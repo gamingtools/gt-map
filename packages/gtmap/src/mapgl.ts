@@ -81,7 +81,7 @@ export default class GTMap {
   private wheelGainCtrl = 0.44;
   private zoomDamping = 0.09;
   private maxZoomRate = 12.0;
-  private _zoomAnim: { from: number; to: number; px: number; py: number; start: number; dur: number; anchor: 'pointer' | 'center' } | null = null;
+  // private _zoomAnim: { from: number; to: number; px: number; py: number; start: number; dur: number; anchor: 'pointer' | 'center' } | null = null;
   private anchorMode: 'pointer' | 'center' = 'pointer';
   private _renderBaseLockZInt: number | null = null;
   // Easing options
@@ -295,7 +295,7 @@ export default class GTMap {
       setLastInteractAt: (t: number) => { this._lastInteractAt = t; },
       getAnchorMode: () => this.anchorMode,
       startEase: (dz, px, py, anchor) => this._startZoomEase(dz, px, py, anchor),
-      cancelZoomAnim: () => { this._zoomAnim = null; },
+      cancelZoomAnim: () => { this._zoomCtrl.cancel(); },
       applyAnchoredZoom: (targetZoom, px, py, anchor) => this._zoomToAnchored(targetZoom, px, py, anchor),
     };
     this._input = new InputController(this._inputDeps);
@@ -311,10 +311,10 @@ export default class GTMap {
     this._dt = (now - this._lastTS) / 1000;
     this._lastTS = now;
     // Render if we have work or an active animation
-    if (!this._needsRender && !this._zoomAnim) return;
+    if (!this._needsRender && !this._zoomCtrl.isAnimating()) return;
     this._render();
     // Keep rendering while animating
-    if (!this._zoomAnim) this._needsRender = false;
+    if (!this._zoomCtrl.isAnimating()) this._needsRender = false;
   }
   private _render() { this._renderer.render(this, this._view()); }
 

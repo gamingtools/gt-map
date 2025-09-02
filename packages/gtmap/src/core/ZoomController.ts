@@ -3,6 +3,8 @@ import { startZoomEase as coreStartZoomEase } from './zoom';
 export default class ZoomController {
   private map: any;
   constructor(map: any) { this.map = map; }
+  isAnimating(): boolean { return !!this.map._zoomAnim; }
+  cancel() { this.map._zoomAnim = null; }
   startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') {
     coreStartZoomEase(this.map, dz, px, py, anchor);
   }
