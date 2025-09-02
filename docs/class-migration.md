@@ -126,3 +126,20 @@ Validation per Phase (Manual)
 - [ ] Tile seams: none at integer zooms
 - [ ] Idle gating: interaction doesn’t starve baseline loads
 - [ ] Console: no GL or runtime warnings
+
+Strategy & Recommendations (Adopted)
+
+- Dependency Injection: inject time/clock, loaders/fetch, GL handles, and schedulers into classes for testability and flexibility.
+- Side‑effects at edges: keep IO (GL, DOM, network, timers) in thin adapters; keep core logic pure/synchronous where practical.
+- Small interfaces: prefer minimal method surfaces (e.g., `enqueue/process`, `render(view)`, `step(now)`) — avoid God objects.
+- Deterministic updates: avoid hidden mutations; either return results or update an explicit `ViewState` passed by reference.
+- Replaceable clocks/schedulers: `ZoomController` and `TilePipeline` accept a `now()` provider (and optional scheduler) for reproducible behavior.
+- No singletons/statics: allow multiple instances (multiple maps) and straightforward mocking.
+- Clear lifecycle: all classes expose `attach()`/`dispose()` (or `init()`/`dispose()`) that are idempotent and deterministic.
+- Pure helpers stay pure: math/transforms (projection, anchors, scoring) remain functions for trivial unit testing later.
+
+Expected Impact
+
+- Helps: clearer boundaries, easier refactors, future unit tests without rewrites, safer DI/mocking, predictable lifecycles.
+- Risks if overdone: boilerplate, cognitive load, slower iteration, premature abstraction.
+- Net: positive — proceed incrementally with pragmatic class boundaries (state/lifecycle in classes; pure helpers as functions).
