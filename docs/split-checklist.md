@@ -9,6 +9,22 @@ Status: WIP (keep this document up to date as we proceed)
 - [ ] WebGL posture: Keep current WebGL1 code paths; no shader or GL feature changes in this split.
 - [ ] Dev flow: Vite dev server; TypeScript in `packages/gtmap`; minimal diffs, consistent style.
 
+Notes
+
+- Public API preserved: constructor and methods unchanged.
+- Behavior unchanged by design; only internal moduleization.
+
+Files Added (internal-only)
+
+- `packages/gtmap/src/gl/program.ts`
+- `packages/gtmap/src/gl/quad.ts`
+- `packages/gtmap/src/render/screenCache.ts`
+- `packages/gtmap/src/tiles/source.ts`
+- `packages/gtmap/src/tiles/cache.ts`
+- `packages/gtmap/src/tiles/queue.ts`
+- `packages/gtmap/src/layers/raster.ts`
+- Backup: `packages/gtmap/src/mapgl.legacy.ts` (excluded from build)
+
 ## Milestone 0 — Baseline Snapshot
 
 - [ ] Record current behavior: wheel/pinch, inertia/ease, recenter, grid toggle.
@@ -70,18 +86,18 @@ Status: WIP (keep this document up to date as we proceed)
 
 ## Task E — Wiring & Parity Pass
 
-- [ ] Replace in-place logic in `GTMap` with calls to the new modules.
-- [ ] Keep fields/state that are user-visible (e.g., `center`, `zoom`, pointers) inside `GTMap`.
-- [ ] Ensure `requestRender()` still coalesces frames as before.
-- [ ] Validate pointer math and world/screen conversions unchanged.
+- [x] Replace in-place logic in `GTMap` with calls to the new modules.
+- [x] Keep fields/state that are user-visible (e.g., `center`, `zoom`, pointers) inside `GTMap`.
+- [x] Ensure `requestRender()` still coalesces frames as before.
+- [x] Validate pointer math and world/screen conversions unchanged.
 - Acceptance
   - [ ] Full smoke run passes: pan, wheel zoom, pinch zoom, grid toggle, zoom speed slider, recenter, HUD/FPS updates.
   - [ ] No new warnings/errors in console; memory usage stable during pan/zoom cycles.
 
 ## Task F — Documentation & Notes
 
-- [ ] Update this checklist with file paths added and any deviations.
-- [ ] Add short module headers/comments explaining purpose and constraints.
+- [x] Update this checklist with file paths added and any deviations.
+- [x] Add short module headers/comments explaining purpose and constraints.
 - [ ] Note any observed edge cases to revisit after the split (but do not change behavior now).
 
 ## Validation Checklist (Manual)
@@ -91,6 +107,8 @@ Status: WIP (keep this document up to date as we proceed)
 - [ ] WrapX=false: finite world clamping behaves the same at min zoom.
 - [ ] Load pacing: interaction does not block base-level loads; idle prioritizes high-need tiles.
 - [ ] Performance: FPS within margin of baseline; no extra GC spikes.
+
+Current Status: pending manual verification while running the dev server.
 
 ## Out of Scope (for this split)
 
