@@ -101,15 +101,15 @@ Phase 4 — Zoom → ZoomController
 
 Phase 5 — State & Wiring
 
-- [ ] Introduce `ViewState` (center, zoom, bounds, flags) shared by subsystems
-- [ ] `GTMap` constructs and composes: `Graphics`, `ScreenCache`, `RasterRenderer`, `ZoomController`, `TilePipeline`, `InputController`, `MapRenderer`, `EventBus`
-- [ ] Ensure `dispose()` cascades cleanup (GL, listeners, textures)
+- [x] Introduce `ViewState` (center, zoom, bounds, flags) shared by subsystems
+- [x] `GTMap` constructs and composes: `Graphics`, `ScreenCache`, `RasterRenderer`, `ZoomController`, `TilePipeline`, `InputController`, `MapRenderer`, `EventBus`
+- [x] Ensure `dispose()` cascades cleanup (GL, listeners, textures)
 - Acceptance
   - [ ] Full smoke run passes; memory stable across cycles
 
 Phase 6 — Cleanup & Docs
 
-- [ ] Remove obsolete wrappers left in `GTMap`
+- [x] Remove obsolete wrappers left in `GTMap`
 - [ ] Update docs with class diagram and module map
 - [ ] Tighten lint (consider import/order as error) and run final pass
 

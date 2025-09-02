@@ -99,7 +99,8 @@ export default class GTMap {
   private _renderer!: MapRenderer;
   private _zoomCtrl!: ZoomController;
   private _gfx!: Graphics;
-  private _view(): ViewState { return { center: this.center, zoom: this.zoom, minZoom: this.minZoom, maxZoom: this.maxZoom, wrapX: this.wrapX }; }
+  private _state!: ViewState;
+  private _view(): ViewState { return this._state; }
   private _events = new EventBus();
   public readonly events = this._events; // experimental chainable events API
   // Grid overlay
@@ -149,6 +150,8 @@ export default class GTMap {
     this._raster = new RasterRenderer(this.gl);
     this._renderer = new MapRenderer();
     this._zoomCtrl = new ZoomController(this as any);
+    // View state
+    this._state = { center: this.center, zoom: this.zoom, minZoom: this.minZoom, maxZoom: this.maxZoom, wrapX: this.wrapX };
     initGridCanvas(this);
     this.resize();
     this._initEvents();
@@ -161,12 +164,14 @@ export default class GTMap {
   setCenter(lng: number, lat: number) {
     this.center.lng = lng;
     this.center.lat = clampLat(lat);
+    this._state.center = this.center;
     this._needsRender = true;
   }
   setZoom(zoom: number) {
     const z = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
     if (z !== this.zoom) {
       this.zoom = z;
+      this._state.zoom = this.zoom;
       this._needsRender = true;
     }
   }
@@ -181,6 +186,10 @@ export default class GTMap {
     if (Number.isFinite(opts.minZoom as number)) this.minZoom = opts.minZoom as number;
     if (Number.isFinite(opts.maxZoom as number)) this.maxZoom = opts.maxZoom as number;
     if (typeof opts.wrapX === 'boolean') this.wrapX = opts.wrapX;
+    // reflect to view state
+    this._state.minZoom = this.minZoom;
+    this._state.maxZoom = this.maxZoom;
+    this._state.wrapX = this.wrapX;
     if (opts.clearCache) {
       // clear GPU textures and cache
       this._tileCache.clear();
@@ -276,15 +285,6 @@ export default class GTMap {
     this._render();
     // Keep rendering while animating
     if (!this._zoomAnim) this._needsRender = false;
-  }
-  private _detectScreenFormat() {
-    const gl = this.gl;
-    try {
-      const attrs = (gl as any).getContextAttributes?.();
-      this._screenTexFormat = attrs && attrs.alpha === false ? gl.RGB : gl.RGBA;
-    } catch {
-      this._screenTexFormat = gl.RGBA;
-    }
   }
   private _render() { this._renderer.render(this, this._view()); }
 
@@ -402,7 +402,6 @@ export default class GTMap {
       this._zoomVel,
       this.useImageBitmap,
       this._movedSinceDown,
-      this._detectScreenFormat,
       this._enqueueTile,
       this._tileUrl,
       this._prefetchNeighbors,
