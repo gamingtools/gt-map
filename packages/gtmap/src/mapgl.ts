@@ -1,4 +1,4 @@
-import { TILE_SIZE, clampLat } from './mercator';
+import { TILE_SIZE, clampLat, lngLatToWorld } from './mercator';
 // programs are initialized via Graphics
 import Graphics from './gl/Graphics';
 import { initCanvas, initGridCanvas, setGridVisible as setGridVisibleCore } from './core/canvas';
@@ -20,6 +20,7 @@ import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 import MapRenderer from './render/MapRenderer';
 import type { ViewState } from './types';
 import { prefetchNeighbors } from './tiles/prefetch';
+import { drawGrid } from './render/grid';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -104,6 +105,43 @@ export default class GTMap {
   private _gfx!: Graphics;
   private _state!: ViewState;
   private _view(): ViewState { return this._state; }
+  // Build the rendering context (internal)
+  public getRenderCtx() {
+    return {
+      gl: this.gl,
+      prog: this._prog!,
+      loc: this._loc!,
+      quad: this._quad!,
+      canvas: this.canvas,
+      dpr: this._dpr,
+      container: this.container,
+      zoom: this.zoom,
+      center: this.center,
+      minZoom: this.minZoom,
+      maxZoom: this.maxZoom,
+      wrapX: this.wrapX,
+      useScreenCache: this.useScreenCache,
+      screenCache: this._screenCache,
+      raster: this._raster,
+      tileCache: this._tileCache,
+      enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
+    } as any;
+  }
+  public prefetchNeighbors(z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) {
+    this._prefetchNeighbors(z, tl, scale, w, h);
+  }
+  public cancelUnwantedLoads() { this._cancelUnwantedLoads(); }
+  public clearWantedKeys() { this._wantedKeys.clear(); }
+  public zoomVelocityTick() {
+    if (Math.abs(this._zoomVel) <= 1e-4) return;
+    const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
+    const maxStep = Math.max(0.0001, this.maxZoomRate * dt);
+    let step = this._zoomVel * dt; step = Math.max(-maxStep, Math.min(maxStep, step));
+    const anchor = (this._wheelAnchor?.mode || this.anchorMode) as 'pointer' | 'center';
+    const px = this._wheelAnchor?.px ?? 0; const py = this._wheelAnchor?.py ?? 0;
+    this._zoomToAnchored(this.zoom + step, px, py, anchor);
+    const k = Math.exp(-dt / this.zoomDamping); this._zoomVel *= k; if (Math.abs(this._zoomVel) < 1e-3) this._zoomVel = 0;
+  }
   private _events = new EventBus();
   public readonly events = this._events; // experimental chainable events API
   // Grid overlay
@@ -168,14 +206,14 @@ export default class GTMap {
     this._zoomCtrl = new ZoomController(this as any);
     // View state
     this._state = { center: this.center, zoom: this.zoom, minZoom: this.minZoom, maxZoom: this.maxZoom, wrapX: this.wrapX };
+    if (false) this._tsUseConfig();
     initGridCanvas(this);
     this.resize();
     this._initEvents();
     this._loop = this._loop.bind(this);
     this._raf = requestAnimationFrame(this._loop);
     this._scheduleBaselinePrefetch();
-    // TEMP: keep TS satisfied for members used by delegated modules; remove after full DI
-    if (false) this._tsUseInternals();
+    // DI in place for input/tiles/render; no need for TS usage hacks
   }
 
   setCenter(lng: number, lat: number) {
@@ -316,8 +354,44 @@ export default class GTMap {
     // Keep rendering while animating
     if (!this._zoomCtrl.isAnimating()) this._needsRender = false;
   }
-  private _render() { this._renderer.render(this, this._view(), () => this._zoomCtrl.step()); }
+  private _render() {
+    this._renderer.render(this, this._view(), () => this._zoomCtrl.step());
+    if (this.showGrid) {
+      const rect = this.container.getBoundingClientRect();
+      const baseZ = Math.floor(this.zoom);
+      const scale = Math.pow(2, this.zoom - baseZ);
+      const widthCSS = rect.width; const heightCSS = rect.height;
+      const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ);
+      const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
+      drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, this.maxZoom);
+    }
+  }
 
+
+  // TEMP: mark rarely-read config/private members as used until full DI removes cross-file references
+  private _tsUseConfig() {
+    void (
+      this.wheelImmediate,
+      this.wheelImmediateCtrl,
+      this.wheelGain,
+      this.wheelGainCtrl,
+      this._renderBaseLockZInt,
+      this.easeBaseMs,
+      this.easePerUnitMs,
+      this.easeMinMs,
+      this.easeMaxMs,
+      this.outCenterBias,
+      this._wheelLinesAccum,
+      this._wheelLastCtrl,
+      this.useImageBitmap,
+      this._wrapX,
+      this._evictIfNeeded,
+      this._stepAnimation,
+      this._isViewportLarger,
+      this._shouldAnchorCenterForZoom,
+      this._processLoadQueue
+    );
+  }
 
   // Prefetch a 1-tile border beyond current viewport at the given level
   private _prefetchNeighbors(zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) { prefetchNeighbors(this, zLevel, tlWorld, scale, widthCSS, heightCSS); }
@@ -376,51 +450,8 @@ export default class GTMap {
   }
 
 
-  // TEMP helper to satisfy noUnusedLocals for members referenced by delegated modules.
-  // Remove once DI refactor (F1–F4) eliminates cross-file private field access.
-  private _tsUseInternals() {
-    void (
-      this._dpr,
-      this._loc,
-      this._dt,
-      this.interactionIdleMs,
-      this._lastInteractAt,
-      this._maxInflightLoads,
-      this._inflightLoads,
-      this.wheelImmediate,
-      this.wheelImmediateCtrl,
-      this.wheelGain,
-      this.wheelGainCtrl,
-      this.zoomDamping,
-      this.maxZoomRate,
-      this._renderBaseLockZInt,
-      this.easeBaseMs,
-      this.easePerUnitMs,
-      this.easeMinMs,
-      this.easeMaxMs,
-      this.outCenterBias,
-      this.useScreenCache,
-      this._raster,
-      this.showGrid,
-      this._gridCtx,
-      this._wheelLinesAccum,
-      this._wheelLastCtrl,
-      this._wheelAnchor,
-      this._zoomVel,
-      this.useImageBitmap,
-      this._prefetchNeighbors,
-      this._enqueueTile,
-      this._wrapX,
-      this._evictIfNeeded,
-      this._processLoadQueue,
-      this._startImageLoad,
-      this._stepAnimation,
-      this._isViewportLarger,
-      this._shouldAnchorCenterForZoom,
-      this._clampCenterWorld,
-      this._cancelUnwantedLoads
-    );
-  }
+
+  // (TEMP helper removed after Render DI completion)
 
   // Bounds clamping similar to JS version
   private _clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number) {
