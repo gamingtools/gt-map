@@ -143,3 +143,10 @@ Expected Impact
 - Helps: clearer boundaries, easier refactors, future unit tests without rewrites, safer DI/mocking, predictable lifecycles.
 - Risks if overdone: boilerplate, cognitive load, slower iteration, premature abstraction.
 - Net: positive — proceed incrementally with pragmatic class boundaries (state/lifecycle in classes; pure helpers as functions).
+
+Early‑Stage Guidance
+
+- Bias for iteration speed: introduce classes only when state/lifecycle is clear; keep other logic as functions.
+- Prefer small, behavior‑neutral refactors; expect churn and revisit boundaries as features crystallize.
+- Defer generalization/extension points until needed; avoid premature inheritance or patterns.
+- Keep the public API flexible; document intent and internal contracts rather than freezing surfaces.
