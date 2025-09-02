@@ -24,9 +24,9 @@ Status: WIP (keep this document up to date as we proceed)
 
 ## Task A — GL Helpers (minimal)
 
-- [ ] `gl/program.ts`: compile/link helpers, error logs, safe deletion.
-- [ ] `gl/quad.ts`: create/bind unit quad VBO; expose draw parameters.
-- [ ] Wire into `GTMap._initPrograms()` with no shader source changes.
+- [x] `gl/program.ts`: compile/link helpers, error logs, safe deletion.
+- [x] `gl/quad.ts`: create/bind unit quad VBO; expose draw parameters.
+- [x] Wire into `GTMap._initPrograms()` with no shader source changes.
 - Acceptance
   - [ ] Tiles render identically; no FPS drop; no GL errors in console.
 
@@ -103,4 +103,3 @@ Status: WIP (keep this document up to date as we proceed)
 - [ ] Chainable events API (promise-like operators) under `GTMap.events`.
 - [ ] WebGL2 uplift (keeping WebGL1 fallback minimal).
 - [ ] Sprite marker layer (instanced), then vector shapes, then HTML overlay.
-

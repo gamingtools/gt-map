@@ -1,4 +1,6 @@
 import { TILE_SIZE, clampLat, lngLatToWorld, worldToLngLat } from './mercator';
+import { createProgramFromSources } from './gl/program';
+import { createUnitQuad } from './gl/quad';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -283,19 +285,13 @@ export default class GTMap {
   }
   private _initPrograms() {
     const gl = this.gl;
-    const vs = this._compile(
-      gl.VERTEX_SHADER,
-      `
+    const vsSrc = `
       attribute vec2 a_pos; uniform vec2 u_translate; uniform vec2 u_size; uniform vec2 u_resolution; varying vec2 v_uv; void main(){ vec2 pixelPos=u_translate + a_pos*u_size; vec2 clip=(pixelPos/u_resolution)*2.0-1.0; clip.y*=-1.0; gl_Position=vec4(clip,0.0,1.0); v_uv=a_pos; }
-    `,
-    );
-    const fs = this._compile(
-      gl.FRAGMENT_SHADER,
-      `
+    `;
+    const fsSrc = `
       precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; uniform float u_alpha; uniform vec2 u_uv0; uniform vec2 u_uv1; void main(){ vec2 uv = mix(u_uv0, u_uv1, v_uv); vec4 c=texture2D(u_tex, uv); gl_FragColor=vec4(c.rgb, c.a*u_alpha); }
-    `,
-    );
-    const prog = (this._prog = this._link(vs, fs));
+    `;
+    const prog = (this._prog = createProgramFromSources(gl, vsSrc, fsSrc));
     this._loc = {
       a_pos: gl.getAttribLocation(prog, 'a_pos'),
       u_translate: gl.getUniformLocation(prog, 'u_translate'),
@@ -306,9 +302,7 @@ export default class GTMap {
       u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
       u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
     };
-    const quad = (this._quad = gl.createBuffer());
-    gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
+    const quad = (this._quad = createUnitQuad(gl));
   }
   resize() {
     const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
