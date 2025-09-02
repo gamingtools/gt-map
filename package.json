@@ -4,7 +4,7 @@
   "private": true,
   "description": "Minimal WebGL tile map with Express server",
   "scripts": {
-    "start": "node server.js",
+    "start": "vite",
     "dev": "vite",
     "build": "vite build && tsc -p packages/gtmap/tsconfig.json",
     "preview": "vite preview",
@@ -13,10 +13,7 @@
     "format": "prettier -w .",
     "format:check": "prettier -c ."
   },
-  "dependencies": {
-    "compression": "^1.8.1",
-    "express": "^5.1.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^24.3.0",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
