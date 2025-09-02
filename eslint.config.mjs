@@ -23,7 +23,7 @@ export default [
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'import/no-unused-modules': ['warn', { unusedExports: true }],
       'import/order': [
-        'warn',
+        'error',
         { groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'], 'newlines-between': 'always' },
       ],
     },
@@ -55,7 +55,7 @@ export default [
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'import/no-unused-modules': ['warn', { unusedExports: true }],
       'import/order': [
-        'warn',
+        'error',
         { groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'], 'newlines-between': 'always' },
       ],
     },

@@ -110,8 +110,38 @@ Phase 5 — State & Wiring
 Phase 6 — Cleanup & Docs
 
 - [x] Remove obsolete wrappers left in `GTMap`
-- [ ] Update docs with class diagram and module map
-- [ ] Tighten lint (consider import/order as error) and run final pass
+ - [x] Update docs with class diagram and module map
+ - [x] Tighten lint (consider import/order as error) and run final pass
+
+Finalization — DI and Smell Removal (Combined Checklist)
+
+Phase F1 — Interfaces & Contracts
+
+- [ ] Define minimal DI interfaces under `packages/gtmap/src/types.ts` (or `core/types.ts`):
+  - `CoreMap`: getView()/setCenter()/setZoom()/getAnchorMode()/setAnchorMode()/requestRender()
+  - `TileDeps`: getView(), idle config (`interactionIdleMs`, lastInteractAt, now()), `getTileCache()`, `startTileLoad(task)`, `urlFromTemplate()`, `wrapX()`, pinned/pending keys access, inflight counters
+  - `RenderDeps`: `getGL()`, `getPrograms()`, `getScreenCache()`, `getRasterRenderer()`, canvas + size
+  - `ZoomDeps`: `getView()`, `applyAnchoredZoom(px,py,targetZoom)`, easing options, now()
+
+Phase F2 — Refactor Controllers to DI
+
+- [ ] `TilePipeline` → constructor(deps: `TileDeps`); remove all `map._*` reach‑ins
+- [ ] `InputController` → constructor(deps: `CoreMap` & `ZoomDeps` & `EventBus`)
+- [ ] `ZoomController` → constructor(deps: `ZoomDeps`); call `applyAnchoredZoom` via deps
+- [ ] `MapRenderer` → constructor(deps: `RenderDeps`); keep `render/frame` pure
+
+Phase F3 — GTMap Getters/Setters + Ownership
+
+- [ ] Add getters/setters on `GTMap` to satisfy DI contracts; make fields private
+- [ ] Ensure `TilePipeline` owns queue/inflight state (no shadow `_queue` in `GTMap`)
+- [ ] Replace any remaining cross‑module `map._*` usages with DI calls
+
+Phase F4 — Cleanup & Verification
+
+- [ ] Remove `_markUsed()` hack; strict TS passes without unused locals
+- [ ] Search/ban direct external access to private GTMap fields
+- [ ] Update `docs/architecture.md` with DI interfaces/relationships
+- [ ] Final smoke: pan/wheel/pinch, screen cache, seams, wrapX, pacing; no console warnings
 
 Notes & Risks
 
@@ -121,11 +151,11 @@ Notes & Risks
 
 Validation per Phase (Manual)
 
-- [ ] Pan/zoom/pinch smoothness; anchor consistency
-- [ ] Screen cache fade/sharpness matches baseline
-- [ ] Tile seams: none at integer zooms
-- [ ] Idle gating: interaction doesn’t starve baseline loads
-- [ ] Console: no GL or runtime warnings
+- [x] Pan/zoom/pinch smoothness; anchor consistency
+- [x] Screen cache fade/sharpness matches baseline
+- [x] Tile seams: none at integer zooms
+- [x] Idle gating: interaction doesn’t starve baseline loads
+- [x] Console: no GL or runtime warnings
 
 Strategy & Recommendations (Adopted)
 

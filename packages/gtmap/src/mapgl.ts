@@ -5,8 +5,9 @@ import { initCanvas, initGridCanvas, setGridVisible as setGridVisibleCore } from
 import { resize as resizeCore } from './core/resize';
 import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
-import { TileQueue } from './tiles/queue';
+// import { TileQueue } from './tiles/queue';
 import TilePipeline from './tiles/TilePipeline';
+import type { TileDeps } from './types';
 import { urlFromTemplate, wrapX as wrapXTile } from './tiles/source';
 import { RasterRenderer } from './layers/raster';
 import { EventBus } from './events/stream';
@@ -114,8 +115,8 @@ export default class GTMap {
   private _maxInflightLoads = 8;
   private _inflightLoads = 0;
   private _pendingKeys = new Set<string>();
-  private _queue: TileQueue = new TileQueue();
   private _tiles!: TilePipeline;
+  private _tileDeps!: TileDeps;
   private _inflightMap = new Map<string, HTMLImageElement>();
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
@@ -145,7 +146,20 @@ export default class GTMap {
     this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
     // Initialize tile cache (LRU)
     this._tileCache = new TileCache(this.gl, this._maxTiles);
-    this._tiles = new TilePipeline(this as any);
+    this._tileDeps = {
+      hasTile: (key: string) => this._tileCache.has(key),
+      isPending: (key: string) => this._pendingKeys.has(key),
+      urlFor: (z: number, x: number, y: number) => this._tileUrl(z, x, y),
+      hasCapacity: () => this._inflightLoads < this._maxInflightLoads,
+      now: () => (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(),
+      getInteractionIdleMs: () => this.interactionIdleMs,
+      getLastInteractAt: () => this._lastInteractAt,
+      getZoom: () => this.zoom,
+      getCenter: () => this.center,
+      startImageLoad: ({ key, url }: { key: string; url: string }) => this._startImageLoad({ key, url }),
+      addPinned: (key: string) => { this._pinnedKeys.add(key); },
+    };
+    this._tiles = new TilePipeline(this._tileDeps);
     // Raster renderer
     this._raster = new RasterRenderer(this.gl);
     this._renderer = new MapRenderer();
@@ -194,7 +208,6 @@ export default class GTMap {
       // clear GPU textures and cache
       this._tileCache.clear();
       this._pendingKeys.clear();
-      this._queue = new TileQueue();
       this._tiles.clear();
       this._inflightMap.clear();
     }
@@ -240,7 +253,6 @@ export default class GTMap {
     this._wantedKeys.clear();
     this._pinnedKeys.clear();
     this._pendingKeys.clear();
-    this._queue = new TileQueue();
     this._tiles.clear();
     this._inflightLoads = 0;
     this._inflightMap.clear();
@@ -378,7 +390,7 @@ export default class GTMap {
       this._lastInteractAt,
       this._maxInflightLoads,
       this._inflightLoads,
-      this._queue,
+      // this._queue,
       this.wheelImmediate,
       this.wheelImmediateCtrl,
       this.wheelGain,
