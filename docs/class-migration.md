@@ -16,6 +16,13 @@ Principles
 - Explicit dependencies via constructors (no hidden singletons).
 - One responsibility per class; each class supports `dispose()`.
 
+SOLID Notes (pragmatic)
+
+- SRP: each class should have a single reason to change (e.g., input, tiles, render, zoom).
+- DIP: depend on abstractions via constructor injection; avoid hard wiring globals.
+- ISP: keep interfaces small and specific (minimal methods between modules).
+- OCP/LSP: don’t force inheritance or artificial extension points; prefer composition and pure functions where simpler.
+
 Keep as Functions
 
 - `mercator.ts`: `lngLatToWorld`, `worldToLngLat`, `clampLat`.
@@ -119,4 +126,3 @@ Validation per Phase (Manual)
 - [ ] Tile seams: none at integer zooms
 - [ ] Idle gating: interaction doesn’t starve baseline loads
 - [ ] Console: no GL or runtime warnings
-
