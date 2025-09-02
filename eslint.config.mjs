@@ -20,7 +20,8 @@ export default [
     },
     plugins: { import: importPlugin, '@typescript-eslint': tseslint.plugin },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'import/no-unused-modules': ['warn', { unusedExports: true }],
       'import/order': [
         'warn',
         { groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'], 'newlines-between': 'always' },
@@ -51,7 +52,8 @@ export default [
       },
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      'import/no-unused-modules': ['warn', { unusedExports: true }],
       'import/order': [
         'warn',
         { groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'], 'newlines-between': 'always' },
