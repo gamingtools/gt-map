@@ -57,15 +57,25 @@ export default class MapGL {
 
     this._raf = null;
     this.debug = !!options.debug;
+    // Cached high-resolution clock function
+    this._now = (typeof performance !== 'undefined' && performance.now)
+      ? () => performance.now()
+      : () => Date.now();
     this._zoomDir = 0; // -1 out, 1 in, 0 idle
     // Lock base tile LOD while zoom animates to avoid last-frame LOD pops
     this._renderBaseLockZInt = null;
+    // Interaction-aware loading
+    this.interactionIdleMs = Number.isFinite(options.interactionIdleMs) ? options.interactionIdleMs : 160;
+    this._lastInteractAt = this._now();
     // Tile loader concurrency control
     this._maxInflightLoads = Number.isFinite(options.maxInflightLoads) ? options.maxInflightLoads : 8;
     this._inflightLoads = 0;
     this._pendingKeys = new Set();
     this._loadQueue = [];
     this._loadQueueSet = new Set();
+    this._inflightMap = new Map(); // key -> HTMLImageElement
+    this._wantedKeys = new Set();
+    this._pinnedKeys = new Set();
     this._inflightMap = new Map(); // key -> HTMLImageElement
     this._wantedKeys = new Set();
     // Screen-space cache to mask gaps while tiles load
@@ -82,6 +92,9 @@ export default class MapGL {
     // Recompute immediate/gain from wheelSpeed defaults for consistent feel
     this.setWheelSpeed(this.wheelSpeed, this.wheelSpeedCtrl);
     this._loop();
+    // Prefetch baseline level tiles (z=2 by default) to stabilize fallback
+    this.prefetchBaselineLevel = Number.isFinite(options.prefetchBaselineLevel) ? options.prefetchBaselineLevel : 2;
+    this._scheduleBaselinePrefetch();
   }
 
   destroy() {
@@ -309,6 +322,7 @@ export default class MapGL {
     let lastX = 0, lastY = 0;
 
     const onMouseDown = (e) => {
+      this._lastInteractAt = this._now();
       dragging = true;
       lastX = e.clientX; lastY = e.clientY;
       canvas.setPointerCapture(e.pointerId ?? 1);
@@ -317,6 +331,7 @@ export default class MapGL {
       // Always update pointer coordinate for HUD
       this._updatePointerAbs(e);
       if (!dragging) return;
+      this._lastInteractAt = this._now();
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
       lastX = e.clientX; lastY = e.clientY;
@@ -338,6 +353,7 @@ export default class MapGL {
       const rect = this.container.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
+      this._lastInteractAt = this._now();
       if (this.debug) {
         try { console.log(`[Wheel] mode=${e.deltaMode} dy=${Number(e.deltaY).toFixed(3)} lines=${Number(lines).toFixed(4)} ctrl=${!!e.ctrlKey}`); } catch {}
       }
@@ -360,6 +376,7 @@ export default class MapGL {
     // Basic touch pinch and pan
     let touchState = null;
     canvas.addEventListener('touchstart', (e) => {
+      this._lastInteractAt = this._now();
       if (e.touches.length === 1) {
         touchState = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
       } else if (e.touches.length === 2) {
@@ -376,6 +393,7 @@ export default class MapGL {
     }, { passive: false });
     canvas.addEventListener('touchmove', (e) => {
       if (!touchState) return;
+      this._lastInteractAt = this._now();
       if (touchState.mode === 'pan' && e.touches.length === 1) {
         const t = e.touches[0];
         const dx = t.clientX - touchState.x; const dy = t.clientY - touchState.y;
@@ -504,7 +522,7 @@ export default class MapGL {
     const ratio = this._viewportCoverageRatio(zInt2, s2, widthCSS, heightCSS);
     const enter = 0.995; // more conservative entering center-anchor
     const exit = 0.90;   // require clearly smaller to exit
-    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const now = this._now();
     if (this._stickyCenterAnchor) {
       if (this._stickyAnchorUntil && now < this._stickyAnchorUntil) {
         return true;
@@ -618,7 +636,7 @@ export default class MapGL {
 
   _maybeLogZoom(z) {
     try {
-      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const now = this._now();
       const rounded = Math.round(z * 1000) / 1000;
       // Throttle to avoid spamming and jank
       if (this._logState.last === rounded && (now - this._logState.lastTime) < 150) return;
@@ -635,25 +653,36 @@ export default class MapGL {
     return r;
   }
 
-  _enqueueTile(z, x, y) {
+  _enqueueTile(z, x, y, priority = 1) {
     const key = `${z}/${x}/${y}`;
     if (this._tileCache.has(key) || this._pendingKeys.has(key) || this._loadQueueSet.has(key)) return;
     const url = tileXYZUrl(this.tileUrl, z, x, y);
-    this._loadQueue.push({ key, url });
+    this._loadQueue.push({ key, url, z, x, y, priority });
     this._loadQueueSet.add(key);
     this._processLoadQueue();
   }
 
   _processLoadQueue() {
     while (this._inflightLoads < this._maxInflightLoads && this._loadQueue.length) {
-      const task = this._loadQueue.shift();
+      const now = this._now();
+      const idle = (now - this._lastInteractAt) > this.interactionIdleMs;
+      const zAllow = Math.floor(this.zoom);
+      let idx = -1;
+      let bestPri = Infinity;
+      for (let i = 0; i < this._loadQueue.length; i++) {
+        const t = this._loadQueue[i];
+        if (!idle && t.z > zAllow) continue; // defer high LOD during interaction
+        if (t.priority < bestPri) { bestPri = t.priority; idx = i; if (bestPri === 0) break; }
+      }
+      if (idx === -1) break;
+      const task = this._loadQueue.splice(idx, 1)[0];
       if (!task) break;
       this._loadQueueSet.delete(task.key);
       this._startImageLoad(task);
     }
   }
 
-  _startImageLoad({ key, url }) {
+  _startImageLoad({ key, url, z, x, y, priority }) {
     this._pendingKeys.add(key);
     this._inflightLoads++;
     const gl = this.gl;
@@ -671,7 +700,9 @@ export default class MapGL {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-        this._tileCache.set(key, { status: 'ready', tex, width: img.naturalWidth, height: img.naturalHeight, lastUsed: this._frame || 0 });
+        const rec = { status: 'ready', tex, width: img.naturalWidth, height: img.naturalHeight, lastUsed: this._frame || 0 };
+        if (this._pinnedKeys.has(key)) rec.pinned = true;
+        this._tileCache.set(key, rec);
         this._evictIfNeeded();
         this._needsRender = true;
       } finally {
@@ -728,7 +759,7 @@ export default class MapGL {
       let victimKey = null;
       let victimUsed = Infinity;
       for (const [k, rec] of this._tileCache) {
-        if (rec?.status !== 'ready') continue;
+        if (rec?.status !== 'ready' || rec?.pinned) continue;
         const used = rec.lastUsed ?? -1;
         if (used < victimUsed) { victimUsed = used; victimKey = k; }
       }
@@ -1083,7 +1114,7 @@ export default class MapGL {
         total++;
         const key = `${zLevel}/${tileX}/${ty}`;
         const record = this._tileCache.get(key);
-        if (!record) this._enqueueTile(zLevel, tileX, ty);
+        if (!record) this._enqueueTile(zLevel, tileX, ty, 0);
         if (record?.status === 'ready') ready++;
       }
     }
@@ -1127,7 +1158,7 @@ export default class MapGL {
         const key = `${zLevel}/${tileX}/${ty}`;
         this._wantedKeys.add(key);
         let record = this._tileCache.get(key);
-        if (!record) this._enqueueTile(zLevel, tileX, ty);
+        if (!record) this._enqueueTile(zLevel, tileX, ty, 0);
 
         let tex = null;
         let uv0 = [0, 0];
@@ -1139,7 +1170,7 @@ export default class MapGL {
           // Try ancestor fallback
           fb = this._findAncestorTile(zLevel, tileX, ty);
           if (fb) {
-            this._wantedKeys.add(`${fb.rec.z}/${fb.rec.x}/${fb.rec.y}`);
+            this._wantedKeys.add(`${fb.z}/${fb.x}/${fb.y}`);
             tex = fb.rec.tex;
             uv0 = [fb.u0, fb.v0];
             uv1 = [fb.u1, fb.v1];
@@ -1183,9 +1214,26 @@ export default class MapGL {
         const v0 = (y % n) / n;
         const u1 = u0 + 1 / n;
         const v1 = v0 + 1 / n;
-        return { rec: prec, u0, v0, u1, v1 };
+        return { rec: prec, z: zp, x: xp, y: yp, u0, v0, u1, v1 };
       }
     }
     return null;
   }
+
+  _scheduleBaselinePrefetch() {
+    const z = this.prefetchBaselineLevel;
+    if (!Number.isFinite(z)) return;
+    const n = 1 << z;
+    for (let y = 0; y < n; y++) {
+      for (let x = 0; x < n; x++) {
+        const key = `${z}/${x}/${y}`;
+        this._pinnedKeys.add(key);
+        if (!this._tileCache.has(key)) this._enqueueTile(z, x, y, 2);
+      }
+    }
+  }
 }
+    // Cached high-resolution clock function
+    this._now = (typeof performance !== 'undefined' && performance.now)
+      ? () => performance.now()
+      : () => Date.now();
