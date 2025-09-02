@@ -60,6 +60,14 @@ export default class MapGL {
     this._zoomDir = 0; // -1 out, 1 in, 0 idle
     // Lock base tile LOD while zoom animates to avoid last-frame LOD pops
     this._renderBaseLockZInt = null;
+    // Tile loader concurrency control
+    this._maxInflightLoads = Number.isFinite(options.maxInflightLoads) ? options.maxInflightLoads : 8;
+    this._inflightLoads = 0;
+    this._pendingKeys = new Set();
+    this._loadQueue = [];
+    this._loadQueueSet = new Set();
+    this._inflightMap = new Map(); // key -> HTMLImageElement
+    this._wantedKeys = new Set();
     // Screen-space cache to mask gaps while tiles load
     this.useScreenCache = options.useScreenCache ?? true;
     this._screenTex = null; // WebGL texture with last frame
@@ -629,43 +637,107 @@ export default class MapGL {
 
   _enqueueTile(z, x, y) {
     const key = `${z}/${x}/${y}`;
-    if (this._tileCache.has(key)) return;
+    if (this._tileCache.has(key) || this._pendingKeys.has(key) || this._loadQueueSet.has(key)) return;
+    const url = tileXYZUrl(this.tileUrl, z, x, y);
+    this._loadQueue.push({ key, url });
+    this._loadQueueSet.add(key);
+    this._processLoadQueue();
+  }
+
+  _processLoadQueue() {
+    while (this._inflightLoads < this._maxInflightLoads && this._loadQueue.length) {
+      const task = this._loadQueue.shift();
+      if (!task) break;
+      this._loadQueueSet.delete(task.key);
+      this._startImageLoad(task);
+    }
+  }
+
+  _startImageLoad({ key, url }) {
+    this._pendingKeys.add(key);
+    this._inflightLoads++;
     const gl = this.gl;
+    this._tileCache.set(key, { status: 'loading' });
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.decoding = 'async';
     img.onload = () => {
-      const tex = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-      this._tileCache.set(key, { status: 'ready', tex, width: img.naturalWidth, height: img.naturalHeight });
-      this._tileOrder.push(key);
-      this._evictIfNeeded();
-      this._needsRender = true;
+      try {
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+        this._tileCache.set(key, { status: 'ready', tex, width: img.naturalWidth, height: img.naturalHeight, lastUsed: this._frame || 0 });
+        this._evictIfNeeded();
+        this._needsRender = true;
+      } finally {
+        this._pendingKeys.delete(key);
+        this._inflightLoads = Math.max(0, this._inflightLoads - 1);
+        this._inflightMap.delete(key);
+        this._processLoadQueue();
+      }
     };
     img.onerror = () => {
       this._tileCache.set(key, { status: 'error' });
+      this._pendingKeys.delete(key);
+      this._inflightLoads = Math.max(0, this._inflightLoads - 1);
+      this._inflightMap.delete(key);
+      this._processLoadQueue();
     };
-    const url = tileXYZUrl(this.tileUrl, z, x, y);
-    this._tileCache.set(key, { status: 'loading' });
+    this._inflightMap.set(key, img);
     img.src = url;
   }
 
+  _cancelUnwantedLoads() {
+    if (!this._wantedKeys) return;
+    // Filter pending queue tasks not wanted
+    if (this._loadQueue.length) {
+      const keep = [];
+      for (const task of this._loadQueue) {
+        if (this._wantedKeys.has(task.key)) keep.push(task);
+        else this._loadQueueSet.delete(task.key);
+      }
+      this._loadQueue = keep;
+    }
+    // Abort inflight images that are no longer needed
+    for (const [key, img] of this._inflightMap.entries()) {
+      if (this._wantedKeys.has(key)) continue;
+      try {
+        img.onload = null;
+        img.onerror = null;
+        img.src = '';
+      } catch {}
+      this._pendingKeys.delete(key);
+      this._inflightMap.delete(key);
+      this._inflightLoads = Math.max(0, this._inflightLoads - 1);
+      this._tileCache.delete(key);
+    }
+    this._wantedKeys.clear();
+    this._processLoadQueue();
+  }
+
   _evictIfNeeded() {
-    if (this._tileOrder.length <= this._maxTiles) return;
-    const overflow = this._tileOrder.length - this._maxTiles;
+    const size = this._tileCache.size;
+    if (size <= this._maxTiles) return;
+    const overflow = size - this._maxTiles;
     for (let i = 0; i < overflow; i++) {
-      const key = this._tileOrder.shift();
-      const rec = this._tileCache.get(key);
+      let victimKey = null;
+      let victimUsed = Infinity;
+      for (const [k, rec] of this._tileCache) {
+        if (rec?.status !== 'ready') continue;
+        const used = rec.lastUsed ?? -1;
+        if (used < victimUsed) { victimUsed = used; victimKey = k; }
+      }
+      if (!victimKey) break;
+      const rec = this._tileCache.get(victimKey);
       if (rec?.tex) {
         this.gl.deleteTexture(rec.tex);
       }
-      this._tileCache.delete(key);
+      this._tileCache.delete(victimKey);
     }
   }
 
@@ -770,6 +842,7 @@ export default class MapGL {
   _render() {
     const gl = this.gl;
     gl.clear(gl.COLOR_BUFFER_BIT);
+    this._frame = (this._frame || 0) + 1;
 
     const zIntActual = Math.floor(this.zoom);
     const baseZ = Number.isFinite(this._renderBaseLockZInt) ? this._renderBaseLockZInt : zIntActual;
@@ -785,6 +858,11 @@ export default class MapGL {
     gl.vertexAttribPointer(this._loc.a_pos, 2, gl.FLOAT, false, 0, 0);
     gl.uniform2f(this._loc.u_resolution, this.canvas.width, this.canvas.height);
     gl.uniform1i(this._loc.u_tex, 0);
+    // Default UV window to full texture for safety
+    if (this._loc.u_uv0 && this._loc.u_uv1) {
+      gl.uniform2f(this._loc.u_uv0, 0.0, 0.0);
+      gl.uniform2f(this._loc.u_uv1, 1.0, 1.0);
+    }
 
     // Draw screen-space cache first to hide transient gaps (if available)
     if (this.useScreenCache && this._screenCacheState && this._screenTex) {
@@ -827,6 +905,9 @@ export default class MapGL {
 
     // Update screen-space cache after drawing tiles
     if (this.useScreenCache) this._updateScreenCache({ zInt, scale, widthCSS, heightCSS, dpr, tlWorld });
+
+    // Cancel queued/inflight loads that are no longer needed
+    this._cancelUnwantedLoads();
   }
 
   _ensureScreenTex() {
@@ -1044,18 +1125,21 @@ export default class MapGL {
         }
 
         const key = `${zLevel}/${tileX}/${ty}`;
+        this._wantedKeys.add(key);
         let record = this._tileCache.get(key);
         if (!record) this._enqueueTile(zLevel, tileX, ty);
 
         let tex = null;
         let uv0 = [0, 0];
         let uv1 = [1, 1];
+        let fb = null;
         if (record?.status === 'ready' && record.tex) {
           tex = record.tex;
         } else {
           // Try ancestor fallback
-          const fb = this._findAncestorTile(zLevel, tileX, ty);
+          fb = this._findAncestorTile(zLevel, tileX, ty);
           if (fb) {
+            this._wantedKeys.add(`${fb.rec.z}/${fb.rec.x}/${fb.rec.y}`);
             tex = fb.rec.tex;
             uv0 = [fb.u0, fb.v0];
             uv1 = [fb.u1, fb.v1];
@@ -1069,6 +1153,11 @@ export default class MapGL {
           gl.uniform2f(this._loc.u_uv0, uv0[0], uv0[1]);
           gl.uniform2f(this._loc.u_uv1, uv1[0], uv1[1]);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          if (record?.status === 'ready') {
+            record.lastUsed = this._frame;
+          } else if (fb && fb.rec) {
+            fb.rec.lastUsed = this._frame;
+          }
         }
       }
     }
