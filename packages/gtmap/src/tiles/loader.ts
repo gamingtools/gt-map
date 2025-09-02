@@ -1,30 +1,41 @@
-// Tile image loader and texture upload utilities extracted from GTMap
-// Internal module, uses a flexible `map` shape to avoid tight coupling.
-
+// Tile image loader with dependency injection for side-effects
 export type TileTask = { key: string; url: string };
+export type TileLoaderDeps = {
+  addPending(key: string): void;
+  removePending(key: string): void;
+  incInflight(): void;
+  decInflight(): void;
+  setLoading(key: string): void;
+  setError(key: string): void;
+  setReady(key: string, tex: WebGLTexture, width: number, height: number, frame: number): void;
+  getGL(): WebGLRenderingContext;
+  getFrame(): number;
+  requestRender(): void;
+  getUseImageBitmap(): boolean;
+  setUseImageBitmap(v: boolean): void;
+};
 
-export function startImageLoad(map: any, { key, url }: TileTask) {
-  map._pendingKeys.add(key);
-  map._inflightLoads++;
-  map._tileCache.setLoading(key);
+export function startImageLoad(deps: TileLoaderDeps, { key, url }: TileTask) {
+  deps.addPending(key);
+  deps.incInflight();
+  deps.setLoading(key);
 
   const onFinally = () => {
     try { /* noop */ } finally {
-      map._pendingKeys.delete(key);
-      map._inflightLoads = Math.max(0, map._inflightLoads - 1);
-      map._processLoadQueue();
+      deps.removePending(key);
+      deps.decInflight();
     }
   };
 
-  if (map.useImageBitmap) {
+  if (deps.getUseImageBitmap()) {
     fetch(url, { mode: 'cors', credentials: 'omit' })
       .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob(); })
       .then((blob) => createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }))
       .then((bmp) => {
         try {
-          const gl: WebGLRenderingContext = map.gl;
+          const gl: WebGLRenderingContext = deps.getGL();
           const tex = gl.createTexture();
-          if (!tex) { map._tileCache.setError(key); return; }
+          if (!tex) { deps.setError(key); return; }
           gl.bindTexture(gl.TEXTURE_2D, tex);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
           gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -34,14 +45,14 @@ export function startImageLoad(map: any, { key, url }: TileTask) {
           gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp as any);
           gl.generateMipmap(gl.TEXTURE_2D);
-          map._tileCache.setReady(key, tex, (bmp as any).width, (bmp as any).height, map._frame);
-          map._needsRender = true;
+          deps.setReady(key, tex, (bmp as any).width, (bmp as any).height, deps.getFrame());
+          deps.requestRender();
         } finally {
           try { (bmp as any).close?.(); } catch {}
           onFinally();
         }
       })
-      .catch(() => { map.useImageBitmap = false; startImageLoad(map, { key, url }); });
+      .catch(() => { deps.setUseImageBitmap(false); startImageLoad(deps, { key, url }); });
     return;
   }
 
@@ -50,9 +61,9 @@ export function startImageLoad(map: any, { key, url }: TileTask) {
   (img as any).decoding = 'async';
   img.onload = () => {
     try {
-      const gl: WebGLRenderingContext = map.gl;
+      const gl: WebGLRenderingContext = deps.getGL();
       const tex = gl.createTexture();
-      if (!tex) { map._tileCache.setError(key); return; }
+      if (!tex) { deps.setError(key); return; }
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -62,13 +73,12 @@ export function startImageLoad(map: any, { key, url }: TileTask) {
       gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img as any);
       gl.generateMipmap(gl.TEXTURE_2D);
-      map._tileCache.setReady(key, tex, (img as any).naturalWidth, (img as any).naturalHeight, map._frame);
-      map._needsRender = true;
+      deps.setReady(key, tex, (img as any).naturalWidth, (img as any).naturalHeight, deps.getFrame());
+      deps.requestRender();
     } finally {
       onFinally();
     }
   };
-  img.onerror = () => { map._tileCache.setError(key); onFinally(); };
+  img.onerror = () => { deps.setError(key); onFinally(); };
   img.src = url;
 }
-

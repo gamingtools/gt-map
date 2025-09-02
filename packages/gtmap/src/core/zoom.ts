@@ -1,48 +1,27 @@
 // Zoom easing and anchored zoom helpers extracted from GTMap
 import { lngLatToWorld, worldToLngLat, clampLat } from '../mercator';
 
-export function startZoomEase(
-  map: any,
-  dz: number,
-  px: number,
-  py: number,
-  anchor: 'pointer' | 'center',
-) {
-  const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-  let current = map.zoom;
-  if (map._zoomAnim) {
-    const a = map._zoomAnim;
-    const t = Math.min(1, (now - a.start) / a.dur);
-    const ease = 1 - Math.pow(1 - t, 3);
-    current = a.from + (a.to - a.from) * ease;
-  }
-  const to = Math.max(map.minZoom, Math.min(map.maxZoom, current + dz));
-  const dist = Math.abs(to - current);
-  const base = map.easeBaseMs; const per = map.easePerUnitMs; const raw = base + per * dist;
-  const dur = Math.max(map.easeMinMs, Math.min(map.easeMaxMs, raw));
-  map._zoomAnim = { from: current, to, px, py, start: now, dur, anchor };
-  map._renderBaseLockZInt = Math.floor(current);
-  map._needsRender = true;
-}
+// startZoomEase moved to ZoomController where easing options live
 
 export function zoomToAnchored(
   map: any,
   targetZoom: number,
   pxCSS: number,
   pyCSS: number,
-  anchor: 'pointer' | 'center',
+  anchorEff: 'pointer' | 'center',
+  outCenterBias: number,
+  clampCenterWorld: (centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number) => { x: number; y: number },
+  requestRender: () => void,
+  tileSize: number,
 ) {
   const zInt = Math.floor(map.zoom);
   const scale = Math.pow(2, map.zoom - zInt);
   const rect = map.container.getBoundingClientRect();
   const widthCSS = rect.width; const heightCSS = rect.height;
-  const centerNow = lngLatToWorld(map.center.lng, map.center.lat, zInt);
+  const centerNow = lngLatToWorld(map.center.lng, map.center.lat, zInt, tileSize);
   const tlWorld = { x: centerNow.x - widthCSS / (2 * scale), y: centerNow.y - heightCSS / (2 * scale) };
   const zClamped = Math.max(map.minZoom, Math.min(map.maxZoom, targetZoom));
   const zInt2 = Math.floor(zClamped); const s2 = Math.pow(2, zClamped - zInt2);
-  // Override to center anchor when viewport would be larger than world (finite worlds)
-  let anchorEff: 'pointer' | 'center' = anchor;
-  if (!map.wrapX && map._shouldAnchorCenterForZoom?.(zClamped)) anchorEff = 'center';
   let center2;
   if (anchorEff === 'center') {
     const factor = Math.pow(2, zInt2 - zInt);
@@ -57,17 +36,16 @@ export function zoomToAnchored(
     if (zClamped < map.zoom) {
       const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
       const dz = Math.max(0, map.zoom - zClamped);
-      const bias = Math.max(0, Math.min(0.6, (map.outCenterBias ?? 0.15) * dz));
+      const bias = Math.max(0, Math.min(0.6, (outCenterBias ?? 0.15) * dz));
       center2 = { x: pointerCenter.x * (1 - bias) + centerScaled.x * bias, y: pointerCenter.y * (1 - bias) + centerScaled.y * bias };
     } else {
       center2 = pointerCenter;
     }
   }
   // Clamp center in world bounds (respect wrapX and freePan)
-  center2 = map._clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
-  const { lng, lat } = worldToLngLat(center2.x, center2.y, zInt2);
+  center2 = clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
+  const { lng, lat } = worldToLngLat(center2.x, center2.y, zInt2, tileSize);
   map.center = { lng, lat: clampLat(lat) };
   map.zoom = zClamped;
-  map._needsRender = true;
+  requestRender();
 }
-

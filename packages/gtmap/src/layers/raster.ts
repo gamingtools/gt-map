@@ -1,5 +1,5 @@
 import type { ProgramLocs } from '../render/screenCache';
-import { TILE_SIZE } from '../mercator';
+// per-level tile size provided via params
 import { tileKey as tileKeyOf, wrapX as wrapXTile } from '../tiles/source';
 
 type TileCacheLike = {
@@ -25,15 +25,17 @@ export class RasterRenderer {
       widthCSS: number;
       heightCSS: number;
       wrapX: boolean;
+      tileSize: number;
     },
   ) {
     const gl = this.gl;
-    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX } = params;
-    const startX = Math.floor(tlWorld.x / TILE_SIZE);
-    const startY = Math.floor(tlWorld.y / TILE_SIZE);
-    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TILE_SIZE) + 1;
-    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TILE_SIZE) + 1;
-    const tilePixelSizeCSS = TILE_SIZE * scale;
+    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize } = params;
+    const TS = tileSize;
+    const startX = Math.floor(tlWorld.x / TS);
+    const startY = Math.floor(tlWorld.y / TS);
+    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
+    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
+    const tilePixelSizeCSS = TS * scale;
     const tilePixelSize = tilePixelSizeCSS * dpr;
 
     for (let ty = startY; ty <= endY; ty++) {
@@ -41,13 +43,13 @@ export class RasterRenderer {
       for (let tx = startX; tx <= endX; tx++) {
         if (!wrapX && (tx < 0 || tx >= (1 << zLevel))) continue;
         const tileX = wrapX ? wrapXTile(tx, zLevel) : tx;
-        const wx = tx * TILE_SIZE;
-        const wy = ty * TILE_SIZE;
+        const wx = tx * TS;
+        const wy = ty * TS;
         let sxCSS = (wx - tlWorld.x) * scale;
         const syCSS = (wy - tlWorld.y) * scale;
         if (wrapX && tileX !== tx) {
           const dxTiles = tx - tileX;
-          sxCSS -= dxTiles * TILE_SIZE * scale;
+          sxCSS -= dxTiles * TS * scale;
         }
         const key = tileKeyOf(zLevel, tileX, ty);
         const rec = tileCache.get(key);
@@ -71,11 +73,13 @@ export class RasterRenderer {
     widthCSS: number,
     heightCSS: number,
     wrapX: boolean,
+    tileSize: number,
   ): number {
-    const startX = Math.floor(tlWorld.x / TILE_SIZE);
-    const startY = Math.floor(tlWorld.y / TILE_SIZE);
-    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TILE_SIZE) + 1;
-    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TILE_SIZE) + 1;
+    const TS = tileSize;
+    const startX = Math.floor(tlWorld.x / TS);
+    const startY = Math.floor(tlWorld.y / TS);
+    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
+    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
     let total = 0;
     let ready = 0;
     for (let ty = startY; ty <= endY; ty++) {
@@ -94,4 +98,3 @@ export class RasterRenderer {
     return ready / total;
   }
 }
-

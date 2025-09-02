@@ -1,8 +1,8 @@
 // Grid overlay drawing utilities extracted from GTMap
-import { TILE_SIZE } from '../mercator';
+// Grid overlay drawing utilities extracted from GTMap
 
-function chooseGridSpacing(scale: number): number {
-  const base = TILE_SIZE;
+function chooseGridSpacing(scale: number, tileSize: number): number {
+  const base = tileSize;
   const candidates = [
     base / 16,
     base / 8,
@@ -40,14 +40,15 @@ export function drawGrid(
   tlWorld: { x: number; y: number },
   dpr: number,
   maxZoom: number,
+  tileSize: number,
 ): void {
   if (!ctx || !canvas) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.save();
   ctx.scale(dpr || 1, dpr || 1);
 
-  const spacingWorld = chooseGridSpacing(scale);
-  const base = TILE_SIZE;
+  const spacingWorld = chooseGridSpacing(scale, tileSize);
+  const base = tileSize;
   const zAbs = Math.floor(maxZoom);
   const factorAbs = Math.pow(2, zAbs - zInt);
 
@@ -112,4 +113,3 @@ export function drawGrid(
 
   ctx.restore();
 }
-

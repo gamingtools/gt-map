@@ -1,4 +1,3 @@
-import { TILE_SIZE } from '../mercator';
 
 export type TileTask = { key: string; url: string; z: number; x: number; y: number; priority: number };
 
@@ -21,7 +20,7 @@ export class TileQueue {
     this.queue = keep;
   }
 
-  next(baseZ: number, centerWorld: { x: number; y: number }, idle: boolean): TileTask | null {
+  next(baseZ: number, centerWorld: { x: number; y: number }, idle: boolean, tileSize: number): TileTask | null {
     if (!this.queue.length) return null;
     let bestIdx = -1;
     let bestScore = Infinity;
@@ -29,8 +28,8 @@ export class TileQueue {
       const t = this.queue[i];
       if (!idle && t.z > baseZ) continue;
       const factor = Math.pow(2, baseZ - t.z);
-      const centerTileX = Math.floor(centerWorld.x / factor / TILE_SIZE);
-      const centerTileY = Math.floor(centerWorld.y / factor / TILE_SIZE);
+      const centerTileX = Math.floor(centerWorld.x / factor / tileSize);
+      const centerTileY = Math.floor(centerWorld.y / factor / tileSize);
       const dx = t.x - centerTileX; const dy = t.y - centerTileY;
       const dist = Math.hypot(dx, dy);
       const zBias = Math.abs(t.z - baseZ);
@@ -46,4 +45,3 @@ export class TileQueue {
   has(key: string) { return this.set.has(key); }
   get length() { return this.queue.length; }
 }
-

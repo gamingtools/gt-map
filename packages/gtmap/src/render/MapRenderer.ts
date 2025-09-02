@@ -1,17 +1,25 @@
-import type { ViewState, RenderCtx } from '../types';
+import type { RenderCtx } from '../types';
 
 import { renderFrame } from './frame';
 
 export default class MapRenderer {
-  render(map: any, _view?: ViewState, stepAnimation?: () => boolean) {
-    const ctx: RenderCtx = map.getRenderCtx();
-    renderFrame(ctx, {
-      stepAnimation,
-      zoomVelocityTick: () => map.zoomVelocityTick(),
-      prefetchNeighbors: (z, tl, scale, w, h) => map.prefetchNeighbors(z, tl, scale, w, h),
-      cancelUnwanted: () => map.cancelUnwantedLoads(),
-      clearWanted: () => map.clearWantedKeys(),
-    });
+  private getCtx: () => RenderCtx;
+  private hooks: {
+    stepAnimation?: () => boolean;
+    zoomVelocityTick?: () => void;
+    prefetchNeighbors?: (z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) => void;
+    cancelUnwanted?: () => void;
+    clearWanted?: () => void;
+  };
+
+  constructor(getCtx: () => RenderCtx, hooks?: MapRenderer['hooks']) {
+    this.getCtx = getCtx;
+    this.hooks = hooks || {};
+  }
+
+  render() {
+    const ctx: RenderCtx = this.getCtx();
+    renderFrame(ctx, this.hooks);
   }
   dispose() {}
 }

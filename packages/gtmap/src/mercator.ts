@@ -1,4 +1,4 @@
-export const TILE_SIZE = 256;
+export const DEFAULT_TILE_SIZE = 256;
 
 /** Clamp latitude to Web Mercator's valid range. */
 export function clampLat(lat: number): number {
@@ -11,8 +11,8 @@ export function clampLat(lat: number): number {
  * Convert lng/lat (degrees) to "world" pixel coordinates at zoom z,
  * where the world size is TILE_SIZE * 2^z.
  */
-export function lngLatToWorld(lng: number, lat: number, z: number): { x: number; y: number } {
-  const s = TILE_SIZE * Math.pow(2, z);
+export function lngLatToWorld(lng: number, lat: number, z: number, tileSize: number = DEFAULT_TILE_SIZE): { x: number; y: number } {
+  const s = tileSize * Math.pow(2, z);
   const x = (lng + 180) / 360;
   const sinLat = Math.sin((clampLat(lat) * Math.PI) / 180);
   const y = 0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI);
@@ -20,8 +20,8 @@ export function lngLatToWorld(lng: number, lat: number, z: number): { x: number;
 }
 
 /** Inverse of lngLatToWorld. */
-export function worldToLngLat(x: number, y: number, z: number): { lng: number; lat: number } {
-  const s = TILE_SIZE * Math.pow(2, z);
+export function worldToLngLat(x: number, y: number, z: number, tileSize: number = DEFAULT_TILE_SIZE): { lng: number; lat: number } {
+  const s = tileSize * Math.pow(2, z);
   const lng = (x / s) * 360 - 180;
   const n = Math.PI - 2 * Math.PI * (y / s);
   const lat = (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));

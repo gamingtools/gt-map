@@ -23,7 +23,7 @@ export function renderFrame(
   const widthCSS = rect.width;
   const heightCSS = rect.height;
   const scale = Math.pow(2, ctx.zoom - baseZ);
-  const centerWorld = lngLatToWorld(ctx.center.lng, ctx.center.lat, baseZ);
+  const centerWorld = lngLatToWorld(ctx.center.lng, ctx.center.lat, baseZ, ctx.tileSize);
   const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
 
   // Setup program/state
@@ -42,29 +42,29 @@ export function renderFrame(
 
   if (ctx.useScreenCache && ctx.screenCache)
     ctx.screenCache.draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.loc!, ctx.prog!, ctx.quad!, ctx.canvas);
-  const coverage = ctx.raster.coverage(ctx.tileCache as any, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX);
+  const coverage = ctx.raster.coverage(ctx.tileCache as any, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize);
   const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
   if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
     for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
-      const centerL = lngLatToWorld(ctx.center.lng, ctx.center.lat, lvl);
+      const centerL = lngLatToWorld(ctx.center.lng, ctx.center.lat, lvl, ctx.tileSize);
       const scaleL = Math.pow(2, ctx.zoom - lvl);
       const tlL = { x: centerL.x - widthCSS / (2 * scaleL), y: centerL.y - heightCSS / (2 * scaleL) };
-      const covL = ctx.raster.coverage(ctx.tileCache as any, lvl, tlL, scaleL, widthCSS, heightCSS, ctx.wrapX);
-      ctx.raster.drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, { zLevel: lvl, tlWorld: tlL, scale: scaleL, dpr: ctx.dpr, widthCSS, heightCSS, wrapX: ctx.wrapX });
+      const covL = ctx.raster.coverage(ctx.tileCache as any, lvl, tlL, scaleL, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize);
+      ctx.raster.drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, { zLevel: lvl, tlWorld: tlL, scale: scaleL, dpr: ctx.dpr, widthCSS, heightCSS, wrapX: ctx.wrapX, tileSize: ctx.tileSize });
       if (covL >= 0.995) break;
     }
   }
-  ctx.raster.drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, { zLevel: baseZ, tlWorld, scale, dpr: ctx.dpr, widthCSS, heightCSS, wrapX: ctx.wrapX });
+  ctx.raster.drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, { zLevel: baseZ, tlWorld, scale, dpr: ctx.dpr, widthCSS, heightCSS, wrapX: ctx.wrapX, tileSize: ctx.tileSize });
 
   // Prefetch neighbors around current view
   if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
 
   const zIntNext = Math.min(ctx.maxZoom, baseZ + 1); const frac = ctx.zoom - baseZ;
   if (zIntNext > baseZ && frac > 0) {
-    const centerN = lngLatToWorld(ctx.center.lng, ctx.center.lat, zIntNext); const scaleN = Math.pow(2, ctx.zoom - zIntNext);
+    const centerN = lngLatToWorld(ctx.center.lng, ctx.center.lat, zIntNext, ctx.tileSize); const scaleN = Math.pow(2, ctx.zoom - zIntNext);
     const tlN = { x: centerN.x - widthCSS / (2 * scaleN), y: centerN.y - heightCSS / (2 * scaleN) };
     gl.uniform1f(ctx.loc.u_alpha!, Math.max(0, Math.min(1, frac)));
-    ctx.raster.drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, { zLevel: zIntNext, tlWorld: tlN, scale: scaleN, dpr: ctx.dpr, widthCSS, heightCSS, wrapX: ctx.wrapX });
+    ctx.raster.drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, { zLevel: zIntNext, tlWorld: tlN, scale: scaleN, dpr: ctx.dpr, widthCSS, heightCSS, wrapX: ctx.wrapX, tileSize: ctx.tileSize });
     gl.uniform1f(ctx.loc.u_alpha!, 1.0);
   }
   // Grid overlay (optional): context provides canvas/container if needed

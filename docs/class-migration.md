@@ -61,7 +61,7 @@ Phase 0 — Baseline
 Phase 1 — Input → InputController
 
 - [x] Create `input/InputController.ts` class from `input/handlers.ts`
-- [ ] Constructor DI: container, canvas, hooks (`setCenter`, `zoomController`), `EventBus`
+ - [x] Constructor DI: container, canvas, hooks (`setCenter`, `zoomController`), `EventBus`
 - [x] Methods: `attach()`, `dispose()`
 - [x] Wire into `GTMap` (replace `_initEvents()`)
 - Acceptance
@@ -72,8 +72,8 @@ Phase 2 — Tiles → TilePipeline
 
 - [x] Create `tiles/TilePipeline.ts` (class)
 - [x] Integrate: combine `tiles/{queue, cache, loader, prefetch}`
-- [ ] Constructor DI: `gl`, limits, idle gating, templating (`tiles/source`)
-- [ ] Methods: `enqueue`, `process`, `cancelUnwanted`, `clear`, `dispose`, optional `pin/unpin`
+ - [x] Constructor DI: `gl`, limits, idle gating, templating (`tiles/source`)
+ - [~] Methods: `enqueue`, `process`, `cancelUnwanted`, `clear` (dispose/pin pending)
 - [x] Replace direct calls in `GTMap` with pipeline methods
 - Acceptance
   - [ ] Load pacing and idle gating match baseline
@@ -83,8 +83,8 @@ Phase 3 — Render → MapRenderer + Graphics
 
 - [x] Create `gl/Graphics.ts` (class) to own GL context + programs
 - [x] Create `render/MapRenderer.ts` (class) from `render/frame.ts`
-- [ ] Constructor DI: `Graphics`, `ScreenCache`, `RasterRenderer`
-- [ ] Method: `render(viewState, tilePipeline)` with same ordering/alpha
+- [x] Constructor DI: `RenderCtx` provider + hooks
+- [x] Method: `render()` uses `render/frame` with same ordering/alpha
 - [x] Replace `_render()` with renderer call
 - Acceptance
   - [ ] Visual parity (tiles, alpha fades, seams) across zoom levels
@@ -93,9 +93,9 @@ Phase 3 — Render → MapRenderer + Graphics
 Phase 4 — Zoom → ZoomController
 
 - [x] Create `core/ZoomController.ts` (class) from `core/zoom.ts`
-- [x] Methods: `startEase`, `step`, `applyAnchoredZoom`, `reset` (partial: `applyAnchoredZoom` via delegated `_zoomToAnchored`)
-- [ ] Own `_zoomAnim` and easing params; expose necessary hooks
-- [ ] Wire controller into InputController + MapRenderer (anchor math)
+ - [x] Methods: `startEase`, `step`, `applyAnchoredZoom`, `reset` (partial: `applyAnchoredZoom` via delegated `_zoomToAnchored`)
+- [x] Own easing params (moved); internal animation state
+- [x] Wire controller via `ZoomDeps` (applyAnchoredZoom, emit, now, requestRender)
 - Acceptance
   - [ ] Ease durations/curves unchanged; anchor feel identical
 
@@ -122,13 +122,13 @@ Phase F1 — Interfaces & Contracts
   - `TileDeps`: getView(), idle config (`interactionIdleMs`, lastInteractAt, now()), `getTileCache()`, `startTileLoad(task)`, `urlFromTemplate()`, `wrapX()`, pinned/pending keys access, inflight counters — [x] added
   - `InputDeps`: container/canvas/view access, setters, pointer updates, event emit, zoom easing — [x] added
   - `RenderDeps`/`RenderCtx`: GL/programs/quad, screen cache, raster, tile access, view + canvas — [x] partial (callbacks + RenderCtx in frame/MapRenderer)
-  - `ZoomDeps`: `getView()`, `applyAnchoredZoom(px,py,targetZoom)`, easing options, now() — [ ]
+  - `ZoomDeps`: `getZoom()/min/max`, `applyAnchoredZoom`, `emit`, `requestRender`, `now()` — [x]
 
 Phase F2 — Refactor Controllers to DI
 
 - [x] `TilePipeline` → constructor(deps: `TileDeps`); remove all `map._*` reach‑ins
 - [x] `InputController` → constructor(deps: InputDeps)
-- [ ] `ZoomController` → constructor(deps: `ZoomDeps`); call `applyAnchoredZoom` via deps (partial: added `isAnimating/cancel`)
+ - [ ] `ZoomController` → constructor(deps: `ZoomDeps`); call `applyAnchoredZoom` via deps (partial: owns easing, `isAnimating/cancel`)
 - [ ] `MapRenderer` → constructor(deps: `RenderDeps`); keep `render/frame` pure (partial: callbacks and RenderCtx argument to frame)
 
 Phase F3 — GTMap Getters/Setters + Ownership
@@ -139,7 +139,7 @@ Phase F3 — GTMap Getters/Setters + Ownership
 
 Phase F4 — Cleanup & Verification
 
-- [x] Remove `_markUsed()` hack; strict TS passes without unused locals (TEMP `_tsUseInternals` remains until Render DI complete)
+- [x] Remove `_markUsed()` hack; strict TS passes without unused locals
 - [ ] Search/ban direct external access to private GTMap fields
 - [ ] Update `docs/architecture.md` with DI interfaces/relationships (after Render DI)
 - [ ] Final smoke: pan/wheel/pinch, screen cache, seams, wrapX, pacing; no console warnings

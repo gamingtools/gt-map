@@ -36,7 +36,7 @@ export default class InputController {
       const rect = deps.getContainer().getBoundingClientRect();
       const scale = Math.pow(2, view.zoom - zInt);
       const widthCSS = rect.width, heightCSS = rect.height;
-      const centerWorld = lngLatToWorld(view.center.lng, view.center.lat, zInt);
+      const centerWorld = lngLatToWorld(view.center.lng, view.center.lat, zInt, deps.getTileSize());
       const tl = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
       // update pointerAbs always
       const px = e.clientX - rect.left; const py = e.clientY - rect.top;
@@ -47,7 +47,7 @@ export default class InputController {
       const newTL = { x: tl.x - dx / scale, y: tl.y - dy / scale };
       let newCenter = { x: newTL.x + widthCSS / (2 * scale), y: newTL.y + heightCSS / (2 * scale) };
       newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
-      const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt);
+      const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
       deps.setCenter(lng, lat);
       deps.emit('move', { view: deps.getView() });
     };
@@ -95,11 +95,11 @@ export default class InputController {
         const rect = deps.getContainer().getBoundingClientRect();
         const scale = Math.pow(2, view.zoom - zInt);
         const widthCSS = rect.width, heightCSS = rect.height;
-        const centerWorld = lngLatToWorld(view.center.lng, view.center.lat, zInt);
+        const centerWorld = lngLatToWorld(view.center.lng, view.center.lat, zInt, deps.getTileSize());
         const tl = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
         let newCenter = { x: tl.x - dx / scale + widthCSS / (2 * scale), y: tl.y - dy / scale + heightCSS / (2 * scale) };
         newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
-        const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt);
+        const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
         deps.setCenter(lng, lat);
         deps.emit('move', { view: deps.getView() });
       } else if (touchState.mode === 'pinch' && e.touches.length === 2) {

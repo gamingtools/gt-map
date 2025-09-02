@@ -1,8 +1,8 @@
 import { lngLatToWorld } from '../mercator';
+import type { TileDeps } from '../types';
 
 import { TileQueue } from './queue';
 import { tileKey as tileKeyOf } from './source';
-import type { TileDeps } from '../types';
 
 export default class TilePipeline {
   private deps: TileDeps;
@@ -47,7 +47,7 @@ export default class TilePipeline {
       const baseZ = Math.floor(this.deps.getZoom());
       const c = this.deps.getCenter();
       const centerWorld = lngLatToWorld(c.lng, c.lat, baseZ);
-      const task = this.queue.next(baseZ, centerWorld, idle);
+      const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());
       if (!task) break;
       this.deps.startImageLoad(task);
     }

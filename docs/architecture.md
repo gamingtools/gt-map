@@ -10,17 +10,18 @@ Modules & Classes
 - Graphics
   - Initializes WebGL context and program/buffer setup; disposes GL resources
 - MapRenderer
-  - Orchestrates per‑frame rendering (delegates to render/frame)
+  - Orchestrates per‑frame rendering (delegates to `render/frame`) via DI hooks/ctx provider
 - ScreenCache
   - Manages the screen‑space texture; update/draw
 - RasterRenderer
   - Draws tiles for a level; computes coverage
 - TilePipeline
   - Queues, schedules, loads, and prefetches tiles; manages inflight
+  - Uses `TileLoaderDeps` to upload textures and manage inflight/pending counters
 - InputController
   - Handles pointer/touch/wheel/resize; emits via EventBus
 - ZoomController
-  - Owns zoom easing animation and stepping
+  - Owns zoom easing animation/stepping; keeps easing options internally; uses `ZoomDeps` to mutate map state
 - EventBus
   - Chainable event streams (`on`, `when`, operators)
 
@@ -62,3 +63,4 @@ Notes
 - Controllers accept dependencies via constructors (DI); no singletons.
 - Pure helpers remain functions for readability and testability.
 - Dispose path: InputController → Renderer → TilePipeline → Graphics → caches/buffers.
+ - Zoom math: `GTMap._zoomToAnchored` now computes effective anchor and bias, delegating core math to `core/zoom.zoomToAnchored` with explicit params.

@@ -20,6 +20,7 @@ export interface TileDeps {
   getLastInteractAt(): number;
   getZoom(): number;
   getCenter(): LngLat;
+  getTileSize(): number;
   startImageLoad(task: { key: string; url: string }): void;
   addPinned(key: string): void;
 }
@@ -41,6 +42,7 @@ export interface RenderCtx {
   screenCache?: any;
   raster: any;
   tileCache: any;
+  tileSize: number;
   enqueueTile(z: number, x: number, y: number, priority?: number): void;
 }
 
@@ -50,6 +52,7 @@ export interface InputDeps {
   getCanvas(): HTMLCanvasElement;
   getMaxZoom(): number;
   getView(): ViewState;
+  getTileSize(): number;
   setCenter(lng: number, lat: number): void;
   clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number): { x: number; y: number };
   updatePointerAbs(x: number, y: number): void;
@@ -60,4 +63,18 @@ export interface InputDeps {
   startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
   cancelZoomAnim(): void;
   applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
+}
+
+export interface ZoomDeps {
+  getZoom(): number;
+  getMinZoom(): number;
+  getMaxZoom(): number;
+  getTileSize(): number;
+  shouldAnchorCenterForZoom(targetZoom: number): boolean;
+  getMap(): any;
+  getOutCenterBias(): number;
+  clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number): { x: number; y: number };
+  emit(name: string, payload: any): void;
+  requestRender(): void;
+  now(): number;
 }

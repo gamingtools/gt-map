@@ -1,4 +1,4 @@
-import { TILE_SIZE, clampLat, lngLatToWorld } from './mercator';
+import { clampLat, lngLatToWorld } from './mercator';
 // programs are initialized via Graphics
 import Graphics from './gl/Graphics';
 import { initCanvas, initGridCanvas, setGridVisible as setGridVisibleCore } from './core/canvas';
@@ -8,11 +8,11 @@ import { TileCache } from './tiles/cache';
 // import { TileQueue } from './tiles/queue';
 import TilePipeline from './tiles/TilePipeline';
 import type { TileDeps } from './types';
-import { urlFromTemplate, wrapX as wrapXTile } from './tiles/source';
+import { urlFromTemplate } from './tiles/source';
 import { RasterRenderer } from './layers/raster';
 import { EventBus } from './events/stream';
 // grid and wheel helpers are used via delegated modules
-import { zoomToAnchored as coreZoomToAnchored } from './core/zoom';
+// zoom core used via ZoomController
 import ZoomController from './core/ZoomController';
 import InputController from './input/InputController';
 import type { InputDeps } from './types';
@@ -21,10 +21,12 @@ import MapRenderer from './render/MapRenderer';
 import type { ViewState } from './types';
 import { prefetchNeighborsCtx } from './tiles/prefetch';
 import { drawGrid } from './render/grid';
+import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
   tileUrl?: string;
+  tileSize?: number;
   minZoom?: number;
   maxZoom?: number;
   wrapX?: boolean;
@@ -44,6 +46,7 @@ export default class GTMap {
   canvas!: HTMLCanvasElement;
   gl!: WebGLRenderingContext;
   tileUrl: string;
+  tileSize: number;
   minZoom: number;
   maxZoom: number;
   wrapX: boolean;
@@ -78,18 +81,12 @@ export default class GTMap {
   private wheelImmediate = 0.9;
   private wheelSpeedCtrl = 0.4;
   private wheelImmediateCtrl = 0.24;
-  private wheelGain = 0.22;
-  private wheelGainCtrl = 0.44;
+  // removed: wheelGain/wheelGainCtrl (not used after DI)
   private zoomDamping = 0.09;
   private maxZoomRate = 12.0;
   // private _zoomAnim: { from: number; to: number; px: number; py: number; start: number; dur: number; anchor: 'pointer' | 'center' } | null = null;
   private anchorMode: 'pointer' | 'center' = 'pointer';
-  private _renderBaseLockZInt: number | null = null;
-  // Easing options
-  private easeBaseMs = 150;
-  private easePerUnitMs = 240;
-  private easeMinMs = 120;
-  private easeMaxMs = 420;
+  // Easing options now owned by ZoomController
   // Zoom-out stability bias toward center
   private outCenterBias = 0.15;
   // Sticky center anchor hysteresis for finite worlds
@@ -124,11 +121,12 @@ export default class GTMap {
       screenCache: this._screenCache,
       raster: this._raster,
       tileCache: this._tileCache,
+      tileSize: this.tileSize,
       enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
     } as any;
   }
   public prefetchNeighbors(z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) {
-    prefetchNeighborsCtx({ wrapX: this.wrapX, hasTile: (key: string) => this._tileCache.has(key), enqueueTile: (zz: number, xx: number, yy: number, p = 1) => this._enqueueTile(zz, xx, yy, p) }, z, tl, scale, w, h);
+    prefetchNeighborsCtx({ wrapX: this.wrapX, tileSize: this.tileSize, hasTile: (key: string) => this._tileCache.has(key), enqueueTile: (zz: number, xx: number, yy: number, p = 1) => this._enqueueTile(zz, xx, yy, p) }, z, tl, scale, w, h);
   }
   public cancelUnwantedLoads() { this._cancelUnwantedLoads(); }
   public clearWantedKeys() { this._wantedKeys.clear(); }
@@ -139,7 +137,7 @@ export default class GTMap {
     let step = this._zoomVel * dt; step = Math.max(-maxStep, Math.min(maxStep, step));
     const anchor = (this._wheelAnchor?.mode || this.anchorMode) as 'pointer' | 'center';
     const px = this._wheelAnchor?.px ?? 0; const py = this._wheelAnchor?.py ?? 0;
-    this._zoomToAnchored(this.zoom + step, px, py, anchor);
+    this._zoomCtrl.applyAnchoredZoom(this.zoom + step, px, py, anchor);
     const k = Math.exp(-dt / this.zoomDamping); this._zoomVel *= k; if (Math.abs(this._zoomVel) < 1e-3) this._zoomVel = 0;
   }
   private _events = new EventBus();
@@ -157,21 +155,22 @@ export default class GTMap {
   private _pendingKeys = new Set<string>();
   private _tiles!: TilePipeline;
   private _tileDeps!: TileDeps;
-  private _inflightMap = new Map<string, HTMLImageElement>();
+  private _loaderDeps!: any;
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
   private prefetchBaselineLevel = 2;
   // Wheel coalescing + velocity tail
-  private _wheelLinesAccum = 0;
-  private _wheelLastCtrl = false;
+  // removed: legacy wheel coalescing fields (handled via easing)
   private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = { px: 0, py: 0, mode: 'pointer' };
   private _zoomVel = 0;
-  private useImageBitmap = typeof createImageBitmap === 'function';
+  // Loader checks this dynamically; no need to track read locally
+  useImageBitmap = typeof createImageBitmap === 'function';
   // private _movedSinceDown = false; // deprecated; input handled by controller
 
   constructor(container: HTMLDivElement, options: MapOptions = {}) {
     this.container = container;
     this.tileUrl = options.tileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    this.tileSize = (Number.isFinite(options.tileSize as number) ? (options.tileSize as number) : 256);
     this.minZoom = options.minZoom ?? 1;
     this.maxZoom = options.maxZoom ?? 19;
     this.wrapX = options.wrapX ?? true;
@@ -196,23 +195,59 @@ export default class GTMap {
       getLastInteractAt: () => this._lastInteractAt,
       getZoom: () => this.zoom,
       getCenter: () => this.center,
+      getTileSize: () => this.tileSize,
       startImageLoad: ({ key, url }: { key: string; url: string }) => this._startImageLoad({ key, url }),
       addPinned: (key: string) => { this._pinnedKeys.add(key); },
+    };
+    this._loaderDeps = {
+      addPending: (key: string) => this._pendingKeys.add(key),
+      removePending: (key: string) => this._pendingKeys.delete(key),
+      incInflight: () => { this._inflightLoads++; },
+      decInflight: () => { this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._tiles.process(); },
+      setLoading: (key: string) => this._tileCache.setLoading(key),
+      setError: (key: string) => this._tileCache.setError(key),
+      setReady: (key: string, tex: WebGLTexture, width: number, height: number, frame: number) => this._tileCache.setReady(key, tex, width, height, frame),
+      getGL: () => this.gl,
+      getFrame: () => this._frame,
+      requestRender: () => { this._needsRender = true },
+      getUseImageBitmap: () => this.useImageBitmap,
+      setUseImageBitmap: (v: boolean) => { this.useImageBitmap = v },
     };
     this._tiles = new TilePipeline(this._tileDeps);
     // Raster renderer
     this._raster = new RasterRenderer(this.gl);
-    this._renderer = new MapRenderer();
-    this._zoomCtrl = new ZoomController(this as any);
+    this._renderer = new MapRenderer(
+      () => this.getRenderCtx(),
+      {
+        stepAnimation: () => this._zoomCtrl.step(),
+        zoomVelocityTick: () => this.zoomVelocityTick(),
+        prefetchNeighbors: (z, tl, scale, w, h) => this.prefetchNeighbors(z, tl, scale, w, h),
+        cancelUnwanted: () => this.cancelUnwantedLoads(),
+        clearWanted: () => this.clearWantedKeys(),
+      },
+    );
+    this._zoomCtrl = new ZoomController({
+      getZoom: () => this.zoom,
+      getMinZoom: () => this.minZoom,
+      getMaxZoom: () => this.maxZoom,
+      getTileSize: () => this.tileSize,
+      shouldAnchorCenterForZoom: (target) => this._shouldAnchorCenterForZoom(target),
+      getMap: () => this,
+      getOutCenterBias: () => this.outCenterBias,
+      clampCenterWorld: (cw, zInt, s, w, h) => clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize),
+      emit: (name: string, payload: any) => this._events.emit(name, payload),
+      requestRender: () => { this._needsRender = true },
+      now: () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()),
+    });
     // View state
     this._state = { center: this.center, zoom: this.zoom, minZoom: this.minZoom, maxZoom: this.maxZoom, wrapX: this.wrapX };
-    if (false) this._tsUseConfig();
+    // DI configured; no temporary TS-usage hacks required
     initGridCanvas(this);
     this.resize();
     this._initEvents();
     this._loop = this._loop.bind(this);
     this._raf = requestAnimationFrame(this._loop);
-    this._scheduleBaselinePrefetch();
+    this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel);
     // DI in place for input/tiles/render; no need for TS usage hacks
   }
 
@@ -232,12 +267,14 @@ export default class GTMap {
   }
   setTileSource(opts: {
     url?: string;
+    tileSize?: number;
     minZoom?: number;
     maxZoom?: number;
     wrapX?: boolean;
     clearCache?: boolean;
   }) {
     if (typeof opts.url === 'string') this.tileUrl = opts.url;
+    if (Number.isFinite(opts.tileSize as number)) this.tileSize = opts.tileSize as number;
     if (Number.isFinite(opts.minZoom as number)) this.minZoom = opts.minZoom as number;
     if (Number.isFinite(opts.maxZoom as number)) this.maxZoom = opts.maxZoom as number;
     if (typeof opts.wrapX === 'boolean') this.wrapX = opts.wrapX;
@@ -250,14 +287,11 @@ export default class GTMap {
       this._tileCache.clear();
       this._pendingKeys.clear();
       this._tiles.clear();
-      this._inflightMap.clear();
     }
     this._needsRender = true;
   }
   setEaseOptions(_opts: EaseOptions) {
-    if (Number.isFinite(_opts.easeBaseMs as number)) this.easeBaseMs = Math.max(50, Math.min(600, _opts.easeBaseMs as number));
-    if (Number.isFinite(_opts.easePerUnitMs as number)) this.easePerUnitMs = Math.max(0, Math.min(600, _opts.easePerUnitMs as number));
-    if (Number.isFinite(_opts.pinchEaseMs as number)) this.easeBaseMs = Math.max(40, Math.min(600, _opts.pinchEaseMs as number));
+    this._zoomCtrl.setOptions({ easeBaseMs: _opts.easeBaseMs, easePerUnitMs: _opts.easePerUnitMs });
     if (typeof _opts.easePinch === 'boolean') {/* reserved for future pinch easing */}
   }
   recenter() {
@@ -296,20 +330,17 @@ export default class GTMap {
     this._pendingKeys.clear();
     this._tiles.clear();
     this._inflightLoads = 0;
-    this._inflightMap.clear();
   }
   public setWheelSpeed(speed: number) {
     if (Number.isFinite(speed)) {
       this.wheelSpeed = Math.max(0.01, Math.min(2, speed));
       const t = Math.max(0, Math.min(1, this.wheelSpeed / 2));
-      // Match JS mapping for immediate step and velocity gain
+      // Map speed to immediate step size; velocity gain removed in DI path
       this.wheelImmediate = 0.05 + t * (1.75 - 0.05);
-      this.wheelGain = 0.12 + t * (0.5 - 0.12);
     }
-    // Keep ctrl speed in sync if desired
+    // Keep ctrl-step in sync if desired
     const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
     this.wheelImmediateCtrl = 0.10 + t2 * (1.90 - 0.10);
-    this.wheelGainCtrl = 0.20 + t2 * (0.60 - 0.20);
   }
   public setAnchorMode(mode: 'pointer' | 'center') { this.anchorMode = mode; }
 
@@ -326,16 +357,17 @@ export default class GTMap {
       getCanvas: () => this.canvas,
       getMaxZoom: () => this.maxZoom,
       getView: () => this._view(),
+      getTileSize: () => this.tileSize,
       setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
-      clampCenterWorld: (cw, zInt, scale, w, h) => this._clampCenterWorld(cw, zInt, scale, w, h),
+      clampCenterWorld: (cw, zInt, scale, w, h) => clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize),
       updatePointerAbs: (x: number, y: number) => { this.pointerAbs = { x, y }; },
       emit: (name: string, payload: any) => this._events.emit(name, payload),
       setLastInteractAt: (t: number) => { this._lastInteractAt = t; },
       getAnchorMode: () => this.anchorMode,
       getWheelStep: (ctrl: boolean) => ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16),
-      startEase: (dz, px, py, anchor) => this._startZoomEase(dz, px, py, anchor),
+      startEase: (dz, px, py, anchor) => this._zoomCtrl.startEase(dz, px, py, anchor),
       cancelZoomAnim: () => { this._zoomCtrl.cancel(); },
-      applyAnchoredZoom: (targetZoom, px, py, anchor) => this._zoomToAnchored(targetZoom, px, py, anchor),
+      applyAnchoredZoom: (targetZoom, px, py, anchor) => this._zoomCtrl.applyAnchoredZoom(targetZoom, px, py, anchor),
     };
     this._input = new InputController(this._inputDeps);
     this._input.attach();
@@ -356,43 +388,18 @@ export default class GTMap {
     if (!this._zoomCtrl.isAnimating()) this._needsRender = false;
   }
   private _render() {
-    this._renderer.render(this, this._view(), () => this._zoomCtrl.step());
+    this._renderer.render();
     if (this.showGrid) {
       const rect = this.container.getBoundingClientRect();
       const baseZ = Math.floor(this.zoom);
       const scale = Math.pow(2, this.zoom - baseZ);
       const widthCSS = rect.width; const heightCSS = rect.height;
-      const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ);
+      const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ, this.tileSize);
       const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
-      drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, this.maxZoom);
+      drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, this.maxZoom, this.tileSize);
     }
   }
-
-
-  // TEMP: mark rarely-read config/private members as used until full DI removes cross-file references
-  private _tsUseConfig() {
-    void (
-      this.wheelImmediate,
-      this.wheelImmediateCtrl,
-      this.wheelGain,
-      this.wheelGainCtrl,
-      this._renderBaseLockZInt,
-      this.easeBaseMs,
-      this.easePerUnitMs,
-      this.easeMinMs,
-      this.easeMaxMs,
-      this.outCenterBias,
-      this._wheelLinesAccum,
-      this._wheelLastCtrl,
-      this.useImageBitmap,
-      this._wrapX,
-      this._evictIfNeeded,
-      this._stepAnimation,
-      this._isViewportLarger,
-      this._shouldAnchorCenterForZoom,
-      this._processLoadQueue
-    );
-  }
+  
 
   // Prefetch a 1-tile border beyond current viewport at the given level
   // grid drawing via render/grid.drawGrid
@@ -406,25 +413,13 @@ export default class GTMap {
     return urlFromTemplate(this.tileUrl, z, x, y);
   }
 
-  private _wrapX(x: number, z: number) { return wrapXTile(x, z); }
+  // wrapX and eviction helpers now provided by tiles/source and TileCache
 
-  private _evictIfNeeded() { this._tileCache.evictIfNeeded(); }
-
-  // --- Minimal implementations to complete port; refined next ---
-  private _stepAnimation(): boolean { return this._zoomCtrl.step(); }
-  private _startZoomEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') { this._zoomCtrl.startEase(dz, px, py, anchor); }
-  private _zoomToAnchored(targetZoom: number, pxCSS: number, pyCSS: number, anchor: 'pointer' | 'center') { coreZoomToAnchored(this, targetZoom, pxCSS, pyCSS, anchor); }
+  // Zoom actions handled by ZoomController
 
   // Finite-world center anchoring hysteresis
-  private _isViewportLarger(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
-    const worldSize = TILE_SIZE * (1 << zInt);
-    const halfW = widthCSS / (2 * scale);
-    const halfH = heightCSS / (2 * scale);
-    const margin = 0.98;
-    return halfW >= (worldSize / 2) * margin || halfH >= (worldSize / 2) * margin;
-  }
   private _viewportCoverageRatio(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
-    const worldSize = TILE_SIZE * (1 << zInt);
+    const worldSize = this.tileSize * (1 << zInt);
     const halfW = widthCSS / (2 * scale);
     const halfH = heightCSS / (2 * scale);
     const halfWorld = worldSize / 2;
@@ -453,19 +448,9 @@ export default class GTMap {
   // (TEMP helper removed after Render DI completion)
 
   // Bounds clamping similar to JS version
-  private _clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number) {
-    if (this.freePan) return centerWorld;
-    const worldSize = TILE_SIZE * (1 << zInt);
-    const halfW = widthCSS / (2 * scale); const halfH = heightCSS / (2 * scale);
-    let cx = centerWorld.x; let cy = centerWorld.y;
-    if (!this.wrapX) {
-      if (halfW >= worldSize / 2) cx = worldSize / 2; else cx = Math.max(halfW, Math.min(worldSize - halfW, cx));
-    }
-    if (halfH >= worldSize / 2) cy = worldSize / 2; else cy = Math.max(halfH, Math.min(worldSize - halfH, cy));
-    return { x: cx, y: cy };
-  }
-  private _processLoadQueue() { this._tiles.process(); }
-  private _startImageLoad({ key, url }: { key: string; url: string }) { loaderStartImageLoad(this, { key, url }); }
+  
+  // Deprecated: loader now calls _tiles.process() directly
+  private _startImageLoad({ key, url }: { key: string; url: string }) { loaderStartImageLoad(this._loaderDeps, { key, url }); }
   private _cancelUnwantedLoads() {
     // Only prune queued tasks that are no longer wanted; keep inflight loads to avoid churn
     this._tiles.cancelUnwanted(this._wantedKeys);
@@ -473,7 +458,7 @@ export default class GTMap {
     this._tiles.process();
   }
 
-  private _scheduleBaselinePrefetch() { this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel); }
+  
 
 
 }
