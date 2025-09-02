@@ -46,9 +46,17 @@ export default class GTMap {
   private _tileCache = new Map<string, { status: 'ready' | 'loading' | 'error'; tex?: WebGLTexture; width?: number; height?: number; lastUsed?: number; pinned?: boolean }>();
   private _maxTiles = 384;
   private _frame = 0;
+  private _lastTS: number | null = null;
+  private _dt = 0;
   // Simple zoom easing
   private wheelSpeed = 1.0;
   private wheelImmediate = 0.9;
+  private wheelSpeedCtrl = 0.4;
+  private wheelImmediateCtrl = 0.24;
+  private wheelGain = 0.22;
+  private wheelGainCtrl = 0.44;
+  private zoomDamping = 0.09;
+  private maxZoomRate = 12.0;
   private _zoomAnim: { from: number; to: number; px: number; py: number; start: number; dur: number; anchor: 'pointer' | 'center' } | null = null;
   private anchorMode: 'pointer' | 'center' = 'pointer';
   private _renderBaseLockZInt: number | null = null;
@@ -81,6 +89,11 @@ export default class GTMap {
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
   private prefetchBaselineLevel = 2;
+  // Wheel coalescing + velocity tail
+  private _wheelLinesAccum = 0;
+  private _wheelLastCtrl = false;
+  private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = { px: 0, py: 0, mode: 'pointer' };
+  private _zoomVel = 0;
 
   constructor(container: HTMLDivElement, options: MapOptions = {}) {
     this.container = container;
@@ -167,8 +180,14 @@ export default class GTMap {
     if (Number.isFinite(speed)) {
       this.wheelSpeed = Math.max(0.01, Math.min(2, speed));
       const t = Math.max(0, Math.min(1, this.wheelSpeed / 2));
+      // Match JS mapping for immediate step and velocity gain
       this.wheelImmediate = 0.05 + t * (1.75 - 0.05);
+      this.wheelGain = 0.12 + t * (0.5 - 0.12);
     }
+    // Keep ctrl speed in sync if desired
+    const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
+    this.wheelImmediateCtrl = 0.10 + t2 * (1.90 - 0.10);
+    this.wheelGainCtrl = 0.20 + t2 * (0.60 - 0.20);
   }
   public setAnchorMode(mode: 'pointer' | 'center') { this.anchorMode = mode; }
 
@@ -325,11 +344,13 @@ export default class GTMap {
       e.preventDefault();
       this._lastInteractAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       let lines = e.deltaY;
-      if (e.deltaMode === 0) lines = e.deltaY / 100;
-      else if (e.deltaMode === 2) lines = e.deltaY * 3;
+      if (e.deltaMode === 0) lines = e.deltaY / 100; else if (e.deltaMode === 2) lines = e.deltaY * 3;
       if (!Number.isFinite(lines)) return;
-      const step = this.wheelImmediate; let dz = -lines * step; dz = Math.max(-2.0, Math.min(2.0, dz));
-      const rect = this.container.getBoundingClientRect(); const px = e.clientX - rect.left; const py = e.clientY - rect.top;
+      const rect = this.container.getBoundingClientRect();
+      const px = e.clientX - rect.left; const py = e.clientY - rect.top;
+      const ctrl = !!e.ctrlKey;
+      const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
+      let dz = -lines * step; dz = Math.max(-2.0, Math.min(2.0, dz));
       this._startZoomEase(dz, px, py, this.anchorMode);
     };
     const onResize = () => this.resize();
@@ -397,6 +418,11 @@ export default class GTMap {
   private _loop() {
     this._raf = requestAnimationFrame(this._loop);
     this._frame++;
+    // Compute dt like JS for smooth velocity tail
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (this._lastTS == null) this._lastTS = now;
+    this._dt = (now - this._lastTS) / 1000;
+    this._lastTS = now;
     // Render if we have work or an active animation
     if (!this._needsRender && !this._zoomAnim) return;
     this._render();
@@ -431,6 +457,29 @@ export default class GTMap {
     gl.uniform1f(this._loc.u_alpha, 1.0);
     gl.uniform2f(this._loc.u_uv0!, 0.0, 0.0);
     gl.uniform2f(this._loc.u_uv1!, 1.0, 1.0);
+
+    /* easing handles wheel animation */ if (false) {
+      const ctrl = !!this._wheelLastCtrl;
+      const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
+      const linesAccum = this._wheelLinesAccum;
+      let dz = -linesAccum * step;
+      const maxDzFrame = 0.8;
+      dz = Math.max(-maxDzFrame, Math.min(maxDzFrame, dz));
+      const anchor = this._wheelAnchor?.mode || this.anchorMode;
+      const px = this._wheelAnchor?.px ?? 0; const py = this._wheelAnchor?.py ?? 0;
+      this._zoomToAnchored(this.zoom + dz, px, py, anchor);
+      this._wheelLinesAccum = 0;
+    }
+
+    // (velocity tail removed in favor of easing path)
+    if (Math.abs(this._zoomVel) > 1e-4) {
+      const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
+      const maxStep = Math.max(0.0001, this.maxZoomRate * dt);
+      let step = this._zoomVel * dt; step = Math.max(-maxStep, Math.min(maxStep, step));
+      const anchor = this._wheelAnchor?.mode || this.anchorMode; const px = this._wheelAnchor?.px ?? 0; const py = this._wheelAnchor?.py ?? 0;
+      this._zoomToAnchored(this.zoom + step, px, py, anchor);
+      const k = Math.exp(-dt / this.zoomDamping); this._zoomVel *= k; if (Math.abs(this._zoomVel) < 1e-3) this._zoomVel = 0;
+    }
 
     if (this.useScreenCache && this._screenCacheState && this._screenTex) this._drawScreenCache({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld });
     const coverage = this._tileCoverage(baseZ, tlWorld, scale, widthCSS, heightCSS);
@@ -498,6 +547,23 @@ export default class GTMap {
           gl.uniform2f(this._loc!.u_size, tilePixelSize, tilePixelSize);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
+      }
+    }
+  }
+
+  // Prefetch a 1-tile border beyond current viewport at the given level
+  private _prefetchNeighbors(zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) {
+    const startX = Math.floor(tlWorld.x / TILE_SIZE) - 1;
+    const startY = Math.floor(tlWorld.y / TILE_SIZE) - 1;
+    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TILE_SIZE) + 1;
+    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TILE_SIZE) + 1;
+    for (let ty = startY; ty <= endY; ty++) {
+      if (ty < 0 || ty >= (1 << zLevel)) continue;
+      for (let tx = startX; tx <= endX; tx++) {
+        let tileX = tx;
+        if (this.wrapX) tileX = this._wrapX(tx, zLevel); else if (tx < 0 || tx >= (1 << zLevel)) continue;
+        const key = `${zLevel}/${tileX}/${ty}`;
+        if (!this._tileCache.has(key)) this._enqueueTile(zLevel, tileX, ty, 1);
       }
     }
   }
