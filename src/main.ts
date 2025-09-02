@@ -68,3 +68,102 @@ centerBtn.style.cursor = 'pointer';
 centerBtn.style.zIndex = '11';
 centerBtn.addEventListener('click', () => (map as any).recenter());
 container.appendChild(centerBtn);
+
+// Zoom speed control
+const speedWrap = document.createElement('div');
+speedWrap.style.position = 'absolute';
+speedWrap.style.left = '8px';
+speedWrap.style.top = '80px';
+speedWrap.style.background = 'rgba(255,255,255,0.9)';
+speedWrap.style.border = '1px solid #bbb';
+speedWrap.style.borderRadius = '4px';
+speedWrap.style.padding = '6px 8px';
+speedWrap.style.font =
+  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+speedWrap.style.zIndex = '11';
+const speedLabel = document.createElement('label');
+speedLabel.textContent = 'Zoom Speed';
+speedLabel.style.display = 'block';
+speedLabel.style.marginBottom = '4px';
+const speedValue = document.createElement('span');
+speedValue.textContent = `1.00`;
+speedValue.style.marginLeft = '6px';
+speedValue.style.color = '#333';
+const speedRow = document.createElement('div');
+speedRow.style.display = 'flex';
+speedRow.style.alignItems = 'center';
+const speedInput = document.createElement('input');
+speedInput.type = 'range';
+speedInput.min = '0.05';
+speedInput.max = '2.00';
+speedInput.step = '0.05';
+speedInput.value = '1.00';
+speedInput.style.width = '140px';
+speedInput.addEventListener('input', () => {
+  const val = parseFloat(speedInput.value);
+  (map as any).setWheelSpeed(val);
+  speedValue.textContent = val.toFixed(2);
+});
+speedRow.appendChild(speedInput);
+speedRow.appendChild(speedValue);
+speedWrap.appendChild(speedLabel);
+speedWrap.appendChild(speedRow);
+container.appendChild(speedWrap);
+
+// Grid toggle
+const gridWrap = document.createElement('div');
+gridWrap.style.position = 'absolute';
+gridWrap.style.left = '8px';
+gridWrap.style.top = '130px';
+gridWrap.style.background = 'rgba(255,255,255,0.9)';
+gridWrap.style.border = '1px solid #bbb';
+gridWrap.style.borderRadius = '4px';
+gridWrap.style.padding = '6px 8px';
+gridWrap.style.font =
+  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+gridWrap.style.zIndex = '11';
+const gridLabel = document.createElement('label');
+gridLabel.textContent = 'Show Grid';
+gridLabel.style.display = 'inline-flex';
+gridLabel.style.alignItems = 'center';
+gridLabel.style.gap = '6px';
+const gridToggle = document.createElement('input');
+gridToggle.type = 'checkbox';
+gridToggle.checked = true;
+gridToggle.addEventListener('change', () => (map as any).setGridVisible(gridToggle.checked));
+gridLabel.appendChild(gridToggle);
+gridWrap.appendChild(gridLabel);
+container.appendChild(gridWrap);
+
+// Anchor mode selector
+const anchorWrap = document.createElement('div');
+anchorWrap.style.position = 'absolute';
+anchorWrap.style.left = '8px';
+anchorWrap.style.top = '170px';
+anchorWrap.style.background = 'rgba(255,255,255,0.9)';
+anchorWrap.style.border = '1px solid #bbb';
+anchorWrap.style.borderRadius = '4px';
+anchorWrap.style.padding = '6px 8px';
+anchorWrap.style.font =
+  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+anchorWrap.style.zIndex = '11';
+const anchorLabel = document.createElement('label');
+anchorLabel.textContent = 'Zoom Anchor';
+anchorLabel.style.display = 'block';
+anchorLabel.style.marginBottom = '4px';
+const anchorSelect = document.createElement('select');
+const optPointer = document.createElement('option');
+optPointer.value = 'pointer';
+optPointer.textContent = 'Pointer';
+const optCenter = document.createElement('option');
+optCenter.value = 'center';
+optCenter.textContent = 'Center';
+anchorSelect.appendChild(optPointer);
+anchorSelect.appendChild(optCenter);
+anchorSelect.value = 'pointer';
+anchorSelect.addEventListener('change', () => {
+  (map as any).setAnchorMode(anchorSelect.value);
+});
+anchorWrap.appendChild(anchorLabel);
+anchorWrap.appendChild(anchorSelect);
+container.appendChild(anchorWrap);
