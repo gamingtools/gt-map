@@ -25,7 +25,7 @@ export default class MapGL {
     this._maxTiles = options.maxTiles ?? 512;
     this._zoomAnim = null; // { from, to, px, py, start, dur }
     // Wheel zoom config (velocity-based smoothing)
-    this.wheelSpeed = options.wheelSpeed ?? 0.60; // UI logical slider (0.05..0.75)
+    this.wheelSpeed = options.wheelSpeed ?? 1.00; // UI logical slider default
     this.wheelSpeedCtrl = options.wheelSpeedCtrl ?? 0.40;
     // Immediate step per wheel line (smooth hybrid)
     this.wheelImmediate = Number.isFinite(options.wheelImmediate) ? options.wheelImmediate : 0.12;
@@ -103,16 +103,20 @@ export default class MapGL {
   setWheelSpeed(speed, ctrlSpeed) {
     if (Number.isFinite(speed)) {
       this.wheelSpeed = Math.max(0.01, Math.min(2, speed));
-      // Map slider to immediate step and velocity gain
-      // Immediate step ~ 0.05..0.35 (higher = more zoom per wheel turn)
-      this.wheelImmediate = 0.05 + (this.wheelSpeed / 0.75) * (0.35 - 0.05);
-      // Velocity gain ~ 0.12..0.35
-      this.wheelGain = 0.12 + (this.wheelSpeed / 0.75) * (0.35 - 0.12);
+      // Normalize to slider domain [0..2]
+      const t = Math.max(0, Math.min(1, this.wheelSpeed / 2));
+      // Immediate step tuned so 1.0 => ~0.90 zoom change per notch
+      // Range: 0.05 .. 1.75
+      this.wheelImmediate = 0.05 + t * (1.75 - 0.05);
+      // Velocity gain (kept for completeness; eased wheel path dominates)
+      this.wheelGain = 0.12 + t * (0.50 - 0.12);
     }
     if (Number.isFinite(ctrlSpeed)) {
       this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, ctrlSpeed));
-      this.wheelImmediateCtrl = 0.10 + (this.wheelSpeedCtrl / 0.75) * (0.60 - 0.10);
-      this.wheelGainCtrl = 0.20 + (this.wheelSpeedCtrl / 0.75) * (0.50 - 0.20);
+      const t2 = Math.max(0, Math.min(1, this.wheelSpeedCtrl / 2));
+      // Slightly higher range for Ctrl-zoom
+      this.wheelImmediateCtrl = 0.10 + t2 * (1.90 - 0.10);
+      this.wheelGainCtrl = 0.20 + t2 * (0.60 - 0.20);
     }
   }
 
@@ -322,7 +326,7 @@ export default class MapGL {
       const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
       // Per-event dz; clamp extreme spikes from high-res wheels
       let dz = -lines * step;
-      const maxDzEvent = 1.5;
+      const maxDzEvent = 2.0;
       dz = Math.max(-maxDzEvent, Math.min(maxDzEvent, dz));
       this._startZoomEase(dz, px, py, this.anchorMode);
       // Clear any residual coalesced or velocity tails
@@ -669,7 +673,7 @@ export default class MapGL {
       const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
       const linesAccum = (this._wheelLinesAccum || 0);
       let dz = -linesAccum * step;
-      const maxDzFrame = 0.8;
+      const maxDzFrame = 1.2;
       dz = Math.max(-maxDzFrame, Math.min(maxDzFrame, dz));
       const z = this.zoom + dz;
       const anchor = this._wheelAnchor?.mode || this.anchorMode;
