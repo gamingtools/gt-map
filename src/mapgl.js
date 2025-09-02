@@ -25,8 +25,11 @@ export default class MapGL {
     this._maxTiles = options.maxTiles ?? 512;
     this._zoomAnim = null; // { from, to, px, py, start, dur }
     // Wheel zoom speed (zoom units per mouse wheel line)
-    this.wheelSpeed = options.wheelSpeed ?? 0.65;
-    this.wheelSpeedCtrl = options.wheelSpeedCtrl ?? 1.30;
+    this.wheelSpeed = options.wheelSpeed ?? 0.10; // target zoom per typical wheel tick (adaptive)
+    this.wheelSpeedCtrl = options.wheelSpeedCtrl ?? 0.20;
+    this._wheelAvg = 1; // EMA of |deltaY| for adaptive scaling
+    this._wheelAccum = 0; // accumulated zoom delta
+    this._wheelAnchor = { px: 0, py: 0, mode: this.anchorMode };
     // Grid + pointer + anchor mode
     this.showGrid = options.showGrid ?? true;
     this.pointerAbs = null; // { x, y } in absolute map pixels (max integer zoom)
@@ -267,19 +270,25 @@ export default class MapGL {
     window.addEventListener('pointermove', onMouseMove);
     window.addEventListener('pointerup', onMouseUp);
 
-    // Wheel zoom (no easing) — pointer/center anchored
+    // Wheel zoom (no easing) — pointer/center anchored, adaptive and immediate
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
-      // Restore simple proportional mapping that felt best
-      const step = e.ctrlKey ? 0.004 : 0.003;
-      const delta = -e.deltaY * step;
+      // Adaptive mapping: scale by EMA of |deltaY| for consistent steps across devices
+      const mag = Math.abs(e.deltaY) || 1;
+      this._wheelAvg = this._wheelAvg * 0.85 + mag * 0.15;
+      const base = e.ctrlKey ? this.wheelSpeedCtrl : this.wheelSpeed;
+      let delta = -e.deltaY * (base / this._wheelAvg);
+      if (!Number.isFinite(delta)) return;
+      // Clamp to avoid extreme trackpad spikes
+      delta = Math.max(-0.5, Math.min(0.5, delta));
       const rect = this.container.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
-      // Immediate zoom; cancel any animation
+      // Immediate zoom; cancel any accumulation/animation
       this._zoomAnim = null;
-      const target = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom + delta));
-      this._zoomToAnchored(target, px, py, this.anchorMode);
+      this._wheelAccum = 0;
+      const z = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom + delta));
+      this._zoomToAnchored(z, px, py, this.anchorMode);
     }, { passive: false });
 
     // Basic touch pinch and pan
@@ -604,8 +613,29 @@ export default class MapGL {
   // --- Render loop ---
   _loop() {
     this._raf = requestAnimationFrame(this._loop);
+    // Linear smoothing for wheel accumulation
+    const now = performance.now();
+    this._lastTS = this._lastTS ?? now;
+    const dt = (now - this._lastTS) / 1000;
+    this._lastTS = now;
+
+    let consumed = 0;
+    const maxRate = 3.0; // zoom units per second
+    const maxStep = Math.max(0.0001, maxRate * dt);
+    if (Math.abs(this._wheelAccum || 0) > 1e-4) {
+      const step = Math.sign(this._wheelAccum) * Math.min(Math.abs(this._wheelAccum), maxStep);
+      const z = this.zoom + step;
+      const anchor = this._wheelAnchor?.mode || this.anchorMode;
+      const px = this._wheelAnchor?.px ?? 0;
+      const py = this._wheelAnchor?.py ?? 0;
+      this._zoomToAnchored(z, px, py, anchor);
+      this._wheelAccum -= step;
+      consumed = step;
+      this._needsRender = true;
+    }
+
     const animating = this._stepAnimation();
-    if (animating || this._needsRender) {
+    if (animating || consumed || this._needsRender) {
       this._render();
       this._needsRender = false;
     }

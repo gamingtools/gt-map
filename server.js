@@ -12,12 +12,17 @@ const ROOT = __dirname;
 app.use(compression());
 app.use(
   express.static(ROOT, {
-    maxAge: '1d',
-    etag: true,
+    maxAge: 0,
+    etag: false,
     extensions: ['html'],
     setHeaders(res, filePath) {
       // Basic security headers
       res.setHeader('X-Content-Type-Options', 'nosniff');
+      // Disable caching for development
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
     },
   })
 );
@@ -26,6 +31,10 @@ app.use(
 app.get('*', (req, res, next) => {
   if (req.method !== 'GET') return next();
   if (!req.accepts('html')) return next();
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
   res.sendFile(path.join(ROOT, 'index.html'));
 });
 
