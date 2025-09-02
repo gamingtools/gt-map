@@ -11,7 +11,8 @@ import { urlFromTemplate, wrapX as wrapXTile } from './tiles/source';
 import { RasterRenderer } from './layers/raster';
 import { EventBus } from './events/stream';
 // grid and wheel helpers are used via delegated modules
-import { startZoomEase as coreStartZoomEase, zoomToAnchored as coreZoomToAnchored } from './core/zoom';
+import { zoomToAnchored as coreZoomToAnchored } from './core/zoom';
+import ZoomController from './core/ZoomController';
 import InputController from './input/InputController';
 import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 import MapRenderer from './render/MapRenderer';
@@ -95,6 +96,7 @@ export default class GTMap {
   private _screenCache: ScreenCache | null = null;
   private _raster!: RasterRenderer;
   private _renderer!: MapRenderer;
+  private _zoomCtrl!: ZoomController;
   private _events = new EventBus();
   public readonly events = this._events; // experimental chainable events API
   // Grid overlay
@@ -142,6 +144,7 @@ export default class GTMap {
     // Raster renderer
     this._raster = new RasterRenderer(this.gl);
     this._renderer = new MapRenderer();
+    this._zoomCtrl = new ZoomController(this as any);
     initGridCanvas(this);
     this.resize();
     this._initEvents();
@@ -300,18 +303,8 @@ export default class GTMap {
   private _evictIfNeeded() { this._tileCache.evictIfNeeded(); }
 
   // --- Minimal implementations to complete port; refined next ---
-  private _stepAnimation(): boolean {
-    if (!this._zoomAnim) return false;
-    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-    const a = this._zoomAnim;
-    const t = Math.min(1, (now - a.start) / a.dur);
-    const ease = 1 - Math.pow(1 - t, 3);
-    const z = a.from + (a.to - a.from) * ease;
-    this._zoomToAnchored(z, a.px, a.py, a.anchor);
-    if (t >= 1) { this._zoomAnim = null; this._renderBaseLockZInt = null; this._events.emit('zoomend', { center: this.center, zoom: this.zoom }); }
-    return true;
-  }
-  private _startZoomEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') { coreStartZoomEase(this, dz, px, py, anchor); }
+  private _stepAnimation(): boolean { return this._zoomCtrl.step(); }
+  private _startZoomEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') { this._zoomCtrl.startEase(dz, px, py, anchor); }
   private _zoomToAnchored(targetZoom: number, pxCSS: number, pyCSS: number, anchor: 'pointer' | 'center') { coreZoomToAnchored(this, targetZoom, pxCSS, pyCSS, anchor); }
 
   // Finite-world center anchoring hysteresis
@@ -414,6 +407,7 @@ export default class GTMap {
       this._startImageLoad,
       this._stepAnimation,
       this._startZoomEase,
+      this._zoomToAnchored,
       this._isViewportLarger,
       this._shouldAnchorCenterForZoom,
       this._clampCenterWorld,

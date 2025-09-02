@@ -60,21 +60,21 @@ Phase 0 — Baseline
 
 Phase 1 — Input → InputController
 
-- [ ] Create `input/InputController.ts` class from `input/handlers.ts`
+- [x] Create `input/InputController.ts` class from `input/handlers.ts`
 - [ ] Constructor DI: container, canvas, hooks (`setCenter`, `zoomController`), `EventBus`
-- [ ] Methods: `attach()`, `dispose()`
-- [ ] Wire into `GTMap` (replace `_initEvents()`)
+- [x] Methods: `attach()`, `dispose()`
+- [x] Wire into `GTMap` (replace `_initEvents()`)
 - Acceptance
   - [ ] Mouse drag, wheel, pinch behaviors identical
   - [ ] `pointerdown/up`, `click`, `move`, `moveend`, `zoom` events fire identically
 
 Phase 2 — Tiles → TilePipeline
 
-- [ ] Create `tiles/TilePipeline.ts` (class)
-- [ ] Integrate: combine `tiles/{queue, cache, loader, prefetch}`
+- [x] Create `tiles/TilePipeline.ts` (class)
+- [x] Integrate: combine `tiles/{queue, cache, loader, prefetch}`
 - [ ] Constructor DI: `gl`, limits, idle gating, templating (`tiles/source`)
 - [ ] Methods: `enqueue`, `process`, `cancelUnwanted`, `clear`, `dispose`, optional `pin/unpin`
-- [ ] Replace direct calls in `GTMap` with pipeline methods
+- [x] Replace direct calls in `GTMap` with pipeline methods
 - Acceptance
   - [ ] Load pacing and idle gating match baseline
   - [ ] Prefetch behaves the same; no thrash; LRU bound respected
@@ -82,18 +82,18 @@ Phase 2 — Tiles → TilePipeline
 Phase 3 — Render → MapRenderer + Graphics
 
 - [ ] Create `gl/Graphics.ts` (class) to own GL context + programs
-- [ ] Create `render/MapRenderer.ts` (class) from `render/frame.ts`
+- [x] Create `render/MapRenderer.ts` (class) from `render/frame.ts`
 - [ ] Constructor DI: `Graphics`, `ScreenCache`, `RasterRenderer`
 - [ ] Method: `render(viewState, tilePipeline)` with same ordering/alpha
-- [ ] Replace `_render()` with renderer call
+- [x] Replace `_render()` with renderer call
 - Acceptance
   - [ ] Visual parity (tiles, alpha fades, seams) across zoom levels
   - [ ] No new GL warnings; FPS stable
 
 Phase 4 — Zoom → ZoomController
 
-- [ ] Create `core/ZoomController.ts` (class) from `core/zoom.ts`
-- [ ] Methods: `startEase`, `step`, `applyAnchoredZoom`, `reset`
+- [x] Create `core/ZoomController.ts` (class) from `core/zoom.ts`
+- [x] Methods: `startEase`, `step`, `applyAnchoredZoom`, `reset` (partial: `applyAnchoredZoom` via delegated `_zoomToAnchored`)
 - [ ] Own `_zoomAnim` and easing params; expose necessary hooks
 - [ ] Wire controller into InputController + MapRenderer (anchor math)
 - Acceptance
