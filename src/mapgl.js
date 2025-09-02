@@ -774,17 +774,20 @@ export default class MapGL {
     gl.uniform2f(this._loc.u_resolution, this.canvas.width, this.canvas.height);
     gl.uniform1i(this._loc.u_tex, 0);
 
-    // If base level coverage is low (tiles still loading), draw previous level underneath
+    // If base level coverage is low (tiles still loading), draw lower levels underneath
     const coverage = this._tileCoverage(zInt, tlWorld, scale, widthCSS, heightCSS);
-    if (coverage < 0.98 && zIntPrev >= this.minZoom) {
-      const centerPrev = lngLatToWorld(this.center.lng, this.center.lat, zIntPrev);
-      const scalePrev = Math.pow(2, this.zoom - zIntPrev);
-      const tlPrev = {
-        x: centerPrev.x - (widthCSS / (2 * scalePrev)),
-        y: centerPrev.y - (heightCSS / (2 * scalePrev)),
-      };
-      // Draw fallback fully to avoid gaps, base level will overwrite where present
-      this._drawTilesForLevel(zIntPrev, tlPrev, scalePrev, dpr, 1.0);
+    if (coverage < 0.995 && zIntPrev >= this.minZoom) {
+      for (let lvl = zIntPrev; lvl >= this.minZoom; lvl--) {
+        const centerL = lngLatToWorld(this.center.lng, this.center.lat, lvl);
+        const scaleL = Math.pow(2, this.zoom - lvl);
+        const tlL = {
+          x: centerL.x - (widthCSS / (2 * scaleL)),
+          y: centerL.y - (heightCSS / (2 * scaleL)),
+        };
+        const covL = this._tileCoverage(lvl, tlL, scaleL, widthCSS, heightCSS);
+        this._drawTilesForLevel(lvl, tlL, scaleL, dpr, 1.0);
+        if (covL >= 0.995) break; // good enough coverage, stop cascading down
+      }
     }
 
     // Draw base level fully
