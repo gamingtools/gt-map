@@ -14,15 +14,15 @@ Getting Started
 Run locally
 
 1. Install deps: `npm install`
-2. Start: `npm start` (serves at `http://localhost:5173`)
+2. Start dev server: `npm start` (Vite at `http://localhost:5173`)
 3. Pan with mouse drag, zoom with wheel or pinch (touch).
 
 Files
 
 - `index.html`: Fullscreen container, attribution, and script entry.
-- `src/main.js`: Bootstraps the map and HUD.
-- `src/mapgl.js`: MapGL class (GL setup, input, tiles, rendering).
-- `src/mercator.js`: Web Mercator helpers and URL templating.
+- `src/main.ts`: Bootstraps the map and HUD.
+- `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
+- `packages/gtmap/src/mercator.ts`: Web Mercator helpers and URL templating.
 
 Tile Source
 Hagga Basin (survival_1)
@@ -34,7 +34,7 @@ Hagga Basin (survival_1)
 
 Customization
 
-- Center/zoom: Set in `src/main.js` when creating `MapGL`.
+- Center/zoom: Set in `src/main.ts` when creating `GTMap`.
 - Zoom bounds: `minZoom`/`maxZoom` options.
 - Tile URL: Pass a different `{z}/{x}/{y}` template to `tileUrl`.
 

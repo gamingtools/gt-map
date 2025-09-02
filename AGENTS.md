@@ -3,21 +3,20 @@
 ## Project Structure & Module Organization
 
 - `index.html`: App shell and HUD elements.
-- `src/main.js`: App bootstrap, UI controls, and HUD updates.
-- `src/mapgl.js`: Core WebGL map (tiles, input, rendering, cache).
-- `src/mercator.js`: Web Mercator and tile helpers.
-- `server.js`: Express static dev server with no‑cache headers.
-- `package.json`: Scripts and runtime deps (`express`, `compression`).
+- `src/main.ts`: App bootstrap, UI controls, and HUD updates.
+- `packages/gtmap/src/mapgl.ts`: Core WebGL map (tiles, input, rendering, cache).
+- `packages/gtmap/src/mercator.ts`: Web Mercator and tile helpers.
+- `package.json`: Scripts and dev deps (Vite, TypeScript, ESLint/Prettier).
 
 ## Build, Test, and Development Commands
 
-- `npm install`: Install server dependencies.
-- `npm start`: Run the dev server at `http://localhost:5173`.
-- Manual run (quick check): Open `index.html` directly in a browser, but prefer the server for consistent behavior and headers.
+- `npm install`: Install dependencies.
+- `npm start` or `npm run dev`: Run the Vite dev server at `http://localhost:5173`.
+- Manual run (quick check): Open `index.html` directly in a browser, but prefer the dev server for consistent behavior and headers.
 
 ## Coding Style & Naming Conventions
 
-- Language: Modern ES modules; keep imports relative (e.g., `./mapgl.js`).
+- Language: Modern ES modules/TypeScript; keep imports relative (e.g., `./mapgl`).
 - Indentation: 2 spaces; semicolons required; single quotes for strings.
 - Naming: PascalCase for classes (e.g., `MapGL`), camelCase for functions/vars, UPPER_SNAKE_CASE for constants.
 - Formatting: No enforced linter; keep diffs small and style consistent with existing files.
