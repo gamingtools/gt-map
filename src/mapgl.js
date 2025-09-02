@@ -273,8 +273,11 @@ export default class MapGL {
       varying vec2 v_uv;
       uniform sampler2D u_tex;
       uniform float u_alpha;
+      uniform vec2 u_uv0; // lower-left UV
+      uniform vec2 u_uv1; // upper-right UV
       void main(){
-        vec4 c = texture2D(u_tex, v_uv);
+        vec2 uv = mix(u_uv0, u_uv1, v_uv);
+        vec4 c = texture2D(u_tex, uv);
         gl_FragColor = vec4(c.rgb, c.a * u_alpha);
       }
     `);
@@ -287,6 +290,8 @@ export default class MapGL {
       u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
       u_tex: gl.getUniformLocation(prog, 'u_tex'),
       u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
+      u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
+      u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
     };
   }
 
@@ -877,6 +882,8 @@ export default class MapGL {
     gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
     gl.uniform1i(this._loc.u_tex, 0);
     gl.uniform1f(this._loc.u_alpha, 1.0);
+    gl.uniform2f(this._loc.u_uv0, 0.0, 0.0);
+    gl.uniform2f(this._loc.u_uv1, 1.0, 1.0);
     gl.uniform2f(this._loc.u_translate, dxPx, dyPx);
     gl.uniform2f(this._loc.u_size, wPx, hPx);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -1037,17 +1044,59 @@ export default class MapGL {
         }
 
         const key = `${zLevel}/${tileX}/${ty}`;
-        const record = this._tileCache.get(key);
+        let record = this._tileCache.get(key);
         if (!record) this._enqueueTile(zLevel, tileX, ty);
 
-        if (record?.status === 'ready') {
+        let tex = null;
+        let uv0 = [0, 0];
+        let uv1 = [1, 1];
+        if (record?.status === 'ready' && record.tex) {
+          tex = record.tex;
+        } else {
+          // Try ancestor fallback
+          const fb = this._findAncestorTile(zLevel, tileX, ty);
+          if (fb) {
+            tex = fb.rec.tex;
+            uv0 = [fb.u0, fb.v0];
+            uv1 = [fb.u1, fb.v1];
+          }
+        }
+        if (tex) {
           gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, record.tex);
+          gl.bindTexture(gl.TEXTURE_2D, tex);
           gl.uniform2f(this._loc.u_translate, sxCSS * dpr, syCSS * dpr);
           gl.uniform2f(this._loc.u_size, tilePixelSize, tilePixelSize);
+          gl.uniform2f(this._loc.u_uv0, uv0[0], uv0[1]);
+          gl.uniform2f(this._loc.u_uv1, uv1[0], uv1[1]);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
       }
     }
+  }
+
+  _findAncestorTile(z, x, y) {
+    // Search parents z-1 .. minZoom for a ready tile and return UV window into it
+    for (let zp = z - 1; zp >= this.minZoom; zp--) {
+      const scaleN = 1 << (z - zp);
+      let xp = Math.floor(x / scaleN);
+      let yp = Math.floor(y / scaleN);
+      if (this.wrapX) {
+        xp = this._wrapX(xp, zp);
+      } else {
+        if (xp < 0 || xp >= (1 << zp)) continue;
+      }
+      if (yp < 0 || yp >= (1 << zp)) continue;
+      const pKey = `${zp}/${xp}/${yp}`;
+      const prec = this._tileCache.get(pKey);
+      if (prec?.status === 'ready' && prec.tex) {
+        const n = scaleN;
+        const u0 = (x % n) / n;
+        const v0 = (y % n) / n;
+        const u1 = u0 + 1 / n;
+        const v1 = v0 + 1 / n;
+        return { rec: prec, u0, v0, u1, v1 };
+      }
+    }
+    return null;
   }
 }
