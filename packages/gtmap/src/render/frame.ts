@@ -2,11 +2,20 @@ import { lngLatToWorld } from '../mercator';
 
 import { drawGrid } from './grid';
 
-export function renderFrame(map: any, opts?: { stepAnimation?: () => boolean }) {
+export function renderFrame(
+  map: any,
+  opts?: {
+    stepAnimation?: () => boolean;
+    zoomVelocityTick?: () => void;
+    prefetchNeighbors?: (zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) => void;
+    cancelUnwanted?: () => void;
+    clearWanted?: () => void;
+  },
+) {
   const gl: WebGLRenderingContext = map.gl;
   gl.clear(gl.COLOR_BUFFER_BIT);
   if (!map._prog || !map._loc || !map._quad) return;
-  map._wantedKeys.clear();
+  if (opts?.clearWanted) opts.clearWanted();
   if (opts?.stepAnimation) opts.stepAnimation();
   const zIntActual = Math.floor(map.zoom);
   const baseZ = map._renderBaseLockZInt ?? zIntActual;
@@ -29,14 +38,7 @@ export function renderFrame(map: any, opts?: { stepAnimation?: () => boolean }) 
   gl.uniform2f(map._loc.u_uv1!, 1.0, 1.0);
 
   // (velocity tail path)
-  if (Math.abs(map._zoomVel) > 1e-4) {
-    const dt = Math.max(0.0005, Math.min(0.1, map._dt || 1 / 60));
-    const maxStep = Math.max(0.0001, map.maxZoomRate * dt);
-    let step = map._zoomVel * dt; step = Math.max(-maxStep, Math.min(maxStep, step));
-    const anchor = map._wheelAnchor?.mode || map.anchorMode; const px = map._wheelAnchor?.px ?? 0; const py = map._wheelAnchor?.py ?? 0;
-    map._zoomToAnchored(map.zoom + step, px, py, anchor);
-    const k = Math.exp(-dt / map.zoomDamping); map._zoomVel *= k; if (Math.abs(map._zoomVel) < 1e-3) map._zoomVel = 0;
-  }
+  if (opts?.zoomVelocityTick) opts.zoomVelocityTick();
 
   if (map.useScreenCache && map._screenCache)
     map._screenCache.draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: map._dpr, tlWorld }, map._loc!, map._prog!, map._quad!, map.canvas);
@@ -55,7 +57,7 @@ export function renderFrame(map: any, opts?: { stepAnimation?: () => boolean }) 
   map._raster.drawTilesForLevel(map._loc! as any, map._tileCache as any, map._enqueueTile.bind(map), { zLevel: baseZ, tlWorld, scale, dpr: map._dpr, widthCSS, heightCSS, wrapX: map.wrapX });
 
   // Prefetch neighbors around current view
-  map._prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
+  if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
 
   const zIntNext = Math.min(map.maxZoom, baseZ + 1); const frac = map.zoom - baseZ;
   if (zIntNext > baseZ && frac > 0) {
@@ -68,5 +70,5 @@ export function renderFrame(map: any, opts?: { stepAnimation?: () => boolean }) 
   if (map.showGrid) drawGrid(map._gridCtx, map.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, map._dpr, map.maxZoom);
   if (map.useScreenCache && map._screenCache)
     map._screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: map._dpr, tlWorld }, map.canvas);
-  map._cancelUnwantedLoads();
+  if (opts?.cancelUnwanted) opts.cancelUnwanted();
 }
