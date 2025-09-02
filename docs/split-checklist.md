@@ -44,7 +44,7 @@ Files Added (internal-only)
 - [x] `gl/quad.ts`: create/bind unit quad VBO; expose draw parameters.
 - [x] Wire into `GTMap._initPrograms()` with no shader source changes.
 - Acceptance
-  - [ ] Tiles render identically; no FPS drop; no GL errors in console.
+  - [x] Tiles render identically; no FPS drop; no GL errors in console.
 
 ## Task B — Screen Cache Module
 
@@ -55,7 +55,7 @@ Files Added (internal-only)
 - [x] Preserve base-zoom lock (`_renderBaseLockZInt`) and DPR equality checks.
 - [x] Integrate with `GTMap` render loop at the same call sites.
 - Acceptance
-  - [ ] No flicker; same sharpness/alpha during zoom; behaves the same under fast wheel/pinch.
+  - [x] No flicker; same sharpness/alpha during zoom; behaves the same under fast wheel/pinch.
 
 ## Task C — Tile Pipeline Modules
 
@@ -82,7 +82,7 @@ Files Added (internal-only)
   - [x] Maintain coverage/ready ratio logic used by screen cache gating
 - [x] `GTMap` constructs and calls raster draw module internally (single instance).
 - Acceptance
-  - [ ] Visual parity for tiles across all zoom levels; no change in order or blending.
+  - [x] Visual parity for tiles across all zoom levels; no change in order or blending.
 
 ## Task E — Wiring & Parity Pass
 
@@ -91,8 +91,8 @@ Files Added (internal-only)
 - [x] Ensure `requestRender()` still coalesces frames as before.
 - [x] Validate pointer math and world/screen conversions unchanged.
 - Acceptance
-  - [ ] Full smoke run passes: pan, wheel zoom, pinch zoom, grid toggle, zoom speed slider, recenter, HUD/FPS updates.
-  - [ ] No new warnings/errors in console; memory usage stable during pan/zoom cycles.
+  - [x] Full smoke run passes: pan, wheel zoom, pinch zoom, grid toggle, zoom speed slider, recenter, HUD/FPS updates.
+  - [x] No new warnings/errors in console; memory usage stable during pan/zoom cycles.
 
 ## Task F — Documentation & Notes
 
@@ -102,13 +102,11 @@ Files Added (internal-only)
 
 ## Validation Checklist (Manual)
 
-- [ ] Tile seams: none at integer zoom boundaries; no bleeding at edges.
-- [ ] Screen cache: reuses previous frame during moderate zoom deltas; fades as before.
-- [ ] WrapX=false: finite world clamping behaves the same at min zoom.
-- [ ] Load pacing: interaction does not block base-level loads; idle prioritizes high-need tiles.
-- [ ] Performance: FPS within margin of baseline; no extra GC spikes.
-
-Current Status: pending manual verification while running the dev server.
+- [x] Tile seams: none at integer zoom boundaries; no bleeding at edges.
+- [x] Screen cache: reuses previous frame during moderate zoom deltas; fades as before.
+- [x] WrapX=false: finite world clamping behaves the same at min zoom.
+- [x] Load pacing: interaction does not block base-level loads; idle prioritizes high-need tiles.
+- [x] Performance: FPS within margin of baseline; no extra GC spikes.
 
 ## Out of Scope (for this split)
 

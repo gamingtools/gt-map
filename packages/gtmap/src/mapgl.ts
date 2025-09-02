@@ -81,8 +81,6 @@ export default class GTMap {
   private _stickyAnchorUntil = 0;
   // Screen-space cache
   private useScreenCache = true;
-  private _screenTex: WebGLTexture | null = null;
-  private _screenCacheState: { zInt: number; scale: number; tlWorld: { x: number; y: number }; widthCSS: number; heightCSS: number; dpr: number } | null = null;
   private _screenTexFormat: number | null = null;
   private _screenCache: ScreenCache | null = null;
   private _raster!: RasterRenderer;
@@ -720,35 +718,6 @@ export default class GTMap {
     }
     if (halfH >= worldSize / 2) cy = worldSize / 2; else cy = Math.max(halfH, Math.min(worldSize - halfH, cy));
     return { x: cx, y: cy };
-  }
-  private _ensureScreenTex() {
-    const gl = this.gl;
-    if (!this._screenTex) {
-      this._screenTex = gl.createTexture();
-      gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      const fmt = this._screenTexFormat ?? gl.RGBA;
-      gl.texImage2D(gl.TEXTURE_2D, 0, fmt, this.canvas.width, this.canvas.height, 0, fmt, gl.UNSIGNED_BYTE, null);
-    } else {
-      gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
-    }
-  }
-  private _updateScreenCache(state: { zInt: number; scale: number; tlWorld: { x: number; y: number }; widthCSS: number; heightCSS: number; dpr: number }) {
-    try {
-      const gl = this.gl; this._ensureScreenTex(); gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
-      gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, this.canvas.width, this.canvas.height);
-      this._screenCacheState = { zInt: state.zInt, scale: state.scale, tlWorld: { x: state.tlWorld.x, y: state.tlWorld.y }, widthCSS: state.widthCSS, heightCSS: state.heightCSS, dpr: state.dpr };
-    } catch {}
-  }
-  private _drawScreenCache(curr: { zInt: number; scale: number; tlWorld: { x: number; y: number }; widthCSS: number; heightCSS: number; dpr: number }) {
-    const prev = this._screenCacheState; if (!prev) return; if (prev.widthCSS !== curr.widthCSS || prev.heightCSS !== curr.heightCSS || prev.dpr !== curr.dpr) return; if (prev.zInt !== curr.zInt) return;
-    const gl = this.gl; const s = curr.scale / Math.max(1e-6, prev.scale); if (!(s > 0.92 && s < 1.08)) return; const dxCSS = (prev.tlWorld.x - curr.tlWorld.x) * curr.scale; const dyCSS = (prev.tlWorld.y - curr.tlWorld.y) * curr.scale; const dxPx = dxCSS * curr.dpr; const dyPx = dyCSS * curr.dpr; const wPx = this.canvas.width * s; const hPx = this.canvas.height * s; if (Math.abs(dxPx) > this.canvas.width * 0.5 || Math.abs(dyPx) > this.canvas.height * 0.5) return;
-    gl.useProgram(this._prog!); gl.bindBuffer(gl.ARRAY_BUFFER, this._quad!); gl.enableVertexAttribArray(this._loc!.a_pos!); gl.vertexAttribPointer(this._loc!.a_pos!, 2, gl.FLOAT, false, 0, 0); gl.uniform2f(this._loc!.u_resolution!, this.canvas.width, this.canvas.height);
-    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this._screenTex); gl.uniform1i(this._loc!.u_tex!, 0); gl.uniform1f(this._loc!.u_alpha!, 0.85); gl.uniform2f(this._loc!.u_uv0!, 0.0, 1.0); gl.uniform2f(this._loc!.u_uv1!, 1.0, 0.0); gl.uniform2f(this._loc!.u_translate!, dxPx, dyPx); gl.uniform2f(this._loc!.u_size!, wPx, hPx); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    gl.uniform1f(this._loc!.u_alpha!, 1.0); gl.uniform2f(this._loc!.u_uv0!, 0.0, 0.0); gl.uniform2f(this._loc!.u_uv1!, 1.0, 1.0);
   }
   private _processLoadQueue() {
     while (this._inflightLoads < this._maxInflightLoads) {
