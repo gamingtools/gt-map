@@ -10,6 +10,7 @@ import { EventBus } from './events/stream';
 import { drawGrid } from './render/grid';
 import { normalizeWheel } from './core/wheel';
 import { attachHandlers } from './input/handlers';
+import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -630,36 +631,7 @@ export default class GTMap {
       this._startImageLoad(task);
     }
   }
-  private _startImageLoad({ key, url }: { key: string; url: string }) {
-    this._pendingKeys.add(key); this._inflightLoads++;
-    this._tileCache.setLoading(key);
-    if (this.useImageBitmap) {
-      fetch(url, { mode: 'cors', credentials: 'omit' })
-        .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob(); })
-        .then((blob) => createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }))
-        .then((bmp) => {
-          try {
-            const gl = this.gl; const tex = gl.createTexture(); if (!tex) { this._tileCache.setError(key); return; }
-            gl.bindTexture(gl.TEXTURE_2D, tex);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
-            gl.generateMipmap(gl.TEXTURE_2D);
-            this._tileCache.setReady(key, tex, (bmp as any).width, (bmp as any).height, this._frame);
-            this._needsRender = true;
-          } finally { try { (bmp as any).close?.(); } catch {} this._pendingKeys.delete(key); this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._processLoadQueue(); }
-        })
-        .catch(() => { this.useImageBitmap = false; this._startImageLoad({ key, url }); });
-      return;
-    }
-    const img = new Image(); img.crossOrigin = 'anonymous'; img.decoding = 'async';
-    img.onload = () => { try { const gl = this.gl; const tex = gl.createTexture(); if (!tex) { this._tileCache.setError(key); return; } gl.bindTexture(gl.TEXTURE_2D, tex); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img); gl.generateMipmap(gl.TEXTURE_2D); this._tileCache.setReady(key, tex, img.naturalWidth, img.naturalHeight, this._frame); this._needsRender = true; } finally { this._pendingKeys.delete(key); this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._processLoadQueue(); } };
-    img.onerror = () => { this._tileCache.setError(key); this._pendingKeys.delete(key); this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._processLoadQueue(); };
-    img.src = url;
-  }
+  private _startImageLoad({ key, url }: { key: string; url: string }) { loaderStartImageLoad(this, { key, url }); }
   private _cancelUnwantedLoads() {
     // Only prune queued tasks that are no longer wanted; keep inflight loads to avoid churn
     this._queue.prune(this._wantedKeys);
