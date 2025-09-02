@@ -166,8 +166,19 @@ export default class GTMap {
     this.setCenter(lng, lat);
   }
   destroy() {
-    if (this._raf != null) cancelAnimationFrame(this._raf);
+    if (this._raf != null) {
+      cancelAnimationFrame(this._raf);
+      this._raf = null;
+    }
     this._cleanupEvents?.();
+    this._cleanupEvents = null;
+    this._clearCache();
+    const gl = this.gl;
+    if (this._screenTex) { try { gl.deleteTexture(this._screenTex); } catch {} this._screenTex = null; }
+    if (this._quad) { try { gl.deleteBuffer(this._quad); } catch {} this._quad = null; }
+    if (this._prog) { try { gl.deleteProgram(this._prog); } catch {} this._prog = null; }
+    try { this.canvas.remove(); } catch {}
+    if (this.gridCanvas) { try { this.gridCanvas.remove(); } catch {} this.gridCanvas = null; this._gridCtx = null; }
   }
 
   // Public controls
@@ -178,6 +189,23 @@ export default class GTMap {
       if (!this.showGrid) this._gridCtx?.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
     }
     this._needsRender = true;
+  }
+  private _clearCache() {
+    // Delete GPU textures in tile cache and reset queues
+    const gl = this.gl;
+    for (const [key, rec] of this._tileCache) {
+      if (rec.tex) {
+        try { gl.deleteTexture(rec.tex); } catch {}
+      }
+      this._tileCache.delete(key);
+    }
+    this._wantedKeys.clear();
+    this._pinnedKeys.clear();
+    this._pendingKeys.clear();
+    this._loadQueueSet.clear();
+    this._loadQueue.length = 0;
+    this._inflightLoads = 0;
+    this._inflightMap.clear();
   }
   public setWheelSpeed(speed: number) {
     if (Number.isFinite(speed)) {
@@ -226,10 +254,7 @@ export default class GTMap {
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    try {
-      const attrs = (gl as any).getContextAttributes?.();
-      this._screenTexFormat = attrs && attrs.alpha === false ? gl.RGB : gl.RGBA;
-    } catch { this._screenTexFormat = gl.RGBA; }
+    this._detectScreenFormat();
   }
   private _compile(type: number, src: string): WebGLShader {
     const gl = this.gl;
@@ -346,8 +371,7 @@ export default class GTMap {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       this._lastInteractAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      let lines = e.deltaY;
-      if (e.deltaMode === 0) lines = e.deltaY / 100; else if (e.deltaMode === 2) lines = e.deltaY * 3;
+      const lines = this._normalizeWheel(e);
       if (!Number.isFinite(lines)) return;
       const rect = this.container.getBoundingClientRect();
       const px = e.clientX - rect.left; const py = e.clientY - rect.top;
@@ -418,6 +442,12 @@ export default class GTMap {
       window.removeEventListener('resize', onResize);
     };
   }
+  private _normalizeWheel(e: WheelEvent): number {
+    const lineHeight = 16; // px baseline for converting pixels to lines
+    if (e.deltaMode === 1) return e.deltaY; // lines
+    if (e.deltaMode === 2) return (e.deltaY * this.canvas.height) / lineHeight; // pages -> lines-ish
+    return e.deltaY / lineHeight; // pixels -> lines
+  }
   private _loop() {
     this._raf = requestAnimationFrame(this._loop);
     this._frame++;
@@ -431,6 +461,15 @@ export default class GTMap {
     this._render();
     // Keep rendering while animating
     if (!this._zoomAnim) this._needsRender = false;
+  }
+  private _detectScreenFormat() {
+    const gl = this.gl;
+    try {
+      const attrs = (gl as any).getContextAttributes?.();
+      this._screenTexFormat = attrs && attrs.alpha === false ? gl.RGB : gl.RGBA;
+    } catch {
+      this._screenTexFormat = gl.RGBA;
+    }
   }
   private _render() {
     const gl = this.gl;
