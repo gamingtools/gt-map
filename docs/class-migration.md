@@ -121,7 +121,7 @@ Phase F1 — Interfaces & Contracts
   - `CoreMap`: getView()/setCenter()/setZoom()/getAnchorMode()/setAnchorMode()/requestRender()
   - `TileDeps`: getView(), idle config (`interactionIdleMs`, lastInteractAt, now()), `getTileCache()`, `startTileLoad(task)`, `urlFromTemplate()`, `wrapX()`, pinned/pending keys access, inflight counters — [x] added
   - `InputDeps`: container/canvas/view access, setters, pointer updates, event emit, zoom easing — [x] added
-  - `RenderDeps`/`RenderCtx`: GL/programs/quad, screen cache, raster, tile access, view + canvas — [x] partial (callbacks + RenderCtx in frame and MapRenderer)
+  - `RenderDeps`/`RenderCtx`: GL/programs/quad, screen cache, raster, tile access, view + canvas — [x] partial (callbacks + RenderCtx in frame/MapRenderer)
   - `ZoomDeps`: `getView()`, `applyAnchoredZoom(px,py,targetZoom)`, easing options, now() — [ ]
 
 Phase F2 — Refactor Controllers to DI
@@ -135,7 +135,7 @@ Phase F3 — GTMap Getters/Setters + Ownership
 
 - [ ] Add getters/setters on `GTMap` to satisfy DI contracts; make fields private
 - [x] Ensure `TilePipeline` owns queue/inflight state (no shadow `_queue` in `GTMap`)
-- [ ] Replace any remaining cross‑module `map._*` usages with DI calls (in progress)
+- [ ] Replace any remaining cross‑module `map._*` usages with DI calls (in progress — prefetch now uses wrapXTile; grid handled in GTMap)
 
 Phase F4 — Cleanup & Verification
 

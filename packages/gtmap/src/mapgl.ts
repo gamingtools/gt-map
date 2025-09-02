@@ -332,6 +332,7 @@ export default class GTMap {
       emit: (name: string, payload: any) => this._events.emit(name, payload),
       setLastInteractAt: (t: number) => { this._lastInteractAt = t; },
       getAnchorMode: () => this.anchorMode,
+      getWheelStep: (ctrl: boolean) => ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16),
       startEase: (dz, px, py, anchor) => this._startZoomEase(dz, px, py, anchor),
       cancelZoomAnim: () => { this._zoomCtrl.cancel(); },
       applyAnchoredZoom: (targetZoom, px, py, anchor) => this._zoomToAnchored(targetZoom, px, py, anchor),

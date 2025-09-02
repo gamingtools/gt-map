@@ -56,6 +56,7 @@ export interface InputDeps {
   emit(name: string, payload: any): void;
   setLastInteractAt(t: number): void;
   getAnchorMode(): 'pointer' | 'center';
+  getWheelStep(ctrl: boolean): number;
   startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
   cancelZoomAnim(): void;
   applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center'): void;

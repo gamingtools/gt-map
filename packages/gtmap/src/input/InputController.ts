@@ -68,7 +68,7 @@ export default class InputController {
       const rect = deps.getContainer().getBoundingClientRect();
       const px = e.clientX - rect.left; const py = e.clientY - rect.top;
       const ctrl = !!(e as any).ctrlKey;
-      const step = ctrl ? 0.24 : 0.16;
+      const step = deps.getWheelStep(ctrl);
       let dz = -lines * step; dz = Math.max(-2.0, Math.min(2.0, dz));
       deps.startEase(dz, px, py, deps.getAnchorMode());
       deps.emit('zoom', { view: deps.getView() });
