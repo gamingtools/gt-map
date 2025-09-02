@@ -12,6 +12,8 @@ import { normalizeWheel } from './core/wheel';
 import { startZoomEase as coreStartZoomEase, zoomToAnchored as coreZoomToAnchored } from './core/zoom';
 import { attachHandlers } from './input/handlers';
 import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
+import { renderFrame } from './render/frame';
+import { prefetchNeighbors } from './tiles/prefetch';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -342,12 +344,7 @@ export default class GTMap {
   private _initEvents() {
     this._cleanupEvents = attachHandlers(this as any);
   }
-  private _normalizeWheel(e: WheelEvent): number {
-    const lineHeight = 16; // px baseline for converting pixels to lines
-    if (e.deltaMode === 1) return e.deltaY; // lines
-    if (e.deltaMode === 2) return (e.deltaY * this.canvas.height) / lineHeight; // pages -> lines-ish
-    return e.deltaY / lineHeight; // pixels -> lines
-  }
+  // wheel normalization handled in input/handlers via core/wheel
   private _loop() {
     this._raf = requestAnimationFrame(this._loop);
     this._frame++;
@@ -372,121 +369,14 @@ export default class GTMap {
     }
   }
   private _render() {
-    const gl = this.gl;
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    if (!this._prog || !this._loc || !this._quad) return;
-    this._wantedKeys.clear();
-    this._stepAnimation();
-    const zIntActual = Math.floor(this.zoom);
-    const baseZ = this._renderBaseLockZInt ?? zIntActual;
-    const rect = this.container.getBoundingClientRect();
-    const widthCSS = rect.width;
-    const heightCSS = rect.height;
-    const scale = Math.pow(2, this.zoom - baseZ);
-    const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ);
-    const tlWorld = {
-      x: centerWorld.x - widthCSS / (2 * scale),
-      y: centerWorld.y - heightCSS / (2 * scale),
-    };
-
-    // Setup program/state
-    gl.useProgram(this._prog);
-    gl.bindBuffer(gl.ARRAY_BUFFER, this._quad);
-    gl.enableVertexAttribArray(this._loc.a_pos);
-    gl.vertexAttribPointer(this._loc.a_pos, 2, gl.FLOAT, false, 0, 0);
-    gl.uniform2f(this._loc.u_resolution, this.canvas.width, this.canvas.height);
-    gl.uniform1i(this._loc.u_tex, 0);
-    gl.uniform1f(this._loc.u_alpha, 1.0);
-    gl.uniform2f(this._loc.u_uv0!, 0.0, 0.0);
-    gl.uniform2f(this._loc.u_uv1!, 1.0, 1.0);
-
-    /* easing handles wheel animation */ if (false) {
-      const ctrl = !!this._wheelLastCtrl;
-      const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
-      const linesAccum = this._wheelLinesAccum;
-      let dz = -linesAccum * step;
-      const maxDzFrame = 0.8;
-      dz = Math.max(-maxDzFrame, Math.min(maxDzFrame, dz));
-      const anchor = this._wheelAnchor?.mode || this.anchorMode;
-      const px = this._wheelAnchor?.px ?? 0; const py = this._wheelAnchor?.py ?? 0;
-      this._zoomToAnchored(this.zoom + dz, px, py, anchor);
-      this._wheelLinesAccum = 0;
-    }
-
-    // (velocity tail removed in favor of easing path)
-    if (Math.abs(this._zoomVel) > 1e-4) {
-      const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
-      const maxStep = Math.max(0.0001, this.maxZoomRate * dt);
-      let step = this._zoomVel * dt; step = Math.max(-maxStep, Math.min(maxStep, step));
-      const anchor = this._wheelAnchor?.mode || this.anchorMode; const px = this._wheelAnchor?.px ?? 0; const py = this._wheelAnchor?.py ?? 0;
-      this._zoomToAnchored(this.zoom + step, px, py, anchor);
-      const k = Math.exp(-dt / this.zoomDamping); this._zoomVel *= k; if (Math.abs(this._zoomVel) < 1e-3) this._zoomVel = 0;
-    }
-
-    if (this.useScreenCache && this._screenCache)
-      this._screenCache.draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld }, this._loc!, this._prog!, this._quad!, this.canvas);
-    const coverage = this._raster.coverage(this._tileCache as any, baseZ, tlWorld, scale, widthCSS, heightCSS, this.wrapX);
-    const zIntPrev = Math.max(this.minZoom, baseZ - 1);
-    if (coverage < 0.995 && zIntPrev >= this.minZoom) {
-      for (let lvl = zIntPrev; lvl >= this.minZoom; lvl--) {
-        const centerL = lngLatToWorld(this.center.lng, this.center.lat, lvl);
-        const scaleL = Math.pow(2, this.zoom - lvl);
-        const tlL = { x: centerL.x - widthCSS / (2 * scaleL), y: centerL.y - heightCSS / (2 * scaleL) };
-        const covL = this._raster.coverage(this._tileCache as any, lvl, tlL, scaleL, widthCSS, heightCSS, this.wrapX);
-        this._raster.drawTilesForLevel(this._loc! as any, this._tileCache as any, this._enqueueTile.bind(this), { zLevel: lvl, tlWorld: tlL, scale: scaleL, dpr: this._dpr, widthCSS, heightCSS, wrapX: this.wrapX });
-        if (covL >= 0.995) break;
-      }
-    }
-    this._raster.drawTilesForLevel(this._loc! as any, this._tileCache as any, this._enqueueTile.bind(this), { zLevel: baseZ, tlWorld, scale, dpr: this._dpr, widthCSS, heightCSS, wrapX: this.wrapX });
-    // Prefetch neighbors around current view
-    this._prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
-    const zIntNext = Math.min(this.maxZoom, baseZ + 1); const frac = this.zoom - baseZ;
-    if (zIntNext > baseZ && frac > 0) {
-      const centerN = lngLatToWorld(this.center.lng, this.center.lat, zIntNext); const scaleN = Math.pow(2, this.zoom - zIntNext);
-      const tlN = { x: centerN.x - widthCSS / (2 * scaleN), y: centerN.y - heightCSS / (2 * scaleN) };
-      gl.uniform1f(this._loc.u_alpha!, Math.max(0, Math.min(1, frac)));
-      this._raster.drawTilesForLevel(this._loc! as any, this._tileCache as any, this._enqueueTile.bind(this), { zLevel: zIntNext, tlWorld: tlN, scale: scaleN, dpr: this._dpr, widthCSS, heightCSS, wrapX: this.wrapX });
-      gl.uniform1f(this._loc.u_alpha!, 1.0);
-    }
-    if (this.showGrid) drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, this.maxZoom);
-    if (this.useScreenCache && this._screenCache)
-      this._screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld }, this.canvas);
-    this._cancelUnwantedLoads();
+    renderFrame(this);
   }
 
 
   // Prefetch a 1-tile border beyond current viewport at the given level
-  private _prefetchNeighbors(zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) {
-    const startX = Math.floor(tlWorld.x / TILE_SIZE) - 1;
-    const startY = Math.floor(tlWorld.y / TILE_SIZE) - 1;
-    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TILE_SIZE) + 1;
-    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TILE_SIZE) + 1;
-    for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= (1 << zLevel)) continue;
-      for (let tx = startX; tx <= endX; tx++) {
-        let tileX = tx;
-        if (this.wrapX) tileX = this._wrapX(tx, zLevel); else if (tx < 0 || tx >= (1 << zLevel)) continue;
-        const key = tileKeyOf(zLevel, tileX, ty);
-        if (!this._tileCache.has(key)) this._enqueueTile(zLevel, tileX, ty, 1);
-      }
-    }
-  }
+  private _prefetchNeighbors(zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) { prefetchNeighbors(this, zLevel, tlWorld, scale, widthCSS, heightCSS); }
 
-  // --- Grid overlay ---
-  private _chooseGridSpacing(scale: number) {
-    const base = TILE_SIZE; const candidates = [base/16, base/8, base/4, base/2, base, base*2, base*4, base*8, base*16, base*32, base*64];
-    const targetPx = 100; let best = candidates[0]; let bestErr = Infinity; for (const w of candidates) { const css = w * scale; const err = Math.abs(css - targetPx); if (err < bestErr) { bestErr = err; best = w; } } return Math.max(1, Math.round(best));
-  }
-  private _drawGrid(zInt: number, scale: number, widthCSS: number, heightCSS: number, tlWorld: { x: number; y: number }) {
-    const ctx = this._gridCtx; if (!ctx || !this.gridCanvas) return; const dpr = this._dpr || 1; ctx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height); ctx.save(); ctx.scale(dpr, dpr);
-    const spacingWorld = this._chooseGridSpacing(scale); const base = TILE_SIZE; const zAbs = Math.floor(this.maxZoom); const factorAbs = Math.pow(2, zAbs - zInt);
-    ctx.font = '11px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif'; ctx.textBaseline = 'top'; ctx.textAlign = 'left';
-    let startWX = Math.floor(tlWorld.x / spacingWorld) * spacingWorld;
-    for (let wx = startWX; (wx - tlWorld.x) * scale <= widthCSS + spacingWorld * scale; wx += spacingWorld) { const xCSS = (wx - tlWorld.x) * scale; const isMajor = (Math.round(wx) % base) === 0; ctx.beginPath(); ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)'; ctx.lineWidth = isMajor ? 1.2 : 0.8; ctx.moveTo(Math.round(xCSS) + 0.5, 0); ctx.lineTo(Math.round(xCSS) + 0.5, heightCSS); ctx.stroke(); if (isMajor) { const xAbs = Math.round(wx * factorAbs); const label = `x ${xAbs}`; const tx = Math.round(xCSS) + 2; const ty = 2; const m = ctx.measureText(label); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12); ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillText(label, tx, ty); } }
-    let startWY = Math.floor(tlWorld.y / spacingWorld) * spacingWorld;
-    for (let wy = startWY; (wy - tlWorld.y) * scale <= heightCSS + spacingWorld * scale; wy += spacingWorld) { const yCSS = (wy - tlWorld.y) * scale; const isMajor = (Math.round(wy) % base) === 0; ctx.beginPath(); ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)'; ctx.lineWidth = isMajor ? 1.2 : 0.8; ctx.moveTo(0, Math.round(yCSS) + 0.5); ctx.lineTo(widthCSS, Math.round(yCSS) + 0.5); ctx.stroke(); if (isMajor) { const yAbs = Math.round(wy * factorAbs); const label = `y ${yAbs}`; const tx = 2; const ty = Math.round(yCSS) + 2; const m = ctx.measureText(label); ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12); ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillText(label, tx, ty); } }
-    ctx.restore();
-  }
+  // grid drawing via render/grid.drawGrid
 
   // (moved to the main definition above)
   // public setGridVisible removed (duplicate)
