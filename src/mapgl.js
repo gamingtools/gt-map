@@ -33,11 +33,14 @@ export default class MapGL {
     // Velocity gain per line for continued motion
     this.wheelGain = Number.isFinite(options.wheelGain) ? options.wheelGain : 0.22;
     this.wheelGainCtrl = Number.isFinite(options.wheelGainCtrl) ? options.wheelGainCtrl : 0.44;
-    this.zoomDamping = Number.isFinite(options.zoomDamping) ? options.zoomDamping : 0.06; // seconds (quicker settle)
+    // Damping time constant for velocity tail (larger = smoother/longer)
+    this.zoomDamping = Number.isFinite(options.zoomDamping) ? options.zoomDamping : 0.09;
     this.maxZoomRate = Number.isFinite(options.maxZoomRate) ? options.maxZoomRate : 12.0; // units/sec (higher cap)
     // Wheel state
     this._zoomVel = 0; // zoom units per second
     this._wheelAnchor = { px: 0, py: 0, mode: this.anchorMode };
+    this._wheelLinesAccum = 0; // coalesced lines until next frame
+    this._wheelLastCtrl = false;
     // Grid + pointer + anchor mode
     this.showGrid = options.showGrid ?? true;
     this.pointerAbs = null; // { x, y } in absolute map pixels (max integer zoom)
@@ -52,6 +55,7 @@ export default class MapGL {
     this.easePinch = options.easePinch ?? false;
 
     this._raf = null;
+    this.debug = !!options.debug;
     this._loop = this._loop.bind(this);
     this._logState = { last: null, lastTime: 0 };
     // Recompute immediate/gain from wheelSpeed defaults for consistent feel
@@ -91,14 +95,14 @@ export default class MapGL {
     if (Number.isFinite(speed)) {
       this.wheelSpeed = Math.max(0.01, Math.min(2, speed));
       // Map slider to immediate step and velocity gain
-      // Immediate step ~ 0.05..0.20
-      this.wheelImmediate = 0.05 + (this.wheelSpeed / 0.75) * (0.20 - 0.05);
+      // Immediate step ~ 0.05..0.35 (higher = more zoom per wheel turn)
+      this.wheelImmediate = 0.05 + (this.wheelSpeed / 0.75) * (0.35 - 0.05);
       // Velocity gain ~ 0.12..0.35
       this.wheelGain = 0.12 + (this.wheelSpeed / 0.75) * (0.35 - 0.12);
     }
     if (Number.isFinite(ctrlSpeed)) {
       this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, ctrlSpeed));
-      this.wheelImmediateCtrl = 0.10 + (this.wheelSpeedCtrl / 0.75) * (0.40 - 0.10);
+      this.wheelImmediateCtrl = 0.10 + (this.wheelSpeedCtrl / 0.75) * (0.60 - 0.10);
       this.wheelGainCtrl = 0.20 + (this.wheelSpeedCtrl / 0.75) * (0.50 - 0.20);
     }
   }
@@ -291,7 +295,7 @@ export default class MapGL {
     window.addEventListener('pointermove', onMouseMove);
     window.addEventListener('pointerup', onMouseUp);
 
-    // Wheel zoom (hybrid: immediate step + velocity smoothing)
+    // Wheel zoom with responsive ease animation (no discrete jumps)
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       // Normalize to 'lines'
@@ -301,17 +305,21 @@ export default class MapGL {
       const rect = this.container.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
-      // Immediate step for responsiveness
-      const stepPerLine = e.ctrlKey ? this.wheelImmediateCtrl : this.wheelImmediate;
-      let dz = -lines * stepPerLine;
-      dz = Math.max(-1.5, Math.min(1.5, dz));
-      const z = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom + dz));
-      this._zoomToAnchored(z, px, py, this.anchorMode);
-      // Add velocity for smooth continuation
-      const gain = e.ctrlKey ? this.wheelGainCtrl : this.wheelGain;
-      this._zoomVel += -lines * gain;
-      const vmax = this.maxZoomRate * 0.9;
-      this._zoomVel = Math.max(-vmax, Math.min(vmax, this._zoomVel));
+      if (this.debug) {
+        try { console.log(`[Wheel] mode=${e.deltaMode} dy=${Number(e.deltaY).toFixed(3)} lines=${Number(lines).toFixed(4)} ctrl=${!!e.ctrlKey}`); } catch {}
+      }
+      // Map lines to a smooth target zoom delta and start/retarget an ease
+      const ctrl = !!e.ctrlKey;
+      const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
+      // Per-event dz; clamp extreme spikes from high-res wheels
+      let dz = -lines * step;
+      const maxDzEvent = 1.5;
+      dz = Math.max(-maxDzEvent, Math.min(maxDzEvent, dz));
+      this._startZoomEase(dz, px, py, this.anchorMode);
+      // Clear any residual coalesced or velocity tails
+      this._wheelLinesAccum = 0;
+      this._wheelLastCtrl = ctrl;
+      this._zoomVel = 0;
       this._wheelAnchor = { px, py, mode: this.anchorMode };
       this._needsRender = true;
     }, { passive: false });
@@ -519,7 +527,7 @@ export default class MapGL {
     const { lng, lat } = worldToLngLat(center2.x, center2.y, zInt2);
     this.center = { lng, lat: clampLat(lat) };
     this.zoom = zClamped;
-    this._maybeLogZoom(this.zoom);
+    if (this.debug) this._maybeLogZoom(this.zoom);
     this._needsRender = true;
   }
 
@@ -561,7 +569,7 @@ export default class MapGL {
     const { lng, lat } = worldToLngLat(center2.x, center2.y, zInt2);
     this.center = { lng, lat: clampLat(lat) };
     this.zoom = zClamped;
-    this._maybeLogZoom(this.zoom);
+    if (this.debug) this._maybeLogZoom(this.zoom);
     this._needsRender = true;
   }
 
@@ -644,8 +652,29 @@ export default class MapGL {
     const dt = (now - this._lastTS) / 1000;
     this._lastTS = now;
 
-    // Apply zoom velocity linearly and damp
+    // Coalesced per-frame wheel step, then apply zoom velocity linearly and damp
     let consumed = 0;
+    if (Math.abs(this._wheelLinesAccum || 0) > 1e-6) {
+      const ctrl = !!this._wheelLastCtrl;
+      const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
+      const linesAccum = (this._wheelLinesAccum || 0);
+      let dz = -linesAccum * step;
+      const maxDzFrame = 0.8;
+      dz = Math.max(-maxDzFrame, Math.min(maxDzFrame, dz));
+      const z = this.zoom + dz;
+      const anchor = this._wheelAnchor?.mode || this.anchorMode;
+      const px = this._wheelAnchor?.px ?? 0;
+      const py = this._wheelAnchor?.py ?? 0;
+      this._zoomToAnchored(z, px, py, anchor);
+      consumed += dz;
+      if (this.debug) {
+        try { console.log(`[WheelFrame] linesAccum=${Number(linesAccum).toFixed(4)} step=${Number(step).toFixed(3)} dz=${Number(dz).toFixed(4)}`); } catch {}
+      }
+      this._wheelLinesAccum = 0;
+      this._needsRender = true;
+    }
+
+    // Apply zoom velocity linearly and damp
     if (Math.abs(this._zoomVel) > 1e-4) {
       const maxStep = Math.max(0.0001, this.maxZoomRate * dt);
       let step = this._zoomVel * dt;
@@ -683,6 +712,25 @@ export default class MapGL {
       this._zoomAnim = null;
     }
     return true;
+  }
+
+  _startZoomEase(dz, px, py, anchor) {
+    const now = performance.now();
+    // If an animation is in progress, sample its current value as the new start
+    let current = this.zoom;
+    if (this._zoomAnim) {
+      const a = this._zoomAnim;
+      const t = Math.min(1, (now - a.start) / a.dur);
+      const ease = 1 - Math.pow(1 - t, 3);
+      current = a.from + (a.to - a.from) * ease;
+    }
+    const to = Math.max(this.minZoom, Math.min(this.maxZoom, current + dz));
+    const dist = Math.abs(to - current);
+    const base = this.easeBaseMs;
+    const per = this.easePerUnitMs;
+    const raw = base + per * dist;
+    const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
+    this._zoomAnim = { from: current, to, px, py, start: now, dur, anchor };
   }
 
   _render() {
