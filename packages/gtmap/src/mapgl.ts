@@ -1,6 +1,7 @@
 import { TILE_SIZE, clampLat, lngLatToWorld, worldToLngLat } from './mercator';
 import { createProgramFromSources } from './gl/program';
 import { createUnitQuad } from './gl/quad';
+import { ScreenCache } from './render/screenCache';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -77,6 +78,7 @@ export default class GTMap {
   private _screenTex: WebGLTexture | null = null;
   private _screenCacheState: { zInt: number; scale: number; tlWorld: { x: number; y: number }; widthCSS: number; heightCSS: number; dpr: number } | null = null;
   private _screenTexFormat: number | null = null;
+  private _screenCache: ScreenCache | null = null;
   // Grid overlay
   private showGrid = true;
   private gridCanvas: HTMLCanvasElement | null = null;
@@ -112,6 +114,8 @@ export default class GTMap {
     this._initCanvas();
     this._initGL();
     this._initPrograms();
+    // Initialize screen cache module (uses detected format)
+    this._screenCache = new ScreenCache(this.gl, this._screenTexFormat ?? this.gl.RGBA);
     this._initGridCanvas();
     this.resize();
     this._initEvents();
@@ -176,7 +180,7 @@ export default class GTMap {
     this._cleanupEvents = null;
     this._clearCache();
     const gl = this.gl;
-    if (this._screenTex) { try { gl.deleteTexture(this._screenTex); } catch {} this._screenTex = null; }
+    this._screenCache?.dispose();
     if (this._quad) { try { gl.deleteBuffer(this._quad); } catch {} this._quad = null; }
     if (this._prog) { try { gl.deleteProgram(this._prog); } catch {} this._prog = null; }
     try { this.canvas.remove(); } catch {}
@@ -517,7 +521,8 @@ export default class GTMap {
       const k = Math.exp(-dt / this.zoomDamping); this._zoomVel *= k; if (Math.abs(this._zoomVel) < 1e-3) this._zoomVel = 0;
     }
 
-    if (this.useScreenCache && this._screenCacheState && this._screenTex) this._drawScreenCache({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld });
+    if (this.useScreenCache && this._screenCache)
+      this._screenCache.draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld }, this._loc!, this._prog!, this._quad!, this.canvas);
     const coverage = this._tileCoverage(baseZ, tlWorld, scale, widthCSS, heightCSS);
     const zIntPrev = Math.max(this.minZoom, baseZ - 1);
     if (coverage < 0.995 && zIntPrev >= this.minZoom) {
@@ -540,7 +545,8 @@ export default class GTMap {
       gl.uniform1f(this._loc.u_alpha!, Math.max(0, Math.min(1, frac))); this._drawTilesForLevel(zIntNext, tlN, scaleN, this._dpr, widthCSS, heightCSS); gl.uniform1f(this._loc.u_alpha!, 1.0);
     }
     if (this.showGrid) this._drawGrid(baseZ, scale, widthCSS, heightCSS, tlWorld);
-    if (this.useScreenCache) this._updateScreenCache({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld });
+    if (this.useScreenCache && this._screenCache)
+      this._screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld }, this.canvas);
     this._cancelUnwantedLoads();
   }
 

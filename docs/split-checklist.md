@@ -32,12 +32,12 @@ Status: WIP (keep this document up to date as we proceed)
 
 ## Task B — Screen Cache Module
 
-- [ ] `render/screenCache.ts`: encapsulate
-  - [ ] ensureScreenTex (format, DPR sizing)
-  - [ ] updateScreenCache (copyTexSubImage2D)
-  - [ ] drawScreenCache (scale/translate; alpha handling; same thresholds)
-- [ ] Preserve base-zoom lock (`_renderBaseLockZInt`) and DPR equality checks.
-- [ ] Integrate with `GTMap` render loop at the same call sites.
+- [x] `render/screenCache.ts`: encapsulate
+  - [x] ensureScreenTex (format, DPR sizing)
+  - [x] updateScreenCache (copyTexSubImage2D)
+  - [x] drawScreenCache (scale/translate; alpha handling; same thresholds)
+- [x] Preserve base-zoom lock (`_renderBaseLockZInt`) and DPR equality checks.
+- [x] Integrate with `GTMap` render loop at the same call sites.
 - Acceptance
   - [ ] No flicker; same sharpness/alpha during zoom; behaves the same under fast wheel/pinch.
 
