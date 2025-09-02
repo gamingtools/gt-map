@@ -1,4 +1,5 @@
 import { TILE_SIZE } from '../mercator';
+
 import { tileKey as tileKeyOf } from './source';
 
 export function prefetchNeighbors(
@@ -23,4 +24,3 @@ export function prefetchNeighbors(
     }
   }
 }
-

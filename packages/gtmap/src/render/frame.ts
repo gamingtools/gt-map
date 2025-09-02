@@ -1,4 +1,5 @@
 import { lngLatToWorld } from '../mercator';
+
 import { drawGrid } from './grid';
 
 export function renderFrame(map: any) {
@@ -69,4 +70,3 @@ export function renderFrame(map: any) {
     map._screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: map._dpr, tlWorld }, map.canvas);
   map._cancelUnwantedLoads();
 }
-

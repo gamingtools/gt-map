@@ -16,6 +16,7 @@ import ZoomController from './core/ZoomController';
 import InputController from './input/InputController';
 import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 import MapRenderer from './render/MapRenderer';
+import type { ViewState } from './types';
 import { prefetchNeighbors } from './tiles/prefetch';
 
 export type LngLat = { lng: number; lat: number };
@@ -98,6 +99,7 @@ export default class GTMap {
   private _renderer!: MapRenderer;
   private _zoomCtrl!: ZoomController;
   private _gfx!: Graphics;
+  private _view(): ViewState { return { center: this.center, zoom: this.zoom, minZoom: this.minZoom, maxZoom: this.maxZoom, wrapX: this.wrapX }; }
   private _events = new EventBus();
   public readonly events = this._events; // experimental chainable events API
   // Grid overlay
@@ -209,6 +211,9 @@ export default class GTMap {
     }
     this._input?.dispose();
     this._input = null;
+    try { (this as any)._renderer?.dispose?.(); } catch {}
+    try { (this as any)._tiles?.clear?.(); } catch {}
+    try { (this as any)._gfx?.dispose?.(); } catch {}
     this._clearCache();
     const gl = this.gl;
     this._screenCache?.dispose();
@@ -281,7 +286,7 @@ export default class GTMap {
       this._screenTexFormat = gl.RGBA;
     }
   }
-  private _render() { this._renderer.render(this); }
+  private _render() { this._renderer.render(this, this._view()); }
 
 
   // Prefetch a 1-tile border beyond current viewport at the given level
