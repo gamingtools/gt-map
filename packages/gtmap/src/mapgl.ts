@@ -11,7 +11,7 @@ import { RasterRenderer } from './layers/raster';
 import { EventBus } from './events/stream';
 // grid and wheel helpers are used via delegated modules
 import { startZoomEase as coreStartZoomEase, zoomToAnchored as coreZoomToAnchored } from './core/zoom';
-import { attachHandlers } from './input/handlers';
+import InputController from './input/InputController';
 import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 import { renderFrame } from './render/frame';
 import { prefetchNeighbors } from './tiles/prefetch';
@@ -47,7 +47,7 @@ export default class GTMap {
 
   private _needsRender = true;
   private _raf: number | null = null;
-  private _cleanupEvents: (() => void) | null = null;
+  private _input: InputController | null = null;
   private _dpr = 1;
   private _prog: WebGLProgram | null = null;
   private _quad: WebGLBuffer | null = null;
@@ -196,8 +196,8 @@ export default class GTMap {
       cancelAnimationFrame(this._raf);
       this._raf = null;
     }
-    this._cleanupEvents?.();
-    this._cleanupEvents = null;
+    this._input?.dispose();
+    this._input = null;
     this._clearCache();
     const gl = this.gl;
     this._screenCache?.dispose();
@@ -244,7 +244,8 @@ export default class GTMap {
     resizeCore(this);
   }
   private _initEvents() {
-    this._cleanupEvents = attachHandlers(this as any);
+    this._input = new InputController(this as any);
+    this._input.attach();
   }
   // wheel normalization handled in input/handlers via core/wheel
   private _loop() {
