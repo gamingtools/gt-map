@@ -58,6 +58,8 @@ export default class MapGL {
     this._raf = null;
     this.debug = !!options.debug;
     this._zoomDir = 0; // -1 out, 1 in, 0 idle
+    // Lock base tile LOD while zoom animates to avoid last-frame LOD pops
+    this._renderBaseLockZInt = null;
     this._loop = this._loop.bind(this);
     this._logState = { last: null, lastTime: 0 };
     // Recompute immediate/gain from wheelSpeed defaults for consistent feel
@@ -398,8 +400,8 @@ export default class MapGL {
       this.pointerAbs = null;
     }
   }
-  _currentState() {
-    const zInt = Math.floor(this.zoom);
+  _currentState(zIntOverride) {
+    const zInt = Number.isFinite(zIntOverride) ? zIntOverride : Math.floor(this.zoom);
     const scale = Math.pow(2, this.zoom - zInt); // screen scale relative to zInt tiles
     const rect = this.container.getBoundingClientRect();
     const widthCSS = rect.width;
@@ -714,6 +716,8 @@ export default class MapGL {
     if (t >= 1) {
       this._zoomAnim = null;
       this._zoomDir = 0;
+      // Release base LOD lock after animation finishes
+      this._renderBaseLockZInt = null;
     }
     return true;
   }
@@ -727,6 +731,10 @@ export default class MapGL {
       const t = Math.min(1, (now - a.start) / a.dur);
       const ease = 1 - Math.pow(1 - t, 3);
       current = a.from + (a.to - a.from) * ease;
+    }
+    // Lock base LOD during the zoom ease to avoid LOD swap at end
+    if (!Number.isFinite(this._renderBaseLockZInt)) {
+      this._renderBaseLockZInt = Math.floor(current);
     }
     const to = Math.max(this.minZoom, Math.min(this.maxZoom, current + dz));
     const dist = Math.abs(to - current);
@@ -742,7 +750,9 @@ export default class MapGL {
     const gl = this.gl;
     gl.clear(gl.COLOR_BUFFER_BIT);
 
-    const { zInt, scale, widthCSS, heightCSS, dpr, tlWorld } = this._currentState();
+    const zIntActual = Math.floor(this.zoom);
+    const baseZ = Number.isFinite(this._renderBaseLockZInt) ? this._renderBaseLockZInt : zIntActual;
+    const { zInt, scale, widthCSS, heightCSS, dpr, tlWorld } = this._currentState(baseZ);
     const frac = this.zoom - zInt;
     const zIntNext = Math.min(Math.floor(this.maxZoom), zInt + 1);
     const zIntPrev = Math.max(Math.floor(this.minZoom), zInt - 1);
