@@ -24,7 +24,7 @@ app.use(
       res.setHeader('Expires', '0');
       res.setHeader('Surrogate-Control', 'no-store');
     },
-  })
+  }),
 );
 
 // SPA fallback to index.html for non-file routes

@@ -12,7 +12,7 @@ export function lngLatToWorld(lng, lat, z) {
   const x = (lng + 180) / 360; // 0..1
   const clampedLat = clampLat(lat);
   const sinLat = Math.sin((clampedLat * Math.PI) / 180);
-  const y = 0.5 - (Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI)); // 0..1
+  const y = 0.5 - Math.log((1 + sinLat) / (1 - sinLat)) / (4 * Math.PI); // 0..1
   return {
     x: x * scale,
     y: y * scale,
@@ -30,11 +30,7 @@ export function worldToLngLat(x, y, z) {
 }
 
 export function tileXYZUrl(urlTemplate, z, x, y) {
-  return urlTemplate
-    .replace('{z}', String(z))
-    .replace('{x}', String(x))
-    .replace('{y}', String(y));
+  return urlTemplate.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y));
 }
 
 export { TILE_SIZE };
-

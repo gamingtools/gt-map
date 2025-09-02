@@ -25,11 +25,13 @@ export default class MapGL {
     this._maxTiles = options.maxTiles ?? 512;
     this._zoomAnim = null; // { from, to, px, py, start, dur }
     // Wheel zoom config (velocity-based smoothing)
-    this.wheelSpeed = options.wheelSpeed ?? 1.00; // UI logical slider default
-    this.wheelSpeedCtrl = options.wheelSpeedCtrl ?? 0.40;
+    this.wheelSpeed = options.wheelSpeed ?? 1.0; // UI logical slider default
+    this.wheelSpeedCtrl = options.wheelSpeedCtrl ?? 0.4;
     // Immediate step per wheel line (smooth hybrid)
     this.wheelImmediate = Number.isFinite(options.wheelImmediate) ? options.wheelImmediate : 0.12;
-    this.wheelImmediateCtrl = Number.isFinite(options.wheelImmediateCtrl) ? options.wheelImmediateCtrl : 0.24;
+    this.wheelImmediateCtrl = Number.isFinite(options.wheelImmediateCtrl)
+      ? options.wheelImmediateCtrl
+      : 0.24;
     // Velocity gain per line for continued motion
     this.wheelGain = Number.isFinite(options.wheelGain) ? options.wheelGain : 0.22;
     this.wheelGainCtrl = Number.isFinite(options.wheelGainCtrl) ? options.wheelGainCtrl : 0.44;
@@ -44,7 +46,10 @@ export default class MapGL {
     // Grid + pointer + anchor mode
     this.showGrid = options.showGrid ?? true;
     this.pointerAbs = null; // { x, y } in absolute map pixels (max integer zoom)
-    this.anchorMode = (options.anchorMode === 'center' || options.anchorMode === 'pointer') ? options.anchorMode : 'pointer';
+    this.anchorMode =
+      options.anchorMode === 'center' || options.anchorMode === 'pointer'
+        ? options.anchorMode
+        : 'pointer';
     this.outCenterBias = Number.isFinite(options.outCenterBias) ? options.outCenterBias : 0.15; // favor center on zoom-out
     // Easing options
     // Longer, smoother tail by default
@@ -58,17 +63,22 @@ export default class MapGL {
     this._raf = null;
     this.debug = !!options.debug;
     // Cached high-resolution clock function
-    this._now = (typeof performance !== 'undefined' && performance.now)
-      ? () => performance.now()
-      : () => Date.now();
+    this._now =
+      typeof performance !== 'undefined' && performance.now
+        ? () => performance.now()
+        : () => Date.now();
     this._zoomDir = 0; // -1 out, 1 in, 0 idle
     // Lock base tile LOD while zoom animates to avoid last-frame LOD pops
     this._renderBaseLockZInt = null;
     // Interaction-aware loading
-    this.interactionIdleMs = Number.isFinite(options.interactionIdleMs) ? options.interactionIdleMs : 160;
+    this.interactionIdleMs = Number.isFinite(options.interactionIdleMs)
+      ? options.interactionIdleMs
+      : 160;
     this._lastInteractAt = this._now();
     // Tile loader concurrency control
-    this._maxInflightLoads = Number.isFinite(options.maxInflightLoads) ? options.maxInflightLoads : 8;
+    this._maxInflightLoads = Number.isFinite(options.maxInflightLoads)
+      ? options.maxInflightLoads
+      : 8;
     this._inflightLoads = 0;
     this._pendingKeys = new Set();
     this._loadQueue = [];
@@ -85,13 +95,16 @@ export default class MapGL {
     // Ensure grid canvas visibility reflects initial option
     if (this.gridCanvas) {
       this.gridCanvas.style.display = this.showGrid ? 'block' : 'none';
-      if (!this.showGrid) this._gridCtx?.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
+      if (!this.showGrid)
+        this._gridCtx?.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
     }
     // Recompute immediate/gain from wheelSpeed defaults for consistent feel
     this.setWheelSpeed(this.wheelSpeed, this.wheelSpeedCtrl);
     this._loop();
     // Prefetch baseline level tiles (z=2 by default) to stabilize fallback
-    this.prefetchBaselineLevel = Number.isFinite(options.prefetchBaselineLevel) ? options.prefetchBaselineLevel : 2;
+    this.prefetchBaselineLevel = Number.isFinite(options.prefetchBaselineLevel)
+      ? options.prefetchBaselineLevel
+      : 2;
     this._scheduleBaselinePrefetch();
   }
 
@@ -132,14 +145,14 @@ export default class MapGL {
       // Range: 0.05 .. 1.75
       this.wheelImmediate = 0.05 + t * (1.75 - 0.05);
       // Velocity gain (kept for completeness; eased wheel path dominates)
-      this.wheelGain = 0.12 + t * (0.50 - 0.12);
+      this.wheelGain = 0.12 + t * (0.5 - 0.12);
     }
     if (Number.isFinite(ctrlSpeed)) {
       this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, ctrlSpeed));
       const t2 = Math.max(0, Math.min(1, this.wheelSpeedCtrl / 2));
       // Slightly higher range for Ctrl-zoom
-      this.wheelImmediateCtrl = 0.10 + t2 * (1.90 - 0.10);
-      this.wheelGainCtrl = 0.20 + t2 * (0.60 - 0.20);
+      this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
+      this.wheelGainCtrl = 0.2 + t2 * (0.6 - 0.2);
     }
   }
 
@@ -151,7 +164,8 @@ export default class MapGL {
 
   setEaseOptions({ easeBaseMs, easePerUnitMs, pinchEaseMs, easePinch }) {
     if (Number.isFinite(easeBaseMs)) this.easeBaseMs = Math.max(50, Math.min(600, easeBaseMs));
-    if (Number.isFinite(easePerUnitMs)) this.easePerUnitMs = Math.max(0, Math.min(600, easePerUnitMs));
+    if (Number.isFinite(easePerUnitMs))
+      this.easePerUnitMs = Math.max(0, Math.min(600, easePerUnitMs));
     if (Number.isFinite(pinchEaseMs)) this.pinchEaseMs = Math.max(40, Math.min(600, pinchEaseMs));
     if (typeof easePinch === 'boolean') this.easePinch = easePinch;
   }
@@ -221,7 +235,11 @@ export default class MapGL {
   }
 
   _initGL() {
-    const gl = this.canvas.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: false });
+    const gl = this.canvas.getContext('webgl', {
+      alpha: false,
+      antialias: false,
+      preserveDrawingBuffer: false,
+    });
     if (!gl) throw new Error('WebGL not supported');
     this.gl = gl;
     gl.clearColor(0.93, 0.93, 0.93, 1);
@@ -233,21 +251,14 @@ export default class MapGL {
     // A unit quad [0,0]..[1,1]
     this._quad = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, this._quad);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([
-        0, 0,
-        1, 0,
-        0, 1,
-        1, 1,
-      ]),
-      gl.STATIC_DRAW
-    );
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
     // Choose screen cache texture format to match framebuffer (avoid copyTexSubImage2D format errors)
     try {
       const attrs = gl.getContextAttributes?.();
-      this._screenTexFormat = (attrs && attrs.alpha === false) ? gl.RGB : gl.RGBA;
-    } catch { this._screenTexFormat = gl.RGBA; }
+      this._screenTexFormat = attrs && attrs.alpha === false ? gl.RGB : gl.RGBA;
+    } catch {
+      this._screenTexFormat = gl.RGBA;
+    }
   }
 
   _compile(type, src) {
@@ -278,7 +289,9 @@ export default class MapGL {
   }
 
   _initPrograms() {
-    const vs = this._compile(this.gl.VERTEX_SHADER, `
+    const vs = this._compile(
+      this.gl.VERTEX_SHADER,
+      `
       attribute vec2 a_pos;
       uniform vec2 u_translate; // pixels (top-left)
       uniform vec2 u_size;      // pixels (width,height)
@@ -291,8 +304,11 @@ export default class MapGL {
         gl_Position = vec4(clip, 0.0, 1.0);
         v_uv = a_pos;
       }
-    `);
-    const fs = this._compile(this.gl.FRAGMENT_SHADER, `
+    `,
+    );
+    const fs = this._compile(
+      this.gl.FRAGMENT_SHADER,
+      `
       precision mediump float;
       varying vec2 v_uv;
       uniform sampler2D u_tex;
@@ -304,7 +320,8 @@ export default class MapGL {
         vec4 c = texture2D(u_tex, uv);
         gl_FragColor = vec4(c.rgb, c.a * u_alpha);
       }
-    `);
+    `,
+    );
     const prog = (this._prog = this._link(vs, fs));
     const gl = this.gl;
     this._loc = {
@@ -322,12 +339,14 @@ export default class MapGL {
   _initEvents() {
     const canvas = this.canvas;
     let dragging = false;
-    let lastX = 0, lastY = 0;
+    let lastX = 0,
+      lastY = 0;
 
     const onMouseDown = (e) => {
       this._lastInteractAt = this._now();
       dragging = true;
-      lastX = e.clientX; lastY = e.clientY;
+      lastX = e.clientX;
+      lastY = e.clientY;
       canvas.setPointerCapture(e.pointerId ?? 1);
     };
     const onMouseMove = (e) => {
@@ -337,89 +356,115 @@ export default class MapGL {
       this._lastInteractAt = this._now();
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
-      lastX = e.clientX; lastY = e.clientY;
+      lastX = e.clientX;
+      lastY = e.clientY;
       this._panBy(dx, dy);
     };
-    const onMouseUp = () => { dragging = false; };
+    const onMouseUp = () => {
+      dragging = false;
+    };
 
     canvas.addEventListener('pointerdown', onMouseDown);
     window.addEventListener('pointermove', onMouseMove);
     window.addEventListener('pointerup', onMouseUp);
 
     // Wheel zoom with responsive ease animation (no discrete jumps)
-    canvas.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      // Normalize to 'lines'
-      let lines = e.deltaY;
-      if (e.deltaMode === 0) lines = e.deltaY / 100; else if (e.deltaMode === 2) lines = e.deltaY * 3;
-      if (!Number.isFinite(lines)) return;
-      const rect = this.container.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-      this._lastInteractAt = this._now();
-      if (this.debug) {
-        try { console.log(`[Wheel] mode=${e.deltaMode} dy=${Number(e.deltaY).toFixed(3)} lines=${Number(lines).toFixed(4)} ctrl=${!!e.ctrlKey}`); } catch {}
-      }
-      // Map lines to a smooth target zoom delta and start/retarget an ease
-      const ctrl = !!e.ctrlKey;
-      const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
-      // Per-event dz; clamp extreme spikes from high-res wheels
-      let dz = -lines * step;
-      const maxDzEvent = 2.0;
-      dz = Math.max(-maxDzEvent, Math.min(maxDzEvent, dz));
-      this._startZoomEase(dz, px, py, this.anchorMode);
-      // Clear any residual coalesced or velocity tails
-      this._wheelLinesAccum = 0;
-      this._wheelLastCtrl = ctrl;
-      this._zoomVel = 0;
-      this._wheelAnchor = { px, py, mode: this.anchorMode };
-      this._needsRender = true;
-    }, { passive: false });
+    canvas.addEventListener(
+      'wheel',
+      (e) => {
+        e.preventDefault();
+        // Normalize to 'lines'
+        let lines = e.deltaY;
+        if (e.deltaMode === 0) lines = e.deltaY / 100;
+        else if (e.deltaMode === 2) lines = e.deltaY * 3;
+        if (!Number.isFinite(lines)) return;
+        const rect = this.container.getBoundingClientRect();
+        const px = e.clientX - rect.left;
+        const py = e.clientY - rect.top;
+        this._lastInteractAt = this._now();
+        if (this.debug) {
+          try {
+            console.log(
+              `[Wheel] mode=${e.deltaMode} dy=${Number(e.deltaY).toFixed(3)} lines=${Number(lines).toFixed(4)} ctrl=${!!e.ctrlKey}`,
+            );
+          } catch {}
+        }
+        // Map lines to a smooth target zoom delta and start/retarget an ease
+        const ctrl = !!e.ctrlKey;
+        const step = ctrl
+          ? this.wheelImmediateCtrl || this.wheelImmediate || 0.16
+          : this.wheelImmediate || 0.16;
+        // Per-event dz; clamp extreme spikes from high-res wheels
+        let dz = -lines * step;
+        const maxDzEvent = 2.0;
+        dz = Math.max(-maxDzEvent, Math.min(maxDzEvent, dz));
+        this._startZoomEase(dz, px, py, this.anchorMode);
+        // Clear any residual coalesced or velocity tails
+        this._wheelLinesAccum = 0;
+        this._wheelLastCtrl = ctrl;
+        this._zoomVel = 0;
+        this._wheelAnchor = { px, py, mode: this.anchorMode };
+        this._needsRender = true;
+      },
+      { passive: false },
+    );
 
     // Basic touch pinch and pan
     let touchState = null;
-    canvas.addEventListener('touchstart', (e) => {
-      this._lastInteractAt = this._now();
-      if (e.touches.length === 1) {
-        touchState = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
-      } else if (e.touches.length === 2) {
-        const [t0, t1] = e.touches;
-        const dx = t1.clientX - t0.clientX;
-        const dy = t1.clientY - t0.clientY;
-        touchState = {
-          mode: 'pinch',
-          cx: (t0.clientX + t1.clientX) / 2,
-          cy: (t0.clientY + t1.clientY) / 2,
-          dist: Math.hypot(dx, dy),
-        };
-      }
-    }, { passive: false });
-    canvas.addEventListener('touchmove', (e) => {
-      if (!touchState) return;
-      this._lastInteractAt = this._now();
-      if (touchState.mode === 'pan' && e.touches.length === 1) {
-        const t = e.touches[0];
-        const dx = t.clientX - touchState.x; const dy = t.clientY - touchState.y;
-        touchState.x = t.clientX; touchState.y = t.clientY;
-        this._panBy(dx, dy);
-      } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
-        const [t0, t1] = e.touches;
-        const dx = t1.clientX - t0.clientX;
-        const dy = t1.clientY - t0.clientY;
-        const dist = Math.hypot(dx, dy);
-        const scaleDelta = Math.log2(dist / touchState.dist);
-        const rect = this.container.getBoundingClientRect();
-        const px = ((t0.clientX + t1.clientX) / 2) - rect.left;
-        const py = ((t0.clientY + t1.clientY) / 2) - rect.top;
-        // Immediate pinch zoom; cancel any animation
-        this._zoomAnim = null;
-        const z = this.zoom + scaleDelta;
-        this._zoomToAnchored(z, px, py, this.anchorMode);
-        touchState.dist = dist;
-      }
-      e.preventDefault();
-    }, { passive: false });
-    canvas.addEventListener('touchend', () => { touchState = null; });
+    canvas.addEventListener(
+      'touchstart',
+      (e) => {
+        this._lastInteractAt = this._now();
+        if (e.touches.length === 1) {
+          touchState = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
+        } else if (e.touches.length === 2) {
+          const [t0, t1] = e.touches;
+          const dx = t1.clientX - t0.clientX;
+          const dy = t1.clientY - t0.clientY;
+          touchState = {
+            mode: 'pinch',
+            cx: (t0.clientX + t1.clientX) / 2,
+            cy: (t0.clientY + t1.clientY) / 2,
+            dist: Math.hypot(dx, dy),
+          };
+        }
+      },
+      { passive: false },
+    );
+    canvas.addEventListener(
+      'touchmove',
+      (e) => {
+        if (!touchState) return;
+        this._lastInteractAt = this._now();
+        if (touchState.mode === 'pan' && e.touches.length === 1) {
+          const t = e.touches[0];
+          const dx = t.clientX - touchState.x;
+          const dy = t.clientY - touchState.y;
+          touchState.x = t.clientX;
+          touchState.y = t.clientY;
+          this._panBy(dx, dy);
+        } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
+          const [t0, t1] = e.touches;
+          const dx = t1.clientX - t0.clientX;
+          const dy = t1.clientY - t0.clientY;
+          const dist = Math.hypot(dx, dy);
+          const scaleDelta = Math.log2(dist / touchState.dist);
+          const rect = this.container.getBoundingClientRect();
+          const px = (t0.clientX + t1.clientX) / 2 - rect.left;
+          const py = (t0.clientY + t1.clientY) / 2 - rect.top;
+          // Immediate pinch zoom; cancel any animation
+          this._zoomAnim = null;
+          const z = this.zoom + scaleDelta;
+          this._zoomToAnchored(z, px, py, this.anchorMode);
+          touchState.dist = dist;
+        }
+        e.preventDefault();
+      },
+      { passive: false },
+    );
+    canvas.addEventListener('touchend', () => {
+      touchState = null;
+    });
 
     this._cleanupEvents = () => {
       canvas.removeEventListener('pointerdown', onMouseDown);
@@ -458,8 +503,8 @@ export default class MapGL {
     const heightCSS = rect.height;
     const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, zInt);
     const tlWorld = {
-      x: centerWorld.x - (widthCSS / (2 * scale)),
-      y: centerWorld.y - (heightCSS / (2 * scale)),
+      x: centerWorld.x - widthCSS / (2 * scale),
+      y: centerWorld.y - heightCSS / (2 * scale),
     };
     const dpr = this._dpr || 1;
     return { zInt, scale, widthCSS, heightCSS, dpr, centerWorld, tlWorld };
@@ -524,7 +569,7 @@ export default class MapGL {
     const s2 = Math.pow(2, zClamped - zInt2);
     const ratio = this._viewportCoverageRatio(zInt2, s2, widthCSS, heightCSS);
     const enter = 0.995; // more conservative entering center-anchor
-    const exit = 0.90;   // require clearly smaller to exit
+    const exit = 0.9; // require clearly smaller to exit
     const now = this._now();
     if (this._stickyCenterAnchor) {
       if (this._stickyAnchorUntil && now < this._stickyAnchorUntil) {
@@ -564,7 +609,7 @@ export default class MapGL {
 
     let center2;
     // default anchor decision
-    const anchorCenter = (!this.wrapX && this._isViewportLarger(zInt2, s2, widthCSS, heightCSS));
+    const anchorCenter = !this.wrapX && this._isViewportLarger(zInt2, s2, widthCSS, heightCSS);
     if (anchorCenter) {
       // Maintain current center when anchoring to viewport center
       const centerNow = lngLatToWorld(this.center.lng, this.center.lat, zInt);
@@ -574,7 +619,7 @@ export default class MapGL {
       const worldBefore = { x: tlWorld.x + pxCSS / s1, y: tlWorld.y + pyCSS / s1 };
       const factor = Math.pow(2, zInt2 - zInt);
       const worldBefore2 = { x: worldBefore.x * factor, y: worldBefore.y * factor };
-      const tl2 = { x: worldBefore2.x - (pxCSS / s2), y: worldBefore2.y - (pyCSS / s2) };
+      const tl2 = { x: worldBefore2.x - pxCSS / s2, y: worldBefore2.y - pyCSS / s2 };
       center2 = { x: tl2.x + widthCSS / (2 * s2), y: tl2.y + heightCSS / (2 * s2) };
     }
     center2 = this._clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
@@ -602,11 +647,11 @@ export default class MapGL {
       const worldBefore = { x: tlWorld.x + pxCSS / s1, y: tlWorld.y + pyCSS / s1 };
       const factor = Math.pow(2, zInt2 - zInt);
       const worldBefore2 = { x: worldBefore.x * factor, y: worldBefore.y * factor };
-      const tl2 = { x: worldBefore2.x - (pxCSS / s2), y: worldBefore2.y - (pyCSS / s2) };
+      const tl2 = { x: worldBefore2.x - pxCSS / s2, y: worldBefore2.y - pyCSS / s2 };
       const centerPointer = { x: tl2.x + widthCSS / (2 * s2), y: tl2.y + heightCSS / (2 * s2) };
 
       // Slightly favor centering when zooming out for stability
-      const zoomingOut = (this._zoomDir ? this._zoomDir < 0 : (zClamped < this.zoom));
+      const zoomingOut = this._zoomDir ? this._zoomDir < 0 : zClamped < this.zoom;
       if (zoomingOut) {
         const centerNow = lngLatToWorld(this.center.lng, this.center.lat, zInt);
         const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
@@ -642,7 +687,7 @@ export default class MapGL {
       const now = this._now();
       const rounded = Math.round(z * 1000) / 1000;
       // Throttle to avoid spamming and jank
-      if (this._logState.last === rounded && (now - this._logState.lastTime) < 150) return;
+      if (this._logState.last === rounded && now - this._logState.lastTime < 150) return;
       console.log(`[MapGL] zoom: ${rounded.toFixed(3)}`);
       this._logState.last = rounded;
       this._logState.lastTime = now;
@@ -650,7 +695,8 @@ export default class MapGL {
   }
 
   // --- Tile management ---
-  _wrapX(x, z) { // wrap around antimeridian
+  _wrapX(x, z) {
+    // wrap around antimeridian
     const n = 1 << z;
     let r = ((x % n) + n) % n;
     return r;
@@ -658,7 +704,8 @@ export default class MapGL {
 
   _enqueueTile(z, x, y, priority = 1) {
     const key = `${z}/${x}/${y}`;
-    if (this._tileCache.has(key) || this._pendingKeys.has(key) || this._loadQueueSet.has(key)) return;
+    if (this._tileCache.has(key) || this._pendingKeys.has(key) || this._loadQueueSet.has(key))
+      return;
     const url = tileXYZUrl(this.tileUrl, z, x, y);
     this._loadQueue.push({ key, url, z, x, y, priority });
     this._loadQueueSet.add(key);
@@ -668,14 +715,18 @@ export default class MapGL {
   _processLoadQueue() {
     while (this._inflightLoads < this._maxInflightLoads && this._loadQueue.length) {
       const now = this._now();
-      const idle = (now - this._lastInteractAt) > this.interactionIdleMs;
+      const idle = now - this._lastInteractAt > this.interactionIdleMs;
       const zAllow = Math.floor(this.zoom);
       let idx = -1;
       let bestPri = Infinity;
       for (let i = 0; i < this._loadQueue.length; i++) {
         const t = this._loadQueue[i];
         if (!idle && t.z > zAllow) continue; // defer high LOD during interaction
-        if (t.priority < bestPri) { bestPri = t.priority; idx = i; if (bestPri === 0) break; }
+        if (t.priority < bestPri) {
+          bestPri = t.priority;
+          idx = i;
+          if (bestPri === 0) break;
+        }
       }
       if (idx === -1) break;
       const task = this._loadQueue.splice(idx, 1)[0];
@@ -703,7 +754,13 @@ export default class MapGL {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-        const rec = { status: 'ready', tex, width: img.naturalWidth, height: img.naturalHeight, lastUsed: this._frame || 0 };
+        const rec = {
+          status: 'ready',
+          tex,
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+          lastUsed: this._frame || 0,
+        };
         if (this._pinnedKeys.has(key)) rec.pinned = true;
         this._tileCache.set(key, rec);
         this._evictIfNeeded();
@@ -764,7 +821,10 @@ export default class MapGL {
       for (const [k, rec] of this._tileCache) {
         if (rec?.status !== 'ready' || rec?.pinned) continue;
         const used = rec.lastUsed ?? -1;
-        if (used < victimUsed) { victimUsed = used; victimKey = k; }
+        if (used < victimUsed) {
+          victimUsed = used;
+          victimKey = k;
+        }
       }
       if (!victimKey) break;
       const rec = this._tileCache.get(victimKey);
@@ -788,8 +848,10 @@ export default class MapGL {
     let consumed = 0;
     if (Math.abs(this._wheelLinesAccum || 0) > 1e-6) {
       const ctrl = !!this._wheelLastCtrl;
-      const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
-      const linesAccum = (this._wheelLinesAccum || 0);
+      const step = ctrl
+        ? this.wheelImmediateCtrl || this.wheelImmediate || 0.16
+        : this.wheelImmediate || 0.16;
+      const linesAccum = this._wheelLinesAccum || 0;
       let dz = -linesAccum * step;
       const maxDzFrame = 1.2;
       dz = Math.max(-maxDzFrame, Math.min(maxDzFrame, dz));
@@ -800,7 +862,11 @@ export default class MapGL {
       this._zoomToAnchored(z, px, py, anchor);
       consumed += dz;
       if (this.debug) {
-        try { console.log(`[WheelFrame] linesAccum=${Number(linesAccum).toFixed(4)} step=${Number(step).toFixed(3)} dz=${Number(dz).toFixed(4)}`); } catch {}
+        try {
+          console.log(
+            `[WheelFrame] linesAccum=${Number(linesAccum).toFixed(4)} step=${Number(step).toFixed(3)} dz=${Number(dz).toFixed(4)}`,
+          );
+        } catch {}
       }
       this._wheelLinesAccum = 0;
       this._needsRender = true;
@@ -910,8 +976,8 @@ export default class MapGL {
         const centerL = lngLatToWorld(this.center.lng, this.center.lat, lvl);
         const scaleL = Math.pow(2, this.zoom - lvl);
         const tlL = {
-          x: centerL.x - (widthCSS / (2 * scaleL)),
-          y: centerL.y - (heightCSS / (2 * scaleL)),
+          x: centerL.x - widthCSS / (2 * scaleL),
+          y: centerL.y - heightCSS / (2 * scaleL),
         };
         const covL = this._tileCoverage(lvl, tlL, scaleL, widthCSS, heightCSS);
         this._drawTilesForLevel(lvl, tlL, scaleL, dpr, 1.0);
@@ -928,8 +994,8 @@ export default class MapGL {
       const centerNext = lngLatToWorld(this.center.lng, this.center.lat, zIntNext);
       const scaleNext = Math.pow(2, this.zoom - zIntNext);
       const tlNext = {
-        x: centerNext.x - (widthCSS / (2 * scaleNext)),
-        y: centerNext.y - (heightCSS / (2 * scaleNext)),
+        x: centerNext.x - widthCSS / (2 * scaleNext),
+        y: centerNext.y - heightCSS / (2 * scaleNext),
       };
       this._drawTilesForLevel(zIntNext, tlNext, scaleNext, dpr, frac);
     }
@@ -938,7 +1004,8 @@ export default class MapGL {
     if (this.showGrid) this._drawGrid();
 
     // Update screen-space cache after drawing tiles
-    if (this.useScreenCache) this._updateScreenCache({ zInt, scale, widthCSS, heightCSS, dpr, tlWorld });
+    if (this.useScreenCache)
+      this._updateScreenCache({ zInt, scale, widthCSS, heightCSS, dpr, tlWorld });
 
     // Cancel queued/inflight loads that are no longer needed
     this._cancelUnwantedLoads();
@@ -954,7 +1021,17 @@ export default class MapGL {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       const fmt = this._screenTexFormat || gl.RGBA;
-      gl.texImage2D(gl.TEXTURE_2D, 0, fmt, this.canvas.width, this.canvas.height, 0, fmt, gl.UNSIGNED_BYTE, null);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        fmt,
+        this.canvas.width,
+        this.canvas.height,
+        0,
+        fmt,
+        gl.UNSIGNED_BYTE,
+        null,
+      );
     } else {
       gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
     }
@@ -980,7 +1057,12 @@ export default class MapGL {
   _drawScreenCache(curr) {
     const prev = this._screenCacheState;
     if (!prev) return;
-    if (prev.widthCSS !== curr.widthCSS || prev.heightCSS !== curr.heightCSS || prev.dpr !== curr.dpr) return;
+    if (
+      prev.widthCSS !== curr.widthCSS ||
+      prev.heightCSS !== curr.heightCSS ||
+      prev.dpr !== curr.dpr
+    )
+      return;
     // Skip when crossing integer zooms or large scale jumps to avoid artifacts
     if (prev.zInt !== curr.zInt) return;
     const gl = this.gl;
@@ -992,7 +1074,8 @@ export default class MapGL {
     const dyPx = dyCSS * curr.dpr;
     const wPx = this.canvas.width * s;
     const hPx = this.canvas.height * s;
-    if (Math.abs(dxPx) > this.canvas.width * 0.5 || Math.abs(dyPx) > this.canvas.height * 0.5) return;
+    if (Math.abs(dxPx) > this.canvas.width * 0.5 || Math.abs(dyPx) > this.canvas.height * 0.5)
+      return;
     gl.useProgram(this._prog);
     gl.bindBuffer(gl.ARRAY_BUFFER, this._quad);
     gl.enableVertexAttribArray(this._loc.a_pos);
@@ -1013,9 +1096,17 @@ export default class MapGL {
   _chooseGridSpacing(scale) {
     const base = TILE_SIZE; // align with tile boundaries
     const candidates = [
-      base / 16, base / 8, base / 4, base / 2,
+      base / 16,
+      base / 8,
+      base / 4,
+      base / 2,
       base,
-      base * 2, base * 4, base * 8, base * 16, base * 32, base * 64,
+      base * 2,
+      base * 4,
+      base * 8,
+      base * 16,
+      base * 32,
+      base * 64,
     ];
     const targetPx = 100; // aim for ~100 CSS px
     let best = candidates[0];
@@ -1023,7 +1114,10 @@ export default class MapGL {
     for (const w of candidates) {
       const css = w * scale;
       const err = Math.abs(css - targetPx);
-      if (err < bestErr) { bestErr = err; best = w; }
+      if (err < bestErr) {
+        bestErr = err;
+        best = w;
+      }
     }
     return Math.max(1, Math.round(best));
   }
@@ -1041,15 +1135,20 @@ export default class MapGL {
     const base = TILE_SIZE;
     const zAbs = Math.floor(this.maxZoom);
     const factorAbs = Math.pow(2, zAbs - zInt);
-    ctx.font = '11px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+    ctx.font =
+      '11px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
     ctx.textBaseline = 'top';
     ctx.textAlign = 'left';
 
     // Vertical lines with labels on major tile boundaries
     let startWX = Math.floor(tlWorld.x / spacingWorld) * spacingWorld;
-    for (let wx = startWX; (wx - tlWorld.x) * scale <= widthCSS + spacingWorld * scale; wx += spacingWorld) {
+    for (
+      let wx = startWX;
+      (wx - tlWorld.x) * scale <= widthCSS + spacingWorld * scale;
+      wx += spacingWorld
+    ) {
       const xCSS = (wx - tlWorld.x) * scale;
-      const isMajor = (Math.round(wx) % base) === 0;
+      const isMajor = Math.round(wx) % base === 0;
       ctx.beginPath();
       ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)';
       ctx.lineWidth = isMajor ? 1.2 : 0.8;
@@ -1071,9 +1170,13 @@ export default class MapGL {
 
     // Horizontal lines with labels on major tile boundaries
     let startWY = Math.floor(tlWorld.y / spacingWorld) * spacingWorld;
-    for (let wy = startWY; (wy - tlWorld.y) * scale <= heightCSS + spacingWorld * scale; wy += spacingWorld) {
+    for (
+      let wy = startWY;
+      (wy - tlWorld.y) * scale <= heightCSS + spacingWorld * scale;
+      wy += spacingWorld
+    ) {
       const yCSS = (wy - tlWorld.y) * scale;
-      const isMajor = (Math.round(wy) % base) === 0;
+      const isMajor = Math.round(wy) % base === 0;
       ctx.beginPath();
       ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)';
       ctx.lineWidth = isMajor ? 1.2 : 0.8;
@@ -1115,11 +1218,11 @@ export default class MapGL {
     let total = 0;
     let ready = 0;
     for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= (1 << zLevel)) continue;
+      if (ty < 0 || ty >= 1 << zLevel) continue;
       for (let tx = startX; tx <= endX; tx++) {
         let tileX = tx;
         if (this.wrapX) tileX = this._wrapX(tx, zLevel);
-        else if (tx < 0 || tx >= (1 << zLevel)) continue;
+        else if (tx < 0 || tx >= 1 << zLevel) continue;
         total++;
         const key = `${zLevel}/${tileX}/${ty}`;
         const record = this._tileCache.get(key);
@@ -1146,7 +1249,7 @@ export default class MapGL {
     this.gl.uniform1f(this._loc.u_alpha, alpha);
 
     for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= (1 << zLevel)) continue; // clamp y
+      if (ty < 0 || ty >= 1 << zLevel) continue; // clamp y
       for (let tx = startX; tx <= endX; tx++) {
         const wx = tx * TILE_SIZE;
         const wy = ty * TILE_SIZE;
@@ -1161,7 +1264,7 @@ export default class MapGL {
             sxCSS -= dxTiles * TILE_SIZE * scale;
           }
         } else {
-          if (tx < 0 || tx >= (1 << zLevel)) continue;
+          if (tx < 0 || tx >= 1 << zLevel) continue;
         }
 
         const key = `${zLevel}/${tileX}/${ty}`;
@@ -1212,9 +1315,9 @@ export default class MapGL {
       if (this.wrapX) {
         xp = this._wrapX(xp, zp);
       } else {
-        if (xp < 0 || xp >= (1 << zp)) continue;
+        if (xp < 0 || xp >= 1 << zp) continue;
       }
-      if (yp < 0 || yp >= (1 << zp)) continue;
+      if (yp < 0 || yp >= 1 << zp) continue;
       const pKey = `${zp}/${xp}/${yp}`;
       const prec = this._tileCache.get(pKey);
       if (prec?.status === 'ready' && prec.tex) {

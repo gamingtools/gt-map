@@ -37,7 +37,8 @@ function updateHUD() {
   updateHUD._t = now;
   updateHUD._acc += dt;
   updateHUD._frames += 1;
-  if (updateHUD._acc >= 500) { // 0.5s window
+  if (updateHUD._acc >= 500) {
+    // 0.5s window
     updateHUD._fps = Math.round((updateHUD._frames * 1000) / updateHUD._acc);
     updateHUD._frames = 0;
     updateHUD._acc = 0;
@@ -64,7 +65,8 @@ centerBtn.style.color = '#222';
 centerBtn.style.border = '1px solid #bbb';
 centerBtn.style.borderRadius = '4px';
 centerBtn.style.padding = '6px 8px';
-centerBtn.style.font = '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+centerBtn.style.font =
+  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
 centerBtn.style.cursor = 'pointer';
 centerBtn.style.zIndex = '11';
 centerBtn.addEventListener('click', () => map.recenter());
@@ -79,7 +81,8 @@ speedWrap.style.background = 'rgba(255,255,255,0.9)';
 speedWrap.style.border = '1px solid #bbb';
 speedWrap.style.borderRadius = '4px';
 speedWrap.style.padding = '6px 8px';
-speedWrap.style.font = '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+speedWrap.style.font =
+  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
 speedWrap.style.zIndex = '11';
 
 const speedLabel = document.createElement('label');
@@ -125,7 +128,8 @@ gridWrap.style.background = 'rgba(255,255,255,0.9)';
 gridWrap.style.border = '1px solid #bbb';
 gridWrap.style.borderRadius = '4px';
 gridWrap.style.padding = '6px 8px';
-gridWrap.style.font = '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+gridWrap.style.font =
+  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
 gridWrap.style.zIndex = '11';
 
 const gridLabel = document.createElement('label');
@@ -152,7 +156,8 @@ anchorWrap.style.background = 'rgba(255,255,255,0.9)';
 anchorWrap.style.border = '1px solid #bbb';
 anchorWrap.style.borderRadius = '4px';
 anchorWrap.style.padding = '6px 8px';
-anchorWrap.style.font = '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+anchorWrap.style.font =
+  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
 anchorWrap.style.zIndex = '11';
 
 const anchorLabel = document.createElement('label');
@@ -161,8 +166,12 @@ anchorLabel.style.display = 'block';
 anchorLabel.style.marginBottom = '4px';
 
 const anchorSelect = document.createElement('select');
-const optPointer = document.createElement('option'); optPointer.value = 'pointer'; optPointer.textContent = 'Pointer';
-const optCenter = document.createElement('option'); optCenter.value = 'center'; optCenter.textContent = 'Center';
+const optPointer = document.createElement('option');
+optPointer.value = 'pointer';
+optPointer.textContent = 'Pointer';
+const optCenter = document.createElement('option');
+optCenter.value = 'center';
+optCenter.textContent = 'Center';
 anchorSelect.appendChild(optPointer);
 anchorSelect.appendChild(optCenter);
 anchorSelect.value = map.anchorMode || 'pointer';

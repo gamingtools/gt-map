@@ -4,11 +4,31 @@
   "private": true,
   "description": "Minimal WebGL tile map with Express server",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "vite",
+    "build": "vite build && tsc -p packages/gtmap/tsconfig.json",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier -w .",
+    "format:check": "prettier -c ."
   },
   "dependencies": {
-    "compression": "^1.7.4",
-    "express": "^4.19.2"
+    "compression": "^1.8.1",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.41.0",
+    "@typescript-eslint/parser": "^8.41.0",
+    "eslint": "^9.34.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^3.6.1",
+    "eslint-plugin-import": "^2.32.0",
+    "globals": "^15.9.0",
+    "prettier": "^3.6.2",
+    "typescript-eslint": "^8.41.0",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.4"
   }
 }
-
