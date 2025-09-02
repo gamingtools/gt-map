@@ -62,6 +62,11 @@ export default class MapGL {
     this._renderBaseLockZInt = null;
     this._loop = this._loop.bind(this);
     this._logState = { last: null, lastTime: 0 };
+    // Ensure grid canvas visibility reflects initial option
+    if (this.gridCanvas) {
+      this.gridCanvas.style.display = this.showGrid ? 'block' : 'none';
+      if (!this.showGrid) this._gridCtx?.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
+    }
     // Recompute immediate/gain from wheelSpeed defaults for consistent feel
     this.setWheelSpeed(this.wheelSpeed, this.wheelSpeedCtrl);
     this._loop();
@@ -885,6 +890,12 @@ export default class MapGL {
 
   setGridVisible(visible) {
     this.showGrid = !!visible;
+    if (this.gridCanvas) {
+      this.gridCanvas.style.display = this.showGrid ? 'block' : 'none';
+      if (!this.showGrid && this._gridCtx) {
+        this._gridCtx.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
+      }
+    }
     this._needsRender = true;
   }
 
