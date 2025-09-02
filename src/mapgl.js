@@ -47,10 +47,11 @@ export default class MapGL {
     this.anchorMode = (options.anchorMode === 'center' || options.anchorMode === 'pointer') ? options.anchorMode : 'pointer';
     this.outCenterBias = Number.isFinite(options.outCenterBias) ? options.outCenterBias : 0.15; // favor center on zoom-out
     // Easing options
-    this.easeBaseMs = Number.isFinite(options.easeBaseMs) ? options.easeBaseMs : 120;
-    this.easePerUnitMs = Number.isFinite(options.easePerUnitMs) ? options.easePerUnitMs : 180;
+    // Longer, smoother tail by default
+    this.easeBaseMs = Number.isFinite(options.easeBaseMs) ? options.easeBaseMs : 150;
+    this.easePerUnitMs = Number.isFinite(options.easePerUnitMs) ? options.easePerUnitMs : 240;
     this.easeMinMs = 120;
-    this.easeMaxMs = 260;
+    this.easeMaxMs = 420;
     this.pinchEaseMs = Number.isFinite(options.pinchEaseMs) ? options.pinchEaseMs : 140;
     this.easePinch = options.easePinch ?? false;
 
