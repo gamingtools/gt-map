@@ -19,7 +19,7 @@ import type { InputDeps } from './types';
 import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 import MapRenderer from './render/MapRenderer';
 import type { ViewState } from './types';
-import { prefetchNeighbors } from './tiles/prefetch';
+import { prefetchNeighborsCtx } from './tiles/prefetch';
 import { drawGrid } from './render/grid';
 
 export type LngLat = { lng: number; lat: number };
@@ -128,7 +128,7 @@ export default class GTMap {
     } as any;
   }
   public prefetchNeighbors(z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) {
-    this._prefetchNeighbors(z, tl, scale, w, h);
+    prefetchNeighborsCtx({ wrapX: this.wrapX, hasTile: (key: string) => this._tileCache.has(key), enqueueTile: (zz: number, xx: number, yy: number, p = 1) => this._enqueueTile(zz, xx, yy, p) }, z, tl, scale, w, h);
   }
   public cancelUnwantedLoads() { this._cancelUnwantedLoads(); }
   public clearWantedKeys() { this._wantedKeys.clear(); }
@@ -395,8 +395,6 @@ export default class GTMap {
   }
 
   // Prefetch a 1-tile border beyond current viewport at the given level
-  private _prefetchNeighbors(zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) { prefetchNeighbors(this, zLevel, tlWorld, scale, widthCSS, heightCSS); }
-
   // grid drawing via render/grid.drawGrid
 
   // (moved to the main definition above)
