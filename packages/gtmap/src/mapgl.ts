@@ -52,6 +52,13 @@ export default class GTMap {
   private _zoomAnim: { from: number; to: number; px: number; py: number; start: number; dur: number; anchor: 'pointer' | 'center' } | null = null;
   private anchorMode: 'pointer' | 'center' = 'pointer';
   private _renderBaseLockZInt: number | null = null;
+  // Easing options
+  private easeBaseMs = 150;
+  private easePerUnitMs = 240;
+  private easeMinMs = 120;
+  private easeMaxMs = 420;
+  // Zoom-out stability bias toward center
+  private outCenterBias = 0.15;
   // Screen-space cache
   private useScreenCache = true;
   private _screenTex: WebGLTexture | null = null;
@@ -130,7 +137,10 @@ export default class GTMap {
     this._needsRender = true;
   }
   setEaseOptions(_opts: EaseOptions) {
-    /* to be ported */
+    if (Number.isFinite(_opts.easeBaseMs as number)) this.easeBaseMs = Math.max(50, Math.min(600, _opts.easeBaseMs as number));
+    if (Number.isFinite(_opts.easePerUnitMs as number)) this.easePerUnitMs = Math.max(0, Math.min(600, _opts.easePerUnitMs as number));
+    if (Number.isFinite(_opts.pinchEaseMs as number)) this.easeBaseMs = Math.max(40, Math.min(600, _opts.pinchEaseMs as number));
+    if (typeof _opts.easePinch === 'boolean') {/* reserved for future pinch easing */}
   }
   recenter() {
     const zInt = Math.floor(this.zoom);
@@ -303,7 +313,8 @@ export default class GTMap {
       if (!dragging) return;
       const dx = e.clientX - lastX, dy = e.clientY - lastY; lastX = e.clientX; lastY = e.clientY;
       const newTL = { x: tl.x - dx / scale, y: tl.y - dy / scale };
-      const newCenter = { x: newTL.x + widthCSS / (2 * scale), y: newTL.y + heightCSS / (2 * scale) };
+      let newCenter = { x: newTL.x + widthCSS / (2 * scale), y: newTL.y + heightCSS / (2 * scale) };
+      newCenter = this._clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
       const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt);
       this.setCenter(lng, lat);
     };
@@ -326,12 +337,60 @@ export default class GTMap {
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     canvas.addEventListener('wheel', onWheel, { passive: false });
+    // Touch pinch & pan
+    let touchState: null | { mode: 'pan' | 'pinch'; x?: number; y?: number; cx?: number; cy?: number; dist?: number } = null;
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        touchState = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
+      } else if (e.touches.length === 2) {
+        const t0 = e.touches[0]; const t1 = e.touches[1];
+        const dx = t1.clientX - t0.clientX; const dy = t1.clientY - t0.clientY;
+        touchState = { mode: 'pinch', cx: (t0.clientX + t1.clientX) / 2, cy: (t0.clientY + t1.clientY) / 2, dist: Math.hypot(dx, dy) };
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (!touchState) return;
+      if (touchState.mode === 'pan' && e.touches.length === 1) {
+        const t = e.touches[0];
+        const dx = t.clientX - (touchState.x || 0); const dy = t.clientY - (touchState.y || 0);
+        touchState.x = t.clientX; touchState.y = t.clientY;
+        const zInt = Math.floor(this.zoom);
+        const rect = this.container.getBoundingClientRect();
+        const scale = Math.pow(2, this.zoom - zInt);
+        const widthCSS = rect.width, heightCSS = rect.height;
+        const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, zInt);
+        const tl = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
+        let newCenter = { x: tl.x - dx / scale + widthCSS / (2 * scale), y: tl.y - dy / scale + heightCSS / (2 * scale) };
+        newCenter = this._clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
+        const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt);
+        this.setCenter(lng, lat);
+      } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
+        const t0 = e.touches[0]; const t1 = e.touches[1];
+        const dx = t1.clientX - t0.clientX; const dy = t1.clientY - t0.clientY;
+        const dist = Math.hypot(dx, dy);
+        const scaleDelta = Math.log2(dist / (touchState.dist || dist));
+        const rect = this.container.getBoundingClientRect();
+        const px = ((t0.clientX + t1.clientX) / 2) - rect.left;
+        const py = ((t0.clientY + t1.clientY) / 2) - rect.top;
+        this._zoomAnim = null;
+        this._zoomToAnchored(this.zoom + scaleDelta, px, py, this.anchorMode);
+        touchState.dist = dist;
+      }
+      e.preventDefault();
+    };
+    const onTouchEnd = () => { touchState = null; };
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd);
     window.addEventListener('resize', onResize);
     this._cleanupEvents = () => {
       canvas.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       canvas.removeEventListener('wheel', onWheel);
+      canvas.removeEventListener('touchstart', onTouchStart as any);
+      canvas.removeEventListener('touchmove', onTouchMove as any);
+      canvas.removeEventListener('touchend', onTouchEnd as any);
       window.removeEventListener('resize', onResize);
     };
   }
@@ -518,38 +577,60 @@ export default class GTMap {
     }
     const to = Math.max(this.minZoom, Math.min(this.maxZoom, current + dz));
     const dist = Math.abs(to - current);
-    const base = 150; const per = 240; const raw = base + per * dist;
-    const dur = Math.max(120, Math.min(420, raw));
+    const base = this.easeBaseMs; const per = this.easePerUnitMs; const raw = base + per * dist;
+    const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
     this._zoomAnim = { from: current, to, px, py, start: now, dur, anchor };
     this._renderBaseLockZInt = Math.floor(current);
     this._needsRender = true;
   }
   private _zoomToAnchored(targetZoom: number, pxCSS: number, pyCSS: number, anchor: 'pointer' | 'center') {
-    const zInt = Math.floor(this.zoom)
-    const scale = Math.pow(2, this.zoom - zInt)
-    const rect = this.container.getBoundingClientRect()
-    const widthCSS = rect.width
-    const heightCSS = rect.height
-    const centerNow = lngLatToWorld(this.center.lng, this.center.lat, zInt)
-    const tlWorld = { x: centerNow.x - widthCSS / (2 * scale), y: centerNow.y - heightCSS / (2 * scale) }
-    const zClamped = Math.max(this.minZoom, Math.min(this.maxZoom, targetZoom))
-    const zInt2 = Math.floor(zClamped)
-    const s2 = Math.pow(2, zClamped - zInt2)
-    let center2
+    const zInt = Math.floor(this.zoom);
+    const scale = Math.pow(2, this.zoom - zInt);
+    const rect = this.container.getBoundingClientRect();
+    const widthCSS = rect.width; const heightCSS = rect.height;
+    const centerNow = lngLatToWorld(this.center.lng, this.center.lat, zInt);
+    const tlWorld = { x: centerNow.x - widthCSS / (2 * scale), y: centerNow.y - heightCSS / (2 * scale) };
+    const zClamped = Math.max(this.minZoom, Math.min(this.maxZoom, targetZoom));
+    const zInt2 = Math.floor(zClamped); const s2 = Math.pow(2, zClamped - zInt2);
+    let center2;
     if (anchor === 'center') {
-      const factor = Math.pow(2, zInt2 - zInt)
-      center2 = { x: centerNow.x * factor, y: centerNow.y * factor }
+      const factor = Math.pow(2, zInt2 - zInt);
+      center2 = { x: centerNow.x * factor, y: centerNow.y * factor };
     } else {
-      const worldBefore = { x: tlWorld.x + pxCSS / scale, y: tlWorld.y + pyCSS / scale }
-      const factor = Math.pow(2, zInt2 - zInt)
-      const worldBefore2 = { x: worldBefore.x * factor, y: worldBefore.y * factor }
-      const tl2 = { x: worldBefore2.x - pxCSS / s2, y: worldBefore2.y - pyCSS / s2 }
-      center2 = { x: tl2.x + widthCSS / (2 * s2), y: tl2.y + heightCSS / (2 * s2) }
+      const worldBefore = { x: tlWorld.x + pxCSS / scale, y: tlWorld.y + pyCSS / scale };
+      const factor = Math.pow(2, zInt2 - zInt);
+      const worldBefore2 = { x: worldBefore.x * factor, y: worldBefore.y * factor };
+      const tl2 = { x: worldBefore2.x - pxCSS / s2, y: worldBefore2.y - pyCSS / s2 };
+      const pointerCenter = { x: tl2.x + widthCSS / (2 * s2), y: tl2.y + heightCSS / (2 * s2) };
+      // When zooming out, bias slightly toward keeping the visual center stable
+      if (zClamped < this.zoom) {
+        const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
+        const dz = Math.max(0, this.zoom - zClamped);
+        const bias = Math.max(0, Math.min(0.6, this.outCenterBias * dz));
+        center2 = { x: pointerCenter.x * (1 - bias) + centerScaled.x * bias, y: pointerCenter.y * (1 - bias) + centerScaled.y * bias };
+      } else {
+        center2 = pointerCenter;
+      }
     }
-    const { lng, lat } = worldToLngLat(center2.x, center2.y, zInt2)
-    this.center = { lng, lat: clampLat(lat) }
-    this.zoom = zClamped
-    this._needsRender = true
+    // Clamp center in world bounds (respect wrapX and freePan)
+    center2 = this._clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
+    const { lng, lat } = worldToLngLat(center2.x, center2.y, zInt2);
+    this.center = { lng, lat: clampLat(lat) };
+    this.zoom = zClamped;
+    this._needsRender = true;
+  }
+
+  // Bounds clamping similar to JS version
+  private _clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number) {
+    if (this.freePan) return centerWorld;
+    const worldSize = TILE_SIZE * (1 << zInt);
+    const halfW = widthCSS / (2 * scale); const halfH = heightCSS / (2 * scale);
+    let cx = centerWorld.x; let cy = centerWorld.y;
+    if (!this.wrapX) {
+      if (halfW >= worldSize / 2) cx = worldSize / 2; else cx = Math.max(halfW, Math.min(worldSize - halfW, cx));
+    }
+    if (halfH >= worldSize / 2) cy = worldSize / 2; else cy = Math.max(halfH, Math.min(worldSize - halfH, cy));
+    return { x: cx, y: cy };
   }
   private _tileCoverage(zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) {
     const startX = Math.floor(tlWorld.x / TILE_SIZE)
@@ -604,18 +685,56 @@ export default class GTMap {
   private _processLoadQueue() {
     while (this._inflightLoads < this._maxInflightLoads && this._loadQueue.length) {
       const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      const idle = (now - this._lastInteractAt) > this.interactionIdleMs; const zAllow = Math.floor(this.zoom);
-      let idx = -1; let bestPri = Infinity;
-      for (let i = 0; i < this._loadQueue.length; i++) { const t = this._loadQueue[i]; if (!idle && t.z > zAllow) continue; if (t.priority < bestPri) { bestPri = t.priority; idx = i; if (bestPri === 0) break; } }
-      if (idx === -1) break; const task = this._loadQueue.splice(idx, 1)[0]; if (!task) break; this._loadQueueSet.delete(task.key); this._startImageLoad(task);
+      const idle = (now - this._lastInteractAt) > this.interactionIdleMs;
+      const baseZ = Math.floor(this.zoom);
+      const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ);
+      let bestIdx = -1; let bestScore = Infinity;
+      for (let i = 0; i < this._loadQueue.length; i++) {
+        const t = this._loadQueue[i];
+        if (!idle && t.z > baseZ) continue;
+        const centerTileX = Math.floor(centerWorld.x / Math.pow(2, baseZ - t.z) / TILE_SIZE);
+        const centerTileY = Math.floor(centerWorld.y / Math.pow(2, baseZ - t.z) / TILE_SIZE);
+        const dx = t.x - centerTileX; const dy = t.y - centerTileY;
+        const dist = Math.hypot(dx, dy);
+        const zBias = Math.abs(t.z - baseZ);
+        const score = t.priority * 100 + zBias * 10 + dist;
+        if (score < bestScore) { bestScore = score; bestIdx = i; if (score === 0) break; }
+      }
+      if (bestIdx === -1) break;
+      const task = this._loadQueue.splice(bestIdx, 1)[0];
+      this._loadQueueSet.delete(task.key);
+      this._startImageLoad(task);
     }
   }
   private _startImageLoad({ key, url }: { key: string; url: string }) {
     this._pendingKeys.add(key); this._inflightLoads++;
-    const img = new Image(); img.crossOrigin = 'anonymous'; img.decoding = 'async'; this._tileCache.set(key, { status: 'loading' });
-    img.onload = () => { try { const gl = this.gl; const tex = gl.createTexture(); if (!tex) { this._tileCache.set(key, { status: 'error' }); return; } gl.bindTexture(gl.TEXTURE_2D, tex); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0); if ((gl as any).UNPACK_COLORSPACE_CONVERSION_WEBGL !== undefined) gl.pixelStorei((gl as any).UNPACK_COLORSPACE_CONVERSION_WEBGL, (gl as any).NONE); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img); gl.generateMipmap(gl.TEXTURE_2D); this._tileCache.set(key, { status: 'ready', tex, width: img.naturalWidth, height: img.naturalHeight, lastUsed: this._frame }); this._evictIfNeeded(); this._needsRender = true; } finally { this._pendingKeys.delete(key); this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._inflightMap.delete(key); this._processLoadQueue(); } };
-    img.onerror = () => { this._tileCache.set(key, { status: 'error' }); this._pendingKeys.delete(key); this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._inflightMap.delete(key); this._processLoadQueue(); };
-    this._inflightMap.set(key, img); img.src = url;
+    this._tileCache.set(key, { status: 'loading' });
+    if (this.useImageBitmap) {
+      fetch(url, { mode: 'cors', credentials: 'omit' })
+        .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.blob(); })
+        .then((blob) => createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' }))
+        .then((bmp) => {
+          try {
+            const gl = this.gl; const tex = gl.createTexture(); if (!tex) { this._tileCache.set(key, { status: 'error' }); return; }
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+            gl.generateMipmap(gl.TEXTURE_2D);
+            this._tileCache.set(key, { status: 'ready', tex, width: (bmp as any).width, height: (bmp as any).height, lastUsed: this._frame });
+            this._evictIfNeeded(); this._needsRender = true;
+          } finally { try { (bmp as any).close?.(); } catch {} this._pendingKeys.delete(key); this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._processLoadQueue(); }
+        })
+        .catch(() => { this.useImageBitmap = false; this._startImageLoad({ key, url }); });
+      return;
+    }
+    const img = new Image(); img.crossOrigin = 'anonymous'; img.decoding = 'async';
+    img.onload = () => { try { const gl = this.gl; const tex = gl.createTexture(); if (!tex) { this._tileCache.set(key, { status: 'error' }); return; } gl.bindTexture(gl.TEXTURE_2D, tex); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR); gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0); gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img); gl.generateMipmap(gl.TEXTURE_2D); this._tileCache.set(key, { status: 'ready', tex, width: img.naturalWidth, height: img.naturalHeight, lastUsed: this._frame }); this._evictIfNeeded(); this._needsRender = true; } finally { this._pendingKeys.delete(key); this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._processLoadQueue(); } };
+    img.onerror = () => { this._tileCache.set(key, { status: 'error' }); this._pendingKeys.delete(key); this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._processLoadQueue(); };
+    img.src = url;
   }
   private _cancelUnwantedLoads() {
     // Only prune queued tasks that are no longer wanted; keep inflight loads to avoid churn
