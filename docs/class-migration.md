@@ -81,7 +81,7 @@ Phase 2 — Tiles → TilePipeline
 
 Phase 3 — Render → MapRenderer + Graphics
 
-- [ ] Create `gl/Graphics.ts` (class) to own GL context + programs
+- [x] Create `gl/Graphics.ts` (class) to own GL context + programs
 - [x] Create `render/MapRenderer.ts` (class) from `render/frame.ts`
 - [ ] Constructor DI: `Graphics`, `ScreenCache`, `RasterRenderer`
 - [ ] Method: `render(viewState, tilePipeline)` with same ordering/alpha

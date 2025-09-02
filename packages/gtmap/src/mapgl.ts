@@ -1,6 +1,6 @@
 import { TILE_SIZE, clampLat } from './mercator';
-import { initPrograms } from './gl/programs';
-import { initGL } from './gl/context';
+// programs are initialized via Graphics
+import Graphics from './gl/Graphics';
 import { initCanvas, initGridCanvas, setGridVisible as setGridVisibleCore } from './core/canvas';
 import { resize as resizeCore } from './core/resize';
 import { ScreenCache } from './render/screenCache';
@@ -97,6 +97,7 @@ export default class GTMap {
   private _raster!: RasterRenderer;
   private _renderer!: MapRenderer;
   private _zoomCtrl!: ZoomController;
+  private _gfx!: Graphics;
   private _events = new EventBus();
   public readonly events = this._events; // experimental chainable events API
   // Grid overlay
@@ -134,7 +135,8 @@ export default class GTMap {
     this.center = { lng: options.center?.lng ?? 0, lat: options.center?.lat ?? 0 };
     this.zoom = options.zoom ?? 2;
     initCanvas(this);
-    initGL(this);
+    this._gfx = new Graphics(this as any);
+    this._gfx.init();
     this._initPrograms();
     // Initialize screen cache module (uses detected format)
     this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
@@ -245,10 +247,8 @@ export default class GTMap {
   public setAnchorMode(mode: 'pointer' | 'center') { this.anchorMode = mode; }
 
   private _initPrograms() {
-    const { prog, loc, quad } = initPrograms(this.gl);
-    this._prog = prog;
-    this._loc = loc as any;
-    this._quad = quad;
+    // Delegate to Graphics to set up programs and buffers
+    this._gfx.initPrograms();
   }
   resize() {
     resizeCore(this);
