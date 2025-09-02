@@ -76,8 +76,6 @@ export default class MapGL {
     this._inflightMap = new Map(); // key -> HTMLImageElement
     this._wantedKeys = new Set();
     this._pinnedKeys = new Set();
-    this._inflightMap = new Map(); // key -> HTMLImageElement
-    this._wantedKeys = new Set();
     // Screen-space cache to mask gaps while tiles load
     this.useScreenCache = options.useScreenCache ?? true;
     this._screenTex = null; // WebGL texture with last frame
@@ -245,6 +243,11 @@ export default class MapGL {
       ]),
       gl.STATIC_DRAW
     );
+    // Choose screen cache texture format to match framebuffer (avoid copyTexSubImage2D format errors)
+    try {
+      const attrs = gl.getContextAttributes?.();
+      this._screenTexFormat = (attrs && attrs.alpha === false) ? gl.RGB : gl.RGBA;
+    } catch { this._screenTexFormat = gl.RGBA; }
   }
 
   _compile(type, src) {
@@ -950,7 +953,8 @@ export default class MapGL {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.canvas.width, this.canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      const fmt = this._screenTexFormat || gl.RGBA;
+      gl.texImage2D(gl.TEXTURE_2D, 0, fmt, this.canvas.width, this.canvas.height, 0, fmt, gl.UNSIGNED_BYTE, null);
     } else {
       gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
     }
@@ -977,14 +981,18 @@ export default class MapGL {
     const prev = this._screenCacheState;
     if (!prev) return;
     if (prev.widthCSS !== curr.widthCSS || prev.heightCSS !== curr.heightCSS || prev.dpr !== curr.dpr) return;
+    // Skip when crossing integer zooms or large scale jumps to avoid artifacts
+    if (prev.zInt !== curr.zInt) return;
     const gl = this.gl;
     const s = curr.scale / Math.max(1e-6, prev.scale);
+    if (!(s > 0.92 && s < 1.08)) return;
     const dxCSS = (prev.tlWorld.x - curr.tlWorld.x) * curr.scale;
     const dyCSS = (prev.tlWorld.y - curr.tlWorld.y) * curr.scale;
     const dxPx = dxCSS * curr.dpr;
     const dyPx = dyCSS * curr.dpr;
     const wPx = this.canvas.width * s;
     const hPx = this.canvas.height * s;
+    if (Math.abs(dxPx) > this.canvas.width * 0.5 || Math.abs(dyPx) > this.canvas.height * 0.5) return;
     gl.useProgram(this._prog);
     gl.bindBuffer(gl.ARRAY_BUFFER, this._quad);
     gl.enableVertexAttribArray(this._loc.a_pos);
@@ -993,9 +1001,10 @@ export default class MapGL {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
     gl.uniform1i(this._loc.u_tex, 0);
-    gl.uniform1f(this._loc.u_alpha, 1.0);
-    gl.uniform2f(this._loc.u_uv0, 0.0, 0.0);
-    gl.uniform2f(this._loc.u_uv1, 1.0, 1.0);
+    gl.uniform1f(this._loc.u_alpha, 0.85);
+    // Framebuffer copy has bottom-left origin; flip V to display upright
+    gl.uniform2f(this._loc.u_uv0, 0.0, 1.0);
+    gl.uniform2f(this._loc.u_uv1, 1.0, 0.0);
     gl.uniform2f(this._loc.u_translate, dxPx, dyPx);
     gl.uniform2f(this._loc.u_size, wPx, hPx);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -1233,7 +1242,3 @@ export default class MapGL {
     }
   }
 }
-    // Cached high-resolution clock function
-    this._now = (typeof performance !== 'undefined' && performance.now)
-      ? () => performance.now()
-      : () => Date.now();
