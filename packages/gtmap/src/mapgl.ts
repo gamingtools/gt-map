@@ -1,6 +1,8 @@
 import { TILE_SIZE, clampLat, lngLatToWorld, worldToLngLat } from './mercator';
-import { createProgramFromSources } from './gl/program';
-import { createUnitQuad } from './gl/quad';
+import { initPrograms } from './gl/programs';
+import { initGL } from './gl/context';
+import { initCanvas, initGridCanvas, setGridVisible as setGridVisibleCore } from './core/canvas';
+import { resize as resizeCore } from './core/resize';
 import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
 import { TileQueue } from './tiles/queue';
@@ -127,8 +129,8 @@ export default class GTMap {
     this.freePan = options.freePan ?? false;
     this.center = { lng: options.center?.lng ?? 0, lat: options.center?.lat ?? 0 };
     this.zoom = options.zoom ?? 2;
-    this._initCanvas();
-    this._initGL();
+    initCanvas(this);
+    initGL(this);
     this._initPrograms();
     // Initialize screen cache module (uses detected format)
     this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
@@ -136,7 +138,7 @@ export default class GTMap {
     this._tileCache = new TileCache(this.gl, this._maxTiles);
     // Raster renderer
     this._raster = new RasterRenderer(this.gl);
-    this._initGridCanvas();
+    initGridCanvas(this);
     this.resize();
     this._initEvents();
     this._loop = this._loop.bind(this);
@@ -206,14 +208,7 @@ export default class GTMap {
   }
 
   // Public controls
-  public setGridVisible(visible: boolean) {
-    this.showGrid = !!visible;
-    if (this.gridCanvas) {
-      this.gridCanvas.style.display = this.showGrid ? 'block' : 'none';
-      if (!this.showGrid) this._gridCtx?.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
-    }
-    this._needsRender = true;
-  }
+  public setGridVisible(visible: boolean) { setGridVisibleCore(this, visible); }
   private _clearCache() {
     // Delete GPU textures in tile cache and reset queues
     this._tileCache.clear();
@@ -239,107 +234,14 @@ export default class GTMap {
   }
   public setAnchorMode(mode: 'pointer' | 'center') { this.anchorMode = mode; }
 
-  private _initCanvas() {
-    this.canvas = document.createElement('canvas');
-    Object.assign(this.canvas.style, {
-      display: 'block',
-      position: 'absolute',
-      left: '0',
-      top: '0',
-      right: '0',
-      bottom: '0',
-      zIndex: '0',
-    } as CSSStyleDeclaration);
-    this.container.appendChild(this.canvas);
-  }
-  private _initGridCanvas() {
-    const c = document.createElement('canvas');
-    this.gridCanvas = c;
-    c.style.display = 'block';
-    c.style.position = 'absolute';
-    c.style.left = '0'; c.style.top = '0'; c.style.right = '0'; c.style.bottom = '0';
-    c.style.zIndex = '5'; c.style.pointerEvents = 'none';
-    this.container.appendChild(c);
-    this._gridCtx = c.getContext('2d');
-    c.style.display = this.showGrid ? 'block' : 'none';
-  }
-  private _initGL() {
-    const gl = this.canvas.getContext('webgl', { alpha: false, antialias: false });
-    if (!gl) throw new Error('WebGL not supported');
-    this.gl = gl;
-    gl.clearColor(0.93, 0.93, 0.93, 1);
-    gl.disable(gl.DEPTH_TEST);
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    this._detectScreenFormat();
-  }
-  private _compile(type: number, src: string): WebGLShader {
-    const gl = this.gl;
-    const sh = gl.createShader(type) as WebGLShader;
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-      const info = gl.getShaderInfoLog(sh) || '';
-      gl.deleteShader(sh);
-      throw new Error('Shader compile error: ' + info);
-    }
-    return sh;
-  }
-  private _link(vs: WebGLShader, fs: WebGLShader): WebGLProgram {
-    const gl = this.gl;
-    const p = gl.createProgram() as WebGLProgram;
-    gl.attachShader(p, vs);
-    gl.attachShader(p, fs);
-    gl.linkProgram(p);
-    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
-      const info = gl.getProgramInfoLog(p) || '';
-      gl.deleteProgram(p);
-      throw new Error('Program link error: ' + info);
-    }
-    return p;
-  }
   private _initPrograms() {
-    const gl = this.gl;
-    const vsSrc = `
-      attribute vec2 a_pos; uniform vec2 u_translate; uniform vec2 u_size; uniform vec2 u_resolution; varying vec2 v_uv; void main(){ vec2 pixelPos=u_translate + a_pos*u_size; vec2 clip=(pixelPos/u_resolution)*2.0-1.0; clip.y*=-1.0; gl_Position=vec4(clip,0.0,1.0); v_uv=a_pos; }
-    `;
-    const fsSrc = `
-      precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; uniform float u_alpha; uniform vec2 u_uv0; uniform vec2 u_uv1; void main(){ vec2 uv = mix(u_uv0, u_uv1, v_uv); vec4 c=texture2D(u_tex, uv); gl_FragColor=vec4(c.rgb, c.a*u_alpha); }
-    `;
-    const prog = (this._prog = createProgramFromSources(gl, vsSrc, fsSrc));
-    this._loc = {
-      a_pos: gl.getAttribLocation(prog, 'a_pos'),
-      u_translate: gl.getUniformLocation(prog, 'u_translate'),
-      u_size: gl.getUniformLocation(prog, 'u_size'),
-      u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
-      u_tex: gl.getUniformLocation(prog, 'u_tex'),
-      u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
-      u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
-      u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
-    };
-    const quad = (this._quad = createUnitQuad(gl));
+    const { prog, loc, quad } = initPrograms(this.gl);
+    this._prog = prog;
+    this._loc = loc as any;
+    this._quad = quad;
   }
   resize() {
-    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3));
-    const rect = this.container.getBoundingClientRect();
-    this.canvas.style.width = rect.width + 'px';
-    this.canvas.style.height = rect.height + 'px';
-    const w = Math.max(1, Math.floor(rect.width * dpr));
-    const h = Math.max(1, Math.floor(rect.height * dpr));
-    if (this.canvas.width !== w || this.canvas.height !== h) {
-      this.canvas.width = w;
-      this.canvas.height = h;
-      this._dpr = dpr;
-      this.gl.viewport(0, 0, w, h);
-      this._needsRender = true;
-    }
-    if (this.gridCanvas) {
-      this.gridCanvas.style.width = rect.width + 'px';
-      this.gridCanvas.style.height = rect.height + 'px';
-      if (this.gridCanvas.width !== w || this.gridCanvas.height !== h) {
-        this.gridCanvas.width = w; this.gridCanvas.height = h; this._needsRender = true;
-      }
-    }
+    resizeCore(this);
   }
   private _initEvents() {
     this._cleanupEvents = attachHandlers(this as any);
