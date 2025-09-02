@@ -3,7 +3,9 @@ import { createProgramFromSources } from './gl/program';
 import { createUnitQuad } from './gl/quad';
 import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
+import { TileQueue } from './tiles/queue';
 import { urlFromTemplate, wrapX as wrapXTile, tileKey as tileKeyOf } from './tiles/source';
+import { RasterRenderer } from './layers/raster';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -81,6 +83,7 @@ export default class GTMap {
   private _screenCacheState: { zInt: number; scale: number; tlWorld: { x: number; y: number }; widthCSS: number; heightCSS: number; dpr: number } | null = null;
   private _screenTexFormat: number | null = null;
   private _screenCache: ScreenCache | null = null;
+  private _raster!: RasterRenderer;
   // Grid overlay
   private showGrid = true;
   private gridCanvas: HTMLCanvasElement | null = null;
@@ -92,8 +95,7 @@ export default class GTMap {
   private _maxInflightLoads = 8;
   private _inflightLoads = 0;
   private _pendingKeys = new Set<string>();
-  private _loadQueue: Array<{ key: string; url: string; z: number; x: number; y: number; priority: number }> = [];
-  private _loadQueueSet = new Set<string>();
+  private _queue: TileQueue = new TileQueue();
   private _inflightMap = new Map<string, HTMLImageElement>();
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
@@ -120,6 +122,8 @@ export default class GTMap {
     this._screenCache = new ScreenCache(this.gl, this._screenTexFormat ?? this.gl.RGBA);
     // Initialize tile cache (LRU)
     this._tileCache = new TileCache(this.gl, this._maxTiles);
+    // Raster renderer
+    this._raster = new RasterRenderer(this.gl);
     this._initGridCanvas();
     this.resize();
     this._initEvents();
@@ -155,8 +159,7 @@ export default class GTMap {
       // clear GPU textures and cache
       this._tileCache.clear();
       this._pendingKeys.clear();
-      this._loadQueue = [];
-      this._loadQueueSet.clear();
+      this._queue = new TileQueue();
       this._inflightMap.clear();
     }
     this._needsRender = true;
@@ -205,8 +208,7 @@ export default class GTMap {
     this._wantedKeys.clear();
     this._pinnedKeys.clear();
     this._pendingKeys.clear();
-    this._loadQueueSet.clear();
-    this._loadQueue.length = 0;
+    this._queue = new TileQueue();
     this._inflightLoads = 0;
     this._inflightMap.clear();
   }
@@ -520,26 +522,28 @@ export default class GTMap {
 
     if (this.useScreenCache && this._screenCache)
       this._screenCache.draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld }, this._loc!, this._prog!, this._quad!, this.canvas);
-    const coverage = this._tileCoverage(baseZ, tlWorld, scale, widthCSS, heightCSS);
+    const coverage = this._raster.coverage(this._tileCache as any, baseZ, tlWorld, scale, widthCSS, heightCSS, this.wrapX);
     const zIntPrev = Math.max(this.minZoom, baseZ - 1);
     if (coverage < 0.995 && zIntPrev >= this.minZoom) {
       for (let lvl = zIntPrev; lvl >= this.minZoom; lvl--) {
         const centerL = lngLatToWorld(this.center.lng, this.center.lat, lvl);
         const scaleL = Math.pow(2, this.zoom - lvl);
         const tlL = { x: centerL.x - widthCSS / (2 * scaleL), y: centerL.y - heightCSS / (2 * scaleL) };
-        const covL = this._tileCoverage(lvl, tlL, scaleL, widthCSS, heightCSS);
-        this._drawTilesForLevel(lvl, tlL, scaleL, this._dpr, widthCSS, heightCSS);
+        const covL = this._raster.coverage(this._tileCache as any, lvl, tlL, scaleL, widthCSS, heightCSS, this.wrapX);
+        this._raster.drawTilesForLevel(this._loc! as any, this._tileCache as any, this._enqueueTile.bind(this), { zLevel: lvl, tlWorld: tlL, scale: scaleL, dpr: this._dpr, widthCSS, heightCSS, wrapX: this.wrapX });
         if (covL >= 0.995) break;
       }
     }
-    this._drawTilesForLevel(baseZ, tlWorld, scale, this._dpr, widthCSS, heightCSS);
+    this._raster.drawTilesForLevel(this._loc! as any, this._tileCache as any, this._enqueueTile.bind(this), { zLevel: baseZ, tlWorld, scale, dpr: this._dpr, widthCSS, heightCSS, wrapX: this.wrapX });
     // Prefetch neighbors around current view
     this._prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
     const zIntNext = Math.min(this.maxZoom, baseZ + 1); const frac = this.zoom - baseZ;
     if (zIntNext > baseZ && frac > 0) {
       const centerN = lngLatToWorld(this.center.lng, this.center.lat, zIntNext); const scaleN = Math.pow(2, this.zoom - zIntNext);
       const tlN = { x: centerN.x - widthCSS / (2 * scaleN), y: centerN.y - heightCSS / (2 * scaleN) };
-      gl.uniform1f(this._loc.u_alpha!, Math.max(0, Math.min(1, frac))); this._drawTilesForLevel(zIntNext, tlN, scaleN, this._dpr, widthCSS, heightCSS); gl.uniform1f(this._loc.u_alpha!, 1.0);
+      gl.uniform1f(this._loc.u_alpha!, Math.max(0, Math.min(1, frac)));
+      this._raster.drawTilesForLevel(this._loc! as any, this._tileCache as any, this._enqueueTile.bind(this), { zLevel: zIntNext, tlWorld: tlN, scale: scaleN, dpr: this._dpr, widthCSS, heightCSS, wrapX: this.wrapX });
+      gl.uniform1f(this._loc.u_alpha!, 1.0);
     }
     if (this.showGrid) this._drawGrid(baseZ, scale, widthCSS, heightCSS, tlWorld);
     if (this.useScreenCache && this._screenCache)
@@ -547,48 +551,6 @@ export default class GTMap {
     this._cancelUnwantedLoads();
   }
 
-  private _drawTilesForLevel(
-    zLevel: number,
-    tlWorld: { x: number; y: number },
-    scale: number,
-    dpr: number,
-    widthCSS: number,
-    heightCSS: number,
-  ) {
-    const gl = this.gl;
-    const startX = Math.floor(tlWorld.x / TILE_SIZE);
-    const startY = Math.floor(tlWorld.y / TILE_SIZE);
-    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TILE_SIZE) + 1;
-    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TILE_SIZE) + 1;
-    const tilePixelSizeCSS = TILE_SIZE * scale;
-    const tilePixelSize = tilePixelSizeCSS * dpr;
-
-    for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= (1 << zLevel)) continue;
-      for (let tx = startX; tx <= endX; tx++) {
-        if (!this.wrapX && (tx < 0 || tx >= (1 << zLevel))) continue;
-        const tileX = this.wrapX ? this._wrapX(tx, zLevel) : tx;
-        const wx = tx * TILE_SIZE;
-        const wy = ty * TILE_SIZE;
-        let sxCSS = (wx - tlWorld.x) * scale;
-        const syCSS = (wy - tlWorld.y) * scale;
-        if (this.wrapX && tileX !== tx) {
-          const dxTiles = tx - tileX;
-          sxCSS -= dxTiles * TILE_SIZE * scale;
-        }
-        const key = tileKeyOf(zLevel, tileX, ty);
-        const rec = this._tileCache.get(key);
-        if (!rec) this._enqueueTile(zLevel, tileX, ty, 0);
-        if (rec?.status === 'ready' && rec.tex) {
-          gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, rec.tex);
-          gl.uniform2f(this._loc!.u_translate, sxCSS * dpr, syCSS * dpr);
-          gl.uniform2f(this._loc!.u_size, tilePixelSize, tilePixelSize);
-          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        }
-      }
-    }
-  }
 
   // Prefetch a 1-tile border beyond current viewport at the given level
   private _prefetchNeighbors(zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) {
@@ -627,10 +589,9 @@ export default class GTMap {
 
   private _enqueueTile(z: number, x: number, y: number, priority = 1) {
     const key = tileKeyOf(z, x, y);
-    if (this._tileCache.has(key) || this._pendingKeys.has(key) || this._loadQueueSet.has(key)) return;
+    if (this._tileCache.has(key) || this._pendingKeys.has(key) || this._queue.has(key)) return;
     const url = this._tileUrl(z, x, y);
-    this._loadQueue.push({ key, url, z, x, y, priority });
-    this._loadQueueSet.add(key);
+    this._queue.enqueue({ key, url, z, x, y, priority });
     this._processLoadQueue();
   }
 
@@ -756,27 +717,6 @@ export default class GTMap {
     if (halfH >= worldSize / 2) cy = worldSize / 2; else cy = Math.max(halfH, Math.min(worldSize - halfH, cy));
     return { x: cx, y: cy };
   }
-  private _tileCoverage(zLevel: number, tlWorld: { x: number; y: number }, scale: number, widthCSS: number, heightCSS: number) {
-    const startX = Math.floor(tlWorld.x / TILE_SIZE)
-    const startY = Math.floor(tlWorld.y / TILE_SIZE)
-    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TILE_SIZE) + 1
-    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TILE_SIZE) + 1
-    let total = 0, ready = 0
-    for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= (1 << zLevel)) continue
-      for (let tx = startX; tx <= endX; tx++) {
-        let tileX = tx
-        if (this.wrapX) tileX = this._wrapX(tx, zLevel)
-        else if (tx < 0 || tx >= (1 << zLevel)) continue
-        total++
-        const key = `${zLevel}/${tileX}/${ty}`
-        const rec = this._tileCache.get(key)
-        if (rec?.status === 'ready') ready++
-      }
-    }
-    if (total === 0) return 1
-    return ready / total
-  }
   private _ensureScreenTex() {
     const gl = this.gl;
     if (!this._screenTex) {
@@ -807,26 +747,13 @@ export default class GTMap {
     gl.uniform1f(this._loc!.u_alpha!, 1.0); gl.uniform2f(this._loc!.u_uv0!, 0.0, 0.0); gl.uniform2f(this._loc!.u_uv1!, 1.0, 1.0);
   }
   private _processLoadQueue() {
-    while (this._inflightLoads < this._maxInflightLoads && this._loadQueue.length) {
+    while (this._inflightLoads < this._maxInflightLoads) {
       const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       const idle = (now - this._lastInteractAt) > this.interactionIdleMs;
       const baseZ = Math.floor(this.zoom);
       const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ);
-      let bestIdx = -1; let bestScore = Infinity;
-      for (let i = 0; i < this._loadQueue.length; i++) {
-        const t = this._loadQueue[i];
-        if (!idle && t.z > baseZ) continue;
-        const centerTileX = Math.floor(centerWorld.x / Math.pow(2, baseZ - t.z) / TILE_SIZE);
-        const centerTileY = Math.floor(centerWorld.y / Math.pow(2, baseZ - t.z) / TILE_SIZE);
-        const dx = t.x - centerTileX; const dy = t.y - centerTileY;
-        const dist = Math.hypot(dx, dy);
-        const zBias = Math.abs(t.z - baseZ);
-        const score = t.priority * 100 + zBias * 10 + dist;
-        if (score < bestScore) { bestScore = score; bestIdx = i; if (score === 0) break; }
-      }
-      if (bestIdx === -1) break;
-      const task = this._loadQueue.splice(bestIdx, 1)[0];
-      this._loadQueueSet.delete(task.key);
+      const task = this._queue.next(baseZ, centerWorld, idle);
+      if (!task) break;
       this._startImageLoad(task);
     }
   }
@@ -862,14 +789,7 @@ export default class GTMap {
   }
   private _cancelUnwantedLoads() {
     // Only prune queued tasks that are no longer wanted; keep inflight loads to avoid churn
-    if (this._loadQueue.length) {
-      const keep: typeof this._loadQueue = [];
-      for (const task of this._loadQueue) {
-        if (this._wantedKeys.has(task.key)) keep.push(task);
-        else this._loadQueueSet.delete(task.key);
-      }
-      this._loadQueue = keep;
-    }
+    this._queue.prune(this._wantedKeys);
     this._wantedKeys.clear();
     this._processLoadQueue();
   }

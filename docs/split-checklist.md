@@ -54,17 +54,17 @@ Status: WIP (keep this document up to date as we proceed)
 - [x] `tiles/source.ts` (templating + addressing)
   - [x] URL templating `{z}/{x}/{y}`; wrapX handling via `_wrapX`
   - [x] Key generation consistent with `${z}/${x}/${y}`
-- [ ] Wire these into `GTMap` without altering timing or fetch paths (ImageBitmap/Image fallback unchanged).
+- [x] Wire these into `GTMap` without altering timing or fetch paths (ImageBitmap/Image fallback unchanged).
 - Acceptance
   - [ ] Prefetch baseline works; LRU bound respected; no load thrash under interaction.
 
 ## Task D — Raster Draw Extraction (internal layer)
 
-- [ ] `layers/raster.ts`: draw logic that receives transform + tile set to render
-  - [ ] Bind program, uniforms (`u_translate`, `u_size`, `u_resolution`, `u_tex`, `u_alpha`, `u_uv0`, `u_uv1`)
-  - [ ] Iterate visible tiles (respect wrapX, bounds) and draw quads
-  - [ ] Maintain coverage/ready ratio logic used by screen cache gating
-- [ ] `GTMap` constructs and calls raster draw module internally (single instance).
+- [x] `layers/raster.ts`: draw logic that receives transform + tile set to render
+  - [x] Bind program, uniforms (`u_translate`, `u_size`, `u_resolution`, `u_tex`, `u_alpha`, `u_uv0`, `u_uv1`)
+  - [x] Iterate visible tiles (respect wrapX, bounds) and draw quads
+  - [x] Maintain coverage/ready ratio logic used by screen cache gating
+- [x] `GTMap` constructs and calls raster draw module internally (single instance).
 - Acceptance
   - [ ] Visual parity for tiles across all zoom levels; no change in order or blending.
 
