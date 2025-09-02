@@ -15,6 +15,7 @@ import { EventBus } from './events/stream';
 import { zoomToAnchored as coreZoomToAnchored } from './core/zoom';
 import ZoomController from './core/ZoomController';
 import InputController from './input/InputController';
+import type { InputDeps } from './types';
 import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 import MapRenderer from './render/MapRenderer';
 import type { ViewState } from './types';
@@ -52,6 +53,7 @@ export default class GTMap {
   private _needsRender = true;
   private _raf: number | null = null;
   private _input: InputController | null = null;
+  private _inputDeps!: InputDeps;
   private _dpr = 1;
   private _prog: WebGLProgram | null = null;
   private _quad: WebGLBuffer | null = null;
@@ -127,7 +129,7 @@ export default class GTMap {
   private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = { px: 0, py: 0, mode: 'pointer' };
   private _zoomVel = 0;
   private useImageBitmap = typeof createImageBitmap === 'function';
-  private _movedSinceDown = false;
+  // private _movedSinceDown = false; // deprecated; input handled by controller
 
   constructor(container: HTMLDivElement, options: MapOptions = {}) {
     this.container = container;
@@ -172,7 +174,8 @@ export default class GTMap {
     this._loop = this._loop.bind(this);
     this._raf = requestAnimationFrame(this._loop);
     this._scheduleBaselinePrefetch();
-    if (false) this._markUsed();
+    // TEMP: keep TS satisfied for members used by delegated modules; remove after full DI
+    if (false) this._tsUseInternals();
   }
 
   setCenter(lng: number, lat: number) {
@@ -280,7 +283,22 @@ export default class GTMap {
     resizeCore(this);
   }
   private _initEvents() {
-    this._input = new InputController(this as any);
+    this._inputDeps = {
+      getContainer: () => this.container,
+      getCanvas: () => this.canvas,
+      getMaxZoom: () => this.maxZoom,
+      getView: () => this._view(),
+      setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
+      clampCenterWorld: (cw, zInt, scale, w, h) => this._clampCenterWorld(cw, zInt, scale, w, h),
+      updatePointerAbs: (x: number, y: number) => { this.pointerAbs = { x, y }; },
+      emit: (name: string, payload: any) => this._events.emit(name, payload),
+      setLastInteractAt: (t: number) => { this._lastInteractAt = t; },
+      getAnchorMode: () => this.anchorMode,
+      startEase: (dz, px, py, anchor) => this._startZoomEase(dz, px, py, anchor),
+      cancelZoomAnim: () => { this._zoomAnim = null; },
+      applyAnchoredZoom: (targetZoom, px, py, anchor) => this._zoomToAnchored(targetZoom, px, py, anchor),
+    };
+    this._input = new InputController(this._inputDeps);
     this._input.attach();
   }
   // wheel normalization handled in input/handlers via core/wheel
@@ -357,6 +375,53 @@ export default class GTMap {
     return this._stickyCenterAnchor;
   }
 
+
+  // TEMP helper to satisfy noUnusedLocals for members referenced by delegated modules.
+  // Remove once DI refactor (F1–F4) eliminates cross-file private field access.
+  private _tsUseInternals() {
+    void (
+      this._dpr,
+      this._loc,
+      this._dt,
+      this.interactionIdleMs,
+      this._lastInteractAt,
+      this._maxInflightLoads,
+      this._inflightLoads,
+      this.wheelImmediate,
+      this.wheelImmediateCtrl,
+      this.wheelGain,
+      this.wheelGainCtrl,
+      this.zoomDamping,
+      this.maxZoomRate,
+      this._renderBaseLockZInt,
+      this.easeBaseMs,
+      this.easePerUnitMs,
+      this.easeMinMs,
+      this.easeMaxMs,
+      this.outCenterBias,
+      this.useScreenCache,
+      this._raster,
+      this.showGrid,
+      this._gridCtx,
+      this._wheelLinesAccum,
+      this._wheelLastCtrl,
+      this._wheelAnchor,
+      this._zoomVel,
+      this.useImageBitmap,
+      this._prefetchNeighbors,
+      this._enqueueTile,
+      this._wrapX,
+      this._evictIfNeeded,
+      this._processLoadQueue,
+      this._startImageLoad,
+      this._stepAnimation,
+      this._isViewportLarger,
+      this._shouldAnchorCenterForZoom,
+      this._clampCenterWorld,
+      this._cancelUnwantedLoads
+    );
+  }
+
   // Bounds clamping similar to JS version
   private _clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number) {
     if (this.freePan) return centerWorld;
@@ -380,54 +445,5 @@ export default class GTMap {
 
   private _scheduleBaselinePrefetch() { this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel); }
 
-  // Reference private fields so TS noUnusedLocals doesn't flag them; they are used by delegated modules at runtime.
-  private _markUsed() {
-    console.log(
-      this._dpr,
-      this._loc,
-      this._dt,
-      this.interactionIdleMs,
-      this._lastInteractAt,
-      this._maxInflightLoads,
-      this._inflightLoads,
-      // this._queue,
-      this.wheelImmediate,
-      this.wheelImmediateCtrl,
-      this.wheelGain,
-      this.wheelGainCtrl,
-      this.zoomDamping,
-      this.maxZoomRate,
-      this.anchorMode,
-      this._renderBaseLockZInt,
-      this.easeBaseMs,
-      this.easePerUnitMs,
-      this.easeMinMs,
-      this.easeMaxMs,
-      this.outCenterBias,
-      this.useScreenCache,
-      this._raster,
-      this.showGrid,
-      this._gridCtx,
-      this._wheelLinesAccum,
-      this._wheelLastCtrl,
-      this._wheelAnchor,
-      this._zoomVel,
-      this.useImageBitmap,
-      this._movedSinceDown,
-      this._enqueueTile,
-      this._tileUrl,
-      this._prefetchNeighbors,
-      this._wrapX,
-      this._evictIfNeeded,
-      this._processLoadQueue,
-      this._startImageLoad,
-      this._stepAnimation,
-      this._startZoomEase,
-      this._zoomToAnchored,
-      this._isViewportLarger,
-      this._shouldAnchorCenterForZoom,
-      this._clampCenterWorld,
-      this._cancelUnwantedLoads,
-    );
-  }
+
 }
