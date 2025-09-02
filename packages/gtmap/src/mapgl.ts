@@ -6,6 +6,7 @@ import { TileCache } from './tiles/cache';
 import { TileQueue } from './tiles/queue';
 import { urlFromTemplate, wrapX as wrapXTile, tileKey as tileKeyOf } from './tiles/source';
 import { RasterRenderer } from './layers/raster';
+import { EventBus } from './events/stream';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -84,6 +85,8 @@ export default class GTMap {
   private _screenTexFormat: number | null = null;
   private _screenCache: ScreenCache | null = null;
   private _raster!: RasterRenderer;
+  private _events = new EventBus();
+  public readonly events = this._events; // experimental chainable events API
   // Grid overlay
   private showGrid = true;
   private gridCanvas: HTMLCanvasElement | null = null;
@@ -106,6 +109,7 @@ export default class GTMap {
   private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = { px: 0, py: 0, mode: 'pointer' };
   private _zoomVel = 0;
   private useImageBitmap = typeof createImageBitmap === 'function';
+  private _movedSinceDown = false;
 
   constructor(container: HTMLDivElement, options: MapOptions = {}) {
     this.container = container;
@@ -337,11 +341,13 @@ export default class GTMap {
       lastY = 0;
     const onDown = (e: PointerEvent) => {
       dragging = true;
+      this._movedSinceDown = false;
       lastX = e.clientX;
       lastY = e.clientY;
-      try {
-        canvas.setPointerCapture(e.pointerId);
-      } catch {}
+      try { canvas.setPointerCapture(e.pointerId); } catch {}
+      const rect = this.container.getBoundingClientRect();
+      const px = e.clientX - rect.left; const py = e.clientY - rect.top;
+      this._events.emit('pointerdown', { x: px, y: py, center: this.center, zoom: this.zoom });
     };
     const onMove = (e: PointerEvent) => {
       this._lastInteractAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
@@ -362,9 +368,16 @@ export default class GTMap {
       newCenter = this._clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
       const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt);
       this.setCenter(lng, lat);
+      this._movedSinceDown = true;
+      this._events.emit('move', { center: this.center, zoom: this.zoom });
     };
-    const onUp = () => {
-      dragging = false;
+    const onUp = (e: PointerEvent) => {
+      if (!dragging) return; dragging = false;
+      const rect = this.container.getBoundingClientRect();
+      const px = e.clientX - rect.left; const py = e.clientY - rect.top;
+      this._events.emit('pointerup', { x: px, y: py, center: this.center, zoom: this.zoom });
+      if (this._movedSinceDown) this._events.emit('moveend', { center: this.center, zoom: this.zoom });
+      else this._events.emit('click', { x: px, y: py, center: this.center, zoom: this.zoom });
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -377,6 +390,7 @@ export default class GTMap {
       const step = ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16);
       let dz = -lines * step; dz = Math.max(-2.0, Math.min(2.0, dz));
       this._startZoomEase(dz, px, py, this.anchorMode);
+      this._events.emit('zoom', { center: this.center, zoom: this.zoom });
     };
     const onResize = () => this.resize();
     canvas.addEventListener('pointerdown', onDown);
@@ -410,6 +424,7 @@ export default class GTMap {
         newCenter = this._clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
         const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt);
         this.setCenter(lng, lat);
+        this._events.emit('move', { center: this.center, zoom: this.zoom });
       } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
         const t0 = e.touches[0]; const t1 = e.touches[1];
         const dx = t1.clientX - t0.clientX; const dy = t1.clientY - t0.clientY;
@@ -420,11 +435,12 @@ export default class GTMap {
         const py = ((t0.clientY + t1.clientY) / 2) - rect.top;
         this._zoomAnim = null;
         this._zoomToAnchored(this.zoom + scaleDelta, px, py, this.anchorMode);
+        this._events.emit('zoom', { center: this.center, zoom: this.zoom });
         touchState.dist = dist;
       }
       e.preventDefault();
     };
-    const onTouchEnd = () => { touchState = null; };
+    const onTouchEnd = () => { touchState = null; this._events.emit('moveend', { center: this.center, zoom: this.zoom }); };
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
     canvas.addEventListener('touchmove', onTouchMove, { passive: false });
     canvas.addEventListener('touchend', onTouchEnd);
@@ -614,7 +630,7 @@ export default class GTMap {
     const ease = 1 - Math.pow(1 - t, 3);
     const z = a.from + (a.to - a.from) * ease;
     this._zoomToAnchored(z, a.px, a.py, a.anchor);
-    if (t >= 1) { this._zoomAnim = null; this._renderBaseLockZInt = null; }
+    if (t >= 1) { this._zoomAnim = null; this._renderBaseLockZInt = null; this._events.emit('zoomend', { center: this.center, zoom: this.zoom }); }
     return true;
   }
   private _startZoomEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') {
