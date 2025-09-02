@@ -2,12 +2,12 @@ import { lngLatToWorld } from '../mercator';
 
 import { drawGrid } from './grid';
 
-export function renderFrame(map: any) {
+export function renderFrame(map: any, opts?: { stepAnimation?: () => boolean }) {
   const gl: WebGLRenderingContext = map.gl;
   gl.clear(gl.COLOR_BUFFER_BIT);
   if (!map._prog || !map._loc || !map._quad) return;
   map._wantedKeys.clear();
-  map._stepAnimation();
+  if (opts?.stepAnimation) opts.stepAnimation();
   const zIntActual = Math.floor(map.zoom);
   const baseZ = map._renderBaseLockZInt ?? zIntActual;
   const rect = map.container.getBoundingClientRect();

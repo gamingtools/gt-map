@@ -316,7 +316,7 @@ export default class GTMap {
     // Keep rendering while animating
     if (!this._zoomCtrl.isAnimating()) this._needsRender = false;
   }
-  private _render() { this._renderer.render(this, this._view()); }
+  private _render() { this._renderer.render(this, this._view(), () => this._zoomCtrl.step()); }
 
 
   // Prefetch a 1-tile border beyond current viewport at the given level
