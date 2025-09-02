@@ -9,6 +9,7 @@ import { RasterRenderer } from './layers/raster';
 import { EventBus } from './events/stream';
 import { drawGrid } from './render/grid';
 import { normalizeWheel } from './core/wheel';
+import { startZoomEase as coreStartZoomEase, zoomToAnchored as coreZoomToAnchored } from './core/zoom';
 import { attachHandlers } from './input/handlers';
 import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 
@@ -518,62 +519,8 @@ export default class GTMap {
     if (t >= 1) { this._zoomAnim = null; this._renderBaseLockZInt = null; this._events.emit('zoomend', { center: this.center, zoom: this.zoom }); }
     return true;
   }
-  private _startZoomEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') {
-    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-    let current = this.zoom;
-    if (this._zoomAnim) {
-      const a = this._zoomAnim;
-      const t = Math.min(1, (now - a.start) / a.dur);
-      const ease = 1 - Math.pow(1 - t, 3);
-      current = a.from + (a.to - a.from) * ease;
-    }
-    const to = Math.max(this.minZoom, Math.min(this.maxZoom, current + dz));
-    const dist = Math.abs(to - current);
-    const base = this.easeBaseMs; const per = this.easePerUnitMs; const raw = base + per * dist;
-    const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
-    this._zoomAnim = { from: current, to, px, py, start: now, dur, anchor };
-    this._renderBaseLockZInt = Math.floor(current);
-    this._needsRender = true;
-  }
-  private _zoomToAnchored(targetZoom: number, pxCSS: number, pyCSS: number, anchor: 'pointer' | 'center') {
-    const zInt = Math.floor(this.zoom);
-    const scale = Math.pow(2, this.zoom - zInt);
-    const rect = this.container.getBoundingClientRect();
-    const widthCSS = rect.width; const heightCSS = rect.height;
-    const centerNow = lngLatToWorld(this.center.lng, this.center.lat, zInt);
-    const tlWorld = { x: centerNow.x - widthCSS / (2 * scale), y: centerNow.y - heightCSS / (2 * scale) };
-    const zClamped = Math.max(this.minZoom, Math.min(this.maxZoom, targetZoom));
-    const zInt2 = Math.floor(zClamped); const s2 = Math.pow(2, zClamped - zInt2);
-    // Override to center anchor when viewport would be larger than world (finite worlds)
-    let anchorEff: 'pointer' | 'center' = anchor;
-    if (!this.wrapX && this._shouldAnchorCenterForZoom(zClamped)) anchorEff = 'center';
-    let center2;
-    if (anchorEff === 'center') {
-      const factor = Math.pow(2, zInt2 - zInt);
-      center2 = { x: centerNow.x * factor, y: centerNow.y * factor };
-    } else {
-      const worldBefore = { x: tlWorld.x + pxCSS / scale, y: tlWorld.y + pyCSS / scale };
-      const factor = Math.pow(2, zInt2 - zInt);
-      const worldBefore2 = { x: worldBefore.x * factor, y: worldBefore.y * factor };
-      const tl2 = { x: worldBefore2.x - pxCSS / s2, y: worldBefore2.y - pyCSS / s2 };
-      const pointerCenter = { x: tl2.x + widthCSS / (2 * s2), y: tl2.y + heightCSS / (2 * s2) };
-      // When zooming out, bias slightly toward keeping the visual center stable
-      if (zClamped < this.zoom) {
-        const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
-        const dz = Math.max(0, this.zoom - zClamped);
-        const bias = Math.max(0, Math.min(0.6, this.outCenterBias * dz));
-        center2 = { x: pointerCenter.x * (1 - bias) + centerScaled.x * bias, y: pointerCenter.y * (1 - bias) + centerScaled.y * bias };
-      } else {
-        center2 = pointerCenter;
-      }
-    }
-    // Clamp center in world bounds (respect wrapX and freePan)
-    center2 = this._clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
-    const { lng, lat } = worldToLngLat(center2.x, center2.y, zInt2);
-    this.center = { lng, lat: clampLat(lat) };
-    this.zoom = zClamped;
-    this._needsRender = true;
-  }
+  private _startZoomEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') { coreStartZoomEase(this, dz, px, py, anchor); }
+  private _zoomToAnchored(targetZoom: number, pxCSS: number, pyCSS: number, anchor: 'pointer' | 'center') { coreZoomToAnchored(this, targetZoom, pxCSS, pyCSS, anchor); }
 
   // Finite-world center anchoring hysteresis
   private _isViewportLarger(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
