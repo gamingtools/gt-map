@@ -60,6 +60,10 @@ export default class MapGL {
     this._zoomDir = 0; // -1 out, 1 in, 0 idle
     // Lock base tile LOD while zoom animates to avoid last-frame LOD pops
     this._renderBaseLockZInt = null;
+    // Screen-space cache to mask gaps while tiles load
+    this.useScreenCache = options.useScreenCache ?? true;
+    this._screenTex = null; // WebGL texture with last frame
+    this._screenCacheState = null; // { scale, tlWorld, widthCSS, heightCSS, dpr }
     this._loop = this._loop.bind(this);
     this._logState = { last: null, lastTime: 0 };
     // Ensure grid canvas visibility reflects initial option
@@ -154,6 +158,9 @@ export default class MapGL {
       this._dpr = dpr;
       this.gl.viewport(0, 0, width, height);
       this._needsRender = true;
+      // Invalidate screen cache on size change
+      this._screenCacheState = null;
+      this._screenTex = null;
     }
     if (this.gridCanvas) {
       this.gridCanvas.style.width = rect.width + 'px';
@@ -774,6 +781,11 @@ export default class MapGL {
     gl.uniform2f(this._loc.u_resolution, this.canvas.width, this.canvas.height);
     gl.uniform1i(this._loc.u_tex, 0);
 
+    // Draw screen-space cache first to hide transient gaps (if available)
+    if (this.useScreenCache && this._screenCacheState && this._screenTex) {
+      this._drawScreenCache({ zInt, scale, widthCSS, heightCSS, dpr, tlWorld });
+    }
+
     // If base level coverage is low (tiles still loading), draw lower levels underneath
     const coverage = this._tileCoverage(zInt, tlWorld, scale, widthCSS, heightCSS);
     if (coverage < 0.995 && zIntPrev >= this.minZoom) {
@@ -807,6 +819,67 @@ export default class MapGL {
 
     // 2D grid overlay
     if (this.showGrid) this._drawGrid();
+
+    // Update screen-space cache after drawing tiles
+    if (this.useScreenCache) this._updateScreenCache({ zInt, scale, widthCSS, heightCSS, dpr, tlWorld });
+  }
+
+  _ensureScreenTex() {
+    const gl = this.gl;
+    if (!this._screenTex) {
+      this._screenTex = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.canvas.width, this.canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    } else {
+      gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
+    }
+  }
+
+  _updateScreenCache(state) {
+    try {
+      const gl = this.gl;
+      this._ensureScreenTex();
+      gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
+      gl.copyTexSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 0, 0, this.canvas.width, this.canvas.height);
+      this._screenCacheState = {
+        zInt: state.zInt,
+        scale: state.scale,
+        tlWorld: { x: state.tlWorld.x, y: state.tlWorld.y },
+        widthCSS: state.widthCSS,
+        heightCSS: state.heightCSS,
+        dpr: state.dpr,
+      };
+    } catch {}
+  }
+
+  _drawScreenCache(curr) {
+    const prev = this._screenCacheState;
+    if (!prev) return;
+    if (prev.widthCSS !== curr.widthCSS || prev.heightCSS !== curr.heightCSS || prev.dpr !== curr.dpr) return;
+    const gl = this.gl;
+    const s = curr.scale / Math.max(1e-6, prev.scale);
+    const dxCSS = (prev.tlWorld.x - curr.tlWorld.x) * curr.scale;
+    const dyCSS = (prev.tlWorld.y - curr.tlWorld.y) * curr.scale;
+    const dxPx = dxCSS * curr.dpr;
+    const dyPx = dyCSS * curr.dpr;
+    const wPx = this.canvas.width * s;
+    const hPx = this.canvas.height * s;
+    gl.useProgram(this._prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._quad);
+    gl.enableVertexAttribArray(this._loc.a_pos);
+    gl.vertexAttribPointer(this._loc.a_pos, 2, gl.FLOAT, false, 0, 0);
+    gl.uniform2f(this._loc.u_resolution, this.canvas.width, this.canvas.height);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this._screenTex);
+    gl.uniform1i(this._loc.u_tex, 0);
+    gl.uniform1f(this._loc.u_alpha, 1.0);
+    gl.uniform2f(this._loc.u_translate, dxPx, dyPx);
+    gl.uniform2f(this._loc.u_size, wPx, hPx);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
   _chooseGridSpacing(scale) {
