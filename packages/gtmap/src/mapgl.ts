@@ -67,6 +67,9 @@ export default class GTMap {
   private easeMaxMs = 420;
   // Zoom-out stability bias toward center
   private outCenterBias = 0.15;
+  // Sticky center anchor hysteresis for finite worlds
+  private _stickyCenterAnchor = false;
+  private _stickyAnchorUntil = 0;
   // Screen-space cache
   private useScreenCache = true;
   private _screenTex: WebGLTexture | null = null;
@@ -658,8 +661,11 @@ export default class GTMap {
     const tlWorld = { x: centerNow.x - widthCSS / (2 * scale), y: centerNow.y - heightCSS / (2 * scale) };
     const zClamped = Math.max(this.minZoom, Math.min(this.maxZoom, targetZoom));
     const zInt2 = Math.floor(zClamped); const s2 = Math.pow(2, zClamped - zInt2);
+    // Override to center anchor when viewport would be larger than world (finite worlds)
+    let anchorEff: 'pointer' | 'center' = anchor;
+    if (!this.wrapX && this._shouldAnchorCenterForZoom(zClamped)) anchorEff = 'center';
     let center2;
-    if (anchor === 'center') {
+    if (anchorEff === 'center') {
       const factor = Math.pow(2, zInt2 - zInt);
       center2 = { x: centerNow.x * factor, y: centerNow.y * factor };
     } else {
@@ -684,6 +690,39 @@ export default class GTMap {
     this.center = { lng, lat: clampLat(lat) };
     this.zoom = zClamped;
     this._needsRender = true;
+  }
+
+  // Finite-world center anchoring hysteresis
+  private _isViewportLarger(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
+    const worldSize = TILE_SIZE * (1 << zInt);
+    const halfW = widthCSS / (2 * scale);
+    const halfH = heightCSS / (2 * scale);
+    const margin = 0.98;
+    return halfW >= (worldSize / 2) * margin || halfH >= (worldSize / 2) * margin;
+  }
+  private _viewportCoverageRatio(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
+    const worldSize = TILE_SIZE * (1 << zInt);
+    const halfW = widthCSS / (2 * scale);
+    const halfH = heightCSS / (2 * scale);
+    const halfWorld = worldSize / 2;
+    return Math.max(halfW, halfH) / halfWorld;
+  }
+  private _shouldAnchorCenterForZoom(targetZoom: number) {
+    if (this.wrapX) return false;
+    const rect = this.container.getBoundingClientRect();
+    const widthCSS = rect.width; const heightCSS = rect.height;
+    const zClamped = Math.max(this.minZoom, Math.min(this.maxZoom, targetZoom));
+    const zInt2 = Math.floor(zClamped); const s2 = Math.pow(2, zClamped - zInt2);
+    const ratio = this._viewportCoverageRatio(zInt2, s2, widthCSS, heightCSS);
+    const enter = 0.995; const exit = 0.90;
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (this._stickyCenterAnchor) {
+      if (this._stickyAnchorUntil && now < this._stickyAnchorUntil) return true;
+      if (ratio <= exit) this._stickyCenterAnchor = false;
+    } else {
+      if (ratio >= enter) { this._stickyCenterAnchor = true; this._stickyAnchorUntil = now + 300; }
+    }
+    return this._stickyCenterAnchor;
   }
 
   // Bounds clamping similar to JS version
