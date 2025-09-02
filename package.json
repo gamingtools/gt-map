@@ -1,0 +1,14 @@
+{
+  "name": "webgl-map",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Minimal WebGL tile map with Express server",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "compression": "^1.7.4",
+    "express": "^4.19.2"
+  }
+}
+

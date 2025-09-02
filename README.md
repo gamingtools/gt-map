@@ -1,0 +1,40 @@
+WebGL Map (Leaflet-like Minimal)
+
+This is a minimal, dependency-free WebGL map that renders raster tiles (e.g., OpenStreetMap) with smooth pan and continuous zoom, similar to Leaflet’s core interactions.
+
+Features
+- WebGL tile rendering (256px tiles)
+- Smooth pan and wheel/pinch zoom
+- Web Mercator (EPSG:3857) projection
+- Antimeridian (x-wrap) handling (disabled for Hagga Basin)
+- Basic tile texture caching with LRU eviction
+
+Getting Started
+Run locally
+1. Install deps: `npm install`
+2. Start: `npm start` (serves at `http://localhost:5173`)
+3. Pan with mouse drag, zoom with wheel or pinch (touch).
+
+Files
+- `index.html`: Fullscreen container, attribution, and script entry.
+- `src/main.js`: Bootstraps the map and HUD.
+- `src/mapgl.js`: MapGL class (GL setup, input, tiles, rendering).
+- `src/mercator.js`: Web Mercator helpers and URL templating.
+
+Tile Source
+Hagga Basin (survival_1)
+- URL: `https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp` (from sibling `dune-map` repo)
+- Min/Max Zoom: 0–5 (8k base image => max zoom 5)
+- Wrap: disabled (finite image pyramid, no world wrap)
+- Note: These are game map tiles, not geo-referenced; they render as a finite image pyramid within the viewer.
+
+Customization
+- Center/zoom: Set in `src/main.js` when creating `MapGL`.
+- Zoom bounds: `minZoom`/`maxZoom` options.
+- Tile URL: Pass a different `{z}/{x}/{y}` template to `tileUrl`.
+
+Notes and Next Steps
+- Retains up to 512 tile textures by default. Tweak via `maxTiles` in the constructor.
+- Currently renders raster tiles only. Vector data, markers, and overlays can be layered with additional draw passes.
+- Keyboard shortcuts, inertia, and animated fly-to can be added if desired.
+- For production, host via a static server. Opening from filesystem works for quick tests in most browsers.
