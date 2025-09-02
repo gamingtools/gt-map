@@ -1,4 +1,4 @@
-import { TILE_SIZE, clampLat, lngLatToWorld } from './mercator';
+import { TILE_SIZE, clampLat } from './mercator';
 import { initPrograms } from './gl/programs';
 import { initGL } from './gl/context';
 import { initCanvas, initGridCanvas, setGridVisible as setGridVisibleCore } from './core/canvas';
@@ -6,14 +6,15 @@ import { resize as resizeCore } from './core/resize';
 import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
 import { TileQueue } from './tiles/queue';
-import { urlFromTemplate, wrapX as wrapXTile, tileKey as tileKeyOf } from './tiles/source';
+import TilePipeline from './tiles/TilePipeline';
+import { urlFromTemplate, wrapX as wrapXTile } from './tiles/source';
 import { RasterRenderer } from './layers/raster';
 import { EventBus } from './events/stream';
 // grid and wheel helpers are used via delegated modules
 import { startZoomEase as coreStartZoomEase, zoomToAnchored as coreZoomToAnchored } from './core/zoom';
 import InputController from './input/InputController';
 import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
-import { renderFrame } from './render/frame';
+import MapRenderer from './render/MapRenderer';
 import { prefetchNeighbors } from './tiles/prefetch';
 
 export type LngLat = { lng: number; lat: number };
@@ -93,6 +94,7 @@ export default class GTMap {
   private _screenTexFormat: number | null = null;
   private _screenCache: ScreenCache | null = null;
   private _raster!: RasterRenderer;
+  private _renderer!: MapRenderer;
   private _events = new EventBus();
   public readonly events = this._events; // experimental chainable events API
   // Grid overlay
@@ -107,6 +109,7 @@ export default class GTMap {
   private _inflightLoads = 0;
   private _pendingKeys = new Set<string>();
   private _queue: TileQueue = new TileQueue();
+  private _tiles!: TilePipeline;
   private _inflightMap = new Map<string, HTMLImageElement>();
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
@@ -135,8 +138,10 @@ export default class GTMap {
     this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
     // Initialize tile cache (LRU)
     this._tileCache = new TileCache(this.gl, this._maxTiles);
+    this._tiles = new TilePipeline(this as any);
     // Raster renderer
     this._raster = new RasterRenderer(this.gl);
+    this._renderer = new MapRenderer();
     initGridCanvas(this);
     this.resize();
     this._initEvents();
@@ -174,6 +179,7 @@ export default class GTMap {
       this._tileCache.clear();
       this._pendingKeys.clear();
       this._queue = new TileQueue();
+      this._tiles.clear();
       this._inflightMap.clear();
     }
     this._needsRender = true;
@@ -216,6 +222,7 @@ export default class GTMap {
     this._pinnedKeys.clear();
     this._pendingKeys.clear();
     this._queue = new TileQueue();
+    this._tiles.clear();
     this._inflightLoads = 0;
     this._inflightMap.clear();
   }
@@ -271,9 +278,7 @@ export default class GTMap {
       this._screenTexFormat = gl.RGBA;
     }
   }
-  private _render() {
-    renderFrame(this);
-  }
+  private _render() { this._renderer.render(this); }
 
 
   // Prefetch a 1-tile border beyond current viewport at the given level
@@ -284,13 +289,7 @@ export default class GTMap {
   // (moved to the main definition above)
   // public setGridVisible removed (duplicate)
 
-  private _enqueueTile(z: number, x: number, y: number, priority = 1) {
-    const key = tileKeyOf(z, x, y);
-    if (this._tileCache.has(key) || this._pendingKeys.has(key) || this._queue.has(key)) return;
-    const url = this._tileUrl(z, x, y);
-    this._queue.enqueue({ key, url, z, x, y, priority });
-    this._processLoadQueue();
-  }
+  private _enqueueTile(z: number, x: number, y: number, priority = 1) { this._tiles.enqueue(z, x, y, priority); }
 
   private _tileUrl(z: number, x: number, y: number) {
     return urlFromTemplate(this.tileUrl, z, x, y);
@@ -360,34 +359,16 @@ export default class GTMap {
     if (halfH >= worldSize / 2) cy = worldSize / 2; else cy = Math.max(halfH, Math.min(worldSize - halfH, cy));
     return { x: cx, y: cy };
   }
-  private _processLoadQueue() {
-    while (this._inflightLoads < this._maxInflightLoads) {
-      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      const idle = (now - this._lastInteractAt) > this.interactionIdleMs;
-      const baseZ = Math.floor(this.zoom);
-      const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ);
-      const task = this._queue.next(baseZ, centerWorld, idle);
-      if (!task) break;
-      this._startImageLoad(task);
-    }
-  }
+  private _processLoadQueue() { this._tiles.process(); }
   private _startImageLoad({ key, url }: { key: string; url: string }) { loaderStartImageLoad(this, { key, url }); }
   private _cancelUnwantedLoads() {
     // Only prune queued tasks that are no longer wanted; keep inflight loads to avoid churn
-    this._queue.prune(this._wantedKeys);
+    this._tiles.cancelUnwanted(this._wantedKeys);
     this._wantedKeys.clear();
-    this._processLoadQueue();
+    this._tiles.process();
   }
 
-  private _scheduleBaselinePrefetch() {
-    const z = this.prefetchBaselineLevel; const n = 1 << z;
-    for (let y = 0; y < n; y++) {
-      for (let x = 0; x < n; x++) {
-        const key = `${z}/${x}/${y}`; this._pinnedKeys.add(key);
-        if (!this._tileCache.has(key)) this._enqueueTile(z, x, y, 2);
-      }
-    }
-  }
+  private _scheduleBaselinePrefetch() { this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel); }
 
   // Reference private fields so TS noUnusedLocals doesn't flag them; they are used by delegated modules at runtime.
   private _markUsed() {
@@ -395,6 +376,11 @@ export default class GTMap {
       this._dpr,
       this._loc,
       this._dt,
+      this.interactionIdleMs,
+      this._lastInteractAt,
+      this._maxInflightLoads,
+      this._inflightLoads,
+      this._queue,
       this.wheelImmediate,
       this.wheelImmediateCtrl,
       this.wheelGain,
@@ -419,9 +405,13 @@ export default class GTMap {
       this.useImageBitmap,
       this._movedSinceDown,
       this._detectScreenFormat,
+      this._enqueueTile,
+      this._tileUrl,
       this._prefetchNeighbors,
       this._wrapX,
       this._evictIfNeeded,
+      this._processLoadQueue,
+      this._startImageLoad,
       this._stepAnimation,
       this._startZoomEase,
       this._isViewportLarger,
