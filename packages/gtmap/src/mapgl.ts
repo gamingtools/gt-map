@@ -7,6 +7,8 @@ import { TileQueue } from './tiles/queue';
 import { urlFromTemplate, wrapX as wrapXTile, tileKey as tileKeyOf } from './tiles/source';
 import { RasterRenderer } from './layers/raster';
 import { EventBus } from './events/stream';
+import { drawGrid } from './render/grid';
+import { normalizeWheel } from './core/wheel';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -382,7 +384,7 @@ export default class GTMap {
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       this._lastInteractAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      const lines = this._normalizeWheel(e);
+      const lines = normalizeWheel(e, this.canvas.height);
       if (!Number.isFinite(lines)) return;
       const rect = this.container.getBoundingClientRect();
       const px = e.clientX - rect.left; const py = e.clientY - rect.top;
@@ -562,7 +564,7 @@ export default class GTMap {
       this._raster.drawTilesForLevel(this._loc! as any, this._tileCache as any, this._enqueueTile.bind(this), { zLevel: zIntNext, tlWorld: tlN, scale: scaleN, dpr: this._dpr, widthCSS, heightCSS, wrapX: this.wrapX });
       gl.uniform1f(this._loc.u_alpha!, 1.0);
     }
-    if (this.showGrid) this._drawGrid(baseZ, scale, widthCSS, heightCSS, tlWorld);
+    if (this.showGrid) drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, this.maxZoom);
     if (this.useScreenCache && this._screenCache)
       this._screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: this._dpr, tlWorld }, this.canvas);
     this._cancelUnwantedLoads();
