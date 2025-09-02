@@ -2,6 +2,7 @@ import { TILE_SIZE, clampLat, lngLatToWorld, worldToLngLat } from './mercator';
 import { createProgramFromSources } from './gl/program';
 import { createUnitQuad } from './gl/quad';
 import { ScreenCache } from './render/screenCache';
+import { urlFromTemplate, wrapX as wrapXTile, tileKey as tileKeyOf } from './tiles/source';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -579,7 +580,7 @@ export default class GTMap {
           const dxTiles = tx - tileX;
           sxCSS -= dxTiles * TILE_SIZE * scale;
         }
-        const key = `${zLevel}/${tileX}/${ty}`;
+        const key = tileKeyOf(zLevel, tileX, ty);
         const rec = this._tileCache.get(key);
         if (!rec) this._enqueueTile(zLevel, tileX, ty, 0);
         if (rec?.status === 'ready' && rec.tex) {
@@ -604,7 +605,7 @@ export default class GTMap {
       for (let tx = startX; tx <= endX; tx++) {
         let tileX = tx;
         if (this.wrapX) tileX = this._wrapX(tx, zLevel); else if (tx < 0 || tx >= (1 << zLevel)) continue;
-        const key = `${zLevel}/${tileX}/${ty}`;
+        const key = tileKeyOf(zLevel, tileX, ty);
         if (!this._tileCache.has(key)) this._enqueueTile(zLevel, tileX, ty, 1);
       }
     }
@@ -629,7 +630,7 @@ export default class GTMap {
   public setGridVisible(visible: boolean) { this.showGrid = !!visible; if (this.gridCanvas) { this.gridCanvas.style.display = this.showGrid ? 'block' : 'none'; if (!this.showGrid) this._gridCtx?.clearRect(0,0,this.gridCanvas.width,this.gridCanvas.height); } this._needsRender = true; }
 
   private _enqueueTile(z: number, x: number, y: number, priority = 1) {
-    const key = `${z}/${x}/${y}`;
+    const key = tileKeyOf(z, x, y);
     if (this._tileCache.has(key) || this._pendingKeys.has(key) || this._loadQueueSet.has(key)) return;
     const url = this._tileUrl(z, x, y);
     this._loadQueue.push({ key, url, z, x, y, priority });
@@ -638,10 +639,10 @@ export default class GTMap {
   }
 
   private _tileUrl(z: number, x: number, y: number) {
-    return this.tileUrl.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y));
+    return urlFromTemplate(this.tileUrl, z, x, y);
   }
 
-  private _wrapX(x: number, z: number) { const n = 1 << z; return ((x % n) + n) % n }
+  private _wrapX(x: number, z: number) { return wrapXTile(x, z); }
 
   private _evictIfNeeded() {
     if (this._tileCache.size <= this._maxTiles) return;

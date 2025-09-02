@@ -43,17 +43,17 @@ Status: WIP (keep this document up to date as we proceed)
 
 ## Task C — Tile Pipeline Modules
 
-- [ ] `tiles/cache.ts` (LRU)
-  - [ ] Map of key → {status, tex, w, h, lastUsed, pinned}
-  - [ ] Eviction logic identical to current `_evictIfNeeded()`
-  - [ ] Safe deletion of GPU textures on clear/dispose.
-- [ ] `tiles/queue.ts` (loading + priority)
+- [x] `tiles/cache.ts` (LRU)
+  - [x] Map of key → {status, tex, w, h, lastUsed, pinned}
+  - [x] Eviction logic identical to current `_evictIfNeeded()`
+  - [x] Safe deletion of GPU textures on clear/dispose.
+- [x] `tiles/queue.ts` (loading + priority)
   - [ ] Inflight limits; `_lastInteractAt` idle gating; `interactionIdleMs`
-  - [ ] Priority scoring that matches current heuristic (z bias + distance + explicit priority)
-  - [ ] Cancel/prune of unwanted queued tasks only; keep inflight.
-- [ ] `tiles/source.ts` (templating + addressing)
-  - [ ] URL templating `{z}/{x}/{y}`; wrapX handling via `_wrapX`
-  - [ ] Key generation consistent with `${z}/${x}/${y}`
+  - [x] Priority scoring that matches current heuristic (z bias + distance + explicit priority)
+  - [x] Cancel/prune of unwanted queued tasks only; keep inflight.
+- [x] `tiles/source.ts` (templating + addressing)
+  - [x] URL templating `{z}/{x}/{y}`; wrapX handling via `_wrapX`
+  - [x] Key generation consistent with `${z}/${x}/${y}`
 - [ ] Wire these into `GTMap` without altering timing or fetch paths (ImageBitmap/Image fallback unchanged).
 - Acceptance
   - [ ] Prefetch baseline works; LRU bound respected; no load thrash under interaction.
