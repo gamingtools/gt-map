@@ -25,18 +25,18 @@ export class ScreenCache {
   private gl: WebGLRenderingContext;
   private tex: WebGLTexture | null = null;
   private state: ScreenCacheState | null = null;
-  private internalFormat: number;
+  private internalFormat: 6408 | 6407;
 
-  constructor(gl: WebGLRenderingContext, internalFormat?: number) {
+  constructor(gl: WebGLRenderingContext, internalFormat?: 6408 | 6407) {
     this.gl = gl;
     // Detect RGB vs RGBA based on context alpha if not provided.
     if (internalFormat != null) {
       this.internalFormat = internalFormat;
     } else {
-      let fmt = gl.RGBA;
+      let fmt: 6408 | 6407 = gl.RGBA as 6408;
       try {
         const attrs = (gl as any).getContextAttributes?.();
-        fmt = attrs && attrs.alpha === false ? gl.RGB : gl.RGBA;
+        fmt = (attrs && attrs.alpha === false ? (gl.RGB as 6407) : (gl.RGBA as 6408));
       } catch {}
       this.internalFormat = fmt;
     }
@@ -59,8 +59,9 @@ export class ScreenCache {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      const fmt = this.internalFormat;
-      gl.texImage2D(gl.TEXTURE_2D, 0, fmt, width, height, 0, fmt, gl.UNSIGNED_BYTE, null);
+      const fmt = this.internalFormat as number;
+      // Cast to number to satisfy TS' narrow WebGL enum overloads
+      gl.texImage2D(gl.TEXTURE_2D, 0, fmt as number, width, height, 0, fmt as number, gl.UNSIGNED_BYTE, null);
     } else {
       gl.bindTexture(gl.TEXTURE_2D, this.tex);
     }
@@ -130,4 +131,3 @@ export class ScreenCache {
     gl.uniform2f(loc.u_uv1!, 1.0, 1.0);
   }
 }
-

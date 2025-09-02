@@ -49,6 +49,8 @@ export default class GTMap {
     u_resolution: WebGLUniformLocation | null;
     u_tex: WebGLUniformLocation | null;
     u_alpha: WebGLUniformLocation | null;
+    u_uv0: WebGLUniformLocation | null;
+    u_uv1: WebGLUniformLocation | null;
   } | null = null;
   private _tileCache!: TileCache;
   private _maxTiles = 384;
@@ -105,6 +107,7 @@ export default class GTMap {
   private _wheelLastCtrl = false;
   private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = { px: 0, py: 0, mode: 'pointer' };
   private _zoomVel = 0;
+  private useImageBitmap = typeof createImageBitmap === 'function';
 
   constructor(container: HTMLDivElement, options: MapOptions = {}) {
     this.container = container;
@@ -119,7 +122,7 @@ export default class GTMap {
     this._initGL();
     this._initPrograms();
     // Initialize screen cache module (uses detected format)
-    this._screenCache = new ScreenCache(this.gl, this._screenTexFormat ?? this.gl.RGBA);
+    this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
     // Initialize tile cache (LRU)
     this._tileCache = new TileCache(this.gl, this._maxTiles);
     // Raster renderer
@@ -585,7 +588,8 @@ export default class GTMap {
     ctx.restore();
   }
 
-  public setGridVisible(visible: boolean) { this.showGrid = !!visible; if (this.gridCanvas) { this.gridCanvas.style.display = this.showGrid ? 'block' : 'none'; if (!this.showGrid) this._gridCtx?.clearRect(0,0,this.gridCanvas.width,this.gridCanvas.height); } this._needsRender = true; }
+  // (moved to the main definition above)
+  // public setGridVisible removed (duplicate)
 
   private _enqueueTile(z: number, x: number, y: number, priority = 1) {
     const key = tileKeyOf(z, x, y);

@@ -12,5 +12,5 @@
     "useDefineForClassFields": false
   },
   "include": ["src/**/*"],
-  "exclude": ["**/*.test.*"]
+  "exclude": ["**/*.test.*", "src/mapgl.legacy.ts"]
 }

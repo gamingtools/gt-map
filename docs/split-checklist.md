@@ -48,7 +48,7 @@ Status: WIP (keep this document up to date as we proceed)
   - [x] Eviction logic identical to current `_evictIfNeeded()`
   - [x] Safe deletion of GPU textures on clear/dispose.
 - [x] `tiles/queue.ts` (loading + priority)
-  - [ ] Inflight limits; `_lastInteractAt` idle gating; `interactionIdleMs`
+  - [x] Inflight limits; `_lastInteractAt` idle gating; `interactionIdleMs`
   - [x] Priority scoring that matches current heuristic (z bias + distance + explicit priority)
   - [x] Cancel/prune of unwanted queued tasks only; keep inflight.
 - [x] `tiles/source.ts` (templating + addressing)
