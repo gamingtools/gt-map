@@ -119,28 +119,29 @@ Phase F1 — Interfaces & Contracts
 
 - [ ] Define minimal DI interfaces under `packages/gtmap/src/types.ts` (or `core/types.ts`):
   - `CoreMap`: getView()/setCenter()/setZoom()/getAnchorMode()/setAnchorMode()/requestRender()
-  - `TileDeps`: getView(), idle config (`interactionIdleMs`, lastInteractAt, now()), `getTileCache()`, `startTileLoad(task)`, `urlFromTemplate()`, `wrapX()`, pinned/pending keys access, inflight counters
-  - `RenderDeps`: `getGL()`, `getPrograms()`, `getScreenCache()`, `getRasterRenderer()`, canvas + size
-  - `ZoomDeps`: `getView()`, `applyAnchoredZoom(px,py,targetZoom)`, easing options, now()
+  - `TileDeps`: getView(), idle config (`interactionIdleMs`, lastInteractAt, now()), `getTileCache()`, `startTileLoad(task)`, `urlFromTemplate()`, `wrapX()`, pinned/pending keys access, inflight counters — [x] added
+  - `InputDeps`: container/canvas/view access, setters, pointer updates, event emit, zoom easing — [x] added
+  - `RenderDeps`/`RenderCtx`: GL/programs/quad, screen cache, raster, tile access, view + canvas — [x] partial (callbacks + RenderCtx in frame and MapRenderer)
+  - `ZoomDeps`: `getView()`, `applyAnchoredZoom(px,py,targetZoom)`, easing options, now() — [ ]
 
 Phase F2 — Refactor Controllers to DI
 
-- [ ] `TilePipeline` → constructor(deps: `TileDeps`); remove all `map._*` reach‑ins
-- [ ] `InputController` → constructor(deps: `CoreMap` & `ZoomDeps` & `EventBus`)
-- [ ] `ZoomController` → constructor(deps: `ZoomDeps`); call `applyAnchoredZoom` via deps
-- [ ] `MapRenderer` → constructor(deps: `RenderDeps`); keep `render/frame` pure
+- [x] `TilePipeline` → constructor(deps: `TileDeps`); remove all `map._*` reach‑ins
+- [x] `InputController` → constructor(deps: InputDeps)
+- [ ] `ZoomController` → constructor(deps: `ZoomDeps`); call `applyAnchoredZoom` via deps (partial: added `isAnimating/cancel`)
+- [ ] `MapRenderer` → constructor(deps: `RenderDeps`); keep `render/frame` pure (partial: callbacks and RenderCtx argument to frame)
 
 Phase F3 — GTMap Getters/Setters + Ownership
 
 - [ ] Add getters/setters on `GTMap` to satisfy DI contracts; make fields private
-- [ ] Ensure `TilePipeline` owns queue/inflight state (no shadow `_queue` in `GTMap`)
-- [ ] Replace any remaining cross‑module `map._*` usages with DI calls
+- [x] Ensure `TilePipeline` owns queue/inflight state (no shadow `_queue` in `GTMap`)
+- [ ] Replace any remaining cross‑module `map._*` usages with DI calls (in progress)
 
 Phase F4 — Cleanup & Verification
 
-- [ ] Remove `_markUsed()` hack; strict TS passes without unused locals
+- [x] Remove `_markUsed()` hack; strict TS passes without unused locals (TEMP `_tsUseInternals` remains until Render DI complete)
 - [ ] Search/ban direct external access to private GTMap fields
-- [ ] Update `docs/architecture.md` with DI interfaces/relationships
+- [ ] Update `docs/architecture.md` with DI interfaces/relationships (after Render DI)
 - [ ] Final smoke: pan/wheel/pinch, screen cache, seams, wrapX, pacing; no console warnings
 
 Notes & Risks

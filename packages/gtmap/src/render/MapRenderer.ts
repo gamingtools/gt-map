@@ -1,4 +1,4 @@
-import type { ViewState } from '../types';
+import type { ViewState, RenderCtx } from '../types';
 
 import { renderFrame } from './frame';
 
@@ -13,7 +13,26 @@ export default class MapRenderer {
       map._zoomToAnchored(map.zoom + step, px, py, anchor);
       const k = Math.exp(-dt / map.zoomDamping); map._zoomVel *= k; if (Math.abs(map._zoomVel) < 1e-3) map._zoomVel = 0;
     };
-    renderFrame(map, {
+    const ctx: RenderCtx = {
+      gl: map.gl,
+      prog: map._prog,
+      loc: map._loc,
+      quad: map._quad,
+      canvas: map.canvas,
+      dpr: map._dpr,
+      container: map.container,
+      zoom: map.zoom,
+      center: map.center,
+      minZoom: map.minZoom,
+      maxZoom: map.maxZoom,
+      wrapX: map.wrapX,
+      useScreenCache: map.useScreenCache,
+      screenCache: map._screenCache,
+      raster: map._raster,
+      tileCache: map._tileCache,
+      enqueueTile: (z: number, x: number, y: number, p = 1) => map._enqueueTile(z, x, y, p),
+    };
+    renderFrame(ctx, {
       stepAnimation,
       zoomVelocityTick,
       prefetchNeighbors: (z, tl, scale, w, h) => map._prefetchNeighbors(z, tl, scale, w, h),

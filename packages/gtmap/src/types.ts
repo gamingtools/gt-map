@@ -24,6 +24,26 @@ export interface TileDeps {
   addPinned(key: string): void;
 }
 
+export interface RenderCtx {
+  gl: WebGLRenderingContext;
+  prog: WebGLProgram;
+  loc: any;
+  quad: WebGLBuffer;
+  canvas: HTMLCanvasElement;
+  dpr: number;
+  container: HTMLElement;
+  zoom: number;
+  center: LngLat;
+  minZoom: number;
+  maxZoom: number;
+  wrapX: boolean;
+  useScreenCache: boolean;
+  screenCache?: any;
+  raster: any;
+  tileCache: any;
+  enqueueTile(z: number, x: number, y: number, priority?: number): void;
+}
+
 
 export interface InputDeps {
   getContainer(): HTMLElement;
