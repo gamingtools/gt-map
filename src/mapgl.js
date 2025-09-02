@@ -56,6 +56,7 @@ export default class MapGL {
 
     this._raf = null;
     this.debug = !!options.debug;
+    this._zoomDir = 0; // -1 out, 1 in, 0 idle
     this._loop = this._loop.bind(this);
     this._logState = { last: null, lastTime: 0 };
     // Recompute immediate/gain from wheelSpeed defaults for consistent feel
@@ -552,10 +553,11 @@ export default class MapGL {
       const centerPointer = { x: tl2.x + widthCSS / (2 * s2), y: tl2.y + heightCSS / (2 * s2) };
 
       // Slightly favor centering when zooming out for stability
-      if (zClamped < this.zoom) {
+      const zoomingOut = (this._zoomDir ? this._zoomDir < 0 : (zClamped < this.zoom));
+      if (zoomingOut) {
         const centerNow = lngLatToWorld(this.center.lng, this.center.lat, zInt);
         const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
-        const dz = Math.max(0, this.zoom - zClamped);
+        const dz = Math.max(0, Math.abs(this.zoom - zClamped));
         const bias = Math.max(0, Math.min(0.6, (this.outCenterBias ?? 0.15) * dz));
         center2 = {
           x: centerPointer.x * (1 - bias) + centerScaled.x * bias,
@@ -710,6 +712,7 @@ export default class MapGL {
     this._zoomToAnchored(z, a.px, a.py, a.anchor || 'pointer');
     if (t >= 1) {
       this._zoomAnim = null;
+      this._zoomDir = 0;
     }
     return true;
   }
@@ -731,6 +734,7 @@ export default class MapGL {
     const raw = base + per * dist;
     const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
     this._zoomAnim = { from: current, to, px, py, start: now, dur, anchor };
+    this._zoomDir = dz < 0 ? -1 : dz > 0 ? 1 : 0;
   }
 
   _render() {
