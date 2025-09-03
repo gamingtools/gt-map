@@ -8,10 +8,10 @@
     "apps/*"
   ],
   "scripts": {
-    "start": "npm -w apps/gtmap-svelte-test run dev",
-    "dev": "npm -w apps/gtmap-svelte-test run dev",
-    "build": "npm -w apps/gtmap-svelte-test run build && npm -w packages/gtmap run build",
-    "preview": "npm -w apps/gtmap-svelte-test run preview",
+    "start": "npm -w gtmap-svelte-test run dev",
+    "dev": "npm -w gtmap-svelte-test run dev",
+    "build": "npm -w gtmap-svelte-test run build && npm -w gtmap run build",
+    "preview": "npm -w gtmap-svelte-test run preview",
     "lint": "eslint packages",
     "lint:fix": "eslint packages --fix",
     "format": "prettier -w \"packages/**/*\"",

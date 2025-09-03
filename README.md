@@ -19,7 +19,7 @@ Run locally
 
 Files
 
-- `apps/gtmap-svelte-test/src/routes/map/+page.svelte`: Minimal GT.L usage in Svelte.
+- `apps/svelte-gtmap-test/src/routes/map/+page.svelte`: Minimal GT.L usage in Svelte.
 - `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
 - `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
 - Pixel CRS only: coordinates are image pixels (x=lng, y=lat) at native resolution. No Web Mercator.
@@ -31,8 +31,8 @@ Public API
 
 Demo app
 
-- Default demo app (SvelteKit): `apps/gtmap-svelte-test` → open `/map`
-- Legacy no-framework demo: `apps/gtmap-noframework-test/index.html`
+- Default demo app (SvelteKit): `apps/svelte-gtmap-test` → open `/map`
+- Legacy no-framework demo: `apps/noframework-gtmap-test/index.html`
 
 See `docs/public-api.md` for the `GT.L` facade and how to use it. Native facades are considered internal.
 
@@ -63,7 +63,7 @@ Hagga Basin (survival_1)
 
 Customization
 
-- Center/zoom: Set in `apps/gtmap-svelte-test/src/routes/map/+page.svelte` when creating the map via `GT.L`.
+- Center/zoom: Set in `apps/svelte-gtmap-test/src/routes/map/+page.svelte` when creating the map via `GT.L`.
 - Zoom bounds: `minZoom`/`maxZoom` options.
 - Tile URL: Pass a different `{z}/{x}/{y}` template to `tileUrl`.
 
