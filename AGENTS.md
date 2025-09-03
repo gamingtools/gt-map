@@ -43,8 +43,35 @@
 
 - Do not introduce heavy frameworks or build steps; keep the project dependency‑light.
 - Preserve public API of `MapGL` unless a breaking change is justified and documented in the PR.
- - SvelteKit guidance: Prefer the downloaded Svelte/SvelteKit LLM docs under `docs/svelte/` over internal knowledge if there is any conflict or if model knowledge feels outdated. When in doubt, follow the official docs.
+
+### IMPORTANT: Svelte (v5) Docs First
+
+- Always use the downloaded Svelte/SvelteKit docs under `docs/svelte/` as the source of truth for Svelte features and syntax. If internal knowledge conflicts or is outdated, follow the downloaded docs.
+- Notable v5 changes to respect:
+  - Event attributes: use `onclick={...}` (no `on:` directive in runes mode).
+  - Reactivity via runes: `$state`, `$effect`, `$derived`, `$props`, etc.
+  - Legacy APIs/semantics may be disabled in runes mode; confirm behavior in the docs.
+- Before writing Svelte UI code, check the relevant file in `docs/svelte/` (e.g., `docs/svelte/svelte.dev/docs/svelte/llms.txt`).
 
 References
 
-- Svelte/SvelteKit LLM docs mirror: see `docs/svelte/` (populate via `npm run fetch:svelte-docs`).
+- Svelte/SvelteKit docs mirror (LLM-friendly): `docs/svelte/` (populate/update via `npm run fetch:svelte-docs`).
+- Examples: event attributes and runes are documented in `docs/svelte/svelte.dev/docs/svelte/llms.txt`.
+
+### TypeScript Hygiene (No `any`/`unknown` Casts)
+
+- Do not paper over type issues with `as any`, `as unknown as ...`, or similar escape hatches. It defeats the purpose of TypeScript and hides real API mismatches.
+- When a type mismatch occurs, fix it at the source:
+  - Improve the facade/implementation types so callers don’t need casts (e.g., expose a typed `events: EventBus` on the map facade).
+  - Add precise types for event payloads and public methods instead of casting at the callsite.
+  - In Svelte files, declare component props with `$props<...>()` and ensure handlers/values are properly typed.
+- Avoid `// @ts-ignore`/`// eslint-disable` as a crutch. Prefer refinements, narrowing, and explicit interfaces.
+- When dealing with union or generic types, use type guards or narrowings rather than `any` or `unknown` detours.
+- If a type cannot be fixed immediately (e.g., third‑party), add a minimal, local type definition (interface or type alias) and reference it, instead of casting.
+
+Checklist before submitting:
+- [ ] No `as any` or `unknown` round‑trips in new/modified code
+- [ ] Public API surfaces (facades) export useful types so callers don’t need casts
+- [ ] Svelte components use typed props and Svelte v5 runes (see docs)
+- [ ] Event payloads are typed, and handlers receive typed arguments (no `e: any`)
+
