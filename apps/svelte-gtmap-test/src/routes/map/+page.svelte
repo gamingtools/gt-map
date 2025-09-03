@@ -1,9 +1,3 @@
-<script lang="ts" context="module">
-	// Disable SSR for this page; run in the browser only
-	export const ssr = false;
-	export const csr = true;
-</script>
-
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import GT, { type LeafletMapFacade } from '@gtmap';

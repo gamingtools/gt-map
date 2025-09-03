@@ -87,13 +87,6 @@
         <span class="tabular-nums w-10 text-right">{wheelSpeed.toFixed(2)}</span>
       </div>
     </div>
-    <div>
-      <label class="block text-gray-700" for="ctrl-zoom-speed">Ctrl zoom speed</label>
-      <div class="flex items-center gap-2">
-        <input id="ctrl-zoom-speed" class="pointer-events-auto w-40" type="range" min="0.05" max="2.00" step="0.05" bind:value={wheelCtrlSpeed} />
-        <span class="tabular-nums w-10 text-right">{wheelCtrlSpeed.toFixed(2)}</span>
-      </div>
-    </div>
     <label class="flex items-center gap-2">
       <input class="pointer-events-auto" type="checkbox" bind:checked={gridEnabled} />
       <span>Show Grid</span>
