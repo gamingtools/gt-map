@@ -74,8 +74,11 @@ export class RasterRenderer {
         if (rec?.status === 'ready' && rec.tex) {
           gl.activeTexture(gl.TEXTURE0);
           gl.bindTexture(gl.TEXTURE_2D, rec.tex);
-          gl.uniform2f(loc.u_translate!, sxCSS * dpr, syCSS * dpr);
-          gl.uniform2f(loc.u_size!, tilePixelSize, tilePixelSize);
+          const tx = Math.round(sxCSS * dpr);
+          const ty = Math.round(syCSS * dpr);
+          const ts = Math.max(1, Math.round(tilePixelSize));
+          gl.uniform2f(loc.u_translate!, tx, ty);
+          gl.uniform2f(loc.u_size!, ts, ts);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
       }

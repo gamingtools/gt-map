@@ -37,10 +37,13 @@ export default class MapRenderer {
     const heightCSS = rect.height;
     const scale = Math.pow(2, ctx.zoom - baseZ);
     const centerWorld = (ctx as any).project(ctx.center.lng, ctx.center.lat, baseZ);
-    const tlWorld = {
+    let tlWorld = {
       x: centerWorld.x - widthCSS / (2 * scale),
       y: centerWorld.y - heightCSS / (2 * scale),
     };
+    // Snap tlWorld to device pixel grid to stabilize sampling during pan
+    const snap = (v: number) => Math.round(v * scale * ctx.dpr) / (scale * ctx.dpr);
+    tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
     gl.useProgram(ctx.prog);
     gl.bindBuffer(gl.ARRAY_BUFFER, ctx.quad);
     gl.enableVertexAttribArray((ctx.loc as any).a_pos);
@@ -81,10 +84,12 @@ export default class MapRenderer {
       for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
         const centerL = (ctx as any).project(ctx.center.lng, ctx.center.lat, lvl);
         const scaleL = Math.pow(2, ctx.zoom - lvl);
-        const tlL = {
+        let tlL = {
           x: centerL.x - widthCSS / (2 * scaleL),
           y: centerL.y - heightCSS / (2 * scaleL),
         };
+        const snapL = (v: number) => Math.round(v * scaleL * ctx.dpr) / (scaleL * ctx.dpr);
+        tlL = { x: snapL(tlL.x), y: snapL(tlL.y) };
         const covL = (ctx.raster as any).coverage(
           ctx.tileCache as any,
           lvl,
@@ -139,10 +144,12 @@ export default class MapRenderer {
     if (zIntNext > baseZ && frac > 0) {
       const centerN = (ctx as any).project(ctx.center.lng, ctx.center.lat, zIntNext);
       const scaleN = Math.pow(2, ctx.zoom - zIntNext);
-      const tlN = {
+      let tlN = {
         x: centerN.x - widthCSS / (2 * scaleN),
         y: centerN.y - heightCSS / (2 * scaleN),
       };
+      const snapN = (v: number) => Math.round(v * scaleN * ctx.dpr) / (scaleN * ctx.dpr);
+      tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };
       const baseAlpha = Math.max(0, Math.min(1, frac));
       const layerAlpha = Math.max(0, Math.min(1, (ctx as any).rasterOpacity ?? 1.0));
       gl.uniform1f((ctx.loc as any).u_alpha, baseAlpha * layerAlpha);

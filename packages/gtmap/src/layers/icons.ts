@@ -146,8 +146,12 @@ export class IconRenderer {
         // Frustum cull
         if (xCSS + w < 0 || yCSS + h < 0 || xCSS > widthCSS || yCSS > heightCSS) continue;
         // Avoid rounding before multiplying by dpr to prevent subpixel jitter
-        gl.uniform2f(ctx.loc.u_translate, xCSS * ctx.dpr, yCSS * ctx.dpr);
-        gl.uniform2f(ctx.loc.u_size, w * ctx.dpr, h * ctx.dpr);
+        const tx = Math.round(xCSS * ctx.dpr);
+        const ty = Math.round(yCSS * ctx.dpr);
+        const tw = Math.max(1, Math.round(w * ctx.dpr));
+        const th = Math.max(1, Math.round(h * ctx.dpr));
+        gl.uniform2f(ctx.loc.u_translate, tx, ty);
+        gl.uniform2f(ctx.loc.u_size, tw, th);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
     }
