@@ -5,7 +5,7 @@
 - `index.html`: App shell and HUD elements.
 - `src/main.ts`: App bootstrap, UI controls, and HUD updates.
 - `packages/gtmap/src/mapgl.ts`: Core WebGL map (tiles, input, rendering, cache).
-- `packages/gtmap/src/mercator.ts`: Web Mercator and tile helpers.
+- Pixel CRS only: use image pixel coordinates (no geodetic CRS).
 - `package.json`: Scripts and dev deps (Vite, TypeScript, ESLint/Prettier).
 
 ## Build, Test, and Development Commands

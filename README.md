@@ -22,7 +22,7 @@ Files
 - `index.html`: Fullscreen container, attribution, and script entry.
 - `src/main.ts`: Bootstraps the map and HUD.
 - `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
-- `packages/gtmap/src/mercator.ts`: Web Mercator helpers and URL templating.
+- Pixel CRS only: coordinates are image pixels (x=lng, y=lat) at native resolution. No Web Mercator.
 
 Public API
 

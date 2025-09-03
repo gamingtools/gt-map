@@ -27,7 +27,7 @@ Modules & Classes
 
 Stateless Helpers (kept as functions)
 
-- Projection: `mercator.ts`
+- Projection: Pixel-based (inline via project/unproject from MapGL; no geodetic CRS)
 - Templating & wrap: `tiles/source.ts` (wrapX, tileKey)
   - Note: URL templating, grid drawing, wheel normalization, and resize/canvas are now class methods.
 
@@ -52,7 +52,7 @@ GTMap (shell, ViewState)
   |-- InputController (wheel normalization in-class), EventBus
   |-- EventBus
 
-Helpers: mercator, tiles/source
+Helpers: tiles/source
 ```
 
 Notes

@@ -2,6 +2,8 @@
 
 This document describes the stable, public-facing API. The library exposes a Leaflet‑compatible facade under `GT.L`, which is the default and only supported public surface. Internal classes (renderers, pipelines, etc.) are private and may change.
 
+Note: Pixel CRS only. Coordinates are image pixels at native resolution (lng=x, lat=y). No Web Mercator or geodetic support.
+
 Recommended usage
 - Use the Leaflet‑compatible facade `GT.L` — it offers familiar Map/TileLayer/Marker APIs.
 

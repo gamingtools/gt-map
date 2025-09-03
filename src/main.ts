@@ -75,7 +75,7 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
     const COUNT = 500;
     for (let i = 0; i < COUNT; i++) {
       const key = keys[(Math.random() * keys.length) | 0];
-      L.marker([rand(-120, 120), rand(-120, 120)], { icon: icons[key] }).addTo(map as any);
+      L.marker([rand(0, 8192), rand(0, 8192)], { icon: icons[key] }).addTo(map as any);
     }
   } catch (err) {
     console.warn('Icon demo load failed:', err);
