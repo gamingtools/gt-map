@@ -13,7 +13,9 @@
     "format": "prettier -w .",
     "format:check": "prettier -c ."
   },
-  "dependencies": {},
+  "dependencies": {
+    
+  },
   "devDependencies": {
     "@types/node": "^24.3.0",
     "@typescript-eslint/eslint-plugin": "^8.41.0",
@@ -27,5 +29,10 @@
     "typescript-eslint": "^8.41.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
