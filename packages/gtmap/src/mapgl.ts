@@ -32,6 +32,8 @@ export type MapOptions = {
   center?: LngLat;
   zoom?: number;
   zoomOutCenterBias?: number | boolean;
+  // Render pacing
+  targetFps?: number; // cap rendering to this FPS (default 60)
   // Recommended tunables
   maxTiles?: number;
   maxInflightLoads?: number;
@@ -85,6 +87,8 @@ export default class GTMap {
   private _frame = 0;
   private _lastTS: number | null = null;
   private _dt = 0;
+  private _lastFrameAt: number | null = null;
+  private _targetFps = 60;
   // Simple zoom easing
   private wheelSpeed = 1.0;
   private wheelImmediate = 0.9;
@@ -251,6 +255,10 @@ export default class GTMap {
     if (Number.isFinite(options.maxTiles as number)) this._maxTiles = Math.max(0, (options.maxTiles as number) | 0);
     if (Number.isFinite(options.maxInflightLoads as number)) this._maxInflightLoads = Math.max(0, (options.maxInflightLoads as number) | 0);
     if (Number.isFinite(options.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (options.interactionIdleMs as number) | 0);
+    if (Number.isFinite(options.targetFps as number)) {
+      const v = Math.max(15, Math.min(240, (options.targetFps as number) | 0));
+      this._targetFps = v;
+    }
     if (options.prefetch) {
       if (typeof options.prefetch.enabled === 'boolean') this.prefetchEnabled = options.prefetch.enabled;
     }
@@ -665,8 +673,22 @@ export default class GTMap {
     this._dt = (now - this._lastTS) / 1000;
     this._lastTS = now;
     // Render if we have work or an active animation (zoom or pan inertia)
-    if (!this._needsRender && !this._zoomCtrl.isAnimating() && !this._panAnim) return;
+    const animating = this._zoomCtrl.isAnimating() || !!this._panAnim;
+    if (!this._needsRender && !animating) return;
+    // Frame pacing
+    const minInterval = 1000 / Math.max(1, this._targetFps);
+    const sinceLast = this._lastFrameAt == null ? Infinity : (now - this._lastFrameAt);
+    const allowRender = sinceLast >= minInterval - 0.5; // small epsilon
+    if (!allowRender) {
+      // Step animations without drawing to keep time-based motion smooth
+      try { this._zoomCtrl.step(); } catch {}
+      try { this.zoomVelocityTick(); } catch {}
+      try { this.panVelocityTick(); } catch {}
+      this._needsRender = true;
+      return;
+    }
     this._render();
+    this._lastFrameAt = now;
     // Keep rendering while animating
     if (!this._zoomCtrl.isAnimating() && !this._panAnim) this._needsRender = false;
   }

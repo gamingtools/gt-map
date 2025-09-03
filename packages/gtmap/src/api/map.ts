@@ -15,6 +15,8 @@ export type LeafletMapOptions = {
   zoomAnimationThreshold?: number;
   fadeAnimation?: boolean;
   markerZoomAnimation?: boolean;
+  // Render pacing
+  targetFps?: number;
 };
 
 type Listener = (...args: any[]) => void;
@@ -31,6 +33,7 @@ export default class LeafletMapFacade {
     if (typeof options?.zoom === 'number') init.zoom = options.zoom;
     if (typeof options?.minZoom === 'number') init.minZoom = options.minZoom;
     if (typeof options?.maxZoom === 'number') init.maxZoom = options.maxZoom;
+    if (typeof options?.targetFps === 'number') init.targetFps = options.targetFps;
     this._map = new Impl(el as HTMLDivElement, init);
     // Wire core events
     this._map.events.on('move').each((e: any) => this._emit('move', e));
