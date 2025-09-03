@@ -1,5 +1,10 @@
 <script lang="ts">
   // Using runes + $effect to (re)subscribe when map changes
+  import Center from './hud/Center.svelte';
+  import Zoom from './hud/Zoom.svelte';
+  import Fps from './hud/Fps.svelte';
+  import Mouse from './hud/Mouse.svelte';
+  import Settings from './hud/Settings.svelte';
 
   type MapLike = {
     getCenter: () => [number, number];
@@ -53,31 +58,13 @@
   });
 </script>
 
-<div class="hud">
-  <div><strong>Center:</strong> lng {center.lng.toFixed(2)}, lat {center.lat.toFixed(2)}</div>
-  <div><strong>Zoom:</strong> {zoom.toFixed(2)}</div>
-  <div><strong>FPS:</strong> {Math.round(fps)}</div>
-  <div><strong>Mouse:</strong> {mouse ? `x ${mouse.x}, y ${mouse.y}` : '—'}</div>
-  <div class="sep"></div>
-  <div><strong>Settings:</strong></div>
-  <div>• Zoom speed: {wheelSpeed.toFixed(2)}</div>
-  <div>• Ctrl zoom speed: {wheelCtrlSpeed.toFixed(2)}</div>
-  <div>• FPS cap: {fpsCap}</div>
-  <div>• freePan: {freePan ? 'on' : 'off'}; wrapX: {wrapX ? 'on' : 'off'}</div>
+<div class="absolute left-2 top-2 z-10 min-w-72 rounded-md border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-2 text-xs text-gray-800 shadow">
+  <div class="grid grid-cols-2 gap-x-6 gap-y-1">
+    <Center {center} />
+    <Zoom {zoom} />
+    <Fps {fps} />
+    <Mouse {mouse} />
+  </div>
+  <div class="my-2 h-px bg-gray-200"></div>
+  <Settings {wheelSpeed} {wheelCtrlSpeed} {fpsCap} {freePan} {wrapX} />
 </div>
-
-<style>
-  .hud {
-    position: absolute;
-    left: 8px;
-    top: 8px;
-    background: rgba(255, 255, 255, 0.85);
-    color: #222;
-    padding: 6px 8px;
-    border-radius: 4px;
-    font: 12px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif;
-    z-index: 10;
-    min-width: 220px;
-  }
-  .hud .sep { height: 6px; }
-</style>
