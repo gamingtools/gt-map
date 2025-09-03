@@ -110,7 +110,13 @@ export default class GTMap {
   private easeLinearity = 0.2;
   private _panAnim: null | { start: number; dur: number; from: { x: number; y: number }; offsetWorld: { x: number; y: number } } = null;
   private _view(): ViewState {
-    return this._state;
+    return {
+      center: this.center,
+      zoom: this.zoom,
+      minZoom: this.minZoom,
+      maxZoom: this.maxZoom,
+      wrapX: this.wrapX,
+    };
   }
   // Build the rendering context (internal)
   public getRenderCtx() {
@@ -537,11 +543,11 @@ export default class GTMap {
     if (this._lastTS == null) this._lastTS = now;
     this._dt = (now - this._lastTS) / 1000;
     this._lastTS = now;
-    // Render if we have work or an active animation
-    if (!this._needsRender && !this._zoomCtrl.isAnimating()) return;
+    // Render if we have work or an active animation (zoom or pan inertia)
+    if (!this._needsRender && !this._zoomCtrl.isAnimating() && !this._panAnim) return;
     this._render();
     // Keep rendering while animating
-    if (!this._zoomCtrl.isAnimating()) this._needsRender = false;
+    if (!this._zoomCtrl.isAnimating() && !this._panAnim) this._needsRender = false;
   }
   private _render() {
     this._renderer.render();
@@ -750,7 +756,8 @@ export default class GTMap {
     const zInt = Math.floor(this.zoom);
     const scale = Math.pow(2, this.zoom - zInt);
     const cw = lngLatToWorld(this.center.lng, this.center.lat, zInt, this.tileSize);
-    const offsetWorld = { x: -dxPx / scale, y: -dyPx / scale };
+    // Use the same screen->world sign convention as during drag updates
+    const offsetWorld = { x: dxPx / scale, y: dyPx / scale };
     this._panAnim = { start: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(), dur: Math.max(0.05, durSec), from: cw, offsetWorld };
     this._needsRender = true;
   }
