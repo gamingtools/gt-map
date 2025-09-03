@@ -97,6 +97,8 @@ export default class GTMap {
   private _zoomCtrl!: ZoomController;
   private _gfx!: Graphics;
   private _state!: ViewState;
+  private _active = true;
+  private _glReleased = false;
   private _view(): ViewState {
     return this._state;
   }
@@ -200,7 +202,7 @@ export default class GTMap {
       hasTile: (key: string) => this._tileCache.has(key),
       isPending: (key: string) => this._pendingKeys.has(key),
       urlFor: (z: number, x: number, y: number) => this._tileUrl(z, x, y),
-      hasCapacity: () => this._inflightLoads < this._maxInflightLoads,
+      hasCapacity: () => this._active && (this._inflightLoads < this._maxInflightLoads),
       now: () =>
         typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(),
       getInteractionIdleMs: () => this.interactionIdleMs,
@@ -696,6 +698,42 @@ export default class GTMap {
       onFinally();
     };
     img.src = url;
+  }
+
+  // Suspend/resume this map instance and optionally release the WebGL context.
+  public setActive(active: boolean, opts?: { releaseGL?: boolean }) {
+    if (active === this._active && !(active && this._glReleased)) return;
+    if (!active) {
+      this._active = false;
+      if (this._raf != null) { try { cancelAnimationFrame(this._raf); } catch {} this._raf = null; }
+      try { this._input?.dispose(); } catch {}
+      if (opts?.releaseGL && this.gl) {
+        try {
+          this._screenCache?.dispose(); this._screenCache = null;
+          this._tileCache?.clear();
+          const ext = (this.gl as any).getExtension?.('WEBGL_lose_context');
+          ext?.loseContext?.();
+          this._glReleased = true;
+        } catch {}
+      }
+      return;
+    }
+    // Resume
+    if (this._glReleased) {
+      try { const ext = (this.gl as any)?.getExtension?.('WEBGL_lose_context'); ext?.restoreContext?.(); } catch {}
+      try { this._gfx.init(); } catch {}
+      try { this._initPrograms(); } catch {}
+      try {
+        this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
+        this._tileCache = new TileCache(this.gl, this._maxTiles);
+      } catch {}
+      this._glReleased = false;
+    }
+    try { this._input?.attach?.(); } catch {}
+    this._active = true;
+    this._needsRender = true;
+    try { this._tiles.process(); } catch {}
+    this._raf = requestAnimationFrame(this._loop);
   }
 
   private static _chooseGridSpacing(scale: number, tileSize: number): number {
