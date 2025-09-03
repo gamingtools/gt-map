@@ -7,12 +7,11 @@
     events: { on: (name: string) => { each: (fn: (e: any) => () => void | void) => () => void } };
   };
 
-  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, freePan: freePanInitial = false, home } = $props<{
+  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, home } = $props<{
     map: MapLike;
     fpsCap?: number;
     wheelSpeed?: number;
     wheelCtrlSpeed?: number;
-    freePan?: boolean;
     home: { lng: number; lat: number };
   }>();
 
@@ -24,8 +23,9 @@
   let wheelSpeed = $state(wheelSpeedInitial);
   let wheelCtrlSpeed = $state(wheelCtrlSpeedInitial);
   let fpsCap = $state(fpsCapInitial);
-  let freePanState = $state(freePanInitial);
   let gridEnabled = $state(true);
+  let boundsEnabled = $state(false);
+  let boundsViscosity = $state(0.0);
 
   function refresh(fromFrame = false, now?: number) {
     if (!map) return;
@@ -59,7 +59,17 @@
   $effect(() => { if (map) (map as any).setWheelSpeed?.(wheelSpeed); });
   $effect(() => { if (map) (map as any).setWheelCtrlSpeed?.(wheelCtrlSpeed); });
   $effect(() => { if (map) (map as any).setFpsCap?.(fpsCap); });
-  $effect(() => { if (map) (map as any).setFreePan?.(freePanState); });
+  // Bounds controls: when enabled, lock to current view bounds; otherwise remove bounds
+  $effect(() => {
+    if (!map) return;
+    if (boundsEnabled) {
+      const b = (map as any).getBounds?.();
+      if (b) (map as any).setMaxBounds?.(b);
+    } else {
+      (map as any).setMaxBounds?.(null);
+    }
+  });
+  $effect(() => { if (map) (map as any).setMaxBoundsViscosity?.(boundsViscosity); });
   $effect(() => { if (map) (map as any).setGridVisible?.(gridEnabled); });
 
   function recenter() {
@@ -106,9 +116,14 @@
         <input id="fps-cap" class="pointer-events-auto w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5" type="number" min="15" max="240" bind:value={fpsCap} />
       </div>
       <label class="flex items-center gap-2">
-        <input class="pointer-events-auto" type="checkbox" bind:checked={freePanState} />
-        <span>freePan</span>
+        <input class="pointer-events-auto" type="checkbox" bind:checked={boundsEnabled} />
+        <span>lock to current bounds</span>
       </label>
+      <div class="flex items-center gap-2">
+        <label class="text-gray-700" for="bounds-visc">Bounds viscosity</label>
+        <input id="bounds-visc" class="pointer-events-auto w-40" type="range" min="0" max="1" step="0.05" bind:value={boundsViscosity} />
+        <span class="tabular-nums w-10 text-right">{boundsViscosity.toFixed(2)}</span>
+      </div>
     </div>
   </div>
 </div>

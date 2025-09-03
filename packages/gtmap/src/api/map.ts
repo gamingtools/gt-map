@@ -12,8 +12,6 @@ export type LeafletMapOptions = {
   maxZoom?: number;
   maxBounds?: LeafletBoundsLike;
   maxBoundsViscosity?: number;
-  // Pan behavior
-  freePan?: boolean;
   // Commonly used Leaflet flags we may accept and map later
   zoomAnimation?: boolean;
   zoomAnimationThreshold?: number;
@@ -38,7 +36,6 @@ export default class LeafletMapFacade {
     if (typeof options?.minZoom === 'number') init.minZoom = options.minZoom;
     if (typeof options?.maxZoom === 'number') init.maxZoom = options.maxZoom;
     if (typeof options?.fpsCap === 'number') init.fpsCap = options.fpsCap;
-    if (typeof options?.freePan === 'boolean') init.freePan = options.freePan;
     if (options?.maxBounds) {
       const sw = Array.isArray(options.maxBounds)
         ? { lat: options.maxBounds[0][0], lng: options.maxBounds[0][1] }
@@ -161,7 +158,6 @@ export default class LeafletMapFacade {
   setWheelCtrlSpeed(v: number) { (this._map as any).setWheelCtrlSpeed?.(v); return this; }
   setGridVisible(on: boolean) { (this._map as any).setGridVisible?.(on); return this; }
   setFpsCap(v: number) { (this._map as any).setFpsCap?.(v); return this; }
-  setFreePan(on: boolean) { (this._map as any).setFreePan?.(on); return this; }
   setWrapX(on: boolean) { (this._map as any).setWrapX?.(on); return this; }
   setMaxBounds(bounds?: LeafletBoundsLike | null) {
     if (!bounds) { (this._map as any).setMaxBoundsPx?.(null); return this; }

@@ -25,14 +25,13 @@
 			maxZoom: 5,
 			wrapX: false
 		};
-		map = L.map(container, {
-			center: HOME,
-			zoom: 2,
-			minZoom: HAGGA.minZoom,
-			maxZoom: HAGGA.maxZoom,
-			fpsCap: 60,
-			freePan: true
-		});
+    map = L.map(container, {
+      center: HOME,
+      zoom: 2,
+      minZoom: HAGGA.minZoom,
+      maxZoom: HAGGA.maxZoom,
+      fpsCap: 60
+    });
 		L.tileLayer(HAGGA.url, {
 			minZoom: HAGGA.minZoom,
 			maxZoom: HAGGA.maxZoom,
@@ -93,7 +92,7 @@
 <h1>GTMap Svelte Demo</h1>
 <p>Simple page demonstrating GT.L in SvelteKit.</p>
 <div bind:this={container} class="map">
-	<Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} freePan={true} home={HOME} />
+  <Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} home={HOME} />
 	<div class="attribution">Hagga Basin tiles © respective owners (game map)</div>
 
  
