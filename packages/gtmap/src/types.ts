@@ -26,6 +26,7 @@ export interface TileDeps {
   getInteractionIdleMs(): number;
   getLastInteractAt(): number;
   getZoom(): number;
+  getMaxZoom(): number;
   getCenter(): LngLat;
   getTileSize(): number;
   startImageLoad(task: { key: string; url: string }): void;

@@ -1,5 +1,4 @@
 import type { ZoomDeps } from '../types';
-import { lngLatToWorld, worldToLngLat, clampLat } from '../mercator';
 
 export default class ZoomController {
   private deps: ZoomDeps;
@@ -59,7 +58,6 @@ export default class ZoomController {
 
   applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center') {
     const map = this.deps.getMap();
-    const tileSize = this.deps.getTileSize();
     const anchorEff: 'pointer' | 'center' =
       !map.wrapX && this.deps.shouldAnchorCenterForZoom(targetZoom) ? 'center' : anchor;
     const zInt = Math.floor(map.zoom);
@@ -67,7 +65,9 @@ export default class ZoomController {
     const rect = map.container.getBoundingClientRect();
     const widthCSS = rect.width;
     const heightCSS = rect.height;
-    const centerNow = lngLatToWorld(map.center.lng, map.center.lat, zInt, tileSize);
+    const zMax = this.deps.getMaxZoom();
+    const s0 = Math.pow(2, zMax - zInt);
+    const centerNow = { x: map.center.lng / s0, y: map.center.lat / s0 };
     const tlWorld = {
       x: centerNow.x - widthCSS / (2 * scale),
       y: centerNow.y - heightCSS / (2 * scale),
@@ -98,8 +98,8 @@ export default class ZoomController {
       }
     }
     center2 = this.deps.clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
-    const { lng, lat } = worldToLngLat(center2.x, center2.y, zInt2, tileSize);
-    map.center = { lng, lat: clampLat(lat) };
+    const s2f = Math.pow(2, zMax - zInt2);
+    map.center = { lng: center2.x * s2f, lat: center2.y * s2f };
     map.zoom = zClamped;
     this.deps.requestRender();
   }

@@ -1,4 +1,3 @@
-import { lngLatToWorld, worldToLngLat } from '../mercator';
 import type { InputDeps } from '../types';
 
 export default class InputController {
@@ -61,7 +60,9 @@ export default class InputController {
       // screen-locked panning while dragging (Leaflet-like)
       const widthCSS = rect.width,
         heightCSS = rect.height;
-      const centerWorld = lngLatToWorld(view.center.lng, view.center.lat, zInt, deps.getTileSize());
+      const zMax = deps.getMaxZoom();
+      const s0 = Math.pow(2, zMax - zInt);
+      const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
       // record position for inertia
       this._pushSample(e.clientX - rect.left, e.clientY - rect.top);
       // update pointerAbs always
@@ -70,7 +71,7 @@ export default class InputController {
       const tl = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
       const wx = tl.x + px / scale;
       const wy = tl.y + py / scale;
-      const zAbs = Math.floor(deps.getMaxZoom());
+      const zAbs = Math.floor(zMax);
       const factor = Math.pow(2, zAbs - zInt);
       deps.updatePointerAbs(wx * factor, wy * factor);
       if (!this.dragging) return;
@@ -82,8 +83,9 @@ export default class InputController {
       let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
       
       newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
-      const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
-      deps.setCenter(lng, lat);
+      const nx = newCenter.x * s0;
+      const ny = newCenter.y * s0;
+      deps.setCenter(nx, ny);
       deps.emit('move', { view: deps.getView() });
     };
 
@@ -152,18 +154,16 @@ export default class InputController {
         const scale = Math.pow(2, view.zoom - zInt);
         const widthCSS = rect.width,
           heightCSS = rect.height;
-        const centerWorld = lngLatToWorld(
-          view.center.lng,
-          view.center.lat,
-          zInt,
-          deps.getTileSize(),
-        );
+        const zMax = deps.getMaxZoom();
+        const s0 = Math.pow(2, zMax - zInt);
+        const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
         this._pushSample(t.clientX - rect.left, t.clientY - rect.top);
         let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
         
         newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
-        const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
-        deps.setCenter(lng, lat);
+        const nx = newCenter.x * s0;
+        const ny = newCenter.y * s0;
+        deps.setCenter(nx, ny);
         deps.emit('move', { view: deps.getView() });
       } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
         const t0 = e.touches[0];

@@ -273,6 +273,7 @@ export default class GTMap {
       getInteractionIdleMs: () => this.interactionIdleMs,
       getLastInteractAt: () => this._lastInteractAt,
       getZoom: () => this.zoom,
+      getMaxZoom: () => this.maxZoom,
       getCenter: () => this.center,
       getTileSize: () => this.tileSize,
       startImageLoad: ({ key, url }: { key: string; url: string }) =>

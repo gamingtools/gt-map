@@ -1,4 +1,3 @@
-import { lngLatToWorld } from '../mercator';
 import type { TileDeps } from '../types';
 
 import { TileQueue } from './queue';
@@ -48,7 +47,9 @@ export default class TilePipeline {
       const idle = now - this.deps.getLastInteractAt() > this.deps.getInteractionIdleMs();
       const baseZ = Math.floor(this.deps.getZoom());
       const c = this.deps.getCenter();
-      const centerWorld = lngLatToWorld(c.lng, c.lat, baseZ, this.deps.getTileSize());
+      const zMax = this.deps.getMaxZoom();
+      const s0 = Math.pow(2, zMax - baseZ);
+      const centerWorld = { x: c.lng / s0, y: c.lat / s0 } as any;
       const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());
       if (!task) break;
       this.deps.startImageLoad(task);
