@@ -118,6 +118,8 @@ export default class GTMap {
   private _state!: ViewState;
   private _active = true;
   private _glReleased = false;
+  // Home view (initial center)
+  private _homeCenter: LngLat | null = null;
   // Leaflet-like inertia options and state
   private inertia = true;
   private inertiaDeceleration = 3400; // px/s^2
@@ -240,6 +242,8 @@ export default class GTMap {
     this.wrapX = options.wrapX ?? false;
     this.freePan = options.freePan ?? false;
     this.center = { lng: options.center?.lng ?? (this.mapSize.width / 2), lat: options.center?.lat ?? (this.mapSize.height / 2) };
+    // Remember initial center as the 'home' for recenter()
+    this._homeCenter = { lng: this.center.lng, lat: this.center.lat };
     this.zoom = options.zoom ?? 2;
     if (typeof options.zoomOutCenterBias === 'boolean') {
       this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
@@ -430,8 +434,9 @@ export default class GTMap {
     }
   }
   recenter() {
-    // Center of Web Mercator is always (0, 0) regardless of tile size
-    this.setCenter(0, 0);
+    // Return to initial map center (home)
+    const hc = this._homeCenter || { lng: this.mapSize.width / 2, lat: this.mapSize.height / 2 };
+    this.setCenter(hc.lng, hc.lat);
   }
   destroy() {
     if (this._raf != null) {
