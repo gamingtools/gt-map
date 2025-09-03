@@ -7,7 +7,7 @@
     events: { on: (name: string) => { each: (fn: (e: any) => () => void | void) => () => void } };
   };
 
-  const { map, fpsCap = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed = 0.4, freePan = false, wrapX = false, home } = $props<{
+  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, freePan: freePanInitial = false, wrapX: wrapXInitial = false, home } = $props<{
     map: MapLike;
     fpsCap?: number;
     wheelSpeed?: number;
@@ -23,6 +23,10 @@
   let mouse: { x: number; y: number } | null = $state(null);
   let _prev = 0;
   let wheelSpeed = $state(wheelSpeedInitial);
+  let wheelCtrlSpeed = $state(wheelCtrlSpeedInitial);
+  let fpsCap = $state(fpsCapInitial);
+  let freePanState = $state(freePanInitial);
+  let wrapXState = $state(wrapXInitial);
   let gridEnabled = $state(true);
 
   function refresh(fromFrame = false, now?: number) {
@@ -55,6 +59,10 @@
 
   // Apply controls
   $effect(() => { if (map) (map as any).setWheelSpeed?.(wheelSpeed); });
+  $effect(() => { if (map) (map as any).setWheelCtrlSpeed?.(wheelCtrlSpeed); });
+  $effect(() => { if (map) (map as any).setFpsCap?.(fpsCap); });
+  $effect(() => { if (map) (map as any).setFreePan?.(freePanState); });
+  $effect(() => { if (map) (map as any).setWrapX?.(wrapXState); });
   $effect(() => { if (map) (map as any).setGridVisible?.(gridEnabled); });
 
   function recenter() {
@@ -82,17 +90,32 @@
         <span class="tabular-nums w-10 text-right">{wheelSpeed.toFixed(2)}</span>
       </div>
     </div>
+    <div>
+      <label class="block text-gray-700">Ctrl zoom speed</label>
+      <div class="flex items-center gap-2">
+        <input class="w-40" type="range" min="0.05" max="2.00" step="0.05" bind:value={wheelCtrlSpeed} />
+        <span class="tabular-nums w-10 text-right">{wheelCtrlSpeed.toFixed(2)}</span>
+      </div>
+    </div>
     <label class="flex items-center gap-2">
       <input type="checkbox" bind:checked={gridEnabled} />
       <span>Show Grid</span>
     </label>
     <div class="my-2 h-px bg-gray-200"></div>
     <div class="space-y-1">
-      <div class="font-semibold text-gray-700">Settings</div>
-      <div class="flex items-center justify-between"><span class="text-gray-600">Ctrl zoom speed</span><span class="tabular-nums text-gray-900">{wheelCtrlSpeed.toFixed(2)}</span></div>
-      <div class="flex items-center justify-between"><span class="text-gray-600">FPS cap</span><span class="tabular-nums text-gray-900">{fpsCap}</span></div>
-      <div class="flex items-center justify-between"><span class="text-gray-600">freePan</span><span class="text-gray-900">{freePan ? 'on' : 'off'}</span></div>
-      <div class="flex items-center justify-between"><span class="text-gray-600">wrapX</span><span class="text-gray-900">{wrapX ? 'on' : 'off'}</span></div>
+      <div class="font-semibold text-gray-700">More settings</div>
+      <div class="flex items-center gap-2">
+        <label class="text-gray-700">FPS cap</label>
+        <input class="w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5" type="number" min="15" max="240" bind:value={fpsCap} />
+      </div>
+      <label class="flex items-center gap-2">
+        <input type="checkbox" bind:checked={freePanState} />
+        <span>freePan</span>
+      </label>
+      <label class="flex items-center gap-2">
+        <input type="checkbox" bind:checked={wrapXState} />
+        <span>wrapX</span>
+      </label>
     </div>
   </div>
 </div>

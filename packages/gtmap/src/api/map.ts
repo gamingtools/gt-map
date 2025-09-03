@@ -148,6 +148,9 @@ export default class LeafletMapFacade {
   setWheelSpeed(v: number) { (this._map as any).setWheelSpeed?.(v); return this; }
   setWheelCtrlSpeed(v: number) { (this._map as any).setWheelCtrlSpeed?.(v); return this; }
   setGridVisible(on: boolean) { (this._map as any).setGridVisible?.(on); return this; }
+  setFpsCap(v: number) { (this._map as any).setFpsCap?.(v); return this; }
+  setFreePan(on: boolean) { (this._map as any).setFreePan?.(on); return this; }
+  setWrapX(on: boolean) { (this._map as any).setWrapX?.(on); return this; }
 
   on(name: string, fn: Listener): this { if (!this._listeners.has(name)) this._listeners.set(name, new Set()); this._listeners.get(name)!.add(fn); return this; }
   off(name: string, fn?: Listener): this {

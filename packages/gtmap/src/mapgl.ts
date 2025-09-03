@@ -611,6 +611,19 @@ export default class GTMap {
     this.useScreenCache = !!enabled;
     this._needsRender = true;
   }
+  // Runtime tunables
+  public setFpsCap(fps: number) {
+    const v = Math.max(15, Math.min(240, (fps as any) | 0));
+    if (v !== this._targetFps) { this._targetFps = v; this._needsRender = true; }
+  }
+  public setFreePan(on: boolean) {
+    const v = !!on;
+    if (v !== this.freePan) { this.freePan = v; this._needsRender = true; }
+  }
+  public setWrapX(on: boolean) {
+    const v = !!on;
+    if (v !== this.wrapX) { this.wrapX = v; this._state.wrapX = v; this._needsRender = true; }
+  }
   // Loader/cache options
   public setLoaderOptions(opts: { maxTiles?: number; maxInflightLoads?: number; interactionIdleMs?: number }) {
     if (Number.isFinite(opts.maxTiles as number) && (opts.maxTiles as number) !== this._maxTiles) {
