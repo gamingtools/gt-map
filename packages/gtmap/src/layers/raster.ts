@@ -76,11 +76,16 @@ export class RasterRenderer {
         if (rec?.status === 'ready' && rec.tex) {
           gl.activeTexture(gl.TEXTURE0);
           gl.bindTexture(gl.TEXTURE_2D, rec.tex);
-          const tx = Math.round(sxCSS * dpr);
-          const ty = Math.round(syCSS * dpr);
-          const ts = Math.max(1, Math.round(tilePixelSize));
-          gl.uniform2f(loc.u_translate!, tx, ty);
-          gl.uniform2f(loc.u_size!, ts, ts);
+          // Compute edges in device pixels, then derive integer-aligned width/height.
+          // This prevents 1px gaps during zoom from per-tile rounding error.
+          const leftPx = Math.round(sxCSS * dpr);
+          const topPx = Math.round(syCSS * dpr);
+          const rightPx = Math.round((sxCSS + TS * scale) * dpr);
+          const bottomPx = Math.round((syCSS + TS * scale) * dpr);
+          const wPx = Math.max(1, rightPx - leftPx);
+          const hPx = Math.max(1, bottomPx - topPx);
+          gl.uniform2f(loc.u_translate!, leftPx, topPx);
+          gl.uniform2f(loc.u_size!, wPx, hPx);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
       }
