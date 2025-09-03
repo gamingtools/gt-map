@@ -20,6 +20,7 @@ const map = new GTMap(container, {
   tileUrl: HAGGA.url,
   wrapX: HAGGA.wrapX,
   freePan: true,
+  tileSize: 256
 });
 
 function updateHUD() {
