@@ -9,7 +9,6 @@
 	import GT from '@gtmap';
 
 	let container: HTMLDivElement | null = null;
-	let hudText = $state('');
 	let speed = $state(1.0);
 	let gridEnabled = $state(true);
 	let map: any;
@@ -43,29 +42,7 @@
 			wrapX: false
 		}).addTo(map);
 
-		// HUD updates on render frames
-		(() => {
-			const state: any = { prev: 0, fps: 0 };
-			const updateHud = (opts?: { now?: number; fromFrame?: boolean }) => {
-				const tnow = opts?.now ?? (performance.now ? performance.now() : Date.now());
-				if (opts?.fromFrame) {
-					if (!state.prev) state.prev = tnow;
-					const dt = tnow - state.prev;
-					state.prev = tnow;
-					const inst = dt > 0 ? 1000 / dt : 0;
-					const alpha = 0.2;
-					state.fps = (1 - alpha) * state.fps + alpha * inst;
-				}
-				const cArr = map.getCenter() as [number, number];
-				const c = { lng: cArr[1], lat: cArr[0] };
-				const p = (map as any).pointerAbs as { x: number; y: number } | null;
-				const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
-				const z = map.getZoom() as number;
-				hudText = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;
-			};
-			map.events.on('frame').each((e: any) => updateHud({ now: e?.now, fromFrame: true }));
-			map.events.on('pointermove').each((_e: any) => updateHud({ fromFrame: false }));
-		})();
+		// HUD handled by <Hud/> component
 
 		// Grid layer init — add once so remove() can toggle visibility later
 		try {
@@ -102,10 +79,14 @@
 
 </script>
 
+<script>
+	import Hud from '$lib/Hud.svelte';
+</script>
+
 <h1>GTMap Svelte Demo</h1>
 <p>Simple page demonstrating GT.L in SvelteKit.</p>
 <div bind:this={container} class="map">
-	<div class="hud">{hudText}</div>
+	<Hud {map} fpsCap={60} wheelSpeed={speed} wheelCtrlSpeed={0.4} freePan={true} wrapX={false} />
 	<div class="attribution">Hagga Basin tiles © respective owners (game map)</div>
 
 	<!-- Recenter button -->
@@ -142,17 +123,7 @@
 		touch-action: none;
 	}
 
-	.hud {
-		position: absolute;
-		left: 8px;
-		top: 8px;
-		background: rgba(255, 255, 255, 0.8);
-		color: #222;
-		padding: 4px 6px;
-		border-radius: 4px;
-		font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif;
-		z-index: 10;
-	}
+/* HUD styles moved into Hud.svelte */
 
 	.attribution {
 		position: absolute;
