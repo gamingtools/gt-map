@@ -2,22 +2,45 @@
 
 This document describes the stable, public-facing API you should use when embedding the map. Internal classes (renderers, pipelines, etc.) are not part of the public surface and may change.
 
+Recommended usage
+- Prefer the Leaflet‑compatible facade `GT.L` for most apps — it offers the familiar Map/TileLayer/Marker APIs and is our primary public surface.
+- Use the native facades (`GTMap` class or `createMap()` → `MapApi`) when you want direct access to performance tunables and modern features.
+
 ## Overview
 
-There are two ways to use the public API. Both expose the same capabilities:
+There are two entry points:
 
-- Class facade: `GTMap`
-- Factory + interface: `createMap()` → `MapApi`
+- Leaflet‑compatible: `GT.L` (primary)
+- Native: `GTMap` class facade or `createMap()` → `MapApi`
 
 Internally both build the implementation and attach small, focused facades (e.g., `icons`, `tiles`) to keep the surface minimal and stable.
 
 ## Imports
 
 ```ts
-import GTMap, { createMap, type MapApi } from '@gtmap';
+import GTMap, { createMap, type MapApi, GT } from '@gtmap';
+
+## Quick Start (Leaflet‑compatible, recommended)
+
+```ts
+const map = GT.L.map(containerEl, {
+  tileUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  minZoom: 1,
+  maxZoom: 19,
+  wrapX: true,
+  zoomOutCenterBias: true,
+});
+
+GT.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+const icon = GT.L.icon({ iconUrl: '/marker.png', iconRetinaUrl: '/marker@2x.png', iconSize: [25, 41] });
+GT.L.marker([0, 0], { icon }).addTo(map);
+
+map.setView([0, 0], 2);
+```
 ```
 
-## Quick Start (facade class)
+## Quick Start (native facade class)
 
 ```ts
 const map = new GTMap(containerEl, {
@@ -62,7 +85,7 @@ map.setActive(true);
 // map.destroy();
 ```
 
-## Quick Start (factory + interface)
+## Quick Start (native factory + interface)
 
 Prefer this for the smallest stable interface:
 
@@ -73,7 +96,7 @@ map.icons.setMarkers(markers);
 map.tiles.setPrefetch({ enabled: false });
 ```
 
-## Facades
+## Facades (native)
 
 ### `icons: IconsApi`
 - `setDefs(defs: IconDefs): Promise<void>` — load icon textures; picks x2 variant on HiDPI.
@@ -125,4 +148,3 @@ Notes:
 ## Contract & stability
 - Facades (`GTMap`, `MapApi`, `IconsApi`, `TilesApi`) are the supported public surface.
 - Internal implementation classes/modules (e.g., `mapgl.ts`, `tiles/*`, `layers/*`) are private and may change without notice.
-
