@@ -106,6 +106,7 @@ export default class GTMap {
   private _raster!: RasterRenderer;
   private _icons!: IconRenderer;
   private _renderer!: MapRenderer;
+  private _rasterOpacity = 1.0;
   private _zoomCtrl!: ZoomController;
   private _gfx!: Graphics;
   private _state!: ViewState;
@@ -144,6 +145,7 @@ export default class GTMap {
       useScreenCache: this.useScreenCache,
       screenCache: this._screenCache,
       raster: this._raster,
+      rasterOpacity: this._rasterOpacity,
       icons: this._icons,
       tileCache: this._tileCache,
       tileSize: this.tileSize,
@@ -382,6 +384,13 @@ export default class GTMap {
     this._zoomCtrl.setOptions({ easeBaseMs: _opts.easeBaseMs, easePerUnitMs: _opts.easePerUnitMs });
     if (typeof _opts.easePinch === 'boolean') {
       /* reserved for future pinch easing */
+    }
+  }
+  public setRasterOpacity(opacity: number) {
+    const v = Math.max(0, Math.min(1, opacity));
+    if (v !== this._rasterOpacity) {
+      this._rasterOpacity = v;
+      this._needsRender = true;
     }
   }
   recenter() {

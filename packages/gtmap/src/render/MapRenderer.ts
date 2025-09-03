@@ -94,6 +94,8 @@ export default class MapRenderer {
           ctx.wrapX,
           ctx.tileSize,
         );
+        // Backfill lower levels at full raster opacity
+        gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, (ctx as any).rasterOpacity ?? 1.0)));
         (ctx.raster as any).drawTilesForLevel(
           ctx.loc! as any,
           ctx.tileCache as any,
@@ -112,6 +114,8 @@ export default class MapRenderer {
         if (covL >= 0.995) break;
       }
     }
+    // Base level draw at raster opacity
+    gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, (ctx as any).rasterOpacity ?? 1.0)));
     (ctx.raster as any).drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, {
       zLevel: baseZ,
       tlWorld,
@@ -132,7 +136,9 @@ export default class MapRenderer {
         x: centerN.x - widthCSS / (2 * scaleN),
         y: centerN.y - heightCSS / (2 * scaleN),
       };
-      gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, frac)));
+      const baseAlpha = Math.max(0, Math.min(1, frac));
+      const layerAlpha = Math.max(0, Math.min(1, (ctx as any).rasterOpacity ?? 1.0));
+      gl.uniform1f((ctx.loc as any).u_alpha, baseAlpha * layerAlpha);
       (ctx.raster as any).drawTilesForLevel(
         ctx.loc! as any,
         ctx.tileCache as any,

@@ -1,6 +1,6 @@
-// Import the library entry which re-exports the existing JS MapGL for now
-import GTMap from '@gtmap';
-
+// Use Leaflet-compatible facade as the default API
+import GT from '@gtmap';
+const L = GT.L;
 const container = document.getElementById('map') as HTMLDivElement;
 const hud = document.getElementById('hud') as HTMLDivElement;
 const attribution = document.getElementById('attribution') as HTMLDivElement;
@@ -12,7 +12,7 @@ const HAGGA = {
   wrapX: false,
 };
 
-const map = new GTMap(container, {
+const map = L.map(container, {
   center: { lng: 0, lat: 0 },
   zoom: 2,
   minZoom: HAGGA.minZoom,
@@ -20,12 +20,14 @@ const map = new GTMap(container, {
   tileUrl: HAGGA.url,
   wrapX: HAGGA.wrapX,
   freePan: true,
-  tileSize: 256
-});
+  tileSize: 256,
+} as any);
+L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSize: 256 }).addTo(map as any);
 
 
 function updateHUD() {
-  const c = map.center;
+  const cArr = (map as any).getCenter() as [number, number];
+  const c = { lng: cArr[1], lat: cArr[0] };
   if (!(updateHUD as any)._t) {
     (updateHUD as any)._t = performance.now();
     (updateHUD as any)._frames = 0;
@@ -46,7 +48,8 @@ function updateHUD() {
   }
   const p = map.pointerAbs;
   const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
-  hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${map.zoom.toFixed(2)} | fps ${(updateHUD as any)._fps}${pText}`;
+  const z = (map as any).getZoom() as number;
+  hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${(updateHUD as any)._fps}${pText}`;
   requestAnimationFrame(updateHUD);
 }
 updateHUD();
@@ -58,7 +61,8 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
   try {
     const url = new URL('./sample-data/MapIcons.json', import.meta.url);
     const defs = await fetch(url).then((r) => r.json());
-    await map.icons.setDefs(defs);
+    // Use underlying implementation for bulk icon setup (temporary)
+    await (map as any).__impl.icons.setDefs(defs);
     // Sample markers near center (demo only)
     const base: any[] = [
       { lng: 0, lat: 0, type: 'player' },
@@ -70,11 +74,11 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
     // Add 500 random icons within a window around center
     const keys = Object.keys(defs);
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 150000; i++) {
       const type = keys[(Math.random() * keys.length) | 0];
-      base.push({ lng: rand(-80, 80), lat: rand(-40, 40), type });
+      base.push({ lng: rand(-120, 120), lat: rand(-120, 120), type });
     }
-    map.icons.setMarkers(base as any);
+    (map as any).__impl.icons.setMarkers(base as any);
   } catch (err) {
     console.warn('Icon demo load failed:', err);
   }
@@ -95,7 +99,7 @@ centerBtn.style.font =
   '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
 centerBtn.style.cursor = 'pointer';
 centerBtn.style.zIndex = '11';
-centerBtn.addEventListener('click', () => map.recenter());
+centerBtn.addEventListener('click', () => (map as any).recenter());
 container.appendChild(centerBtn);
 
 // Zoom speed control
@@ -130,7 +134,7 @@ speedInput.value = '1.00';
 speedInput.style.width = '140px';
 speedInput.addEventListener('input', () => {
   const val = parseFloat(speedInput.value);
-  map.setWheelSpeed(val);
+  (map as any).setWheelSpeed(val);
   speedValue.textContent = val.toFixed(2);
 });
 speedRow.appendChild(speedInput);
@@ -159,7 +163,7 @@ gridLabel.style.gap = '6px';
 const gridToggle = document.createElement('input');
 gridToggle.type = 'checkbox';
 gridToggle.checked = true;
-gridToggle.addEventListener('change', () => map.setGridVisible(gridToggle.checked));
+gridToggle.addEventListener('change', () => (map as any).setGridVisible(gridToggle.checked));
 gridLabel.appendChild(gridToggle);
 gridWrap.appendChild(gridLabel);
 container.appendChild(gridWrap);
@@ -191,7 +195,7 @@ anchorSelect.appendChild(optPointer);
 anchorSelect.appendChild(optCenter);
 anchorSelect.value = 'pointer';
 anchorSelect.addEventListener('change', () => {
-  map.setAnchorMode(anchorSelect.value as 'pointer' | 'center');
+  (map as any).setAnchorMode(anchorSelect.value as 'pointer' | 'center');
 });
 anchorWrap.appendChild(anchorLabel);
 anchorWrap.appendChild(anchorSelect);

@@ -8,4 +8,3 @@ export function toLngLat(ll: LeafletLatLng): { lng: number; lat: number } {
 export function toLeafletLatLng(lng: number, lat: number): [number, number] {
   return [lat, lng];
 }
-

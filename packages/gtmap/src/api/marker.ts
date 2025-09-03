@@ -1,10 +1,18 @@
-import type GTMap from '../GTMap';
-import type { IconsApi } from '../IconsApi';
+import type Impl from '../mapgl';
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
 
 export type LeafletIcon = { __type: string; __def?: any };
+export type IconOptions = { iconUrl: string; iconRetinaUrl?: string; iconSize?: [number, number]; iconAnchor?: [number, number] };
+export type MarkerOptions = {
+  icon?: LeafletIcon;
+  title?: string;
+  alt?: string;
+  zIndexOffset?: number;
+  draggable?: boolean;
+  opacity?: number;
+};
 
-export function createIcon(opts: { iconUrl: string; iconRetinaUrl?: string; iconSize?: [number, number]; iconAnchor?: [number, number] }): LeafletIcon {
+export function createIcon(opts: IconOptions): LeafletIcon {
   const type = `icon_${Math.random().toString(36).slice(2, 10)}`;
   const width = (opts.iconSize && opts.iconSize[0]) || 32;
   const height = (opts.iconSize && opts.iconSize[1]) || 32;
@@ -15,26 +23,26 @@ export function createIcon(opts: { iconUrl: string; iconRetinaUrl?: string; icon
 export class LeafletMarkerFacade {
   private _latlng: { lng: number; lat: number };
   private _icon: LeafletIcon | null;
-  private _map: GTMap | null = null;
+  private _map: Impl | null = null;
 
-  constructor(latlng: LeafletLatLng, options?: { icon?: LeafletIcon }) {
+  constructor(latlng: LeafletLatLng, options?: MarkerOptions) {
     this._latlng = toLngLat(latlng);
     this._icon = options?.icon || null;
   }
 
-  addTo(map: GTMap) {
+  addTo(map: Impl): this {
     this._map = map;
-    ensureIconDefs(map.icons, this._icon);
+    ensureIconDefs(map, this._icon);
     flushMarkers(map, this);
     return this;
   }
-  remove() {
+  remove(): this {
     if (!this._map) return this;
     removeMarker(this._map, this);
     this._map = null;
     return this;
   }
-  setLatLng(latlng: LeafletLatLng) {
+  setLatLng(latlng: LeafletLatLng): this {
     this._latlng = toLngLat(latlng);
     if (this._map) flushMarkers(this._map, this);
     return this;
@@ -42,49 +50,48 @@ export class LeafletMarkerFacade {
   getLatLng(): [number, number] {
     return toLeafletLatLng(this._latlng.lng, this._latlng.lat);
   }
-  setIcon(icon: LeafletIcon) {
+  setIcon(icon: LeafletIcon): this {
     this._icon = icon;
     if (this._map) {
-      ensureIconDefs(this._map.icons, this._icon);
+      ensureIconDefs(this._map, this._icon);
       flushMarkers(this._map, this);
     }
     return this;
   }
   // internal getters
-  __getLngLat() { return this._latlng; }
-  __getType() { return (this._icon && this._icon.__type) || 'default'; }
+  __getLngLat(): { lng: number; lat: number } { return this._latlng; }
+  __getType(): string { return (this._icon && this._icon.__type) || 'default'; }
   __getSize(): number | undefined { return undefined; }
 }
 
-// Simple global registry per GTMap instance
-const markersByMap = new WeakMap<GTMap, Set<LeafletMarkerFacade>>();
+// Simple global registry per map instance
+const markersByMap = new WeakMap<Impl, Set<LeafletMarkerFacade>>();
 
-function getSet(map: GTMap): Set<LeafletMarkerFacade> {
+function getSet(map: Impl): Set<LeafletMarkerFacade> {
   let s = markersByMap.get(map);
   if (!s) { s = new Set(); markersByMap.set(map, s); }
   return s;
 }
 
-function ensureIconDefs(icons: IconsApi, icon: LeafletIcon | null) {
+function ensureIconDefs(map: Impl, icon: LeafletIcon | null) {
   if (icon && icon.__def) {
     const defs: any = {}; defs[icon.__type] = icon.__def;
-    icons.setDefs(defs);
+    (map as any).setIconDefs(defs);
     // mark as loaded
     (icon as any).__def = null;
   }
 }
 
-function flushMarkers(map: GTMap, recent?: LeafletMarkerFacade) {
+function flushMarkers(map: Impl, recent?: LeafletMarkerFacade) {
   const set = getSet(map);
   if (recent) set.add(recent);
   const arr: any[] = [];
   for (const m of set) arr.push({ lng: m.__getLngLat().lng, lat: m.__getLngLat().lat, type: m.__getType() });
-  map.icons.setMarkers(arr);
+  (map as any).setMarkers(arr);
 }
 
-function removeMarker(map: GTMap, marker: LeafletMarkerFacade) {
+function removeMarker(map: Impl, marker: LeafletMarkerFacade) {
   const set = getSet(map);
   set.delete(marker);
   flushMarkers(map);
 }
-

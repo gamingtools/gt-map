@@ -26,17 +26,16 @@ Files
 
 Public API
 
-- Primary: Leaflet‑compatible facade `GT.L` (see docs/public-api.md). Use factories like `GT.L.map`, `GT.L.tileLayer`, `GT.L.marker`, `GT.L.icon`.
-- Native: `GTMap` class or `createMap()` for direct access to performance tunables and modern features.
+- Primary (and default): Leaflet‑compatible facade `GT.L` (see docs/public-api.md). Use factories like `GT.L.map`, `GT.L.tileLayer`, `GT.L.marker`, `GT.L.icon`.
+  - The previous native facades (`GTMap`, `createMap`, `MapApi`) are no longer exported. Internals remain, but apps should use `GT.L`.
 
-Demo pages
+Demo page
 
 - Default demo: `index.html`
-- Leaflet‑style demo: `leaflet.html` (uses `GT.L`)
 
 Public API
 
-See `docs/public-api.md` for the recommended, stable facade APIs (`GTMap` class, `createMap()` factory) and grouped sub-APIs (`map.icons`, `map.tiles`).
+See `docs/public-api.md` for the `GT.L` facade and how to use it. Native facades are considered internal.
 
 Visibility Control (suspend/resume)
 

@@ -17,35 +17,35 @@ Currently Implemented (GT.L Phase 1)
 - (impl) GT.L.marker([lat, lng], { icon }).addTo(map), setLatLng/getLatLng, remove
 
 ## Map (Core)
-- [ ] L.map(container, options)
-- [ ] map.setView(latlng, zoom?, options?)
-- [ ] map.getCenter(), map.getZoom()
-- [ ] map.panTo(latlng, options?)
-- [ ] map.flyTo(latlng, zoom?, options?)
-- [ ] map.fitBounds(bounds, options?)
-- [ ] map.getBounds()
-- [ ] map.addLayer(layer), map.removeLayer(layer)
-- [ ] map.hasLayer(layer)
-- [ ] map.eachLayer(fn)
-- [ ] map.invalidateSize(options?)
-- [ ] map.getSize(), map.getPixelBounds(), map.getPixelOrigin()
-- [ ] map.getMinZoom(), map.getMaxZoom(), map.setMinZoom(z), map.setMaxZoom(z)
+- [1] L.map(container, options)
+- [1] map.setView(latlng, zoom?, options?)
+- [1] map.getCenter(), map.getZoom()
+- [1] map.panTo(latlng, options?)
+- [1] map.flyTo(latlng, zoom?, options?)
+- [1] map.fitBounds(bounds, options?)
+- [1] map.getBounds()
+- [1] map.addLayer(layer), map.removeLayer(layer)
+- [1] map.hasLayer(layer)
+- [1] map.eachLayer(fn)
+- [1] map.invalidateSize(options?)
+- [1] map.getSize(), map.getPixelBounds(), map.getPixelOrigin()
+- [1] map.getMinZoom(), map.getMaxZoom(), map.setMinZoom(z), map.setMaxZoom(z)
 - [ ] map.whenReady(fn)
-- [ ] map.remove()
+- [1] map.remove()
 
 ## Map Options
-- [ ] center, zoom, minZoom, maxZoom
-- [ ] dragging (enable/disable)
-- [ ] inertia, inertiaDeceleration, inertiaMaxSpeed, easeLinearity
-- [ ] scrollWheelZoom
-- [ ] doubleClickZoom
+- [1] center, zoom, minZoom, maxZoom
+- [1] dragging (enable/disable)
+- [1] inertia, inertiaDeceleration, inertiaMaxSpeed, easeLinearity
+- [1] scrollWheelZoom
+- [1] doubleClickZoom
 - [ ] boxZoom
 - [ ] keyboard
 - [ ] zoomControl, attributionControl
 - [ ] worldCopyJump
-- [ ] maxBounds, maxBoundsViscosity
-- [ ] zoomAnimation, zoomAnimationThreshold
-- [ ] fadeAnimation, markerZoomAnimation
+- [1] maxBounds, maxBoundsViscosity
+- [1] zoomAnimation, zoomAnimationThreshold
+- [1] fadeAnimation, markerZoomAnimation
 
 ## Map Handlers
 - [ ] Dragging (Map.Drag) — screen-locked drag + inertia
@@ -66,9 +66,9 @@ Currently Implemented (GT.L Phase 1)
 - [ ] layeradd, layerremove
 
 ## Tile Layers
-- [ ] L.tileLayer(urlTemplate, options).addTo(map)
-- [ ] setUrl(url), setZIndex(z), setOpacity(opacity)
-- [ ] options: tileSize, minZoom, maxZoom, subdomains, errorTileUrl, tms, opacity, updateWhenIdle
+- [1] L.tileLayer(urlTemplate, options).addTo(map)
+- [1] setUrl(url), setZIndex(z), setOpacity(opacity)
+- [1] options: tileSize, minZoom, maxZoom, subdomains, errorTileUrl, tms, opacity, updateWhenIdle
 - [ ] WMS: L.tileLayer.wms(url, options)
 
 ## Overlays
@@ -77,20 +77,20 @@ Currently Implemented (GT.L Phase 1)
 - [ ] L.svgOverlay(svgElement, bounds, options).addTo(map)
 
 ## Marker & Icon
-- [ ] L.icon({ iconUrl, iconRetinaUrl, iconSize, iconAnchor, className })
-- [ ] L.marker(latlng, { icon, title, alt, zIndexOffset, draggable })
-- [ ] marker.addTo(map), marker.remove()
-- [ ] marker.setLatLng(latlng), marker.getLatLng()
-- [ ] marker.setIcon(icon), marker.setZIndexOffset()
+- [1] L.icon({ iconUrl, iconRetinaUrl, iconSize, iconAnchor, className })
+- [1] L.marker(latlng, { icon, title, alt, zIndexOffset, draggable })
+- [1] marker.addTo(map), marker.remove()
+- [1] marker.setLatLng(latlng), marker.getLatLng()
+- [1] marker.setIcon(icon), marker.setZIndexOffset()
 - [ ] marker.bindPopup/popup events (see Popups)
 - [ ] marker.bindTooltip/tooltip events (see Tooltips)
 - [ ] marker dragging (interactive reposition)
 
 ## Layer Groups
-- [ ] L.layerGroup(layers)
-- [ ] L.featureGroup(layers)
-- [ ] group.addLayer/removeLayer/clearLayers()
-- [ ] group.eachLayer()
+- [1] L.layerGroup(layers)
+- [1] L.featureGroup(layers)
+- [1] group.addLayer/removeLayer/clearLayers()
+- [1] group.eachLayer()
 - [ ] featureGroup event propagation, getBounds()
 
 ## Popups
@@ -105,13 +105,13 @@ Currently Implemented (GT.L Phase 1)
 - [ ] tooltip events: add/remove/open/close
 
 ## Vector Layers (Paths)
-- [ ] L.polyline(latlngs, options)
-- [ ] L.polygon(latlngs, options)
-- [ ] L.circle(latlng, options)
-- [ ] L.circleMarker(latlng, options)
-- [ ] L.rectangle(bounds, options)
-- [ ] Path options: color, weight, opacity, fill, fillColor, fillOpacity, lineCap, lineJoin, dashArray, className
-- [ ] Path methods: addTo/remove, setStyle, bringToFront/Back, getBounds
+- [1] L.polyline(latlngs, options)
+- [1] L.polygon(latlngs, options)
+- [1] L.circle(latlng, options)
+- [1] L.circleMarker(latlng, options)
+- [1] L.rectangle(bounds, options)
+- [1] Path options: color, weight, opacity, fill, fillColor, fillOpacity, lineCap, lineJoin, dashArray, className
+- [1] Path methods: addTo/remove, setStyle, bringToFront/Back, getBounds
 - [ ] Renderer selection: L.canvas(), L.svg()
 
 ## GeoJSON
@@ -126,6 +126,7 @@ Currently Implemented (GT.L Phase 1)
 - [ ] control.addTo(map), control.remove()
 
 ## CRS / Projection
+Fixed pixel based CRS
 - [ ] Custom CRS (L.CRS.*)
 - [ ] Project/unproject helpers
 
@@ -138,11 +139,11 @@ Currently Implemented (GT.L Phase 1)
 - [ ] setView animations via PosAnimation
 
 ## Performance & Extras (GT-native)
-- [ ] (native) tiles: setOptions({ maxTiles, maxInflightLoads, interactionIdleMs })
-- [ ] (native) tiles: setPrefetch({ enabled, baselineLevel })
-- [ ] (native) screen cache: setScreenCache(true/false)
-- [ ] (native) inertia tuning: setInertiaOptions
-- [ ] (native) zoom-out center bias: setZoomOutCenterBias
+- [1] (native) tiles: setOptions({ maxTiles, maxInflightLoads, interactionIdleMs })
+- [1] (native) tiles: setPrefetch({ enabled, baselineLevel })
+- [1] (native) screen cache: setScreenCache(true/false)
+- [1] (native) inertia tuning: setInertiaOptions
+- [1] (native) zoom-out center bias: setZoomOutCenterBias
 
 ---
 
