@@ -19,8 +19,8 @@ Run locally
 
 Files
 
-- `index.html`: Fullscreen container, attribution, and script entry.
-- `src/main.ts`: Bootstraps the map and HUD.
+- `apps/gtmap-noframework-test/index.html`: Fullscreen container, attribution, and script entry.
+- `apps/gtmap-noframework-test/src/main.ts`: Bootstraps the map and HUD.
 - `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
 - Pixel CRS only: coordinates are image pixels (x=lng, y=lat) at native resolution. No Web Mercator.
 
@@ -31,7 +31,7 @@ Public API
 
 Demo page
 
-- Default demo: `index.html`
+- Default demo app: `apps/gtmap-noframework-test/index.html`
 
 See `docs/public-api.md` for the `GT.L` facade and how to use it. Native facades are considered internal.
 
@@ -62,7 +62,7 @@ Hagga Basin (survival_1)
 
 Customization
 
-- Center/zoom: Set in `src/main.ts` when creating `GTMap`.
+- Center/zoom: Set in `apps/gtmap-noframework-test/src/main.ts` when creating `GTMap`.
 - Zoom bounds: `minZoom`/`maxZoom` options.
 - Tile URL: Pass a different `{z}/{x}/{y}` template to `tileUrl`.
 
