@@ -52,6 +52,25 @@ updateHUD();
 
 attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
 
+// Load sample icon definitions and place a few markers
+(async () => {
+  try {
+    const url = new URL('./sample-data/MapIcons.json', import.meta.url);
+    const defs = await fetch(url).then((r) => r.json());
+    await map.setIconDefs(defs);
+    // Sample markers near center (demo only)
+    map.setMarkers([
+      { lng: 0, lat: 0, type: 'player' },
+      { lng: 32, lat: 8, type: 'objective', size: 48 },
+      { lng: -28, lat: -6, type: 'otherplayer' },
+      { lng: 12, lat: -14, type: 'contract' },
+      { lng: -40, lat: 18, type: 'ecolab' },
+    ]);
+  } catch (err) {
+    console.warn('Icon demo load failed:', err);
+  }
+})();
+
 const centerBtn = document.createElement('button');
 centerBtn.textContent = 'Center Hagga Basin';
 centerBtn.title = 'Recenter the map to Hagga Basin';
