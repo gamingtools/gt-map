@@ -761,10 +761,13 @@ export default class GTMap {
       const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
       const s = Math.pow(2, imageMaxZ - baseZ);
       const centerWorld = { x: this.center.lng / s, y: this.center.lat / s };
-      const tlWorld = {
+      let tlWorld = {
         x: centerWorld.x - widthCSS / (2 * scale),
         y: centerWorld.y - heightCSS / (2 * scale),
       };
+      // Snap to device pixel grid to reduce shimmer during pan
+      const snap = (v: number) => Math.round(v * scale * this._dpr) / (scale * this._dpr);
+      tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
       this._drawGrid(
         this._gridCtx,
         this.gridCanvas,
@@ -1071,8 +1074,8 @@ export default class GTMap {
       const xCSS = (wx - tlWorld.x) * scale;
       const isMajor = Math.round(wx) % base === 0;
       ctx.beginPath();
-      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)';
-      ctx.lineWidth = isMajor ? 1.2 : 0.8;
+      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = isMajor ? 1.0 : 0.6;
       ctx.moveTo(Math.round(xCSS) + 0.5, 0);
       ctx.lineTo(Math.round(xCSS) + 0.5, heightCSS);
       ctx.stroke();
@@ -1082,9 +1085,9 @@ export default class GTMap {
         const tx = Math.round(xCSS) + 2;
         const ty = 2;
         const m = ctx.measureText(label);
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
         ctx.fillRect(tx - 2, ty - 1, (m as any).width + 4, 12);
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.fillText(label, tx, ty);
       }
     }
@@ -1097,8 +1100,8 @@ export default class GTMap {
       const yCSS = (wy - tlWorld.y) * scale;
       const isMajor = Math.round(wy) % base === 0;
       ctx.beginPath();
-      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)';
-      ctx.lineWidth = isMajor ? 1.2 : 0.8;
+      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = isMajor ? 1.0 : 0.6;
       ctx.moveTo(0, Math.round(yCSS) + 0.5);
       ctx.lineTo(widthCSS, Math.round(yCSS) + 0.5);
       ctx.stroke();
@@ -1108,9 +1111,9 @@ export default class GTMap {
         const tx = 2;
         const ty = Math.round(yCSS) + 2;
         const m = ctx.measureText(label);
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
         ctx.fillRect(tx - 2, ty - 1, (m as any).width + 4, 12);
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.fillText(label, tx, ty);
       }
     }
