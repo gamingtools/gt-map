@@ -145,8 +145,9 @@ export class IconRenderer {
         yCSS = yCSS - h / 2;
         // Frustum cull
         if (xCSS + w < 0 || yCSS + h < 0 || xCSS > widthCSS || yCSS > heightCSS) continue;
-        gl.uniform2f(ctx.loc.u_translate, Math.round(xCSS) * ctx.dpr, Math.round(yCSS) * ctx.dpr);
-        gl.uniform2f(ctx.loc.u_size, Math.round(w) * ctx.dpr, Math.round(h) * ctx.dpr);
+        // Avoid rounding before multiplying by dpr to prevent subpixel jitter
+        gl.uniform2f(ctx.loc.u_translate, xCSS * ctx.dpr, yCSS * ctx.dpr);
+        gl.uniform2f(ctx.loc.u_size, w * ctx.dpr, h * ctx.dpr);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
     }
