@@ -147,7 +147,6 @@ export default class LeafletMapFacade {
 
   setWheelSpeed(v: number) { (this._map as any).setWheelSpeed?.(v); return this; }
   setWheelCtrlSpeed(v: number) { (this._map as any).setWheelCtrlSpeed?.(v); return this; }
-  setAnchorMode(m: 'pointer' | 'center') { (this._map as any).setAnchorMode?.(m); return this; }
   setGridVisible(on: boolean) { (this._map as any).setGridVisible?.(on); return this; }
 
   on(name: string, fn: Listener): this { if (!this._listeners.has(name)) this._listeners.set(name, new Set()); this._listeners.get(name)!.add(fn); return this; }

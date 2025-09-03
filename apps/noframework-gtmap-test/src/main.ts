@@ -168,38 +168,7 @@ gridLabel.appendChild(gridToggle);
 gridWrap.appendChild(gridLabel);
 container.appendChild(gridWrap);
 
-// Anchor mode selector
-const anchorWrap = document.createElement('div');
-anchorWrap.style.position = 'absolute';
-anchorWrap.style.left = '8px';
-anchorWrap.style.top = '170px';
-anchorWrap.style.background = 'rgba(255,255,255,0.9)';
-anchorWrap.style.border = '1px solid #bbb';
-anchorWrap.style.borderRadius = '4px';
-anchorWrap.style.padding = '6px 8px';
-anchorWrap.style.font =
-  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
-anchorWrap.style.zIndex = '11';
-const anchorLabel = document.createElement('label');
-anchorLabel.textContent = 'Zoom Anchor';
-anchorLabel.style.display = 'block';
-anchorLabel.style.marginBottom = '4px';
-const anchorSelect = document.createElement('select');
-const optPointer = document.createElement('option');
-optPointer.value = 'pointer';
-optPointer.textContent = 'Pointer';
-const optCenter = document.createElement('option');
-optCenter.value = 'center';
-optCenter.textContent = 'Center';
-anchorSelect.appendChild(optPointer);
-anchorSelect.appendChild(optCenter);
-anchorSelect.value = 'pointer';
-anchorSelect.addEventListener('change', () => {
-  map.setAnchorMode(anchorSelect.value as 'pointer' | 'center');
-});
-anchorWrap.appendChild(anchorLabel);
-anchorWrap.appendChild(anchorSelect);
-container.appendChild(anchorWrap);
+// Anchor mode selector removed (no public API yet)
 
 // Invalidate map size when the container resizes
 try {

@@ -12,7 +12,6 @@
 	let hudText = $state('');
 	let speed = $state(1.0);
 	let gridEnabled = $state(true);
-	let anchorMode = $state<'pointer' | 'center'>('pointer');
 	let map: any;
 	let gridLayer: any | null = null;
 
@@ -97,9 +96,6 @@
 		else gridLayer.remove();
 	});
 
-	$effect(() => {
-		if (map) map.setAnchorMode(anchorMode);
-	});
 </script>
 
 <h1>GTMap Svelte Demo</h1>
@@ -128,14 +124,7 @@
 		</label>
 	</div>
 
-	<!-- Anchor mode selector -->
-	<div class="panel anchor">
-		<label>Zoom Anchor</label>
-		<select bind:value={anchorMode}>
-			<option value="pointer">Pointer</option>
-			<option value="center">Center</option>
-		</select>
-	</div>
+ 
 </div>
 
 <style>
@@ -199,7 +188,7 @@
 
 	.panel.speed { top: 80px; }
 	.panel.grid { top: 130px; }
-	.panel.anchor { top: 170px; }
+/* anchor panel removed for now */
 
 	.row { display: flex; align-items: center; gap: 6px; }
 	.panel.speed input[type='range'] { width: 140px; }

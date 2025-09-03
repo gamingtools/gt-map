@@ -58,8 +58,8 @@ export default class ZoomController {
 
   applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center') {
     const map = this.deps.getMap();
-    const anchorEff: 'pointer' | 'center' =
-      !map.wrapX && this.deps.shouldAnchorCenterForZoom(targetZoom) ? 'center' : anchor;
+    // Respect the requested anchor; default is 'pointer'.
+    const anchorEff: 'pointer' | 'center' = anchor;
     const zInt = Math.floor(map.zoom);
     const scale = Math.pow(2, map.zoom - zInt);
     const rect = map.container.getBoundingClientRect();
