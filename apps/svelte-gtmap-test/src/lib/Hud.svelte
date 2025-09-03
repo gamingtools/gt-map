@@ -39,8 +39,8 @@
 
   $effect(() => {
     if (!map) return;
-    const offFrame = map.events.on<{ now: number }>('frame').each((e) => refresh(true, e.now));
-    const offPointer = map.events.on<{ x: number; y: number }>('pointermove').each(() => refresh(false));
+    const offFrame = (map.events.on as (event: string) => { each: (callback: (e: { now: number }) => void) => () => void })('frame').each((e) => refresh(true, e.now));
+    const offPointer = (map.events.on as (event: string) => { each: (callback: (e: { x: number; y: number }) => void) => () => void })('pointermove').each(() => refresh(false));
     refresh(false);
     return () => {
       try { offFrame?.(); } catch {}
@@ -63,10 +63,10 @@
 <div class="absolute left-2 top-2 z-10 rounded-md border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-2 text-xs text-gray-800 shadow select-none pointer-events-none">
   <!-- Status (non-interactive) -->
   <div class="pointer-events-none grid grid-cols-1 gap-x-6 gap-y-1">
-    <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Center:</span><span class="tabular-nums">lng {center.lng.toFixed(2)}, lat {center.lat.toFixed(2)}</span></div>
+    <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Center:</span><span class="tabular-nums">X: {center.lng.toFixed(2)}, Y: {center.lat.toFixed(2)}</span></div>
     <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Zoom:</span><span class="tabular-nums">{zoom.toFixed(2)}</span></div>
     <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">FPS:</span><span class="tabular-nums">{Math.round(fps)}</span></div>
-    <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Mouse:</span><span class="tabular-nums">{mouse ? `x ${mouse.x}, y ${mouse.y}` : '—'}</span></div>
+    <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Mouse:</span><span class="tabular-nums">{mouse ? `X: ${mouse.x}, Y: ${mouse.y}` : '—'}</span></div>
   </div>
   <div class="my-2 h-px bg-gray-200"></div>
   <!-- Controls (interactive only on elements) -->

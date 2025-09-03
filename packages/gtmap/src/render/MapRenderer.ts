@@ -119,6 +119,7 @@ export default class MapRenderer {
             tileSize: ctx.tileSize,
             mapSize: (ctx as any).mapSize,
             zMax: ctx.maxZoom,
+            sourceMaxZoom: (ctx as any).sourceMaxZoom,
           },
         );
         if (covL >= 0.995) break;
@@ -137,6 +138,7 @@ export default class MapRenderer {
       tileSize: ctx.tileSize,
       mapSize: (ctx as any).mapSize,
       zMax: ctx.maxZoom,
+      sourceMaxZoom: (ctx as any).sourceMaxZoom,
     });
     if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
     const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
@@ -168,6 +170,7 @@ export default class MapRenderer {
           tileSize: ctx.tileSize,
           mapSize: (ctx as any).mapSize,
           zMax: ctx.maxZoom,
+          sourceMaxZoom: (ctx as any).sourceMaxZoom,
         },
       );
       gl.uniform1f((ctx.loc as any).u_alpha, 1.0);

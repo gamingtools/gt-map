@@ -52,6 +52,7 @@ export interface RenderCtx {
   icons?: any;
   tileCache: any;
   tileSize: number;
+  sourceMaxZoom?: number;
   enqueueTile(z: number, x: number, y: number, priority?: number): void;
 }
 
@@ -59,6 +60,7 @@ export interface InputDeps {
   getContainer(): HTMLElement;
   getCanvas(): HTMLCanvasElement;
   getMaxZoom(): number;
+  getImageMaxZoom(): number;
   getView(): ViewState;
   getTileSize(): number;
   setCenter(lng: number, lat: number): void;
@@ -91,6 +93,7 @@ export interface ZoomDeps {
   getZoom(): number;
   getMinZoom(): number;
   getMaxZoom(): number;
+  getImageMaxZoom(): number;
   getTileSize(): number;
   shouldAnchorCenterForZoom(targetZoom: number): boolean;
   getMap(): any;

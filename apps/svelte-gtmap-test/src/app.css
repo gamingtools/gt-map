@@ -1,1 +1,6 @@
 @import 'tailwindcss';
+
+/* Navigation link styles */
+.header-link {
+  @apply px-2 py-1 rounded text-neutral-300 hover:text-neutral-100 hover:bg-neutral-800 transition-colors;
+}

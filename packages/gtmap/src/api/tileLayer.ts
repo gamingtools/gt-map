@@ -25,8 +25,8 @@ export class LeafletTileLayerFacade extends Layer {
   onAdd(map: LeafletMapFacade) {
     (map.__impl as any).setTileSource({
       url: this._url,
-      minZoom: this._options.minZoom,
-      maxZoom: this._options.maxZoom,
+      sourceMinZoom: this._options.minZoom,
+      sourceMaxZoom: this._options.maxZoom,
       tileSize: this._options.tileSize,
       // Default: no wrap for pixel-CRS images; allow explicit opt-in via wrapX option
       wrapX: typeof this._options.wrapX === 'boolean' ? this._options.wrapX : false,

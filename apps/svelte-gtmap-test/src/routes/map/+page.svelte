@@ -30,11 +30,11 @@
       center: HOME,
       zoom: 2,
       minZoom: HAGGA.minZoom,
-      maxZoom: HAGGA.maxZoom,
+      maxZoom: 10,
       fpsCap: 60,
-      maxBounds: BOUNDS,
-      maxBoundsViscosity: 1,
-      bounceAtZoomLimits: true
+    //   maxBounds: BOUNDS,
+    //   maxBoundsViscosity: 1,
+    //   bounceAtZoomLimits: true
     });
 		L.tileLayer(HAGGA.url, {
 			minZoom: HAGGA.minZoom,
@@ -84,21 +84,12 @@
 		});
 	});
 
-	function recenter() {
-		if (!map) return;
-		map.setView([HOME.lat, HOME.lng], map.getZoom());
-	}
-
-	// HUD drives settings directly
 
 </script>
 
-<h1>GTMap Svelte Demo</h1>
-<p>Simple page demonstrating GT.L in SvelteKit.</p>
+
 <div bind:this={container} class="map">
   <Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} home={HOME} />
-	<div class="attribution">Hagga Basin tiles © respective owners (game map)</div>
-
  
 </div>
 
@@ -109,25 +100,8 @@
 		user-select: none;
 		-webkit-user-select: none;
 		touch-action: none;
-		/* Make container square based on viewport height, capped by width */
-		aspect-ratio: 1 / 1;
-		width: min(80vh, 100%);
-		height: auto;
+		width: 100%;
+		height: calc(100vh - 32px);
 	}
-
-/* HUD styles moved into Hud.svelte */
-
-	.attribution {
-		position: absolute;
-		right: 8px;
-		bottom: 8px;
-		background: rgba(255, 255, 255, 0.8);
-		color: #222;
-		padding: 4px 6px;
-		border-radius: 4px;
-		font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif;
-		z-index: 10;
-	}
-
 
 </style>

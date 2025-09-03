@@ -28,10 +28,11 @@ export class RasterRenderer {
       tileSize: number;
       mapSize?: { width: number; height: number };
       zMax?: number;
+      sourceMaxZoom?: number;
     },
   ) {
     const gl = this.gl;
-    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax } = params as any;
+    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom } = params as any;
     const TS = tileSize;
     const startX = Math.floor(tlWorld.x / TS);
     const startY = Math.floor(tlWorld.y / TS);
@@ -68,6 +69,7 @@ export class RasterRenderer {
           const dxTiles = tx - tileX;
           sxCSS -= dxTiles * TS * scale;
         }
+        if (typeof sourceMaxZoom === 'number' && zLevel > sourceMaxZoom) continue;
         const key = tileKeyOf(zLevel, tileX, ty);
         const rec = tileCache.get(key);
         if (!rec) enqueueTile(zLevel, tileX, ty, 0);
