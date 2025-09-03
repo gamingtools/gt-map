@@ -7,6 +7,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import GT from '@gtmap';
+	import Hud from '$lib/Hud.svelte';
 
 	let container: HTMLDivElement | null = null;
 	let speed = $state(1.0);
@@ -77,10 +78,6 @@
 		else gridLayer.remove();
 	});
 
-</script>
-
-<script>
-	import Hud from '$lib/Hud.svelte';
 </script>
 
 <h1>GTMap Svelte Demo</h1>
