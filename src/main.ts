@@ -17,7 +17,7 @@ const map = L.map(container, {
   zoom: 2,
   minZoom: HAGGA.minZoom,
   maxZoom: HAGGA.maxZoom,
-  targetFps: 30,
+  targetFps: 60,
 } as any);
 L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSize: 256, tms: false }).addTo(map as any);
 
@@ -38,7 +38,7 @@ L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSiz
     const p = map.pointerAbs as { x: number; y: number } | null;
     const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
     const z = map.getZoom() as number;
-    hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;
+    hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps cap ${Math.round(state.fps)}${pText}`;
   });
 })();
 

@@ -54,6 +54,7 @@ export default class LeafletMapFacade {
   getMinZoom(): number { return (this._map as any).minZoom; }
   getMaxZoom(): number { return (this._map as any).maxZoom; }
   get pointerAbs(): { x: number; y: number } | null { return (this._map as any).pointerAbs ?? null; }
+  get events(): any { return (this._map as any).events; }
 
   // Common convenience methods (bridge to impl)
   panTo(latlng: LeafletLatLng, _opts?: any): this { const p = toLngLat(latlng); this._map.setCenter(p.lng, p.lat); return this; }
