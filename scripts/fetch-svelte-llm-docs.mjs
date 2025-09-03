@@ -8,11 +8,16 @@ async function ensureDir(p) {
   await fs.mkdir(p, { recursive: true });
 }
 
-async function download(urlStr) {
+function toOutPath(urlStr) {
   const u = new URL(urlStr);
   let pathname = u.pathname;
   if (pathname.endsWith('/')) pathname += 'index.html';
-  const outPath = path.join(OUT_ROOT, u.host, pathname.replace(/^\/+/, ''));
+  return path.join(OUT_ROOT, u.host, pathname.replace(/^\/+/, ''));
+}
+
+async function download(urlStr) {
+  const u = new URL(urlStr);
+  const outPath = toOutPath(urlStr);
   await ensureDir(path.dirname(outPath));
 
   const res = await fetch(urlStr, { redirect: 'follow' });
@@ -37,9 +42,11 @@ async function main() {
 
   let ok = 0;
   let fail = 0;
+  const urlToLocal = new Map();
   for (const url of urls) {
     try {
       const p = await download(url);
+      urlToLocal.set(url, p);
       ok++;
       console.log(`Downloaded: ${url} -> ${p}`);
     } catch (err) {
@@ -48,6 +55,36 @@ async function main() {
     }
   }
   console.log(`Complete. OK: ${ok}, Failed: ${fail}`);
+
+  // Post-process: replace absolute Svelte LLM URLs in downloaded files with local paths
+  if (ok > 0) {
+    const allFiles = [];
+    async function walk(dir) {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      for (const e of entries) {
+        const p = path.join(dir, e.name);
+        if (e.isDirectory()) await walk(p);
+        else allFiles.push(p);
+      }
+    }
+    await walk(OUT_ROOT);
+    for (const file of allFiles) {
+      try {
+        let text = await fs.readFile(file, 'utf8');
+        let changed = false;
+        for (const [remote, localAbs] of urlToLocal.entries()) {
+          const localPosix = localAbs.split(path.sep).join('/');
+          const before = text;
+          text = text.split(remote).join(localPosix);
+          if (text !== before) changed = true;
+        }
+        if (changed) {
+          await fs.writeFile(file, text, 'utf8');
+          console.log(`Rewrote links in: ${file}`);
+        }
+      } catch {}
+    }
+  }
 }
 
 main().catch((e) => {

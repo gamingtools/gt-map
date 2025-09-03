@@ -4,15 +4,15 @@
 
 ## Documentation Sets
 
-- [Abridged documentation](https://svelte.dev/llms-medium.txt): A shorter version of the Svelte and SvelteKit documentation, with examples and non-essential content removed
-- [Compressed documentation](https://svelte.dev/llms-small.txt): A minimal version of the Svelte and SvelteKit documentation, with many examples and non-essential content removed
-- [Complete documentation](https://svelte.dev/llms-full.txt): The complete Svelte and SvelteKit documentation including all examples and additional content
+- [Abridged documentation](docs/svelte/svelte.dev/llms-medium.txt): A shorter version of the Svelte and SvelteKit documentation, with examples and non-essential content removed
+- [Compressed documentation](docs/svelte/svelte.dev/llms-small.txt): A minimal version of the Svelte and SvelteKit documentation, with many examples and non-essential content removed
+- [Complete documentation](docs/svelte/svelte.dev/llms-full.txt): The complete Svelte and SvelteKit documentation including all examples and additional content
 
 ## Individual Package Documentation
 
-- [Svelte documentation](https://svelte.dev/docs/svelte/llms.txt): This is the developer documentation for Svelte.
-- [SvelteKit documentation](https://svelte.dev/docs/kit/llms.txt): This is the developer documentation for SvelteKit.
-- [the Svelte CLI documentation](https://svelte.dev/docs/cli/llms.txt): This is the developer documentation for the Svelte CLI.
+- [Svelte documentation](docs/svelte/svelte.dev/docs/svelte/llms.txt): This is the developer documentation for Svelte.
+- [SvelteKit documentation](docs/svelte/svelte.dev/docs/kit/llms.txt): This is the developer documentation for SvelteKit.
+- [the Svelte CLI documentation](docs/svelte/svelte.dev/docs/cli/llms.txt): This is the developer documentation for the Svelte CLI.
 
 ## Notes
 
