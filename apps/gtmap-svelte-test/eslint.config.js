@@ -10,6 +10,17 @@ import svelteConfig from './svelte.config.js';
 const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 
 export default ts.config(
+	// Ignore generated/output dirs explicitly for speed
+	{
+		ignores: [
+			'.svelte-kit/**',
+			'build/**',
+			'dist/**',
+			'.wrangler/**',
+			'src/worker-configuration.d.ts',
+			'**/*.d.ts'
+		]
+	},
 	includeIgnoreFile(gitignorePath),
 	js.configs.recommended,
 	...ts.configs.recommended,
@@ -30,7 +41,8 @@ export default ts.config(
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],
 		languageOptions: {
 			parserOptions: {
-				projectService: true,
+				// Disable TypeScript project service for faster linting; rely on svelte-check for type diagnostics
+				projectService: false,
 				extraFileExtensions: ['.svelte'],
 				parser: ts.parser,
 				svelteConfig

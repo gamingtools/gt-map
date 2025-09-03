@@ -19,8 +19,12 @@ const map = L.map(container, {
   maxZoom: HAGGA.maxZoom,
   fpsCap: 60,
 } as any);
-L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSize: 256, tms: false }).addTo(map as any);
-
+L.tileLayer(HAGGA.url, {
+  minZoom: HAGGA.minZoom,
+  maxZoom: HAGGA.maxZoom,
+  tileSize: 256,
+  tms: false,
+}).addTo(map as any);
 
 // HUD updates on actual render frames (engine emits 'frame')
 (() => {
@@ -53,7 +57,11 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
     const icons: Record<string, any> = {};
     Object.keys(defs).forEach((k) => {
       const d = (defs as any)[k];
-      icons[k] = L.icon({ iconUrl: d.iconPath, iconRetinaUrl: d.x2IconPath, iconSize: [d.width, d.height] });
+      icons[k] = L.icon({
+        iconUrl: d.iconPath,
+        iconRetinaUrl: d.x2IconPath,
+        iconSize: [d.width, d.height],
+      });
     });
     // Optionally add markers via L.marker (no fixed markers at center)
     // A moderate number of random markers using L.marker
