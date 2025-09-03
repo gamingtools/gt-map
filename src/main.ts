@@ -22,7 +22,7 @@ L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSiz
 
 
 function updateHUD() {
-  const cArr = (map as any).getCenter() as [number, number];
+  const cArr = map.getCenter() as [number, number];
   const c = { lng: cArr[1], lat: cArr[0] };
   if (!(updateHUD as any)._t) {
     (updateHUD as any)._t = performance.now();
@@ -42,9 +42,9 @@ function updateHUD() {
     (updateHUD as any)._frames = 0;
     (updateHUD as any)._acc = 0;
   }
-  const p = (map as any).pointerAbs as { x: number; y: number } | null;
+  const p = map.pointerAbs as { x: number; y: number } | null;
   const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
-  const z = (map as any).getZoom() as number;
+  const z = map.getZoom() as number;
   hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${(updateHUD as any)._fps}${pText}`;
   requestAnimationFrame(updateHUD);
 }
@@ -92,7 +92,7 @@ centerBtn.style.font =
   '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
 centerBtn.style.cursor = 'pointer';
 centerBtn.style.zIndex = '11';
-centerBtn.addEventListener('click', () => (map as any).recenter());
+centerBtn.addEventListener('click', () => map.recenter());
 container.appendChild(centerBtn);
 
 // Zoom speed control
@@ -127,7 +127,7 @@ speedInput.value = '1.00';
 speedInput.style.width = '140px';
 speedInput.addEventListener('input', () => {
   const val = parseFloat(speedInput.value);
-  (map as any).setWheelSpeed(val);
+  map.setWheelSpeed(val);
   speedValue.textContent = val.toFixed(2);
 });
 speedRow.appendChild(speedInput);
@@ -156,7 +156,7 @@ gridLabel.style.gap = '6px';
 const gridToggle = document.createElement('input');
 gridToggle.type = 'checkbox';
 gridToggle.checked = true;
-gridToggle.addEventListener('change', () => (map as any).setGridVisible(gridToggle.checked));
+gridToggle.addEventListener('change', () => map.setGridVisible(gridToggle.checked));
 gridLabel.appendChild(gridToggle);
 gridWrap.appendChild(gridLabel);
 container.appendChild(gridWrap);
@@ -188,7 +188,7 @@ anchorSelect.appendChild(optPointer);
 anchorSelect.appendChild(optCenter);
 anchorSelect.value = 'pointer';
 anchorSelect.addEventListener('change', () => {
-  (map as any).setAnchorMode(anchorSelect.value as 'pointer' | 'center');
+  map.setAnchorMode(anchorSelect.value as 'pointer' | 'center');
 });
 anchorWrap.appendChild(anchorLabel);
 anchorWrap.appendChild(anchorSelect);
@@ -197,10 +197,10 @@ container.appendChild(anchorWrap);
 // Invalidate map size when the container resizes
 try {
   const ro = new ResizeObserver(() => {
-    (map as any).invalidateSize();
+    map.invalidateSize();
   });
   ro.observe(container);
 } catch {
   // Fallback to window resize
-  window.addEventListener('resize', () => (map as any).invalidateSize());
+  window.addEventListener('resize', () => map.invalidateSize());
 }
