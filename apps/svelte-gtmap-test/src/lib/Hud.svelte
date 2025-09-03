@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
+  // Using runes + $effect to (re)subscribe when map changes
 
   type MapLike = {
     getCenter: () => [number, number];
@@ -40,20 +40,16 @@
     }
   }
 
-  let offFrame: (() => void) | null = null;
-  let offPointer: (() => void) | null = null;
-  onMount(() => {
+  $effect(() => {
     if (!map) return;
-    offFrame = map.events.on('frame').each((e: any) => {
-      refresh(true, e?.now);
-    });
-    offPointer = map.events.on('pointermove').each(() => {
-      refresh(false);
-    });
-  });
-  onDestroy(() => {
-    try { offFrame?.(); } catch {}
-    try { offPointer?.(); } catch {}
+    const offFrame = map.events.on('frame').each((e: any) => refresh(true, e?.now));
+    const offPointer = map.events.on('pointermove').each(() => refresh(false));
+    // Kick an initial refresh so values show immediately
+    refresh(false);
+    return () => {
+      try { offFrame?.(); } catch {}
+      try { offPointer?.(); } catch {}
+    };
   });
 </script>
 
@@ -85,4 +81,3 @@
   }
   .hud .sep { height: 6px; }
 </style>
-

@@ -149,7 +149,7 @@
 
 	.panel {
 		position: absolute;
-		left: 8px;
+		left: 240px; /* offset to avoid overlapping the HUD */
 		background: rgba(255, 255, 255, 0.9);
 		border: 1px solid #bbb;
 		border-radius: 4px;
