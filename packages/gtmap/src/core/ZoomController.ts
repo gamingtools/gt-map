@@ -1,4 +1,5 @@
 import type { ZoomDeps } from '../types';
+import { DEBUG } from '../debug';
 
 export default class ZoomController {
   private deps: ZoomDeps;
@@ -14,6 +15,7 @@ export default class ZoomController {
     start: number;
     dur: number;
     anchor: 'pointer' | 'center';
+    bounce?: boolean;
   } = null;
 
   constructor(deps: ZoomDeps) {
@@ -34,11 +36,32 @@ export default class ZoomController {
       const ease = 1 - Math.pow(1 - t, 3);
       current = a.from + (a.to - a.from) * ease;
     }
-    const to = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), current + dz));
+    let to = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), current + dz));
+    // Bounds-based min zoom + optional bounce at zoom limits
+    let bounce = false;
+    try {
+      const map: any = this.deps.getMap();
+      const rect = map?.container?.getBoundingClientRect?.();
+      const mb = map?._maxBoundsPx;
+      if (mb && rect) {
+        const widthCSS = rect.width;
+        const heightCSS = rect.height;
+        const boundsW = Math.max(1, (mb.maxX - mb.minX));
+        const boundsH = Math.max(1, (mb.maxY - mb.minY));
+        const zMaxImg = this.deps.getImageMaxZoom();
+        const minZByW = zMaxImg + Math.log2(widthCSS / boundsW);
+        const minZByH = zMaxImg + Math.log2(heightCSS / boundsH);
+        const minZByBounds = Math.max(minZByW, minZByH);
+        if (isFinite(minZByBounds) && to < minZByBounds) {
+          bounce = !!map?._bounceAtZoomLimits;
+          to = minZByBounds;
+        }
+      }
+    } catch {}
     const dist = Math.abs(to - current);
     const raw = this.easeBaseMs + this.easePerUnitMs * dist;
     const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
-    this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor };
+    this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor, bounce };
     this.deps.requestRender();
   }
   step(): boolean {
@@ -47,7 +70,14 @@ export default class ZoomController {
     const a = this.zoomAnim;
     const t = Math.min(1, (now - a.start) / a.dur);
     const ease = 1 - Math.pow(1 - t, 3);
-    const z = a.from + (a.to - a.from) * ease;
+    let z = a.from + (a.to - a.from) * ease;
+    if (a.bounce) {
+      // easeOutBack to create a slight overshoot and return
+      const c1 = 1.70158, c3 = c1 + 1;
+      const tb = t - 1;
+      const outBack = 1 + c3 * (tb * tb * tb) + c1 * (tb * tb);
+      z = a.from + (a.to - a.from) * outBack;
+    }
     this.applyAnchoredZoom(z, a.px, a.py, a.anchor);
     if (t >= 1) {
       this.zoomAnim = null;
@@ -65,8 +95,8 @@ export default class ZoomController {
     const rect = map.container.getBoundingClientRect();
     const widthCSS = rect.width;
     const heightCSS = rect.height;
-    const zMax = this.deps.getMaxZoom();
-    const s0 = Math.pow(2, zMax - zInt);
+    const zImg = this.deps.getImageMaxZoom();
+    const s0 = Math.pow(2, zImg - zInt);
     const centerNow = { x: map.center.lng / s0, y: map.center.lat / s0 };
     const tlWorld = {
       x: centerNow.x - widthCSS / (2 * scale),
@@ -83,9 +113,9 @@ export default class ZoomController {
         const heightCSS = rect.height;
         const boundsW = Math.max(1, (mb.maxX - mb.minX));
         const boundsH = Math.max(1, (mb.maxY - mb.minY));
-        const zMax = this.deps.getMaxZoom();
-        const minZByW = zMax + Math.log2(widthCSS / boundsW);
-        const minZByH = zMax + Math.log2(heightCSS / boundsH);
+        const zMaxImg = this.deps.getImageMaxZoom();
+        const minZByW = zMaxImg + Math.log2(widthCSS / boundsW);
+        const minZByH = zMaxImg + Math.log2(heightCSS / boundsH);
         const minZByBounds = Math.max(minZByW, minZByH);
         if (isFinite(minZByBounds)) zClamped = Math.max(zClamped, minZByBounds);
       }
@@ -115,12 +145,12 @@ export default class ZoomController {
       }
     }
     center2 = this.deps.clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
-    const s2f = Math.pow(2, zMax - zInt2);
+    const s2f = Math.pow(2, zImg - zInt2);
     map.center = { lng: center2.x * s2f, lat: center2.y * s2f };
     map.zoom = zClamped;
+    if (DEBUG) try { console.debug('[center] zoom', { lng: map.center.lng, lat: map.center.lat, z: map.zoom }); } catch {}
     this.deps.requestRender();
   }
-
   setOptions(opts: {
     easeBaseMs?: number;
     easePerUnitMs?: number;

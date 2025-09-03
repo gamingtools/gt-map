@@ -1,4 +1,5 @@
 import type { InputDeps } from '../types';
+import { DEBUG } from '../debug';
 
 export default class InputController {
   private deps: InputDeps;
@@ -103,7 +104,7 @@ export default class InputController {
       const nx = newCenter.x * s0;
       const ny = newCenter.y * s0;
       deps.setCenter(nx, ny);
-      try { console.debug('[center] drag', { lng: nx, lat: ny, z: view.zoom }); } catch {}
+      if (DEBUG) try { console.debug('[center] drag', { lng: nx, lat: ny, z: view.zoom }); } catch {}
       deps.emit('move', { view: deps.getView() });
     };
 
@@ -114,13 +115,13 @@ export default class InputController {
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
       deps.emit('pointerup', { x: px, y: py, view: deps.getView() });
-      if (InputController.DEBUG) console.debug('[inertia] pointerup');
+      if (DEBUG) console.debug('[inertia] pointerup');
       this.inertiaActive = false;
       this._maybeStartInertia();
       if (this.inertiaActive) {
-        if (InputController.DEBUG) console.debug('[inertia] started');
+        if (DEBUG) console.debug('[inertia] started');
       } else {
-        if (InputController.DEBUG) console.debug('[inertia] none; emitting moveend');
+        if (DEBUG) console.debug('[inertia] none; emitting moveend');
         deps.emit('moveend', { view: deps.getView() });
       }
     };
@@ -274,14 +275,14 @@ export default class InputController {
     const speedVec = { x: (dir.x * ease) / duration, y: (dir.y * ease) / duration };
     const speed = Math.hypot(speedVec.x, speedVec.y);
     const limited = Math.min(maxSpeed, speed);
-    if (InputController.DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel, duration, samples: this._positions.length });
+    if (DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel, duration, samples: this._positions.length });
     if (!isFinite(limited) || limited <= 0) return;
     const scale = (limited / speed) || 0;
     const limitedVec = { x: speedVec.x * scale, y: speedVec.y * scale };
     const decelDuration = limited / (decel * ease);
     // offset is negative half of deceleration impulse
     const offset = { x: Math.round(limitedVec.x * (-decelDuration / 2)), y: Math.round(limitedVec.y * (-decelDuration / 2)) };
-    if (InputController.DEBUG) console.debug('[inertia] offset', { offset, decelDuration });
+    if (DEBUG) console.debug('[inertia] offset', { offset, decelDuration });
     if (!offset.x && !offset.y) return;
     this.inertiaActive = true;
     deps.startPanBy(offset.x, offset.y, decelDuration, ease);
