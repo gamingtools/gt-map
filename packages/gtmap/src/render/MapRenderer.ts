@@ -120,24 +120,6 @@ export default class MapRenderer {
       wrapX: ctx.wrapX,
       tileSize: ctx.tileSize,
     });
-
-    // Draw icon markers, if present (simple CPU cull + batch per icon type)
-    if ((ctx as any).icons) {
-      (ctx as any).icons.draw({
-        gl: ctx.gl,
-        prog: ctx.prog,
-        loc: ctx.loc,
-        quad: ctx.quad,
-        canvas: ctx.canvas,
-        dpr: ctx.dpr,
-        tileSize: ctx.tileSize,
-        zoom: ctx.zoom,
-        center: ctx.center,
-        container: ctx.container,
-        lngLatToWorld,
-        wrapX: ctx.wrapX,
-      });
-    }
     if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
     const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
     const frac = ctx.zoom - baseZ;
@@ -165,6 +147,26 @@ export default class MapRenderer {
         },
       );
       gl.uniform1f((ctx.loc as any).u_alpha, 1.0);
+    }
+
+    // Draw icon markers after all tile layers so they are not faded by blended tiles
+    if ((ctx as any).icons) {
+      // Ensure alpha is 1 for icons
+      gl.uniform1f((ctx.loc as any).u_alpha, 1.0);
+      (ctx as any).icons.draw({
+        gl: ctx.gl,
+        prog: ctx.prog,
+        loc: ctx.loc,
+        quad: ctx.quad,
+        canvas: ctx.canvas,
+        dpr: ctx.dpr,
+        tileSize: ctx.tileSize,
+        zoom: ctx.zoom,
+        center: ctx.center,
+        container: ctx.container,
+        lngLatToWorld,
+        wrapX: ctx.wrapX,
+      });
     }
     if (ctx.useScreenCache && ctx.screenCache)
       (ctx.screenCache as any).update(
