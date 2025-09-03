@@ -46,27 +46,25 @@
 		// HUD updates on render frames
 		(() => {
 			const state: any = { prev: 0, fps: 0 };
-			const updateHud = (nowOpt?: number) => {
-				const tnow = nowOpt ?? (performance.now ? performance.now() : Date.now());
-				if (!state.prev) state.prev = tnow;
-				const dt = tnow - state.prev;
-				state.prev = tnow;
-				const inst = dt > 0 ? 1000 / dt : 0;
-				const alpha = 0.2;
-				state.fps = (1 - alpha) * state.fps + alpha * inst;
+			const updateHud = (opts?: { now?: number; fromFrame?: boolean }) => {
+				const tnow = opts?.now ?? (performance.now ? performance.now() : Date.now());
+				if (opts?.fromFrame) {
+					if (!state.prev) state.prev = tnow;
+					const dt = tnow - state.prev;
+					state.prev = tnow;
+					const inst = dt > 0 ? 1000 / dt : 0;
+					const alpha = 0.2;
+					state.fps = (1 - alpha) * state.fps + alpha * inst;
+				}
 				const cArr = map.getCenter() as [number, number];
 				const c = { lng: cArr[1], lat: cArr[0] };
 				const p = (map as any).pointerAbs as { x: number; y: number } | null;
 				const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
 				const z = map.getZoom() as number;
-				hudText = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps cap ${Math.round(state.fps)}${pText}`;
+				hudText = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;
 			};
-			map.events.on('frame').each((e: any) => {
-				updateHud(e?.now);
-			});
-			map.events.on('pointermove').each((_e: any) => {
-				updateHud();
-			});
+			map.events.on('frame').each((e: any) => updateHud({ now: e?.now, fromFrame: true }));
+			map.events.on('pointermove').each((_e: any) => updateHud({ fromFrame: false }));
 		})();
 
 		// Grid layer init — add once so remove() can toggle visibility later

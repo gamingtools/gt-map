@@ -30,23 +30,25 @@ L.tileLayer(HAGGA.url, {
 // HUD updates on actual render frames (engine emits 'frame')
 (() => {
   const state: any = { prev: 0, fps: 0 };
-  const renderHud = (nowOpt?: number) => {
-    const now = nowOpt ?? (performance.now ? performance.now() : Date.now());
-    if (!state.prev) state.prev = now;
-    const dt = now - state.prev;
-    state.prev = now;
-    const inst = dt > 0 ? 1000 / dt : 0;
-    const alpha = 0.2;
-    state.fps = (1 - alpha) * state.fps + alpha * inst;
+  const renderHud = (opts?: { now?: number; fromFrame?: boolean }) => {
+    const now = opts?.now ?? (performance.now ? performance.now() : Date.now());
+    if (opts?.fromFrame) {
+      if (!state.prev) state.prev = now;
+      const dt = now - state.prev;
+      state.prev = now;
+      const inst = dt > 0 ? 1000 / dt : 0;
+      const alpha = 0.2;
+      state.fps = (1 - alpha) * state.fps + alpha * inst;
+    }
     const cArr = map.getCenter() as [number, number];
     const c = { lng: cArr[1], lat: cArr[0] };
     const p = map.pointerAbs as { x: number; y: number } | null;
     const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
     const z = map.getZoom() as number;
-    hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps cap ${Math.round(state.fps)}${pText}`;
+    hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;
   };
-  map.events.on('frame').each((e: any) => renderHud(e?.now));
-  map.events.on('pointermove').each(() => renderHud());
+  map.events.on('frame').each((e: any) => renderHud({ now: e?.now, fromFrame: true }));
+  map.events.on('pointermove').each(() => renderHud({ fromFrame: false }));
 })();
 
 attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
