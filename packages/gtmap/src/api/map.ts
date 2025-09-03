@@ -164,6 +164,10 @@ export default class LeafletMapFacade {
     (this._map as any).setMarkers(markers);
     return this;
   }
+  setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
+    (this._map as any).setUpscaleFilter(mode);
+    return this;
+  }
   remove() { this._listeners.clear(); (this._map as any).destroy?.(); return this; }
 
   setWheelSpeed(v: number) { (this._map as any).setWheelSpeed?.(v); return this; }

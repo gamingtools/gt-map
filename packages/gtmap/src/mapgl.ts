@@ -117,6 +117,7 @@ export default class GTMap {
   private _icons!: IconRenderer;
   private _renderer!: MapRenderer;
   private _rasterOpacity = 1.0;
+  private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'auto';
   private _zoomCtrl!: ZoomController;
   private _gfx!: Graphics;
   private _state!: ViewState;
@@ -165,6 +166,7 @@ export default class GTMap {
       screenCache: this._screenCache,
       raster: this._raster,
       rasterOpacity: this._rasterOpacity,
+      upscaleFilter: this._upscaleFilter,
       icons: this._icons,
       tileCache: this._tileCache,
       tileSize: this.tileSize,
@@ -448,6 +450,14 @@ export default class GTMap {
     // Marker set changed; invalidate screen cache so removed markers don't linger
     try { this._screenCache?.clear?.(); } catch {}
     this._needsRender = true;
+  }
+  public setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic') {
+    const next = (mode === 'linear' || mode === 'bicubic') ? mode : 'auto';
+    if (next !== this._upscaleFilter) {
+      this._upscaleFilter = next;
+      try { this._screenCache?.clear?.(); } catch {}
+      this._needsRender = true;
+    }
   }
   setEaseOptions(_opts: EaseOptions) {
     this._zoomCtrl.setOptions({ easeBaseMs: _opts.easeBaseMs, easePerUnitMs: _opts.easePerUnitMs });

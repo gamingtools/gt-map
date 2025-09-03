@@ -139,6 +139,7 @@ export default class MapRenderer {
       mapSize: (ctx as any).mapSize,
       zMax: ctx.maxZoom,
       sourceMaxZoom: (ctx as any).sourceMaxZoom,
+      filterMode: (ctx as any).upscaleFilter || 'auto',
     });
     if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
     const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
@@ -171,6 +172,7 @@ export default class MapRenderer {
           mapSize: (ctx as any).mapSize,
           zMax: ctx.maxZoom,
           sourceMaxZoom: (ctx as any).sourceMaxZoom,
+          filterMode: (ctx as any).upscaleFilter || 'auto',
         },
       );
       gl.uniform1f((ctx.loc as any).u_alpha, 1.0);

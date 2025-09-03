@@ -53,6 +53,8 @@ export interface RenderCtx {
   tileCache: any;
   tileSize: number;
   sourceMaxZoom?: number;
+  // Raster rendering options
+  upscaleFilter?: 'auto' | 'linear' | 'bicubic';
   enqueueTile(z: number, x: number, y: number, priority?: number): void;
 }
 

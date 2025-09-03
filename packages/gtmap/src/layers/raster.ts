@@ -29,10 +29,11 @@ export class RasterRenderer {
       mapSize?: { width: number; height: number };
       zMax?: number;
       sourceMaxZoom?: number;
+      filterMode?: 'auto' | 'linear' | 'bicubic';
     },
   ) {
     const gl = this.gl;
-    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom } = params as any;
+    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom, filterMode } = params as any;
     const TS = tileSize;
     const startX = Math.floor(tlWorld.x / TS);
     const startY = Math.floor(tlWorld.y / TS);
@@ -91,9 +92,16 @@ export class RasterRenderer {
           const texH = Math.max(1, (rec as any).height || TS);
           const upscaleX = (wPx / dpr) / texW;
           const upscaleY = (hPx / dpr) / texH;
-          const isUpscale = (upscaleX > 1.01 || upscaleY > 1.01) ? 1 : 0;
+          let modeInt = 0; // linear
+          if (filterMode === 'bicubic') modeInt = 1;
+          else if (filterMode === 'auto') {
+            const isUpscale = (upscaleX > 1.01 || upscaleY > 1.01);
+            modeInt = isUpscale ? 1 : 0;
+          } else {
+            modeInt = 0;
+          }
           if ((loc as any).u_texel) gl.uniform2f((loc as any).u_texel, 1.0 / texW, 1.0 / texH);
-          if ((loc as any).u_filterMode) gl.uniform1i((loc as any).u_filterMode, isUpscale);
+          if ((loc as any).u_filterMode) gl.uniform1i((loc as any).u_filterMode, modeInt);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
       }
