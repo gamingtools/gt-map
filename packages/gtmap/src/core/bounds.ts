@@ -14,6 +14,7 @@ export function clampCenterWorld(
   // Optional Leaflet-like bounds clamp (in image pixels at native resolution)
   maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null,
   maxBoundsViscosity?: number,
+  viscous?: boolean,
 ) {
   // If explicit bounds are provided, apply them (Leaflet-like maxBounds behavior)
   if (maxBoundsPx) {
@@ -31,15 +32,14 @@ export function clampCenterWorld(
     const maxCy = maxYw - halfH;
     let cx = centerWorld.x;
     let cy = centerWorld.y;
-    const clampedX = Math.max(minCx, Math.min(maxCx, cx));
-    const clampedY = Math.max(minCy, Math.min(maxCy, cy));
-    if (visc === 0) {
-      cx = clampedX;
-      cy = clampedY;
-    } else {
-      // Blend toward clamped position to simulate viscosity
-      cx = cx * (1 - visc) + clampedX * visc;
-      cy = cy * (1 - visc) + clampedY * visc;
+    // If viewport exceeds bounds, pin to bounds center (Leaflet behavior)
+    if (minCx > maxCx) cx = (minXw + maxXw) * 0.5; else {
+      const clampedX = Math.max(minCx, Math.min(maxCx, cx));
+      if (viscous && visc > 0) cx = cx * (1 - visc) + clampedX * visc; else cx = clampedX;
+    }
+    if (minCy > maxCy) cy = (minYw + maxYw) * 0.5; else {
+      const clampedY = Math.max(minCy, Math.min(maxCy, cy));
+      if (viscous && visc > 0) cy = cy * (1 - visc) + clampedY * visc; else cy = clampedY;
     }
     return { x: cx, y: cy };
   }

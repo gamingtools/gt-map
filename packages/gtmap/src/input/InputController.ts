@@ -97,7 +97,7 @@ export default class InputController {
       // screen-locked pan while dragging: shift center by dx/scale
       let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
       
-      newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
+      newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS, true);
       const nx = newCenter.x * s0;
       const ny = newCenter.y * s0;
       deps.setCenter(nx, ny);
@@ -175,7 +175,7 @@ export default class InputController {
         this._pushSample(t.clientX - rect.left, t.clientY - rect.top);
         let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
         
-        newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
+        newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS, true);
         const nx = newCenter.x * s0;
         const ny = newCenter.y * s0;
         deps.setCenter(nx, ny);

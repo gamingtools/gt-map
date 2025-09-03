@@ -344,7 +344,7 @@ export default class GTMap {
       getMap: () => this,
       getOutCenterBias: () => this.outCenterBias,
       clampCenterWorld: (cw, zInt, s, w, h) =>
-        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity),
+        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
       emit: (name: string, payload: any) => this._events.emit(name, payload),
       requestRender: () => {
         this._needsRender = true;
@@ -663,8 +663,8 @@ export default class GTMap {
       getView: () => this._view(),
       getTileSize: () => this.tileSize,
       setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
-      clampCenterWorld: (cw, zInt, scale, w, h) =>
-        clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom),
+      clampCenterWorld: (cw, zInt, scale, w, h, viscous?: boolean) =>
+        clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, !!viscous),
       updatePointerAbs: (x: number | null, y: number | null) => {
         if (Number.isFinite(x as number) && Number.isFinite(y as number)) this.pointerAbs = { x: x as number, y: y as number };
         else this.pointerAbs = null;
@@ -927,7 +927,7 @@ export default class GTMap {
     const widthCSS = rect.width; const heightCSS = rect.height;
     const from = a.from;
     const target = { x: from.x + a.offsetWorld.x * p, y: from.y + a.offsetWorld.y * p };
-    let newCenter = clampCenterWorldCore(target, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom);
+    let newCenter = clampCenterWorldCore(target, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false);
     const s0 = Math.pow(2, this.maxZoom - zInt);
     const nx = newCenter.x * s0;
     const ny = newCenter.y * s0;

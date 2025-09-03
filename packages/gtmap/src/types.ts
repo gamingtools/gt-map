@@ -68,6 +68,7 @@ export interface InputDeps {
     scale: number,
     widthCSS: number,
     heightCSS: number,
+    viscous?: boolean,
   ): { x: number; y: number };
   updatePointerAbs(x: number | null, y: number | null): void;
   emit(name: string, payload: any): void;
