@@ -21,6 +21,9 @@ export default class InputController {
     startDist?: number;
     startZoom?: number;
     startCenter?: { x: number; y: number };
+    // Leaflet-like pinch tracking
+    centerPointCSS?: { x: number; y: number };
+    pinchStartNative?: { x: number; y: number };
   } = null;
   private cleanup: (() => void) | null = null;
   private static normalizeWheel(e: WheelEvent, canvasHeight: number): number {
@@ -163,6 +166,19 @@ export default class InputController {
         // Record starting zoom and center (keep center fixed during pinch like Leaflet 'center')
         const view = deps.getView();
         const startCenter = { x: view.center.lng, y: view.center.lat };
+        const rect = deps.getContainer().getBoundingClientRect();
+        const midPx = (t0.clientX + t1.clientX) / 2 - rect.left;
+        const midPy = (t0.clientY + t1.clientY) / 2 - rect.top;
+        // Compute the native-pixel latlng under the initial pinch midpoint
+        const zInt = Math.floor(view.zoom);
+        const scale = Math.pow(2, view.zoom - zInt);
+        const widthCSS = rect.width, heightCSS = rect.height;
+        const zImg = deps.getImageMaxZoom();
+        const s0 = Math.pow(2, zImg - zInt);
+        const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
+        const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
+        const midWorld = { x: tlWorld.x + midPx / scale, y: tlWorld.y + midPy / scale };
+        const pinchStartNative = { x: midWorld.x * s0, y: midWorld.y * s0 };
         this.touchState = {
           mode: 'pinch',
           cx: (t0.clientX + t1.clientX) / 2,
@@ -171,6 +187,8 @@ export default class InputController {
           startDist: Math.hypot(dx, dy),
           startZoom: view.zoom,
           startCenter: startCenter,
+          centerPointCSS: { x: widthCSS / 2, y: heightCSS / 2 },
+          pinchStartNative,
         };
       }
     };
@@ -212,10 +230,26 @@ export default class InputController {
         const scale = Math.max(1e-6, dist / Math.max(1e-6, startDist));
         const nextZoom = startZoom + Math.log2(scale);
         deps.cancelZoomAnim();
-        // Keep center fixed to the starting center during pinch
-        const c = touchState.startCenter || deps.getView().center;
+        // Compute center similar to Leaflet's delta-from-center approach
+        const rect = deps.getContainer().getBoundingClientRect();
+        const widthCSS = rect.width, heightCSS = rect.height;
+        const midPx = (t0.clientX + t1.clientX) / 2 - rect.left;
+        const midPy = (t0.clientY + t1.clientY) / 2 - rect.top;
+        const cp = touchState.centerPointCSS || { x: widthCSS / 2, y: heightCSS / 2 };
+        const deltaCSS = { x: midPx - cp.x, y: midPy - cp.y };
+        const zInt2 = Math.floor(nextZoom);
+        const s2 = Math.pow(2, nextZoom - zInt2);
+        const zImg = deps.getImageMaxZoom();
+        const s2f = Math.pow(2, zImg - zInt2);
+        const pinchStartNative = touchState.pinchStartNative || { x: deps.getView().center.lng, y: deps.getView().center.lat };
+        const pinchStartWorld2 = { x: pinchStartNative.x / s2f, y: pinchStartNative.y / s2f };
+        // Desired center in world coords at zInt2
+        let centerWorld2 = { x: pinchStartWorld2.x - deltaCSS.x / s2, y: pinchStartWorld2.y - deltaCSS.y / s2 };
+        // Clamp against bounds/finite world
+        centerWorld2 = deps.clampCenterWorld(centerWorld2, zInt2, s2, widthCSS, heightCSS, true);
+        const centerNative = { x: centerWorld2.x * s2f, y: centerWorld2.y * s2f };
         deps.setZoom(nextZoom);
-        deps.setCenter(c.x, c.y);
+        deps.setCenter(centerNative.x, centerNative.y);
         deps.emit('zoom', { view: deps.getView() });
         deps.emit('move', { view: deps.getView() });
         touchState.dist = dist;
