@@ -10,7 +10,11 @@ export class LeafletGridLayerFacade extends Layer {
 
   onAdd(map: LeafletMapFacade): void { this._map = map; (map.__impl as any).setGridVisible(this._visible); }
 
-  onRemove(_map: LeafletMapFacade): void { if (this._map) { (this._map as any).__impl?.setGridVisible(false); this._map = null; } }
+  onRemove(map: LeafletMapFacade): void {
+    // Use the provided map instance because Layer.remove() nulls this._map before calling onRemove
+    (map as any).__impl?.setGridVisible(false);
+    this._map = null;
+  }
 
   setVisible(on: boolean): this {
     this._visible = !!on;
