@@ -72,7 +72,24 @@ export default class ZoomController {
       x: centerNow.x - widthCSS / (2 * scale),
       y: centerNow.y - heightCSS / (2 * scale),
     };
-    const zClamped = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), targetZoom));
+    let zClamped = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), targetZoom));
+    // If maxBounds are set, prevent zooming out beyond bounds (Leaflet-like)
+    try {
+      const map: any = this.deps.getMap();
+      const mb = map?._maxBoundsPx;
+      if (mb) {
+        const rect = map.container.getBoundingClientRect();
+        const widthCSS = rect.width;
+        const heightCSS = rect.height;
+        const boundsW = Math.max(1, (mb.maxX - mb.minX));
+        const boundsH = Math.max(1, (mb.maxY - mb.minY));
+        const zMax = this.deps.getMaxZoom();
+        const minZByW = zMax + Math.log2(widthCSS / boundsW);
+        const minZByH = zMax + Math.log2(heightCSS / boundsH);
+        const minZByBounds = Math.max(minZByW, minZByH);
+        if (isFinite(minZByBounds)) zClamped = Math.max(zClamped, minZByBounds);
+      }
+    } catch {}
     const zInt2 = Math.floor(zClamped);
     const s2 = Math.pow(2, zClamped - zInt2);
     let center2: { x: number; y: number };

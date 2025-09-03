@@ -371,13 +371,22 @@ export default class GTMap {
   }
 
   setCenter(lng: number, lat: number) {
-    // clamp to image bounds unless freePan
-    const w = this.mapSize?.width ?? Math.pow(2, this.maxZoom) * this.tileSize;
-    const h = this.mapSize?.height ?? Math.pow(2, this.maxZoom) * this.tileSize;
-    const x = this.freePan ? lng : Math.max(0, Math.min(w, lng));
-    const y = this.freePan ? lat : Math.max(0, Math.min(h, lat));
-    this.center.lng = x;
-    this.center.lat = y;
+    // If bounds are set, strictly clamp center against bounds (Leaflet-like)
+    if (this._maxBoundsPx) {
+      const zInt = Math.floor(this.zoom);
+      const scale = Math.pow(2, this.zoom - zInt);
+      const rect = this.container.getBoundingClientRect();
+      const wCSS = rect.width, hCSS = rect.height;
+      const s0 = Math.pow(2, this.maxZoom - zInt);
+      const cw = { x: lng / s0, y: lat / s0 };
+      const clamped = clampCenterWorldCore(cw, zInt, scale, wCSS, hCSS, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false);
+      this.center.lng = clamped.x * s0;
+      this.center.lat = clamped.y * s0;
+    } else {
+      // No bounds: allow free panning
+      this.center.lng = lng;
+      this.center.lat = lat;
+    }
     this._state.center = this.center;
     this._needsRender = true;
   }
@@ -931,10 +940,7 @@ export default class GTMap {
     const s0 = Math.pow(2, this.maxZoom - zInt);
     const nx = newCenter.x * s0;
     const ny = newCenter.y * s0;
-    const w = this.mapSize.width, h = this.mapSize.height;
-    const clampedX = this.freePan ? nx : Math.max(0, Math.min(w, nx));
-    const clampedY = this.freePan ? ny : Math.max(0, Math.min(h, ny));
-    this.center = { lng: clampedX, lat: clampedY };
+    this.center = { lng: nx, lat: ny };
     this._state.center = this.center;
     this._needsRender = true;
     if (t >= 1) { this._panAnim = null; this._events.emit('moveend', { view: this._view() }); }
