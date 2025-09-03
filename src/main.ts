@@ -17,7 +17,7 @@ const map = L.map(container, {
   zoom: 2,
   minZoom: HAGGA.minZoom,
   maxZoom: HAGGA.maxZoom,
-  targetFps: 60,
+  fpsCap: 60,
 } as any);
 L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSize: 256, tms: false }).addTo(map as any);
 

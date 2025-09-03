@@ -33,7 +33,7 @@ export type MapOptions = {
   zoom?: number;
   zoomOutCenterBias?: number | boolean;
   // Render pacing
-  targetFps?: number; // cap rendering to this FPS (default 60)
+  fpsCap?: number; // cap rendering to this FPS (default 60)
   // Recommended tunables
   maxTiles?: number;
   maxInflightLoads?: number;
@@ -255,8 +255,8 @@ export default class GTMap {
     if (Number.isFinite(options.maxTiles as number)) this._maxTiles = Math.max(0, (options.maxTiles as number) | 0);
     if (Number.isFinite(options.maxInflightLoads as number)) this._maxInflightLoads = Math.max(0, (options.maxInflightLoads as number) | 0);
     if (Number.isFinite(options.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (options.interactionIdleMs as number) | 0);
-    if (Number.isFinite(options.targetFps as number)) {
-      const v = Math.max(15, Math.min(240, (options.targetFps as number) | 0));
+    if (Number.isFinite(options.fpsCap as number)) {
+      const v = Math.max(15, Math.min(240, (options.fpsCap as number) | 0));
       this._targetFps = v;
     }
     if (options.prefetch) {
