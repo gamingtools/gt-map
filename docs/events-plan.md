@@ -1,52 +1,44 @@
-# Events API Plan (Milestone)
+# Events API (Current)
 
-Goals
+Overview
 
 - Chainable, promise-like streams for map interactions and view changes.
-- Lightweight, zero-dep, O(1) unsubscribe; pooled objects later for perf.
-- Additive API under `GTMap.events` without breaking existing public surface.
+- Zero-dependency, O(1) unsubscribe. Exposed under `GTMap.events`.
 
-Initial Surface (scaffolded)
+API Surface
 
-- `map.events.on(name)` → stream
+- `map.events.on(name)` → EventStream
   - Operators: `filter`, `map`, `tap`, `throttle`, `debounce`, `once`, `take`, `takeUntil`, `each`
   - Helpers: `first()`, `toAsyncIterator()`, `EventStream.merge([...])`
 - `map.events.when(name)` → Promise of first event payload
 
-Event Names (initial)
+Event Names (implemented)
 
-- `pointerdown`, `pointerup`, `click`
+- `pointerdown`, `pointerup`
 - `move`, `moveend`
 - `zoom`, `zoomend`
 
-Payload Shape (tentative)
+Payload Shape (implemented)
 
-- `{ center: {lng, lat}, zoom }` for view events
-- `{ x, y, center, zoom }` for pointer/click events (x,y in CSS pixels)
+- View events (`move`, `moveend`, `zoom`, `zoomend`): `{ view }`
+  - `view` contains `{ center: { lng, lat }, zoom, minZoom, maxZoom, wrapX }`
+- Pointer events (`pointerdown`, `pointerup`): `{ x, y, view }` (x/y in CSS pixels relative to the map container)
 
 Examples
 
 ```ts
 // Wait for move end
-map.events.when('moveend').then(() => console.log('move ended'));
+map.events.when('moveend').then(({ view }) => console.log('move ended at', view));
 
-// Log clicks, throttled
+// Track zoom values with throttling
 map.events
-  .on('click')
-  .throttle(200)
-  .each(({ x, y }) => console.log(x, y));
-
-// Async iterator for zoom events
-for await (const z of map.events
   .on('zoom')
-  .map((e) => e.zoom)
-  .toAsyncIterator()) {
-  console.log('zoom', z);
-}
+  .throttle(200)
+  .map((e) => e.view.zoom)
+  .each((z) => console.log('zoom', z));
 ```
 
-Next Steps
+Notes
 
-- Pool payload objects; integrate per-layer event picking in renderer.
-- Add `merge`, `once`, `takeUntil` patterns to examples.
-- Document performance notes and unsub best practices.
+- The `click` event is not emitted yet.
+- Payloads intentionally carry a `view` object instead of flattening fields.
