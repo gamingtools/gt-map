@@ -56,29 +56,31 @@ updateHUD();
 
 attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
 
-// Load sample icon definitions and place a few markers
+// Load sample icon definitions and place a few markers using L.marker
 (async () => {
   try {
     const url = new URL('./sample-data/MapIcons.json', import.meta.url);
     const defs = await fetch(url).then((r) => r.json());
-    // Bulk icon setup via GT extensions on the map facade
-    await (map as any).setIconDefs(defs);
-    // Sample markers near center (demo only)
-    const base: any[] = [
-      { lng: 0, lat: 0, type: 'player' },
-      { lng: 32, lat: 8, type: 'objective', size: 48 },
-      { lng: -28, lat: -6, type: 'otherplayer' },
-      { lng: 12, lat: -14, type: 'contract' },
-      { lng: -40, lat: 18, type: 'ecolab' },
-    ];
-    // Add 500 random icons within a window around center
-    const keys = Object.keys(defs);
+    // Build Leaflet-style icon objects from the defs
+    const icons: Record<string, any> = {};
+    Object.keys(defs).forEach((k) => {
+      const d = (defs as any)[k];
+      icons[k] = L.icon({ iconUrl: d.iconPath, iconRetinaUrl: d.x2IconPath, iconSize: [d.width, d.height] });
+    });
+    // Sample markers near center
+    L.marker([0, 0], { icon: icons['player'] }).addTo(map as any);
+    L.marker([8, 32], { icon: icons['objective'] }).addTo(map as any);
+    L.marker([-6, -28], { icon: icons['otherplayer'] }).addTo(map as any);
+    L.marker([-14, 12], { icon: icons['contract'] }).addTo(map as any);
+    L.marker([18, -40], { icon: icons['ecolab'] }).addTo(map as any);
+    // A moderate number of random markers using L.marker
+    const keys = Object.keys(icons);
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
-    for (let i = 0; i < 500; i++) {
-      const type = keys[(Math.random() * keys.length) | 0];
-      base.push({ lng: rand(-120, 120), lat: rand(-120, 120), type });
+    const COUNT = 500;
+    for (let i = 0; i < COUNT; i++) {
+      const key = keys[(Math.random() * keys.length) | 0];
+      L.marker([rand(-120, 120), rand(-120, 120)], { icon: icons[key] }).addTo(map as any);
     }
-    (map as any).setMarkers(base as any);
   } catch (err) {
     console.warn('Icon demo load failed:', err);
   }
