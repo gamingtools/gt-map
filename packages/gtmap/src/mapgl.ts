@@ -26,7 +26,7 @@ export type MapOptions = {
   tileSize?: number;
   minZoom?: number;
   maxZoom?: number;
-  imageSize?: { width: number; height: number };
+  mapSize?: { width: number; height: number };
   wrapX?: boolean;
   freePan?: boolean;
   center?: LngLat;
@@ -57,7 +57,7 @@ export default class GTMap {
   tileSize: number;
   minZoom: number;
   maxZoom: number;
-  imageSize: { width: number; height: number };
+  mapSize: { width: number; height: number };
   wrapX: boolean;
   freePan: boolean;
   center: LngLat;
@@ -143,7 +143,7 @@ export default class GTMap {
       center: this.center,
       minZoom: this.minZoom,
       maxZoom: this.maxZoom,
-      imageSize: this.imageSize,
+      mapSize: this.mapSize,
       wrapX: this.wrapX,
       useScreenCache: this.useScreenCache,
       screenCache: this._screenCache,
@@ -226,17 +226,17 @@ export default class GTMap {
       ? (options.tileSize as number)
       : 256;
     this.minZoom = options.minZoom ?? 0;
-    // Infer maxZoom from imageSize if provided
-    if (options.imageSize && !Number.isFinite(options.maxZoom as number)) {
-      const maxDim = Math.max(options.imageSize.width, options.imageSize.height);
+    // Infer maxZoom from mapSize if provided
+    if (options.mapSize && !Number.isFinite(options.maxZoom as number)) {
+      const maxDim = Math.max(options.mapSize.width, options.mapSize.height);
       this.maxZoom = Math.max(0, Math.floor(Math.log2(Math.max(1, maxDim / this.tileSize))));
     } else {
       this.maxZoom = options.maxZoom ?? 19;
     }
-    this.imageSize = options.imageSize ?? { width: this.tileSize * (1 << this.maxZoom), height: this.tileSize * (1 << this.maxZoom) };
+    this.mapSize = options.mapSize ?? { width: this.tileSize * (1 << this.maxZoom), height: this.tileSize * (1 << this.maxZoom) };
     this.wrapX = options.wrapX ?? false;
     this.freePan = options.freePan ?? false;
-    this.center = { lng: options.center?.lng ?? (this.imageSize.width / 2), lat: options.center?.lat ?? (this.imageSize.height / 2) };
+    this.center = { lng: options.center?.lng ?? (this.mapSize.width / 2), lat: options.center?.lat ?? (this.mapSize.height / 2) };
     this.zoom = options.zoom ?? 2;
     if (typeof options.zoomOutCenterBias === 'boolean') {
       this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
@@ -327,7 +327,7 @@ export default class GTMap {
       getMap: () => this,
       getOutCenterBias: () => this.outCenterBias,
       clampCenterWorld: (cw, zInt, s, w, h) =>
-        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.imageSize, this.maxZoom),
+        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom),
       emit: (name: string, payload: any) => this._events.emit(name, payload),
       requestRender: () => {
         this._needsRender = true;
@@ -355,8 +355,8 @@ export default class GTMap {
 
   setCenter(lng: number, lat: number) {
     // clamp to image bounds unless freePan
-    const w = this.imageSize?.width ?? Math.pow(2, this.maxZoom) * this.tileSize;
-    const h = this.imageSize?.height ?? Math.pow(2, this.maxZoom) * this.tileSize;
+    const w = this.mapSize?.width ?? Math.pow(2, this.maxZoom) * this.tileSize;
+    const h = this.mapSize?.height ?? Math.pow(2, this.maxZoom) * this.tileSize;
     const x = this.freePan ? lng : Math.max(0, Math.min(w, lng));
     const y = this.freePan ? lat : Math.max(0, Math.min(h, lat));
     this.center.lng = x;
@@ -377,7 +377,7 @@ export default class GTMap {
     tileSize?: number;
     minZoom?: number;
     maxZoom?: number;
-    imageSize?: { width: number; height: number };
+    mapSize?: { width: number; height: number };
     wrapX?: boolean;
     clearCache?: boolean;
   }) {
@@ -385,7 +385,7 @@ export default class GTMap {
     if (Number.isFinite(opts.tileSize as number)) this.tileSize = opts.tileSize as number;
     if (Number.isFinite(opts.minZoom as number)) this.minZoom = opts.minZoom as number;
     if (Number.isFinite(opts.maxZoom as number)) this.maxZoom = opts.maxZoom as number;
-    if (opts.imageSize) this.imageSize = { width: Math.max(1, opts.imageSize.width), height: Math.max(1, opts.imageSize.height) };
+    if (opts.mapSize) this.mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
     if (typeof opts.wrapX === 'boolean') this.wrapX = opts.wrapX;
     // reflect to view state
     this._state.minZoom = this.minZoom;
@@ -627,7 +627,7 @@ export default class GTMap {
       getTileSize: () => this.tileSize,
       setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
       clampCenterWorld: (cw, zInt, scale, w, h) =>
-        clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize, this.imageSize, this.maxZoom),
+        clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom),
       updatePointerAbs: (x: number, y: number) => {
         this.pointerAbs = { x, y };
       },
@@ -723,8 +723,8 @@ export default class GTMap {
   // Finite-world center anchoring hysteresis
   private _viewportCoverageRatio(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
     const s = Math.pow(2, this.maxZoom - zInt);
-    const levelW = this.imageSize.width / s;
-    const levelH = this.imageSize.height / s;
+    const levelW = this.mapSize.width / s;
+    const levelH = this.mapSize.height / s;
     const halfW = widthCSS / (2 * scale);
     const halfH = heightCSS / (2 * scale);
     const covX = halfW / (levelW / 2);
@@ -869,11 +869,11 @@ export default class GTMap {
     const widthCSS = rect.width; const heightCSS = rect.height;
     const from = a.from;
     const target = { x: from.x + a.offsetWorld.x * p, y: from.y + a.offsetWorld.y * p };
-    let newCenter = clampCenterWorldCore(target, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize, this.imageSize, this.maxZoom);
+    let newCenter = clampCenterWorldCore(target, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom);
     const s0 = Math.pow(2, this.maxZoom - zInt);
     const nx = newCenter.x * s0;
     const ny = newCenter.y * s0;
-    const w = this.imageSize.width, h = this.imageSize.height;
+    const w = this.mapSize.width, h = this.mapSize.height;
     const clampedX = this.freePan ? nx : Math.max(0, Math.min(w, nx));
     const clampedY = this.freePan ? ny : Math.max(0, Math.min(h, ny));
     this.center = { lng: clampedX, lat: clampedY };

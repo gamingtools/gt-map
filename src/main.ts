@@ -13,7 +13,7 @@ const HAGGA = {
 };
 
 const map = L.map(container, {
-  imageSize: { width: 8192, height: 8192 },
+  mapSize: { width: 8192, height: 8192 },
   center: { lng: 4096, lat: 4096 },
   zoom: 2,
   minZoom: HAGGA.minZoom,

@@ -65,6 +65,7 @@ Notes:
 
 ## Options
 - `center`, `zoom`, `minZoom`, `maxZoom`
+- `mapSize` — `{ width, height }` in pixels at native resolution
 - `tileUrl`, `tileSize`, `wrapX`, `freePan`
 - Accepted (reserved/not fully wired yet): `zoomAnimation`, `zoomAnimationThreshold`, `fadeAnimation`, `markerZoomAnimation`
 

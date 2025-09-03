@@ -9,17 +9,17 @@ export function clampCenterWorld(
   wrapX: boolean,
   freePan: boolean,
   tileSize: number,
-  imageSize?: { width: number; height: number },
+  mapSize?: { width: number; height: number },
   zMax?: number,
 ) {
   if (freePan) return centerWorld;
   // Derive level dimensions; fallback to square world if not provided
   let worldW = tileSize * (1 << zInt);
   let worldH = worldW;
-  if (imageSize && typeof zMax === 'number') {
+  if (mapSize && typeof zMax === 'number') {
     const s = Math.pow(2, zMax - zInt);
-    worldW = imageSize.width / s;
-    worldH = imageSize.height / s;
+    worldW = mapSize.width / s;
+    worldH = mapSize.height / s;
   }
   const halfW = widthCSS / (2 * scale);
   const halfH = heightCSS / (2 * scale);

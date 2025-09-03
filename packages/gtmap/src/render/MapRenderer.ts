@@ -73,7 +73,7 @@ export default class MapRenderer {
       heightCSS,
       ctx.wrapX,
       ctx.tileSize,
-      (ctx as any).imageSize,
+      (ctx as any).mapSize,
       ctx.maxZoom,
     );
     const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
@@ -94,7 +94,7 @@ export default class MapRenderer {
           heightCSS,
           ctx.wrapX,
           ctx.tileSize,
-          (ctx as any).imageSize,
+          (ctx as any).mapSize,
           ctx.maxZoom,
         );
         // Backfill lower levels at full raster opacity
@@ -112,7 +112,7 @@ export default class MapRenderer {
             heightCSS,
             wrapX: ctx.wrapX,
             tileSize: ctx.tileSize,
-            imageSize: (ctx as any).imageSize,
+            mapSize: (ctx as any).mapSize,
             zMax: ctx.maxZoom,
           },
         );
@@ -130,7 +130,7 @@ export default class MapRenderer {
       heightCSS,
       wrapX: ctx.wrapX,
       tileSize: ctx.tileSize,
-      imageSize: (ctx as any).imageSize,
+      mapSize: (ctx as any).mapSize,
       zMax: ctx.maxZoom,
     });
     if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
@@ -159,7 +159,7 @@ export default class MapRenderer {
           heightCSS,
           wrapX: ctx.wrapX,
           tileSize: ctx.tileSize,
-          imageSize: (ctx as any).imageSize,
+          mapSize: (ctx as any).mapSize,
           zMax: ctx.maxZoom,
         },
       );

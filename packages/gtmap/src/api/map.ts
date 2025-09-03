@@ -10,7 +10,7 @@ export type LeafletMapOptions = {
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
-  imageSize?: { width: number; height: number };
+  mapSize?: { width: number; height: number };
   // Commonly used Leaflet flags we may accept and map later
   zoomAnimation?: boolean;
   zoomAnimationThreshold?: number;
@@ -38,7 +38,7 @@ export default class LeafletMapFacade {
     if (typeof options?.maxZoom === 'number') init.maxZoom = options.maxZoom;
     if (options?.tileUrl) init.tileUrl = options.tileUrl;
     if (typeof options?.tileSize === 'number') init.tileSize = options.tileSize;
-    if (options?.imageSize) init.imageSize = options.imageSize;
+    if (options?.mapSize) init.mapSize = options.mapSize;
     if (typeof options?.wrapX === 'boolean') init.wrapX = options.wrapX;
     if (typeof options?.freePan === 'boolean') init.freePan = options.freePan;
     this._map = new Impl(el as HTMLDivElement, init);

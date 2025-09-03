@@ -26,12 +26,12 @@ export class RasterRenderer {
       heightCSS: number;
       wrapX: boolean;
       tileSize: number;
-      imageSize?: { width: number; height: number };
+      mapSize?: { width: number; height: number };
       zMax?: number;
     },
   ) {
     const gl = this.gl;
-    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, imageSize, zMax } = params as any;
+    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax } = params as any;
     const TS = tileSize;
     const startX = Math.floor(tlWorld.x / TS);
     const startY = Math.floor(tlWorld.y / TS);
@@ -91,7 +91,7 @@ export class RasterRenderer {
     heightCSS: number,
     wrapX: boolean,
     tileSize: number,
-    imageSize?: { width: number; height: number },
+    mapSize?: { width: number; height: number },
     zMax?: number,
   ): number {
     const TS = tileSize;
@@ -103,6 +103,7 @@ export class RasterRenderer {
     let ready = 0;
     let tilesX = Infinity;
     let tilesY = Infinity;
+    const imageSize = mapSize as any;
     if (imageSize && typeof zMax === 'number') {
       const s = Math.pow(2, zMax - zLevel);
       const levelW = Math.ceil(imageSize.width / s);
