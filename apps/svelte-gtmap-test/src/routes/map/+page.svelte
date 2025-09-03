@@ -5,7 +5,7 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import GT from '@gtmap';
 	import Hud from '$lib/Hud.svelte';
 
@@ -51,13 +51,34 @@
 			gridLayer = null;
 		}
 
-		// Resize handling
+		// Resize handling (debounced): wait until user stops resizing
+		let resizeTimer: any = null;
+		const scheduleInvalidate = () => {
+			if (resizeTimer) clearTimeout(resizeTimer);
+			resizeTimer = setTimeout(() => {
+				try { map.invalidateSize(); } catch {}
+			}, 160);
+		};
+		let ro: ResizeObserver | null = null;
+		let usedWindowResize = false;
 		try {
-			const ro = new ResizeObserver(() => map.invalidateSize());
+			ro = new ResizeObserver(scheduleInvalidate);
 			ro.observe(container);
 		} catch {
-			window.addEventListener('resize', () => map.invalidateSize());
+			window.addEventListener('resize', scheduleInvalidate);
+			usedWindowResize = true;
 		}
+
+		// Teardown on navigation/unmount per Svelte docs
+		onDestroy(() => {
+			console.log('GTMap Svelte unmounting');
+			try { gridLayer?.remove?.(); } catch {}
+			try { map?.remove?.(); } catch {}
+			if (resizeTimer) { try { clearTimeout(resizeTimer); } catch {} resizeTimer = null; }
+			try { ro?.disconnect?.(); } catch {}
+			if (usedWindowResize) { try { window.removeEventListener('resize', scheduleInvalidate); } catch {} }
+			console.log('GTMap Svelte unmounted');
+		});
 	});
 
 	function recenter() {
