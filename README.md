@@ -6,15 +6,15 @@ Features
 
 - WebGL tile rendering (256px tiles)
 - Smooth pan and wheel/pinch zoom
-- Web Mercator (EPSG:3857) projection
-- Antimeridian (x-wrap) handling (disabled for Hagga Basin)
+- Pixel CRS: image pixel coordinates (no Web Mercator)
+- Antimeridian/wrapX support (disabled for Hagga Basin demo)
 - Basic tile texture caching with LRU eviction
 
 Getting Started
 Run locally
 
-1. Install deps: `npm install`
-2. Start dev server: `npm start` (Vite at `http://localhost:5173`)
+1. Install deps: `pnpm install`
+2. Start dev server: `pnpm dev` (Vite at `http://localhost:5173`)
 3. Pan with mouse drag, zoom with wheel or pinch (touch).
 
 Files
@@ -32,8 +32,6 @@ Public API
 Demo page
 
 - Default demo: `index.html`
-
-Public API
 
 See `docs/public-api.md` for the `GT.L` facade and how to use it. Native facades are considered internal.
 
@@ -74,3 +72,12 @@ Notes and Next Steps
 - Currently renders raster tiles only. Vector data, markers, and overlays can be layered with additional draw passes.
 - Keyboard shortcuts, inertia, and animated fly-to can be added if desired.
 - For production, host via a static server. Opening from filesystem works for quick tests in most browsers.
+
+Monorepo & Package Manager
+
+- This repository uses a pnpm workspace. Packages are defined in `pnpm-workspace.yaml`.
+- Common commands:
+  - Install: `pnpm install`
+  - Dev server: `pnpm dev`
+  - Build: `pnpm build` (also builds `packages/gtmap`)
+  - Lint/format: `pnpm lint`, `pnpm format`

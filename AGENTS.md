@@ -10,8 +10,8 @@
 
 ## Build, Test, and Development Commands
 
-- `npm install`: Install dependencies.
-- `npm start` or `npm run dev`: Run the Vite dev server at `http://localhost:5173`.
+- `pnpm install`: Install dependencies (pnpm workspace).
+- `pnpm start` or `pnpm dev`: Run the Vite dev server at `http://localhost:5173`.
 - Manual run (quick check): Open `index.html` directly in a browser, but prefer the dev server for consistent behavior and headers.
 
 ## Coding Style & Naming Conventions
@@ -37,7 +37,7 @@
 
 - Tiles: Use HTTPS tile sources with proper CORS. Don’t commit secrets.
 - Caching: Dev server disables cache; be mindful if changing headers.
-- Ports: Default `5173`; override with `PORT=XXXX npm start`.
+- Ports: Default `5173`; override with `PORT=XXXX pnpm start`.
 
 ## Agent-Specific Instructions
 
