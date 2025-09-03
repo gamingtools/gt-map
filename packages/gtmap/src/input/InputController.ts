@@ -203,7 +203,9 @@ export default class InputController {
         const py = (t0.clientY + t1.clientY) / 2 - rect.top;
         deps.cancelZoomAnim();
         const v3 = deps.getView();
-        deps.applyAnchoredZoom(v3.zoom + scaleDelta, px, py, deps.getAnchorMode());
+        // Use center anchor during pinch to avoid sudden jumps on mobile
+        // (pointer-anchored zoom can bias toward previous center when zooming out)
+        deps.applyAnchoredZoom(v3.zoom + scaleDelta, px, py, 'center');
         deps.emit('zoom', { view: deps.getView() });
         touchState.dist = dist;
       }
