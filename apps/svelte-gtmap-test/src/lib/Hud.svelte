@@ -80,25 +80,25 @@
     <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Mouse:</span><span class="tabular-nums">{mouse ? `x ${mouse.x}, y ${mouse.y}` : '—'}</span></div>
   </div>
   <div class="my-2 h-px bg-gray-200"></div>
-  <!-- Controls (interactive) -->
-  <div class="space-y-2 pointer-events-auto select-auto">
-    <button class="rounded border border-gray-300 bg-white/70 px-2 py-1 text-gray-800 hover:bg-white" on:click={recenter}>Recenter</button>
+  <!-- Controls (interactive only on elements) -->
+  <div class="space-y-2 pointer-events-none select-auto">
+    <button class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1 text-gray-800 hover:bg-white" on:click={recenter}>Recenter</button>
     <div>
       <label class="block text-gray-700" for="zoom-speed">Zoom speed</label>
       <div class="flex items-center gap-2">
-        <input id="zoom-speed" class="w-40" type="range" min="0.05" max="2.00" step="0.05" bind:value={wheelSpeed} />
+        <input id="zoom-speed" class="pointer-events-auto w-40" type="range" min="0.05" max="2.00" step="0.05" bind:value={wheelSpeed} />
         <span class="tabular-nums w-10 text-right">{wheelSpeed.toFixed(2)}</span>
       </div>
     </div>
     <div>
       <label class="block text-gray-700" for="ctrl-zoom-speed">Ctrl zoom speed</label>
       <div class="flex items-center gap-2">
-        <input id="ctrl-zoom-speed" class="w-40" type="range" min="0.05" max="2.00" step="0.05" bind:value={wheelCtrlSpeed} />
+        <input id="ctrl-zoom-speed" class="pointer-events-auto w-40" type="range" min="0.05" max="2.00" step="0.05" bind:value={wheelCtrlSpeed} />
         <span class="tabular-nums w-10 text-right">{wheelCtrlSpeed.toFixed(2)}</span>
       </div>
     </div>
     <label class="flex items-center gap-2">
-      <input type="checkbox" bind:checked={gridEnabled} />
+      <input class="pointer-events-auto" type="checkbox" bind:checked={gridEnabled} />
       <span>Show Grid</span>
     </label>
     <div class="my-2 h-px bg-gray-200"></div>
@@ -106,14 +106,14 @@
       <div class="font-semibold text-gray-700">More settings</div>
       <div class="flex items-center gap-2">
         <label class="text-gray-700" for="fps-cap">FPS cap</label>
-        <input id="fps-cap" class="w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5" type="number" min="15" max="240" bind:value={fpsCap} />
+        <input id="fps-cap" class="pointer-events-auto w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5" type="number" min="15" max="240" bind:value={fpsCap} />
       </div>
       <label class="flex items-center gap-2">
-        <input type="checkbox" bind:checked={freePanState} />
+        <input class="pointer-events-auto" type="checkbox" bind:checked={freePanState} />
         <span>freePan</span>
       </label>
       <label class="flex items-center gap-2">
-        <input type="checkbox" bind:checked={wrapXState} />
+        <input class="pointer-events-auto" type="checkbox" bind:checked={wrapXState} />
         <span>wrapX</span>
       </label>
     </div>
