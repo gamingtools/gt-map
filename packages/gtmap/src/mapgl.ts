@@ -41,6 +41,9 @@ export type MapOptions = {
   prefetch?: { enabled?: boolean; baselineLevel?: number };
   screenCache?: boolean;
   wheelSpeedCtrl?: number;
+  // Leaflet-like bounds
+  maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
+  maxBoundsViscosity?: number;
 };
 export type EaseOptions = {
   easeBaseMs?: number;
@@ -118,6 +121,8 @@ export default class GTMap {
   private _state!: ViewState;
   private _active = true;
   private _glReleased = false;
+  private _maxBoundsPx: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
+  private _maxBoundsViscosity = 0;
   // Home view (initial center)
   private _homeCenter: LngLat | null = null;
   // Leaflet-like inertia options and state
@@ -268,6 +273,8 @@ export default class GTMap {
     }
     if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
     if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
+    if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
+    if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
 
     // Initialize screen cache module (uses detected format)
     this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
@@ -337,7 +344,7 @@ export default class GTMap {
       getMap: () => this,
       getOutCenterBias: () => this.outCenterBias,
       clampCenterWorld: (cw, zInt, s, w, h) =>
-        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom),
+        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity),
       emit: (name: string, payload: any) => this._events.emit(name, payload),
       requestRender: () => {
         this._needsRender = true;
@@ -639,6 +646,14 @@ export default class GTMap {
   public setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number }) {
     if (typeof opts.enabled === 'boolean') this.prefetchEnabled = opts.enabled;
     // baselineLevel no longer used
+  }
+  public setMaxBoundsPx(bounds: { minX: number; minY: number; maxX: number; maxY: number } | null) {
+    this._maxBoundsPx = bounds ? { ...bounds } : null;
+    this._needsRender = true;
+  }
+  public setMaxBoundsViscosity(v: number) {
+    this._maxBoundsViscosity = Math.max(0, Math.min(1, v));
+    this._needsRender = true;
   }
   private _initEvents() {
     this._inputDeps = {

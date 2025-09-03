@@ -10,6 +10,8 @@ export type LeafletMapOptions = {
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
+  maxBounds?: LeafletBoundsLike;
+  maxBoundsViscosity?: number;
   // Pan behavior
   freePan?: boolean;
   // Commonly used Leaflet flags we may accept and map later
@@ -37,6 +39,16 @@ export default class LeafletMapFacade {
     if (typeof options?.maxZoom === 'number') init.maxZoom = options.maxZoom;
     if (typeof options?.fpsCap === 'number') init.fpsCap = options.fpsCap;
     if (typeof options?.freePan === 'boolean') init.freePan = options.freePan;
+    if (options?.maxBounds) {
+      const sw = Array.isArray(options.maxBounds)
+        ? { lat: options.maxBounds[0][0], lng: options.maxBounds[0][1] }
+        : toLngLat(options.maxBounds.getSouthWest());
+      const ne = Array.isArray(options.maxBounds)
+        ? { lat: options.maxBounds[1][0], lng: options.maxBounds[1][1] }
+        : toLngLat(options.maxBounds.getNorthEast());
+      (init as any).maxBoundsPx = { minX: sw.lng, minY: sw.lat, maxX: ne.lng, maxY: ne.lat };
+    }
+    if (typeof options?.maxBoundsViscosity === 'number') (init as any).maxBoundsViscosity = options.maxBoundsViscosity;
     this._map = new Impl(el as HTMLDivElement, init);
     // Wire core events
     this._map.events.on('move').each((e: any) => this._emit('move', e));
@@ -151,6 +163,18 @@ export default class LeafletMapFacade {
   setFpsCap(v: number) { (this._map as any).setFpsCap?.(v); return this; }
   setFreePan(on: boolean) { (this._map as any).setFreePan?.(on); return this; }
   setWrapX(on: boolean) { (this._map as any).setWrapX?.(on); return this; }
+  setMaxBounds(bounds?: LeafletBoundsLike | null) {
+    if (!bounds) { (this._map as any).setMaxBoundsPx?.(null); return this; }
+    const sw = Array.isArray(bounds)
+      ? { lat: bounds[0][0], lng: bounds[0][1] }
+      : toLngLat((bounds as any).getSouthWest());
+    const ne = Array.isArray(bounds)
+      ? { lat: bounds[1][0], lng: bounds[1][1] }
+      : toLngLat((bounds as any).getNorthEast());
+    (this._map as any).setMaxBoundsPx?.({ minX: sw.lng, minY: sw.lat, maxX: ne.lng, maxY: ne.lat });
+    return this;
+  }
+  setMaxBoundsViscosity(v: number) { (this._map as any).setMaxBoundsViscosity?.(v); return this; }
 
   on(name: string, fn: Listener): this { if (!this._listeners.has(name)) this._listeners.set(name, new Set()); this._listeners.get(name)!.add(fn); return this; }
   off(name: string, fn?: Listener): this {

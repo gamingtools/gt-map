@@ -11,7 +11,38 @@ export function clampCenterWorld(
   tileSize: number,
   mapSize?: { width: number; height: number },
   zMax?: number,
+  // Optional Leaflet-like bounds clamp (in image pixels at native resolution)
+  maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null,
+  maxBoundsViscosity?: number,
 ) {
+  // If explicit bounds are provided, apply them (Leaflet-like maxBounds behavior)
+  if (maxBoundsPx) {
+    const visc = Math.max(0, Math.min(1, maxBoundsViscosity ?? 0));
+    const s = Math.pow(2, (zMax ?? zInt) - zInt);
+    const minXw = maxBoundsPx.minX / s;
+    const minYw = maxBoundsPx.minY / s;
+    const maxXw = maxBoundsPx.maxX / s;
+    const maxYw = maxBoundsPx.maxY / s;
+    const halfW = widthCSS / (2 * scale);
+    const halfH = heightCSS / (2 * scale);
+    const minCx = minXw + halfW;
+    const maxCx = maxXw - halfW;
+    const minCy = minYw + halfH;
+    const maxCy = maxYw - halfH;
+    let cx = centerWorld.x;
+    let cy = centerWorld.y;
+    const clampedX = Math.max(minCx, Math.min(maxCx, cx));
+    const clampedY = Math.max(minCy, Math.min(maxCy, cy));
+    if (visc === 0) {
+      cx = clampedX;
+      cy = clampedY;
+    } else {
+      // Blend toward clamped position to simulate viscosity
+      cx = cx * (1 - visc) + clampedX * visc;
+      cy = cy * (1 - visc) + clampedY * visc;
+    }
+    return { x: cx, y: cy };
+  }
   if (freePan) return centerWorld;
   // Derive level dimensions; fallback to square world if not provided
   let worldW = tileSize * (1 << zInt);
