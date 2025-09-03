@@ -10,8 +10,6 @@
 	import Hud from '$lib/Hud.svelte';
 
 	let container: HTMLDivElement | null = null;
-	let speed = $state(1.0);
-	let gridEnabled = $state(true);
 	let map: any;
 	let gridLayer: any | null = null;
 
@@ -67,44 +65,15 @@
 		map.setView([HOME.lat, HOME.lng], map.getZoom());
 	}
 
-	// Reactive runes: apply control state to the map
-	$effect(() => {
-		if (map) map.setWheelSpeed(speed);
-	});
-
-	$effect(() => {
-		if (!map || !gridLayer) return;
-		if (gridEnabled) gridLayer.addTo(map);
-		else gridLayer.remove();
-	});
+	// HUD drives settings directly
 
 </script>
 
 <h1>GTMap Svelte Demo</h1>
 <p>Simple page demonstrating GT.L in SvelteKit.</p>
 <div bind:this={container} class="map">
-	<Hud {map} fpsCap={60} wheelSpeed={speed} wheelCtrlSpeed={0.4} freePan={true} wrapX={false} />
+	<Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} freePan={true} wrapX={false} home={HOME} />
 	<div class="attribution">Hagga Basin tiles © respective owners (game map)</div>
-
-	<!-- Recenter button -->
-	<button class="recenter" on:click={recenter}>Recenter</button>
-
-	<!-- Zoom speed control -->
-	<div class="panel speed">
-		<label>Zoom Speed</label>
-		<div class="row">
-			<input type="range" min="0.05" max="2.00" step="0.05" bind:value={speed} />
-			<span>{speed.toFixed(2)}</span>
-		</div>
-	</div>
-
-	<!-- Grid toggle -->
-	<div class="panel grid">
-		<label class="row">
-			<input type="checkbox" bind:checked={gridEnabled} />
-			<span>Show Grid</span>
-		</label>
-	</div>
 
  
 </div>
@@ -134,34 +103,6 @@
 		z-index: 10;
 	}
 
-	.recenter {
-		position: absolute;
-		left: 8px;
-		bottom: 8px;
-		background: #fff;
-		border: 1px solid #bbb;
-		border-radius: 4px;
-		padding: 6px 8px;
-		font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif;
-		cursor: pointer;
-		z-index: 11;
-	}
-
-	.panel {
-		position: absolute;
-		left: 240px; /* offset to avoid overlapping the HUD */
-		background: rgba(255, 255, 255, 0.9);
-		border: 1px solid #bbb;
-		border-radius: 4px;
-		padding: 6px 8px;
-		font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif;
-		z-index: 11;
-	}
-
-	.panel.speed { top: 80px; }
-	.panel.grid { top: 130px; }
-/* anchor panel removed for now */
-
-	.row { display: flex; align-items: center; gap: 6px; }
+/* HUD now includes controls */
 	.panel.speed input[type='range'] { width: 140px; }
 </style>
