@@ -1,5 +1,3 @@
-export const DEFAULT_TILE_SIZE = 256;
-
 /** Clamp latitude to Web Mercator's valid range. */
 export function clampLat(lat: number): number {
   const MAX = 85.05112878;
@@ -15,7 +13,7 @@ export function lngLatToWorld(
   lng: number,
   lat: number,
   z: number,
-  tileSize: number = DEFAULT_TILE_SIZE,
+  tileSize: number,
 ): { x: number; y: number } {
   const s = tileSize * Math.pow(2, z);
   const x = (lng + 180) / 360;
@@ -29,7 +27,7 @@ export function worldToLngLat(
   x: number,
   y: number,
   z: number,
-  tileSize: number = DEFAULT_TILE_SIZE,
+  tileSize: number,
 ): { lng: number; lat: number } {
   const s = tileSize * Math.pow(2, z);
   const lng = (x / s) * 360 - 180;
