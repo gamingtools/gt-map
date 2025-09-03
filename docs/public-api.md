@@ -49,15 +49,22 @@ Notes:
 
 ### Tiles
 - `GT.L.tileLayer(url, options).addTo(map)` sets the tile source.
-- Additional options and controls will be surfaced progressively.
+- `setUrl(url)` updates the source (clears cache and reloads).
+- `setOpacity(opacity)` controls raster alpha for tiles (0..1).
+- `setZIndex(z)` is a no-op for now (single-canvas renderer).
 
 ## Map methods (selected)
-- `map.setView(latlng, zoom?)`, `map.getCenter()`, `map.getZoom()`
-- `map.on/off('move'|'moveend'|'zoom'|'zoomend', fn)`
-- Tile layer via `GT.L.tileLayer(url, options).addTo(map)`
+- View: `setView(latlng, zoom?)` → this, `getCenter()` → `[lat, lng]`, `getZoom()` → `number`
+- Movement: `panTo(latlng)` → this, `flyTo(latlng, zoom?)` → this, `panBy({x,y}|[x,y])` → this
+- Bounds: `fitBounds(bounds, { padding?, paddingTopLeft?, paddingBottomRight?, maxZoom? })` → this, `getBounds()` → `[[south, west],[north, east]]`
+- Zoom helpers: `zoomIn(delta?)` → this, `zoomOut(delta?)` → this
+- Resize: `invalidateSize(options?)` → this, `getSize()` → `{ x, y }`, `getPixelBounds()` → `{ min:{x,y}, max:{x,y} }`, `getPixelOrigin()` → `{ x, y }`
+- Events: `on/off('move'|'moveend'|'zoom'|'zoomend', fn)` (returns this)
 
 ## Options
-- `tileUrl`, `tileSize`, `minZoom`, `maxZoom`, `wrapX`, `freePan`, `center`, `zoom`
+- `center`, `zoom`, `minZoom`, `maxZoom`
+- `tileUrl`, `tileSize`, `wrapX`, `freePan`
+- Accepted (reserved/not fully wired yet): `zoomAnimation`, `zoomAnimationThreshold`, `fadeAnimation`, `markerZoomAnimation`
 
 ## Migration notes
 - Use `GT.L` exclusively. Previous native facades are no longer exported.
@@ -65,3 +72,7 @@ Notes:
 ## Contract & stability
 - Facade (`GT.L`) is the supported public surface.
 - Internal implementation classes/modules (e.g., `mapgl.ts`, `tiles/*`, `layers/*`) are private and may change without notice.
+
+## TypeScript
+- Import typed options and helpers from `@gtmap`:
+  - `LeafletMapOptions`, `TileLayerOptions`, `IconOptions`, `LeafletIcon`, `MarkerOptions`, `LeafletLatLng`.

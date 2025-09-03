@@ -13,8 +13,15 @@ Currently Implemented (GT.L Phase 1)
 - (impl) map.getCenter(), map.getZoom()
 - (impl) map.on/off for move/moveend/zoom/zoomend
 - (impl) GT.L.tileLayer(url, options).addTo(map)
+- (impl) L.tileLayer.setUrl(url), setOpacity(opacity), setZIndex(z) [zIndex is a no-op with single-canvas renderer]
 - (impl) GT.L.icon(options)
 - (impl) GT.L.marker([lat, lng], { icon }).addTo(map), setLatLng/getLatLng, remove
+- (impl) map.panTo(latlng)
+- (impl) map.flyTo(latlng, zoom?)
+- (impl) map.fitBounds(bounds, options?), map.getBounds()
+- (impl) map.zoomIn(delta?), map.zoomOut(delta?)
+- (impl) map.panBy(offset)
+- (impl) map.invalidateSize(options?), map.getSize(), map.getPixelBounds(), map.getPixelOrigin()
 
 ## Map (Core)
 - [1] L.map(container, options)
@@ -151,3 +158,4 @@ Notes
 - Check the items you need; we can prioritize implementation accordingly.
 - Items marked (native) exist today via the native facades and can be plumbed into GT.L where it makes sense.
 - DOM-based features (popups/tooltips/controls) will be lightweight overlays anchored to world position and updated on move/zoom.
+ - zIndex for TileLayer is a no-op for now because the renderer is single-canvas; proper pane/stacking controls are planned.
