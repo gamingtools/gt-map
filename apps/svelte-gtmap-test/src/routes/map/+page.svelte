@@ -16,6 +16,8 @@
 	let map: any;
 	let gridLayer: any | null = null;
 
+	const HOME = { lng: 4096, lat: 4096 };
+
 	onMount(() => {
 		if (!container) return;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +28,6 @@
 			maxZoom: 5,
 			wrapX: false
 		};
-		const HOME = { lng: 4096, lat: 4096 };
 		map = L.map(container, {
 			center: HOME,
 			zoom: 2,
