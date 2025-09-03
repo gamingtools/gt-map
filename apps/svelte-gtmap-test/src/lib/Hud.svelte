@@ -7,13 +7,12 @@
     events: { on: (name: string) => { each: (fn: (e: any) => () => void | void) => () => void } };
   };
 
-  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, freePan: freePanInitial = false, wrapX: wrapXInitial = false, home } = $props<{
+  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, freePan: freePanInitial = false, home } = $props<{
     map: MapLike;
     fpsCap?: number;
     wheelSpeed?: number;
     wheelCtrlSpeed?: number;
     freePan?: boolean;
-    wrapX?: boolean;
     home: { lng: number; lat: number };
   }>();
 
@@ -26,7 +25,6 @@
   let wheelCtrlSpeed = $state(wheelCtrlSpeedInitial);
   let fpsCap = $state(fpsCapInitial);
   let freePanState = $state(freePanInitial);
-  let wrapXState = $state(wrapXInitial);
   let gridEnabled = $state(true);
 
   function refresh(fromFrame = false, now?: number) {
@@ -62,7 +60,6 @@
   $effect(() => { if (map) (map as any).setWheelCtrlSpeed?.(wheelCtrlSpeed); });
   $effect(() => { if (map) (map as any).setFpsCap?.(fpsCap); });
   $effect(() => { if (map) (map as any).setFreePan?.(freePanState); });
-  $effect(() => { if (map) (map as any).setWrapX?.(wrapXState); });
   $effect(() => { if (map) (map as any).setGridVisible?.(gridEnabled); });
 
   function recenter() {
@@ -82,7 +79,7 @@
   <div class="my-2 h-px bg-gray-200"></div>
   <!-- Controls (interactive only on elements) -->
   <div class="space-y-2 pointer-events-none select-auto">
-    <button class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1 text-gray-800 hover:bg-white" on:click={recenter}>Recenter</button>
+    <button class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1 text-gray-800 hover:bg-white" onclick={recenter}>Recenter</button>
     <div>
       <label class="block text-gray-700" for="zoom-speed">Zoom speed</label>
       <div class="flex items-center gap-2">
@@ -111,10 +108,6 @@
       <label class="flex items-center gap-2">
         <input class="pointer-events-auto" type="checkbox" bind:checked={freePanState} />
         <span>freePan</span>
-      </label>
-      <label class="flex items-center gap-2">
-        <input class="pointer-events-auto" type="checkbox" bind:checked={wrapXState} />
-        <span>wrapX</span>
       </label>
     </div>
   </div>

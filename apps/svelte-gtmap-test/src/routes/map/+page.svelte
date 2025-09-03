@@ -93,7 +93,7 @@
 <h1>GTMap Svelte Demo</h1>
 <p>Simple page demonstrating GT.L in SvelteKit.</p>
 <div bind:this={container} class="map">
-	<Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} freePan={true} wrapX={false} home={HOME} />
+	<Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} freePan={true} home={HOME} />
 	<div class="attribution">Hagga Basin tiles © respective owners (game map)</div>
 
  
