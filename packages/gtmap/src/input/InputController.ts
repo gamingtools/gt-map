@@ -8,7 +8,6 @@ export default class InputController {
   private lastY = 0;
   private _positions: Array<{ x: number; y: number }> = [];
   private _times: number[] = [];
-  //
   private touchState: null | {
     mode: 'pan' | 'pinch';
     x?: number;
@@ -63,15 +62,12 @@ export default class InputController {
       const widthCSS = rect.width,
         heightCSS = rect.height;
       const centerWorld = lngLatToWorld(view.center.lng, view.center.lat, zInt, deps.getTileSize());
-      const tl = {
-        x: centerWorld.x - widthCSS / (2 * scale),
-        y: centerWorld.y - heightCSS / (2 * scale),
-      };
       // record position for inertia
       this._pushSample(e.clientX - rect.left, e.clientY - rect.top);
       // update pointerAbs always
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
+      const tl = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
       const wx = tl.x + px / scale;
       const wy = tl.y + py / scale;
       const zAbs = Math.floor(deps.getMaxZoom());
@@ -82,9 +78,9 @@ export default class InputController {
         dy = e.clientY - this.lastY;
       this.lastX = e.clientX;
       this.lastY = e.clientY;
-      // screen-locked pan while dragging
-      const newTL = { x: tl.x - dx / scale, y: tl.y - dy / scale };
-      let newCenter = { x: newTL.x + widthCSS / (2 * scale), y: newTL.y + heightCSS / (2 * scale) };
+      // screen-locked pan while dragging: shift center by dx/scale
+      let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
+      
       newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
       const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
       deps.setCenter(lng, lat);
@@ -162,12 +158,9 @@ export default class InputController {
           zInt,
           deps.getTileSize(),
         );
-        const tl = {
-          x: centerWorld.x - widthCSS / (2 * scale),
-          y: centerWorld.y - heightCSS / (2 * scale),
-        };
         this._pushSample(t.clientX - rect.left, t.clientY - rect.top);
-        let newCenter = { x: tl.x - dx / scale + widthCSS / (2 * scale), y: tl.y - dy / scale + heightCSS / (2 * scale) };
+        let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
+        
         newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
         const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
         deps.setCenter(lng, lat);
