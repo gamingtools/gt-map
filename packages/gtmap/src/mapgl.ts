@@ -125,12 +125,15 @@ export default class GTMap {
   private _maxBoundsPx: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
   private _maxBoundsViscosity = 0;
   _bounceAtZoomLimits = false;
+  // Tile source availability
+  private _sourceMinZoom: number = 0;
+  private _sourceMaxZoom: number = 0;
   // Home view (initial center)
   private _homeCenter: LngLat | null = null;
   // Leaflet-like inertia options and state
   private inertia = true;
   private inertiaDeceleration = 3400; // px/s^2
-  private inertiaMaxSpeed = Infinity; // px/s
+  private inertiaMaxSpeed = 2000; // px/s (cap to prevent excessive throw)
   private easeLinearity = 0.2;
   private _panAnim: null | { start: number; dur: number; from: { x: number; y: number }; offsetWorld: { x: number; y: number } } = null;
   private _view(): ViewState {
@@ -165,14 +168,17 @@ export default class GTMap {
       icons: this._icons,
       tileCache: this._tileCache,
       tileSize: this.tileSize,
+      sourceMaxZoom: this._sourceMaxZoom,
       // Project image pixels at native resolution into level-z pixel coords
       project: (x: number, y: number, z: number) => {
-        const s = Math.pow(2, this.maxZoom - z);
+        const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+        const s = Math.pow(2, imageMaxZ - z);
         return { x: x / s, y: y / s };
       },
       // Unproject level-z pixel coords into image pixels at native resolution
       unproject: (x: number, y: number, z: number) => {
-        const s = Math.pow(2, this.maxZoom - z);
+        const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+        const s = Math.pow(2, imageMaxZ - z);
         return { x: x * s, y: y * s };
       },
       enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
@@ -342,6 +348,7 @@ export default class GTMap {
       getZoom: () => this.zoom,
       getMinZoom: () => this.minZoom,
       getMaxZoom: () => this.maxZoom,
+      getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
       getTileSize: () => this.tileSize,
       shouldAnchorCenterForZoom: (target) => this._shouldAnchorCenterForZoom(target),
       getMap: () => this,
@@ -380,7 +387,8 @@ export default class GTMap {
       const scale = Math.pow(2, this.zoom - zInt);
       const rect = this.container.getBoundingClientRect();
       const wCSS = rect.width, hCSS = rect.height;
-      const s0 = Math.pow(2, this.maxZoom - zInt);
+      const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+      const s0 = Math.pow(2, imageMaxZ - zInt);
       const cw = { x: lng / s0, y: lat / s0 };
       const clamped = clampCenterWorldCore(cw, zInt, scale, wCSS, hCSS, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false);
       this.center.lng = clamped.x * s0;
@@ -404,21 +412,19 @@ export default class GTMap {
   setTileSource(opts: {
     url?: string;
     tileSize?: number;
-    minZoom?: number;
-    maxZoom?: number;
+    sourceMinZoom?: number;
+    sourceMaxZoom?: number;
     mapSize?: { width: number; height: number };
     wrapX?: boolean;
     clearCache?: boolean;
   }) {
     if (typeof opts.url === 'string') this.tileUrl = opts.url;
     if (Number.isFinite(opts.tileSize as number)) this.tileSize = opts.tileSize as number;
-    if (Number.isFinite(opts.minZoom as number)) this.minZoom = opts.minZoom as number;
-    if (Number.isFinite(opts.maxZoom as number)) this.maxZoom = opts.maxZoom as number;
+    if (Number.isFinite(opts.sourceMinZoom as number)) this._sourceMinZoom = (opts.sourceMinZoom as number) | 0;
+    if (Number.isFinite(opts.sourceMaxZoom as number)) this._sourceMaxZoom = (opts.sourceMaxZoom as number) | 0;
     if (opts.mapSize) this.mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
     if (typeof opts.wrapX === 'boolean') this.wrapX = opts.wrapX;
-    // reflect to view state
-    this._state.minZoom = this.minZoom;
-    this._state.maxZoom = this.maxZoom;
+    // reflect to view state (min/max zoom remain view constraints, not source constraints)
     this._state.wrapX = this.wrapX;
     if (opts.clearCache) {
       // clear GPU textures and cache
@@ -672,6 +678,7 @@ export default class GTMap {
       getContainer: () => this.container,
       getCanvas: () => this.canvas,
       getMaxZoom: () => this.maxZoom,
+      getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
       getView: () => this._view(),
       getTileSize: () => this.tileSize,
       setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
@@ -747,7 +754,8 @@ export default class GTMap {
       const scale = Math.pow(2, this.zoom - baseZ);
       const widthCSS = rect.width;
       const heightCSS = rect.height;
-      const s = Math.pow(2, this.maxZoom - baseZ);
+      const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+      const s = Math.pow(2, imageMaxZ - baseZ);
       const centerWorld = { x: this.center.lng / s, y: this.center.lat / s };
       const tlWorld = {
         x: centerWorld.x - widthCSS / (2 * scale),
@@ -762,7 +770,7 @@ export default class GTMap {
         heightCSS,
         tlWorld,
         this._dpr,
-        this.maxZoom,
+        (this._sourceMaxZoom || this.maxZoom) as number,
         this.tileSize,
       );
     }
@@ -940,7 +948,8 @@ export default class GTMap {
     const from = a.from;
     const target = { x: from.x + a.offsetWorld.x * p, y: from.y + a.offsetWorld.y * p };
     let newCenter = clampCenterWorldCore(target, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false);
-    const s0 = Math.pow(2, this.maxZoom - zInt);
+    const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+    const s0 = Math.pow(2, imageMaxZ - zInt);
     const nx = newCenter.x * s0;
     const ny = newCenter.y * s0;
     this.center = { lng: nx, lat: ny };
@@ -952,7 +961,8 @@ export default class GTMap {
   private _startPanBy(dxPx: number, dyPx: number, durSec: number) {
     const zInt = Math.floor(this.zoom);
     const scale = Math.pow(2, this.zoom - zInt);
-    const s = Math.pow(2, this.maxZoom - zInt);
+    const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+    const s = Math.pow(2, imageMaxZ - zInt);
     const cw = { x: this.center.lng / s, y: this.center.lat / s };
     // Use the same screen->world sign convention as during drag updates
     const offsetWorld = { x: dxPx / scale, y: dyPx / scale };
@@ -1111,21 +1121,22 @@ export default class GTMap {
     h: number,
   ) {
     if (!this.prefetchEnabled) return;
+    const zClamped = Math.min(z, this._sourceMaxZoom || z);
     const TS = this.tileSize;
     const startX = Math.floor(tl.x / TS) - 1;
     const startY = Math.floor(tl.y / TS) - 1;
     const endX = Math.floor((tl.x + w / scale) / TS) + 1;
     const endY = Math.floor((tl.y + h / scale) / TS) + 1;
     for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= 1 << z) continue;
+      if (ty < 0 || ty >= 1 << zClamped) continue;
       for (let tx = startX; tx <= endX; tx++) {
         let tileX = tx;
         if (this.wrapX) {
-          const n = 1 << z;
+          const n = 1 << zClamped;
           tileX = ((tx % n) + n) % n;
-        } else if (tx < 0 || tx >= 1 << z) continue;
-        const key = `${z}/${tileX}/${ty}`;
-        if (!this._tileCache.has(key)) this._enqueueTile(z, tileX, ty, 1);
+        } else if (tx < 0 || tx >= 1 << zClamped) continue;
+        const key = `${zClamped}/${tileX}/${ty}`;
+        if (!this._tileCache.has(key)) this._enqueueTile(zClamped, tileX, ty, 1);
       }
     }
   }

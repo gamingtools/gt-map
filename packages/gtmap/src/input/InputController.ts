@@ -7,7 +7,7 @@ export default class InputController {
   private lastY = 0;
   private over = false;
   private inertiaActive = false;
-  private static readonly DEBUG = true;
+  private static readonly DEBUG = false;
   private _positions: Array<{ x: number; y: number }> = [];
   private _times: number[] = [];
   private touchState: null | {
@@ -103,6 +103,7 @@ export default class InputController {
       const nx = newCenter.x * s0;
       const ny = newCenter.y * s0;
       deps.setCenter(nx, ny);
+      try { console.debug('[center] drag', { lng: nx, lat: ny, z: view.zoom }); } catch {}
       deps.emit('move', { view: deps.getView() });
     };
 
@@ -273,7 +274,7 @@ export default class InputController {
     const speedVec = { x: (dir.x * ease) / duration, y: (dir.y * ease) / duration };
     const speed = Math.hypot(speedVec.x, speedVec.y);
     const limited = Math.min(maxSpeed, speed);
-    if (InputController.DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel });
+    if (InputController.DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel, duration, samples: this._positions.length });
     if (!isFinite(limited) || limited <= 0) return;
     const scale = (limited / speed) || 0;
     const limitedVec = { x: speedVec.x * scale, y: speedVec.y * scale };
