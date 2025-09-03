@@ -130,14 +130,15 @@
 </div>
 
 <style>
-	.map {
-		position: relative;
-		background: #ddd;
-		user-select: none;
-		-webkit-user-select: none;
-		touch-action: none;
-		width: 100%;
-		height: calc(100vh - 32px);
-	}
+  .map {
+    position: relative;
+    /* Dark neutral to match app background */
+    background: #171717;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    width: 100%;
+    height: calc(100vh - 32px);
+  }
 
 </style>

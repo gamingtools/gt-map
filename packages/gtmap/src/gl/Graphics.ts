@@ -24,7 +24,8 @@ export default class Graphics {
     }) as WebGLRenderingContext | null;
     if (!gl) throw new Error('WebGL not supported');
     this.map.gl = gl;
-    gl.clearColor(0.93, 0.93, 0.93, 1);
+    // Match app's dark theme to avoid white flashes between tile draws
+    gl.clearColor(0.10, 0.10, 0.10, 1);
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
