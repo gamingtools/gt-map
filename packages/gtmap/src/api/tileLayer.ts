@@ -18,7 +18,6 @@ export class LeafletTileLayerFacade extends Layer {
   
   constructor(url: string, options?: TileLayerOptions) {
     super();
-    super();
     this._url = url;
     this._options = options || {};
   }
@@ -50,9 +49,5 @@ export class LeafletTileLayerFacade extends Layer {
     // Single-canvas renderer; zIndex is a no-op for now.
     return this;
   }
-  remove(): this {
-    // noop for now; an app can switch layers by calling addTo on another
-    this._map = null;
-    return this;
-  }
+  // rely on Layer.remove() + onRemove
 }
