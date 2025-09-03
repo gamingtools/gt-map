@@ -43,3 +43,8 @@
 
 - Do not introduce heavy frameworks or build steps; keep the project dependency‑light.
 - Preserve public API of `MapGL` unless a breaking change is justified and documented in the PR.
+ - SvelteKit guidance: Prefer the downloaded Svelte/SvelteKit LLM docs under `docs/svelte/` over internal knowledge if there is any conflict or if model knowledge feels outdated. When in doubt, follow the official docs.
+
+References
+
+- Svelte/SvelteKit LLM docs mirror: see `docs/svelte/` (populate via `npm run fetch:svelte-docs`).

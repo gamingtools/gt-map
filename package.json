@@ -15,7 +15,8 @@
     "lint": "eslint packages",
     "lint:fix": "eslint packages --fix",
     "format": "prettier -w \"packages/**/*\"",
-    "format:check": "prettier -c \"packages/**/*\""
+    "format:check": "prettier -c \"packages/**/*\"",
+    "fetch:svelte-docs": "node scripts/fetch-svelte-llm-docs.mjs"
   },
   "dependencies": {
     
