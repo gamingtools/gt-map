@@ -1,12 +1,11 @@
 <script lang="ts">
   // Single status widget: subscribes to map events and shows key values
-  import type { LeafletMapFacade, EventBus } from '@gtmap';
+  import type { LeafletMapFacade } from '@gtmap';
 
-  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, home, markerCount, setMarkerCount } = $props<{
+  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, home, markerCount, setMarkerCount } = $props<{
     map: LeafletMapFacade;
     fpsCap?: number;
     wheelSpeed?: number;
-    wheelCtrlSpeed?: number;
     home: { lng: number; lat: number };
     markerCount: number;
     setMarkerCount: (n: number) => void;
@@ -18,7 +17,6 @@
   let mouse: { x: number; y: number } | null = $state(null);
   let _prev = 0;
   let wheelSpeed = $state(wheelSpeedInitial);
-  let wheelCtrlSpeed = $state(wheelCtrlSpeedInitial);
   let fpsCap = $state(fpsCapInitial);
   let gridEnabled = $state(true);
   let markersLocal = $state<number>(markerCount ?? 0);
@@ -53,7 +51,6 @@
 
   // Apply controls
   $effect(() => { map?.setWheelSpeed(wheelSpeed); });
-  $effect(() => { map?.setWheelCtrlSpeed(wheelCtrlSpeed); });
   $effect(() => { map?.setFpsCap(fpsCap); });
   $effect(() => { map?.setGridVisible(gridEnabled); });
 

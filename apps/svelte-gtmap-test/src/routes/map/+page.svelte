@@ -123,7 +123,7 @@
 
 
 <div bind:this={container} class="map">
-  <Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} home={HOME}
+  <Hud {map} fpsCap={60} wheelSpeed={1.0} home={HOME}
     markerCount={markerCount} setMarkerCount={setMarkerCount}
   />
  
