@@ -1,11 +1,5 @@
 <script lang="ts">
-  // Using runes + $effect to (re)subscribe when map changes
-  import Center from './hud/Center.svelte';
-  import Zoom from './hud/Zoom.svelte';
-  import Fps from './hud/Fps.svelte';
-  import Mouse from './hud/Mouse.svelte';
-  import Settings from './hud/Settings.svelte';
-
+  // Single status widget: subscribes to map events and shows key values
   type MapLike = {
     getCenter: () => [number, number];
     getZoom: () => number;
@@ -49,7 +43,6 @@
     if (!map) return;
     const offFrame = map.events.on('frame').each((e: any) => refresh(true, e?.now));
     const offPointer = map.events.on('pointermove').each(() => refresh(false));
-    // Kick an initial refresh so values show immediately
     refresh(false);
     return () => {
       try { offFrame?.(); } catch {}
@@ -60,11 +53,18 @@
 
 <div class="absolute left-2 top-2 z-10 min-w-72 rounded-md border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-2 text-xs text-gray-800 shadow pointer-events-none select-none">
   <div class="grid grid-cols-2 gap-x-6 gap-y-1">
-    <Center {center} />
-    <Zoom {zoom} />
-    <Fps {fps} />
-    <Mouse {mouse} />
+    <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Center:</span><span class="tabular-nums">lng {center.lng.toFixed(2)}, lat {center.lat.toFixed(2)}</span></div>
+    <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Zoom:</span><span class="tabular-nums">{zoom.toFixed(2)}</span></div>
+    <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">FPS:</span><span class="tabular-nums">{Math.round(fps)}</span></div>
+    <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Mouse:</span><span class="tabular-nums">{mouse ? `x ${mouse.x}, y ${mouse.y}` : '—'}</span></div>
   </div>
   <div class="my-2 h-px bg-gray-200"></div>
-  <Settings {wheelSpeed} {wheelCtrlSpeed} {fpsCap} {freePan} {wrapX} />
+  <div class="space-y-1">
+    <div class="font-semibold text-gray-700">Settings</div>
+    <div class="flex items-center justify-between"><span class="text-gray-600">Zoom speed</span><span class="tabular-nums text-gray-900">{wheelSpeed.toFixed(2)}</span></div>
+    <div class="flex items-center justify-between"><span class="text-gray-600">Ctrl zoom speed</span><span class="tabular-nums text-gray-900">{wheelCtrlSpeed.toFixed(2)}</span></div>
+    <div class="flex items-center justify-between"><span class="text-gray-600">FPS cap</span><span class="tabular-nums text-gray-900">{fpsCap}</span></div>
+    <div class="flex items-center justify-between"><span class="text-gray-600">freePan</span><span class="text-gray-900">{freePan ? 'on' : 'off'}</span></div>
+    <div class="flex items-center justify-between"><span class="text-gray-600">wrapX</span><span class="text-gray-900">{wrapX ? 'on' : 'off'}</span></div>
+  </div>
 </div>
