@@ -66,6 +66,7 @@ export interface InputDeps {
   getView(): ViewState;
   getTileSize(): number;
   setCenter(lng: number, lat: number): void;
+  setZoom(zoom: number): void;
   clampCenterWorld(
     centerWorld: { x: number; y: number },
     zInt: number,

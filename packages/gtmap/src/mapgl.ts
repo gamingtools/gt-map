@@ -696,6 +696,7 @@ export default class GTMap {
       getView: () => this._view(),
       getTileSize: () => this.tileSize,
       setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
+      setZoom: (z: number) => this.setZoom(z),
       clampCenterWorld: (cw, zInt, scale, w, h, viscous?: boolean) =>
         clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, !!viscous),
       updatePointerAbs: (x: number | null, y: number | null) => {

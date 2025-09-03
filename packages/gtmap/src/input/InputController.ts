@@ -18,6 +18,9 @@ export default class InputController {
     cx?: number;
     cy?: number;
     dist?: number;
+    startDist?: number;
+    startZoom?: number;
+    startCenter?: { x: number; y: number };
   } = null;
   private cleanup: (() => void) | null = null;
   private static normalizeWheel(e: WheelEvent, canvasHeight: number): number {
@@ -157,11 +160,17 @@ export default class InputController {
         const t1 = e.touches[1];
         const dx = t1.clientX - t0.clientX;
         const dy = t1.clientY - t0.clientY;
+        // Record starting zoom and center (keep center fixed during pinch like Leaflet 'center')
+        const view = deps.getView();
+        const startCenter = { x: view.center.lng, y: view.center.lat };
         this.touchState = {
           mode: 'pinch',
           cx: (t0.clientX + t1.clientX) / 2,
           cy: (t0.clientY + t1.clientY) / 2,
           dist: Math.hypot(dx, dy),
+          startDist: Math.hypot(dx, dy),
+          startZoom: view.zoom,
+          startCenter: startCenter,
         };
       }
     };
@@ -197,16 +206,18 @@ export default class InputController {
         const dx = t1.clientX - t0.clientX;
         const dy = t1.clientY - t0.clientY;
         const dist = Math.hypot(dx, dy);
-        const scaleDelta = Math.log2(dist / (touchState.dist || dist));
-        const rect = deps.getContainer().getBoundingClientRect();
-        const px = (t0.clientX + t1.clientX) / 2 - rect.left;
-        const py = (t0.clientY + t1.clientY) / 2 - rect.top;
+        // Compute zoom relative to the starting pinch distance like Leaflet
+        const startDist = touchState.startDist || dist;
+        const startZoom = touchState.startZoom || deps.getView().zoom;
+        const scale = Math.max(1e-6, dist / Math.max(1e-6, startDist));
+        const nextZoom = startZoom + Math.log2(scale);
         deps.cancelZoomAnim();
-        const v3 = deps.getView();
-        // Use center anchor during pinch to avoid sudden jumps on mobile
-        // (pointer-anchored zoom can bias toward previous center when zooming out)
-        deps.applyAnchoredZoom(v3.zoom + scaleDelta, px, py, 'center');
+        // Keep center fixed to the starting center during pinch
+        const c = touchState.startCenter || deps.getView().center;
+        deps.setZoom(nextZoom);
+        deps.setCenter(c.x, c.y);
         deps.emit('zoom', { view: deps.getView() });
+        deps.emit('move', { view: deps.getView() });
         touchState.dist = dist;
       }
       e.preventDefault();
@@ -215,6 +226,7 @@ export default class InputController {
       if (this.touchState?.mode === 'pan') this._maybeStartInertia();
       this.touchState = null;
       deps.emit('moveend', { view: deps.getView() });
+      deps.emit('zoomend', { view: deps.getView() });
     };
 
     // Wire listeners
