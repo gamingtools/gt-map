@@ -58,7 +58,7 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
   try {
     const url = new URL('./sample-data/MapIcons.json', import.meta.url);
     const defs = await fetch(url).then((r) => r.json());
-    await map.setIconDefs(defs);
+    await map.icons.setDefs(defs);
     // Sample markers near center (demo only)
     const base: any[] = [
       { lng: 0, lat: 0, type: 'player' },
@@ -74,7 +74,7 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
       const type = keys[(Math.random() * keys.length) | 0];
       base.push({ lng: rand(-80, 80), lat: rand(-40, 40), type });
     }
-    map.setMarkers(base as any);
+    map.icons.setMarkers(base as any);
   } catch (err) {
     console.warn('Icon demo load failed:', err);
   }

@@ -1,13 +1,16 @@
 import Impl, { type MapOptions, type LngLat } from '../mapgl';
 import { createIconsApi, type IconsApi } from './IconsApi';
+import { createTilesApi, type TilesApi } from './TilesApi';
 
 export default class GTMap {
   private _impl: Impl;
   public readonly icons: IconsApi;
+  public readonly tiles: TilesApi;
 
   constructor(container: HTMLDivElement, options: MapOptions = {}) {
     this._impl = new Impl(container, options);
     this.icons = createIconsApi(this._impl);
+    this.tiles = createTilesApi(this._impl);
   }
 
   // Properties (readonly views)
@@ -37,4 +40,3 @@ export default class GTMap {
   recenter() { (this._impl as any).recenter(); }
   destroy() { (this._impl as any).destroy(); }
 }
-

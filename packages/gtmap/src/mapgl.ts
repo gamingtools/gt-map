@@ -480,6 +480,8 @@ export default class GTMap {
     this._tiles.clear();
     this._inflightLoads = 0;
   }
+  // Public cache clear for API facades
+  public clearCache() { this._clearCache(); this._needsRender = true; }
   public setWheelSpeed(speed: number) {
     if (Number.isFinite(speed)) {
       this.wheelSpeed = Math.max(0.01, Math.min(2, speed));
