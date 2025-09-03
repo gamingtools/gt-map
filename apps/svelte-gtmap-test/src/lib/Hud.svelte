@@ -117,7 +117,7 @@
       </div>
       <label class="flex items-center gap-2">
         <input class="pointer-events-auto" type="checkbox" bind:checked={boundsEnabled} />
-        <span>lock to current bounds</span>
+        <span>lock to image bounds</span>
       </label>
       <div class="flex items-center gap-2">
         <label class="text-gray-700" for="bounds-visc">Bounds viscosity</label>

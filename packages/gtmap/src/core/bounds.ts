@@ -43,7 +43,9 @@ export function clampCenterWorld(
     }
     return { x: cx, y: cy };
   }
-  if (freePan) return centerWorld;
+  // Leaflet semantics: if no explicit maxBounds are set, do not clamp the view
+  // (panning can go beyond the image/world unless application sets bounds).
+  return centerWorld;
   // Derive level dimensions; fallback to square world if not provided
   let worldW = tileSize * (1 << zInt);
   let worldH = worldW;
