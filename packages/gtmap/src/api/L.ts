@@ -1,6 +1,8 @@
 import LeafletMapFacade, { type LeafletMapOptions } from './map';
-import { LeafletTileLayerFacade, type TileLayerOptions } from './tileLayer';
-import { LeafletMarkerFacade, createIcon, type IconOptions, type LeafletIcon, type MarkerOptions } from './marker';
+import { LeafletTileLayerFacade } from './tileLayer';
+import { LeafletMarkerFacade, createIcon } from './marker';
+import type { TileLayerOptions } from './tileLayer';
+import type { IconOptions, LeafletIcon, MarkerOptions } from './marker';
 import type { LeafletLatLng } from './util';
 
 export const GT = {
