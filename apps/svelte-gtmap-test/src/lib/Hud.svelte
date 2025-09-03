@@ -63,7 +63,7 @@
   $effect(() => {
     if (!map) return;
     if (boundsEnabled) {
-      const b = (map as any).getBounds?.();
+      const b = (map as any).getImageBounds?.() || (map as any).getBounds?.();
       if (b) (map as any).setMaxBounds?.(b);
     } else {
       (map as any).setMaxBounds?.(null);

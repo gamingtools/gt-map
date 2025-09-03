@@ -143,6 +143,15 @@ export default class LeafletMapFacade {
     return { min: { x: 0, y: 0 }, max: { x: s.x, y: s.y } };
     }
   getPixelOrigin(): { x: number; y: number } { return { x: 0, y: 0 }; }
+  getImageBounds(): [[number, number], [number, number]] {
+    const ms = (this._map as any).mapSize as { width: number; height: number } | undefined;
+    if (ms && Number.isFinite(ms.width) && Number.isFinite(ms.height)) {
+      // Lat = y, Lng = x in pixel CRS
+      return [[0, 0], [ms.height, ms.width]];
+    }
+    // Fallback to current view bounds
+    return this.getBounds();
+  }
 
   // Native marker helpers (GT extensions for performance/testing)
   async setIconDefs(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>): Promise<void> {
