@@ -6,6 +6,7 @@ export default class MapRenderer {
   private hooks: {
     stepAnimation?: () => boolean;
     zoomVelocityTick?: () => void;
+    panVelocityTick?: () => void;
     prefetchNeighbors?: (
       z: number,
       tl: { x: number; y: number },
@@ -55,6 +56,7 @@ export default class MapRenderer {
     gl.uniform2f((ctx.loc as any).u_uv0, 0.0, 0.0);
     gl.uniform2f((ctx.loc as any).u_uv1, 1.0, 1.0);
     if (opts?.zoomVelocityTick) opts.zoomVelocityTick();
+    if (opts?.panVelocityTick) opts.panVelocityTick();
     if (ctx.useScreenCache && ctx.screenCache)
       (ctx.screenCache as any).draw(
         { zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld },

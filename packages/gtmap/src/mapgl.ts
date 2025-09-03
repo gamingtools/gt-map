@@ -1,4 +1,4 @@
-import { clampLat, lngLatToWorld } from './mercator';
+import { clampLat, lngLatToWorld, worldToLngLat } from './mercator';
 // programs are initialized via Graphics
 import Graphics from './gl/Graphics';
 import { ScreenCache } from './render/screenCache';
@@ -103,6 +103,9 @@ export default class GTMap {
   private _state!: ViewState;
   private _active = true;
   private _glReleased = false;
+  private _panVelX = 0;
+  private _panVelY = 0;
+  private panDamping = 0.12;
   private _view(): ViewState {
     return this._state;
   }
@@ -252,6 +255,7 @@ export default class GTMap {
     this._renderer = new MapRenderer(() => this.getRenderCtx(), {
       stepAnimation: () => this._zoomCtrl.step(),
       zoomVelocityTick: () => this.zoomVelocityTick(),
+      panVelocityTick: () => this.panVelocityTick(),
       prefetchNeighbors: (z, tl, scale, w, h) => this.prefetchNeighbors(z, tl, scale, w, h),
       cancelUnwanted: () => this.cancelUnwantedLoads(),
       clearWanted: () => this.clearWantedKeys(),
@@ -510,6 +514,7 @@ export default class GTMap {
       },
       applyAnchoredZoom: (targetZoom, px, py, anchor) =>
         this._zoomCtrl.applyAnchoredZoom(targetZoom, px, py, anchor),
+      setPanVelocity: (vx: number, vy: number) => { this._panVelX = vx || 0; this._panVelY = vy || 0; this._needsRender = true; },
     };
     this._input = new InputController(this._inputDeps);
     this._input.attach();
@@ -711,6 +716,33 @@ export default class GTMap {
       onFinally();
     };
     img.src = url;
+  }
+
+  public panVelocityTick() {
+    const vX = this._panVelX;
+    const vY = this._panVelY;
+    if (Math.abs(vX) + Math.abs(vY) <= 1e-4) return;
+    const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
+    const zInt = Math.floor(this.zoom);
+    const scale = Math.pow(2, this.zoom - zInt);
+    const rect = this.container.getBoundingClientRect();
+    const widthCSS = rect.width;
+    const heightCSS = rect.height;
+    const centerW = lngLatToWorld(this.center.lng, this.center.lat, zInt, this.tileSize);
+    const nx = centerW.x + vX * dt;
+    const ny = centerW.y + vY * dt;
+    let newCenter = { x: nx, y: ny };
+    newCenter = clampCenterWorldCore(newCenter, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize);
+    const p = worldToLngLat(newCenter.x, newCenter.y, zInt, this.tileSize);
+    this.center = { lng: p.lng, lat: clampLat(p.lat) };
+    this._state.center = this.center;
+    // decay velocity
+    const k = Math.exp(-dt / this.panDamping);
+    this._panVelX *= k;
+    this._panVelY *= k;
+    if (Math.abs(this._panVelX) + Math.abs(this._panVelY) < 1e-3) { this._panVelX = 0; this._panVelY = 0; }
+    // keep rendering while inertia active
+    this._needsRender = true;
   }
 
   // Suspend/resume this map instance and optionally release the WebGL context.

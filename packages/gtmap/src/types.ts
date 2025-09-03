@@ -76,6 +76,7 @@ export interface InputDeps {
   startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
   cancelZoomAnim(): void;
   applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
+  setPanVelocity(vxWorld: number, vyWorld: number): void;
 }
 
 export interface ZoomDeps {

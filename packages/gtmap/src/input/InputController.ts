@@ -6,6 +6,9 @@ export default class InputController {
   private dragging = false;
   private lastX = 0;
   private lastY = 0;
+  private lastTS = 0;
+  private lastVXWorld = 0;
+  private lastVYWorld = 0;
   private touchState: null | {
     mode: 'pan' | 'pinch';
     x?: number;
@@ -36,6 +39,8 @@ export default class InputController {
       deps.cancelZoomAnim();
       this.lastX = e.clientX;
       this.lastY = e.clientY;
+      this.lastTS = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      this.lastVXWorld = 0; this.lastVYWorld = 0; deps.setPanVelocity(0, 0);
       try {
         canvas.setPointerCapture((e as any).pointerId);
       } catch {}
@@ -53,9 +58,7 @@ export default class InputController {
       const zInt = Math.floor(view.zoom);
       const rect = deps.getContainer().getBoundingClientRect();
       const scale = Math.pow(2, view.zoom - zInt);
-      // Option 1 (screen-locked): const panScale = scale;
-      // Option 2 (zoom-normalized): use absolute 2^zoom so pan speed is slower at high zoom
-      const panScale = Math.pow(2, view.zoom);
+      // screen-locked panning while dragging (Leaflet-like)
       const widthCSS = rect.width,
         heightCSS = rect.height;
       const centerWorld = lngLatToWorld(view.center.lng, view.center.lat, zInt, deps.getTileSize());
@@ -76,11 +79,18 @@ export default class InputController {
         dy = e.clientY - this.lastY;
       this.lastX = e.clientX;
       this.lastY = e.clientY;
-      const newTL = { x: tl.x - dx / panScale, y: tl.y - dy / panScale };
+      const nowTS = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const dt = Math.max(0.001, (nowTS - this.lastTS) / 1000);
+      this.lastTS = nowTS;
+      // screen-locked pan while dragging
+      const newTL = { x: tl.x - dx / scale, y: tl.y - dy / scale };
       let newCenter = { x: newTL.x + widthCSS / (2 * scale), y: newTL.y + heightCSS / (2 * scale) };
       newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
       const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
       deps.setCenter(lng, lat);
+      // estimate velocity in world units/sec for inertia
+      this.lastVXWorld = -(dx / dt) / scale;
+      this.lastVYWorld = -(dy / dt) / scale;
       deps.emit('move', { view: deps.getView() });
     };
 
@@ -91,6 +101,7 @@ export default class InputController {
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
       deps.emit('pointerup', { x: px, y: py, view: deps.getView() });
+      deps.setPanVelocity(this.lastVXWorld || 0, this.lastVYWorld || 0);
       deps.emit('moveend', { view: deps.getView() });
     };
 
@@ -108,6 +119,7 @@ export default class InputController {
       const step = deps.getWheelStep(ctrl);
       let dz = -lines * step;
       dz = Math.max(-2.0, Math.min(2.0, dz));
+      deps.setPanVelocity(0, 0);
       deps.startEase(dz, px, py, deps.getAnchorMode());
       deps.emit('zoom', { view: deps.getView() });
     };
@@ -145,8 +157,6 @@ export default class InputController {
         const zInt = Math.floor(view.zoom);
         const rect = deps.getContainer().getBoundingClientRect();
         const scale = Math.pow(2, view.zoom - zInt);
-        // Option 1 (screen-locked): const panScale = scale;
-        const panScale = Math.pow(2, view.zoom); // Option 2 (zoom-normalized)
         const widthCSS = rect.width,
           heightCSS = rect.height;
         const centerWorld = lngLatToWorld(
@@ -159,13 +169,15 @@ export default class InputController {
           x: centerWorld.x - widthCSS / (2 * scale),
           y: centerWorld.y - heightCSS / (2 * scale),
         };
-        let newCenter = {
-          x: tl.x - dx / panScale + widthCSS / (2 * scale),
-          y: tl.y - dy / panScale + heightCSS / (2 * scale),
-        };
+        const nowTS = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        const dt = Math.max(0.001, (nowTS - this.lastTS) / 1000);
+        this.lastTS = nowTS;
+        let newCenter = { x: tl.x - dx / scale + widthCSS / (2 * scale), y: tl.y - dy / scale + heightCSS / (2 * scale) };
         newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
         const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
         deps.setCenter(lng, lat);
+        this.lastVXWorld = -(dx / dt) / scale;
+        this.lastVYWorld = -(dy / dt) / scale;
         deps.emit('move', { view: deps.getView() });
       } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
         const t0 = e.touches[0];
@@ -186,6 +198,7 @@ export default class InputController {
       e.preventDefault();
     };
     const onTouchEnd = () => {
+      if (this.touchState?.mode === 'pan') deps.setPanVelocity(this.lastVXWorld || 0, this.lastVYWorld || 0);
       this.touchState = null;
       deps.emit('moveend', { view: deps.getView() });
     };
