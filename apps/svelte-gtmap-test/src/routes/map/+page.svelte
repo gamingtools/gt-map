@@ -9,10 +9,10 @@
 	import GT from '@gtmap';
 
 	let container: HTMLDivElement | null = null;
-	let hudText = '';
-	let speed = 1.0;
-	let gridEnabled = true;
-	let anchorMode: 'pointer' | 'center' = 'pointer';
+	let hudText = $state('');
+	let speed = $state(1.0);
+	let gridEnabled = $state(true);
+	let anchorMode = $state<'pointer' | 'center'>('pointer');
 	let map: any;
 	let gridLayer: any | null = null;
 
@@ -60,10 +60,9 @@
 			});
 		})();
 
-		// Grid layer initial
+		// Grid layer init
 		try {
 			gridLayer = (L as any).grid();
-			if (gridEnabled) gridLayer.addTo(map);
 		} catch {
 			gridLayer = null;
 		}
@@ -81,25 +80,20 @@
 		map?.recenter?.();
 	}
 
-	function onSpeedInput(e: Event) {
-		const t = e.target as HTMLInputElement;
-		speed = parseFloat(t.value || '1');
-		map?.setWheelSpeed?.(speed);
-	}
+	// Reactive runes: apply control state to the map
+	$effect(() => {
+		if (map) map.setWheelSpeed(speed);
+	});
 
-	function onGridToggle(e: Event) {
-		const t = e.target as HTMLInputElement;
-		gridEnabled = t.checked;
-		if (!gridLayer) return;
+	$effect(() => {
+		if (!map || !gridLayer) return;
 		if (gridEnabled) gridLayer.addTo(map);
 		else gridLayer.remove();
-	}
+	});
 
-	function onAnchorChange(e: Event) {
-		const t = e.target as HTMLSelectElement;
-		anchorMode = (t.value as 'pointer' | 'center') ?? 'pointer';
-		map?.setAnchorMode?.(anchorMode);
-	}
+	$effect(() => {
+		if (map) map.setAnchorMode(anchorMode);
+	});
 </script>
 
 <h1>GTMap Svelte Demo</h1>
@@ -115,7 +109,7 @@
 	<div class="panel speed">
 		<label>Zoom Speed</label>
 		<div class="row">
-			<input type="range" min="0.05" max="2.00" step="0.05" bind:value={speed} on:input={onSpeedInput} />
+			<input type="range" min="0.05" max="2.00" step="0.05" bind:value={speed} />
 			<span>{speed.toFixed(2)}</span>
 		</div>
 	</div>
@@ -123,7 +117,7 @@
 	<!-- Grid toggle -->
 	<div class="panel grid">
 		<label class="row">
-			<input type="checkbox" bind:checked={gridEnabled} on:change={onGridToggle} />
+			<input type="checkbox" bind:checked={gridEnabled} />
 			<span>Show Grid</span>
 		</label>
 	</div>
@@ -131,7 +125,7 @@
 	<!-- Anchor mode selector -->
 	<div class="panel anchor">
 		<label>Zoom Anchor</label>
-		<select bind:value={anchorMode} on:change={onAnchorChange}>
+		<select bind:value={anchorMode}>
 			<option value="pointer">Pointer</option>
 			<option value="center">Center</option>
 		</select>
