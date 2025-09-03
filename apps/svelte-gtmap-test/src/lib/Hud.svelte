@@ -71,7 +71,7 @@
   }
 </script>
 
-<div class="absolute left-2 top-2 z-10 rounded-md border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-2 text-xs text-gray-800 shadow select-none">
+<div class="absolute left-2 top-2 z-10 rounded-md border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-2 text-xs text-gray-800 shadow select-none pointer-events-none">
   <!-- Status (non-interactive) -->
   <div class="pointer-events-none grid grid-cols-1 gap-x-6 gap-y-1">
     <div class="flex items-center gap-2"><span class="font-semibold text-gray-700">Center:</span><span class="tabular-nums">lng {center.lng.toFixed(2)}, lat {center.lat.toFixed(2)}</span></div>
