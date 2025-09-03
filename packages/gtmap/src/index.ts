@@ -1,2 +1,2 @@
-export { default } from './mapgl';
+export { default } from './api/GTMap';
 export * from './mercator';
