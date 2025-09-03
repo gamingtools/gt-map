@@ -156,7 +156,13 @@ gridLabel.style.gap = '6px';
 const gridToggle = document.createElement('input');
 gridToggle.type = 'checkbox';
 gridToggle.checked = true;
-gridToggle.addEventListener('change', () => map.setGridVisible(gridToggle.checked));
+// Create a Leaflet-like grid layer and add/remove via checkbox
+const gridLayer = L.grid();
+gridLayer.addTo(map as any);
+gridToggle.addEventListener('change', () => {
+  if (gridToggle.checked) gridLayer.addTo(map as any);
+  else gridLayer.remove();
+});
 gridLabel.appendChild(gridToggle);
 gridWrap.appendChild(gridLabel);
 container.appendChild(gridWrap);

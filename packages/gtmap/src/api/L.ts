@@ -3,6 +3,7 @@ import { LeafletTileLayerFacade } from './tileLayer';
 import { LeafletMarkerFacade, createIcon } from './marker';
 import type { TileLayerOptions } from './tileLayer';
 import type { IconOptions, LeafletIcon, MarkerOptions } from './marker';
+import { createGridLayer, type GridLayerOptions } from './grid';
 import type { LeafletLatLng } from './util';
 
 export const GT = {
@@ -11,8 +12,9 @@ export const GT = {
     tileLayer: (url: string, options?: TileLayerOptions): LeafletTileLayerFacade => new LeafletTileLayerFacade(url, options),
     marker: (latlng: LeafletLatLng, options?: MarkerOptions): LeafletMarkerFacade => new LeafletMarkerFacade(latlng, options),
     icon: (options: IconOptions): LeafletIcon => createIcon(options),
+    grid: (options?: GridLayerOptions) => createGridLayer(options),
     control: {}, // placeholder for Phase 2
   },
 };
 
-export type { LeafletMapOptions, TileLayerOptions, IconOptions, LeafletIcon, MarkerOptions, LeafletLatLng };
+export type { LeafletMapOptions, TileLayerOptions, IconOptions, LeafletIcon, MarkerOptions, LeafletLatLng, GridLayerOptions };
