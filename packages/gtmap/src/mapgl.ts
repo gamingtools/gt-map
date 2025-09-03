@@ -346,11 +346,8 @@ export default class GTMap {
     }
   }
   recenter() {
-    const zInt = Math.floor(this.zoom);
-    const worldSize = 256 * (1 << zInt);
-    const lng = (worldSize / 2 / (256 * (1 << zInt))) * 360 - 180;
-    const lat = 0;
-    this.setCenter(lng, lat);
+    // Center of Web Mercator is always (0, 0) regardless of tile size
+    this.setCenter(0, 0);
   }
   destroy() {
     if (this._raf != null) {

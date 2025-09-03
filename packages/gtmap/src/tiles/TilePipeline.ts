@@ -48,7 +48,7 @@ export default class TilePipeline {
       const idle = now - this.deps.getLastInteractAt() > this.deps.getInteractionIdleMs();
       const baseZ = Math.floor(this.deps.getZoom());
       const c = this.deps.getCenter();
-      const centerWorld = lngLatToWorld(c.lng, c.lat, baseZ);
+      const centerWorld = lngLatToWorld(c.lng, c.lat, baseZ, this.deps.getTileSize());
       const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());
       if (!task) break;
       this.deps.startImageLoad(task);
