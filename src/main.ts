@@ -24,28 +24,21 @@ L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSiz
 function updateHUD() {
   const cArr = map.getCenter() as [number, number];
   const c = { lng: cArr[1], lat: cArr[0] };
-  if (!(updateHUD as any)._t) {
-    (updateHUD as any)._t = performance.now();
-    (updateHUD as any)._frames = 0;
-    (updateHUD as any)._acc = 0;
+  const now = performance.now();
+  if (!(updateHUD as any)._prev) {
+    (updateHUD as any)._prev = now;
     (updateHUD as any)._fps = 0;
   }
-  const now = performance.now();
-  const dt = now - (updateHUD as any)._t;
-  (updateHUD as any)._t = now;
-  (updateHUD as any)._acc += dt;
-  (updateHUD as any)._frames += 1;
-  if ((updateHUD as any)._acc >= 500) {
-    (updateHUD as any)._fps = Math.round(
-      ((updateHUD as any)._frames * 1000) / (updateHUD as any)._acc,
-    );
-    (updateHUD as any)._frames = 0;
-    (updateHUD as any)._acc = 0;
-  }
+  const dt = now - (updateHUD as any)._prev;
+  (updateHUD as any)._prev = now;
+  // Instantaneous FPS with light smoothing (EMA)
+  const inst = dt > 0 ? 1000 / dt : 0;
+  const alpha = 0.15; // responsiveness of the FPS readout
+  (updateHUD as any)._fps = (1 - alpha) * (updateHUD as any)._fps + alpha * inst;
   const p = map.pointerAbs as { x: number; y: number } | null;
   const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
   const z = map.getZoom() as number;
-  hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${(updateHUD as any)._fps}${pText}`;
+  hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${Math.round((updateHUD as any)._fps)}${pText}`;
   requestAnimationFrame(updateHUD);
 }
 updateHUD();
