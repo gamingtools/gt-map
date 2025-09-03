@@ -53,6 +53,9 @@ export default class InputController {
       const zInt = Math.floor(view.zoom);
       const rect = deps.getContainer().getBoundingClientRect();
       const scale = Math.pow(2, view.zoom - zInt);
+      // Option 1 (screen-locked): const panScale = scale;
+      // Option 2 (zoom-normalized): use absolute 2^zoom so pan speed is slower at high zoom
+      const panScale = Math.pow(2, view.zoom);
       const widthCSS = rect.width,
         heightCSS = rect.height;
       const centerWorld = lngLatToWorld(view.center.lng, view.center.lat, zInt, deps.getTileSize());
@@ -73,7 +76,7 @@ export default class InputController {
         dy = e.clientY - this.lastY;
       this.lastX = e.clientX;
       this.lastY = e.clientY;
-      const newTL = { x: tl.x - dx / scale, y: tl.y - dy / scale };
+      const newTL = { x: tl.x - dx / panScale, y: tl.y - dy / panScale };
       let newCenter = { x: newTL.x + widthCSS / (2 * scale), y: newTL.y + heightCSS / (2 * scale) };
       newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
       const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
@@ -142,6 +145,8 @@ export default class InputController {
         const zInt = Math.floor(view.zoom);
         const rect = deps.getContainer().getBoundingClientRect();
         const scale = Math.pow(2, view.zoom - zInt);
+        // Option 1 (screen-locked): const panScale = scale;
+        const panScale = Math.pow(2, view.zoom); // Option 2 (zoom-normalized)
         const widthCSS = rect.width,
           heightCSS = rect.height;
         const centerWorld = lngLatToWorld(
@@ -155,8 +160,8 @@ export default class InputController {
           y: centerWorld.y - heightCSS / (2 * scale),
         };
         let newCenter = {
-          x: tl.x - dx / scale + widthCSS / (2 * scale),
-          y: tl.y - dy / scale + heightCSS / (2 * scale),
+          x: tl.x - dx / panScale + widthCSS / (2 * scale),
+          y: tl.y - dy / panScale + heightCSS / (2 * scale),
         };
         newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
         const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
