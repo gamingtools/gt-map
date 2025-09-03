@@ -23,6 +23,7 @@ const map = new GTMap(container, {
   tileSize: 256
 });
 
+
 function updateHUD() {
   const c = map.center;
   if (!(updateHUD as any)._t) {
@@ -59,13 +60,21 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
     const defs = await fetch(url).then((r) => r.json());
     await map.setIconDefs(defs);
     // Sample markers near center (demo only)
-    map.setMarkers([
+    const base: any[] = [
       { lng: 0, lat: 0, type: 'player' },
       { lng: 32, lat: 8, type: 'objective', size: 48 },
       { lng: -28, lat: -6, type: 'otherplayer' },
       { lng: 12, lat: -14, type: 'contract' },
       { lng: -40, lat: 18, type: 'ecolab' },
-    ]);
+    ];
+    // Add 500 random icons within a window around center
+    const keys = Object.keys(defs);
+    const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+    for (let i = 0; i < 500; i++) {
+      const type = keys[(Math.random() * keys.length) | 0];
+      base.push({ lng: rand(-80, 80), lat: rand(-40, 40), type });
+    }
+    map.setMarkers(base as any);
   } catch (err) {
     console.warn('Icon demo load failed:', err);
   }
