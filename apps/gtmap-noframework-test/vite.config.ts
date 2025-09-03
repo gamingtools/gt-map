@@ -15,7 +15,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@gtmap': resolve(__dirname, 'packages/gtmap/src'),
+      '@gtmap': resolve(__dirname, '../../packages/gtmap/src'),
     },
   },
   optimizeDeps: {
