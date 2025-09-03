@@ -13,8 +13,8 @@ Features
 Getting Started
 Run locally
 
-1. Install deps: `pnpm install`
-2. Start dev server: `pnpm dev` (Vite/SvelteKit at `http://localhost:5173`)
+1. Install deps: `npm install`
+2. Start dev server: `npm run dev` (Vite/SvelteKit at `http://localhost:5173`)
 3. Pan with mouse drag, zoom with wheel or pinch (touch).
 
 Files
@@ -76,9 +76,9 @@ Notes and Next Steps
 
 Monorepo & Package Manager
 
-- This repository uses a pnpm workspace. Packages are defined in `pnpm-workspace.yaml`.
+- This repository uses npm workspaces (configured in the root `package.json`).
 - Common commands:
-  - Install: `pnpm install`
-  - Dev server: `pnpm dev`
-  - Build: `pnpm build` (also builds `packages/gtmap`)
-  - Lint/format: `pnpm lint`, `pnpm format`
+  - Install: `npm install`
+  - Dev server: `npm run dev`
+  - Build: `npm run build` (also builds `packages/gtmap`)
+  - Lint/format: `npm run lint`, `npm run format`

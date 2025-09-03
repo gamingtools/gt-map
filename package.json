@@ -3,15 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "description": "Minimal WebGL tile map with Express server",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "start": "pnpm -C apps/gtmap-svelte-test dev",
-    "dev": "pnpm -C apps/gtmap-svelte-test dev",
-    "build": "pnpm -C apps/gtmap-svelte-test build && pnpm -C packages/gtmap build",
-    "preview": "pnpm -C apps/gtmap-svelte-test preview",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier -w .",
-    "format:check": "prettier -c ."
+    "start": "npm -w apps/gtmap-svelte-test run dev",
+    "dev": "npm -w apps/gtmap-svelte-test run dev",
+    "build": "npm -w apps/gtmap-svelte-test run build && npm -w packages/gtmap run build",
+    "preview": "npm -w apps/gtmap-svelte-test run preview",
+    "lint": "eslint packages",
+    "lint:fix": "eslint packages --fix",
+    "format": "prettier -w \"packages/**/*\"",
+    "format:check": "prettier -c \"packages/**/*\""
   },
   "dependencies": {
     
@@ -29,10 +33,5 @@
     "typescript-eslint": "^8.41.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.4"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }

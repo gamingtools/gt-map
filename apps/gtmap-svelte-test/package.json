@@ -6,15 +6,16 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"preview": "pnpm run build && wrangler dev",
+		"preview": "npm run build && wrangler dev",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint .",
+		"format:check": "prettier --check \"src/**/*.{svelte,ts,js,css,md,json}\"",
+		"lint": "eslint src --ext .ts,.js,.svelte --cache --cache-location ./.eslintcache",
 		"test:e2e": "playwright test",
 		"test": "npm run test:e2e",
-		"deploy": "pnpm run build && wrangler deploy",
+		"deploy": "npm run build && wrangler deploy",
 		"cf-typegen": "wrangler types ./src/worker-configuration.d.ts"
 	},
 	"devDependencies": {
