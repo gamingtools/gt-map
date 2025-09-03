@@ -6,6 +6,8 @@ export default class InputController {
   private lastX = 0;
   private lastY = 0;
   private over = false;
+  private inertiaActive = false;
+  private static readonly DEBUG = true;
   private _positions: Array<{ x: number; y: number }> = [];
   private _times: number[] = [];
   private touchState: null | {
@@ -61,8 +63,8 @@ export default class InputController {
       // screen-locked panning while dragging (Leaflet-like)
       const widthCSS = rect.width,
         heightCSS = rect.height;
-      const zMax = deps.getMaxZoom();
-      const s0 = Math.pow(2, zMax - zInt);
+      const zImg = deps.getImageMaxZoom();
+      const s0 = Math.pow(2, zImg - zInt);
       const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
       // record position for inertia
       this._pushSample(e.clientX - rect.left, e.clientY - rect.top);
@@ -72,7 +74,7 @@ export default class InputController {
       const tl = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
       const wx = tl.x + px / scale;
       const wy = tl.y + py / scale;
-      const zAbs = Math.floor(zMax);
+      const zAbs = Math.floor(zImg);
       const factor = Math.pow(2, zAbs - zInt);
       const inside = px >= 0 && py >= 0 && px <= widthCSS && py <= heightCSS;
       if (this.dragging) {
@@ -111,8 +113,15 @@ export default class InputController {
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
       deps.emit('pointerup', { x: px, y: py, view: deps.getView() });
+      if (InputController.DEBUG) console.debug('[inertia] pointerup');
+      this.inertiaActive = false;
       this._maybeStartInertia();
-      deps.emit('moveend', { view: deps.getView() });
+      if (this.inertiaActive) {
+        if (InputController.DEBUG) console.debug('[inertia] started');
+      } else {
+        if (InputController.DEBUG) console.debug('[inertia] none; emitting moveend');
+        deps.emit('moveend', { view: deps.getView() });
+      }
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -169,8 +178,8 @@ export default class InputController {
         const scale = Math.pow(2, view.zoom - zInt);
         const widthCSS = rect.width,
           heightCSS = rect.height;
-        const zMax = deps.getMaxZoom();
-        const s0 = Math.pow(2, zMax - zInt);
+      const zImg = deps.getImageMaxZoom();
+      const s0 = Math.pow(2, zImg - zInt);
         const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
         this._pushSample(t.clientX - rect.left, t.clientY - rect.top);
         let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
@@ -264,13 +273,16 @@ export default class InputController {
     const speedVec = { x: (dir.x * ease) / duration, y: (dir.y * ease) / duration };
     const speed = Math.hypot(speedVec.x, speedVec.y);
     const limited = Math.min(maxSpeed, speed);
+    if (InputController.DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel });
     if (!isFinite(limited) || limited <= 0) return;
     const scale = (limited / speed) || 0;
     const limitedVec = { x: speedVec.x * scale, y: speedVec.y * scale };
     const decelDuration = limited / (decel * ease);
     // offset is negative half of deceleration impulse
     const offset = { x: Math.round(limitedVec.x * (-decelDuration / 2)), y: Math.round(limitedVec.y * (-decelDuration / 2)) };
+    if (InputController.DEBUG) console.debug('[inertia] offset', { offset, decelDuration });
     if (!offset.x && !offset.y) return;
+    this.inertiaActive = true;
     deps.startPanBy(offset.x, offset.y, decelDuration, ease);
     // reset samples
     this._positions = []; this._times = [];
