@@ -487,6 +487,12 @@ export default class GTMap {
     }
   }
 
+  // Zoom-out center bias: when zooming out, bias the center toward previous visual center
+  // v is approximately per-unit-zoom bias (0..1), internally clamped and capped.
+  public setZoomOutCenterBias(v: number) {
+    if (Number.isFinite(v)) this.outCenterBias = Math.max(0, Math.min(1, v));
+  }
+
   private _initPrograms() {
     // Delegate to Graphics to set up programs and buffers
     this._gfx.initPrograms();
