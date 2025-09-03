@@ -128,6 +128,7 @@ export default class MapRenderer {
         prog: ctx.prog,
         loc: ctx.loc,
         quad: ctx.quad,
+        canvas: ctx.canvas,
         dpr: ctx.dpr,
         tileSize: ctx.tileSize,
         zoom: ctx.zoom,

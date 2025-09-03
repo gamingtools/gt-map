@@ -93,6 +93,7 @@ export class IconRenderer {
     prog: WebGLProgram;
     loc: any;
     quad: WebGLBuffer;
+    canvas: HTMLCanvasElement;
     dpr: number;
     tileSize: number;
     zoom: number;
@@ -115,7 +116,7 @@ export class IconRenderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, ctx.quad);
     gl.enableVertexAttribArray(ctx.loc.a_pos);
     gl.vertexAttribPointer(ctx.loc.a_pos, 2, gl.FLOAT, false, 0, 0);
-    gl.uniform2f(ctx.loc.u_resolution, (ctx as any).canvas.width, (ctx as any).canvas.height);
+    gl.uniform2f(ctx.loc.u_resolution, ctx.canvas.width, ctx.canvas.height);
     gl.uniform1i(ctx.loc.u_tex, 0);
     gl.uniform1f(ctx.loc.u_alpha, 1.0);
     gl.uniform2f(ctx.loc.u_uv0!, 0.0, 0.0);
