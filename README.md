@@ -14,13 +14,13 @@ Getting Started
 Run locally
 
 1. Install deps: `pnpm install`
-2. Start dev server: `pnpm dev` (Vite at `http://localhost:5173`)
+2. Start dev server: `pnpm dev` (Vite/SvelteKit at `http://localhost:5173`)
 3. Pan with mouse drag, zoom with wheel or pinch (touch).
 
 Files
 
-- `apps/gtmap-noframework-test/index.html`: Fullscreen container, attribution, and script entry.
-- `apps/gtmap-noframework-test/src/main.ts`: Bootstraps the map and HUD.
+- `apps/gtmap-svelte-test/src/routes/map/+page.svelte`: Minimal GT.L usage in Svelte.
+- `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
 - `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
 - Pixel CRS only: coordinates are image pixels (x=lng, y=lat) at native resolution. No Web Mercator.
 
@@ -29,9 +29,10 @@ Public API
 - Primary (and default): Leaflet‑compatible facade `GT.L` (see docs/public-api.md). Use factories like `GT.L.map`, `GT.L.tileLayer`, `GT.L.marker`, `GT.L.icon`.
   - The previous native facades (`GTMap`, `createMap`, `MapApi`) are no longer exported. Internals remain, but apps should use `GT.L`.
 
-Demo page
+Demo app
 
-- Default demo app: `apps/gtmap-noframework-test/index.html`
+- Default demo app (SvelteKit): `apps/gtmap-svelte-test` → open `/map`
+- Legacy no-framework demo: `apps/gtmap-noframework-test/index.html`
 
 See `docs/public-api.md` for the `GT.L` facade and how to use it. Native facades are considered internal.
 
@@ -62,7 +63,7 @@ Hagga Basin (survival_1)
 
 Customization
 
-- Center/zoom: Set in `apps/gtmap-noframework-test/src/main.ts` when creating `GTMap`.
+- Center/zoom: Set in `apps/gtmap-svelte-test/src/routes/map/+page.svelte` when creating the map via `GT.L`.
 - Zoom bounds: `minZoom`/`maxZoom` options.
 - Tile URL: Pass a different `{z}/{x}/{y}` template to `tileUrl`.
 
