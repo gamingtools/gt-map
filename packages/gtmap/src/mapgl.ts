@@ -30,6 +30,7 @@ export type MapOptions = {
   freePan?: boolean;
   center?: LngLat;
   zoom?: number;
+  zoomOutCenterBias?: number;
 };
 export type EaseOptions = {
   easeBaseMs?: number;
@@ -207,6 +208,10 @@ export default class GTMap {
     this.freePan = options.freePan ?? false;
     this.center = { lng: options.center?.lng ?? 0, lat: options.center?.lat ?? 0 };
     this.zoom = options.zoom ?? 2;
+    if (Number.isFinite(options.zoomOutCenterBias as number)) {
+      const v = Math.max(0, Math.min(1, options.zoomOutCenterBias as number));
+      this.outCenterBias = v;
+    }
     this._initCanvas();
     this._gfx = new Graphics(this as any);
     this._gfx.init();
