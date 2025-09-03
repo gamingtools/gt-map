@@ -103,9 +103,12 @@ export default class GTMap {
   private _state!: ViewState;
   private _active = true;
   private _glReleased = false;
-  private _panVelX = 0;
-  private _panVelY = 0;
-  private panDamping = 0.12;
+  // Leaflet-like inertia options and state
+  private inertia = true;
+  private inertiaDeceleration = 3400; // px/s^2
+  private inertiaMaxSpeed = Infinity; // px/s
+  private easeLinearity = 0.2;
+  private _panAnim: null | { start: number; dur: number; from: { x: number; y: number }; offsetWorld: { x: number; y: number } } = null;
   private _view(): ViewState {
     return this._state;
   }
@@ -514,7 +517,12 @@ export default class GTMap {
       },
       applyAnchoredZoom: (targetZoom, px, py, anchor) =>
         this._zoomCtrl.applyAnchoredZoom(targetZoom, px, py, anchor),
-      setPanVelocity: (vx: number, vy: number) => { this._panVelX = vx || 0; this._panVelY = vy || 0; this._needsRender = true; },
+      getInertia: () => this.inertia,
+      getInertiaDecel: () => this.inertiaDeceleration,
+      getInertiaMaxSpeed: () => this.inertiaMaxSpeed,
+      getEaseLinearity: () => this.easeLinearity,
+      startPanBy: (dxPx: number, dyPx: number, durSec: number) => this._startPanBy(dxPx, dyPx, durSec),
+      cancelPanAnim: () => { this._panAnim = null; },
     };
     this._input = new InputController(this._inputDeps);
     this._input.attach();
@@ -719,29 +727,31 @@ export default class GTMap {
   }
 
   public panVelocityTick() {
-    const vX = this._panVelX;
-    const vY = this._panVelY;
-    if (Math.abs(vX) + Math.abs(vY) <= 1e-4) return;
-    const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
+    if (!this._panAnim) return;
+    const a = this._panAnim;
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const t = Math.min(1, (now - a.start) / (a.dur * 1000));
+    const p = 1 - Math.pow(1 - t, 3); // easeOutCubic
     const zInt = Math.floor(this.zoom);
     const scale = Math.pow(2, this.zoom - zInt);
     const rect = this.container.getBoundingClientRect();
-    const widthCSS = rect.width;
-    const heightCSS = rect.height;
-    const centerW = lngLatToWorld(this.center.lng, this.center.lat, zInt, this.tileSize);
-    const nx = centerW.x + vX * dt;
-    const ny = centerW.y + vY * dt;
-    let newCenter = { x: nx, y: ny };
-    newCenter = clampCenterWorldCore(newCenter, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize);
-    const p = worldToLngLat(newCenter.x, newCenter.y, zInt, this.tileSize);
-    this.center = { lng: p.lng, lat: clampLat(p.lat) };
+    const widthCSS = rect.width; const heightCSS = rect.height;
+    const from = a.from;
+    const target = { x: from.x + a.offsetWorld.x * p, y: from.y + a.offsetWorld.y * p };
+    let newCenter = clampCenterWorldCore(target, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize);
+    const pll = worldToLngLat(newCenter.x, newCenter.y, zInt, this.tileSize);
+    this.center = { lng: pll.lng, lat: clampLat(pll.lat) };
     this._state.center = this.center;
-    // decay velocity
-    const k = Math.exp(-dt / this.panDamping);
-    this._panVelX *= k;
-    this._panVelY *= k;
-    if (Math.abs(this._panVelX) + Math.abs(this._panVelY) < 1e-3) { this._panVelX = 0; this._panVelY = 0; }
-    // keep rendering while inertia active
+    this._needsRender = true;
+    if (t >= 1) { this._panAnim = null; this._events.emit('moveend', { view: this._view() }); }
+  }
+
+  private _startPanBy(dxPx: number, dyPx: number, durSec: number) {
+    const zInt = Math.floor(this.zoom);
+    const scale = Math.pow(2, this.zoom - zInt);
+    const cw = lngLatToWorld(this.center.lng, this.center.lat, zInt, this.tileSize);
+    const offsetWorld = { x: -dxPx / scale, y: -dyPx / scale };
+    this._panAnim = { start: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(), dur: Math.max(0.05, durSec), from: cw, offsetWorld };
     this._needsRender = true;
   }
 

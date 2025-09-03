@@ -6,9 +6,9 @@ export default class InputController {
   private dragging = false;
   private lastX = 0;
   private lastY = 0;
-  private lastTS = 0;
-  private lastVXWorld = 0;
-  private lastVYWorld = 0;
+  private _positions: Array<{ x: number; y: number }> = [];
+  private _times: number[] = [];
+  //
   private touchState: null | {
     mode: 'pan' | 'pinch';
     x?: number;
@@ -37,10 +37,11 @@ export default class InputController {
     const onDown = (e: PointerEvent) => {
       this.dragging = true;
       deps.cancelZoomAnim();
+      deps.cancelPanAnim();
       this.lastX = e.clientX;
       this.lastY = e.clientY;
-      this.lastTS = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      this.lastVXWorld = 0; this.lastVYWorld = 0; deps.setPanVelocity(0, 0);
+      // no-op: timestamp reserved for future averaging
+      this._positions = []; this._times = []; deps.cancelPanAnim();
       try {
         canvas.setPointerCapture((e as any).pointerId);
       } catch {}
@@ -66,6 +67,8 @@ export default class InputController {
         x: centerWorld.x - widthCSS / (2 * scale),
         y: centerWorld.y - heightCSS / (2 * scale),
       };
+      // record position for inertia
+      this._pushSample(e.clientX - rect.left, e.clientY - rect.top);
       // update pointerAbs always
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
@@ -79,18 +82,12 @@ export default class InputController {
         dy = e.clientY - this.lastY;
       this.lastX = e.clientX;
       this.lastY = e.clientY;
-      const nowTS = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      const dt = Math.max(0.001, (nowTS - this.lastTS) / 1000);
-      this.lastTS = nowTS;
       // screen-locked pan while dragging
       const newTL = { x: tl.x - dx / scale, y: tl.y - dy / scale };
       let newCenter = { x: newTL.x + widthCSS / (2 * scale), y: newTL.y + heightCSS / (2 * scale) };
       newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
       const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
       deps.setCenter(lng, lat);
-      // estimate velocity in world units/sec for inertia
-      this.lastVXWorld = -(dx / dt) / scale;
-      this.lastVYWorld = -(dy / dt) / scale;
       deps.emit('move', { view: deps.getView() });
     };
 
@@ -101,7 +98,7 @@ export default class InputController {
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
       deps.emit('pointerup', { x: px, y: py, view: deps.getView() });
-      deps.setPanVelocity(this.lastVXWorld || 0, this.lastVYWorld || 0);
+      this._maybeStartInertia();
       deps.emit('moveend', { view: deps.getView() });
     };
 
@@ -119,7 +116,7 @@ export default class InputController {
       const step = deps.getWheelStep(ctrl);
       let dz = -lines * step;
       dz = Math.max(-2.0, Math.min(2.0, dz));
-      deps.setPanVelocity(0, 0);
+      deps.cancelPanAnim();
       deps.startEase(dz, px, py, deps.getAnchorMode());
       deps.emit('zoom', { view: deps.getView() });
     };
@@ -169,15 +166,11 @@ export default class InputController {
           x: centerWorld.x - widthCSS / (2 * scale),
           y: centerWorld.y - heightCSS / (2 * scale),
         };
-        const nowTS = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-        const dt = Math.max(0.001, (nowTS - this.lastTS) / 1000);
-        this.lastTS = nowTS;
+        this._pushSample(t.clientX - rect.left, t.clientY - rect.top);
         let newCenter = { x: tl.x - dx / scale + widthCSS / (2 * scale), y: tl.y - dy / scale + heightCSS / (2 * scale) };
         newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS);
         const { lng, lat } = worldToLngLat(newCenter.x, newCenter.y, zInt, deps.getTileSize());
         deps.setCenter(lng, lat);
-        this.lastVXWorld = -(dx / dt) / scale;
-        this.lastVYWorld = -(dy / dt) / scale;
         deps.emit('move', { view: deps.getView() });
       } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
         const t0 = e.touches[0];
@@ -198,7 +191,7 @@ export default class InputController {
       e.preventDefault();
     };
     const onTouchEnd = () => {
-      if (this.touchState?.mode === 'pan') deps.setPanVelocity(this.lastVXWorld || 0, this.lastVYWorld || 0);
+      if (this.touchState?.mode === 'pan') this._maybeStartInertia();
       this.touchState = null;
       deps.emit('moveend', { view: deps.getView() });
     };
@@ -234,5 +227,44 @@ export default class InputController {
       this.dragging = false;
       this.touchState = null;
     }
+  }
+
+  private _pushSample(x: number, y: number) {
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    this._positions.push({ x, y });
+    this._times.push(now);
+    // keep only last ~50ms
+    while (this._positions.length > 1 && now - (this._times[0] || 0) > 50) {
+      this._positions.shift(); this._times.shift();
+    }
+  }
+
+  private _maybeStartInertia() {
+    const deps = this.deps;
+    if (!deps.getInertia() || this._times.length < 2) return;
+    const ease = deps.getEaseLinearity();
+    const maxSpeed = deps.getInertiaMaxSpeed();
+    const decel = deps.getInertiaDecel();
+    const lastIdx = this._positions.length - 1;
+    const firstIdx = 0;
+    const last = this._positions[lastIdx];
+    const first = this._positions[firstIdx];
+    const lastT = this._times[lastIdx];
+    const firstT = this._times[firstIdx];
+    const duration = Math.max(0.001, (lastT - firstT) / 1000);
+    const dir = { x: last.x - first.x, y: last.y - first.y };
+    const speedVec = { x: (dir.x * ease) / duration, y: (dir.y * ease) / duration };
+    const speed = Math.hypot(speedVec.x, speedVec.y);
+    const limited = Math.min(maxSpeed, speed);
+    if (!isFinite(limited) || limited <= 0) return;
+    const scale = (limited / speed) || 0;
+    const limitedVec = { x: speedVec.x * scale, y: speedVec.y * scale };
+    const decelDuration = limited / (decel * ease);
+    // offset is negative half of deceleration impulse
+    const offset = { x: Math.round(limitedVec.x * (-decelDuration / 2)), y: Math.round(limitedVec.y * (-decelDuration / 2)) };
+    if (!offset.x && !offset.y) return;
+    deps.startPanBy(offset.x, offset.y, decelDuration, ease);
+    // reset samples
+    this._positions = []; this._times = [];
   }
 }

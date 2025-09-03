@@ -76,7 +76,13 @@ export interface InputDeps {
   startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
   cancelZoomAnim(): void;
   applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
-  setPanVelocity(vxWorld: number, vyWorld: number): void;
+  // Leaflet-like inertia controls
+  getInertia(): boolean;
+  getInertiaDecel(): number; // px/s^2
+  getInertiaMaxSpeed(): number; // px/s
+  getEaseLinearity(): number;
+  startPanBy(offsetXPx: number, offsetYPx: number, durationSec: number, ease: number): void;
+  cancelPanAnim(): void;
 }
 
 export interface ZoomDeps {
