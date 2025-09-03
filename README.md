@@ -24,6 +24,10 @@ Files
 - `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
 - `packages/gtmap/src/mercator.ts`: Web Mercator helpers and URL templating.
 
+Public API
+
+See `docs/public-api.md` for the recommended, stable facade APIs (`GTMap` class, `createMap()` factory) and grouped sub-APIs (`map.icons`, `map.tiles`).
+
 Visibility Control (suspend/resume)
 
 If you render multiple maps on a page, you can suspend ones that are offscreen to save CPU, network, and VRAM:
