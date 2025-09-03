@@ -58,7 +58,7 @@
   });
 </script>
 
-<div class="absolute left-2 top-2 z-10 min-w-72 rounded-md border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-2 text-xs text-gray-800 shadow">
+<div class="absolute left-2 top-2 z-10 min-w-72 rounded-md border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-2 text-xs text-gray-800 shadow pointer-events-none select-none">
   <div class="grid grid-cols-2 gap-x-6 gap-y-1">
     <Center {center} />
     <Zoom {zoom} />
