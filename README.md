@@ -24,6 +24,23 @@ Files
 - `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
 - `packages/gtmap/src/mercator.ts`: Web Mercator helpers and URL templating.
 
+Visibility Control (suspend/resume)
+
+If you render multiple maps on a page, you can suspend ones that are offscreen to save CPU, network, and VRAM:
+
+```ts
+// Suspend a map (stop RAF, input, and tile processing)
+map.setActive(false);
+
+// Suspend and also release the WebGL context and VRAM
+map.setActive(false, { releaseGL: true });
+
+// Resume (recreates GL state if it was released)
+map.setActive(true);
+```
+
+This pairs well with IntersectionObserver or the Page Visibility API. Keep examples in your app code; this repo does not wire it by default.
+
 Tile Source
 Hagga Basin (survival_1)
 

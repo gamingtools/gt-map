@@ -14,6 +14,7 @@
 - View & loop: DPR‑aware canvas sizing, resize handling, RAF scheduling.
 - `requestRender()`: Demand‑driven frames; coalesces updates to avoid churn.
 - Options: `minZoom`, `maxZoom`, `wrapX`, `freePan`, speed/ease controls, `tileUrl`.
+ - `setActive(active, { releaseGL? })`: Suspend/resume an instance. When inactive, stops RAF, detaches input, and gates tile processing. With `releaseGL: true`, also releases the WebGL context and VRAM via `WEBGL_lose_context`; on resume, re‑initializes GL/programs/screen cache and tile cache.
 
 ## Tiles Pipeline
 
