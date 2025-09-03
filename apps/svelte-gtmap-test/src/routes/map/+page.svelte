@@ -6,14 +6,50 @@
 
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import GT from '@gtmap';
+	import GT, { type LeafletMapFacade } from '@gtmap';
 	import Hud from '$lib/Hud.svelte';
 
 	let container: HTMLDivElement | null = null;
-	let map: any;
+	let map: LeafletMapFacade | null = null;
 	let gridLayer: any | null = null;
 
 	const HOME = { lng: 4096, lat: 4096 };
+
+  type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
+  let iconDefs: Record<string, IconDef> = {};
+  let markerCount = 500;
+
+  function clampMarkerCount(n: number): number {
+    if (!Number.isFinite(n)) return 0;
+    n = Math.max(0, Math.min(999_999, Math.floor(n)));
+    return n;
+  }
+
+  function rand(min: number, max: number): number { return Math.random() * (max - min) + min; }
+
+  async function loadIconDefs(): Promise<void> {
+    const url = new URL('../../sample-data/MapIcons.json', import.meta.url);
+    const defs = (await fetch(url).then((r) => r.json())) as Record<string, IconDef>;
+    iconDefs = defs;
+    await map!.setIconDefs(defs);
+  }
+
+  function applyMarkerCount(n: number): void {
+    if (!map) return;
+    const count = clampMarkerCount(n);
+    markerCount = count;
+    const keys = Object.keys(iconDefs);
+    if (keys.length === 0) { map.setMarkers([]); return; }
+    const markers = new Array(Math.max(0, count)).fill(0).map(() => {
+      const key = keys[(Math.random() * keys.length) | 0];
+      return { lng: rand(0, 8192), lat: rand(0, 8192), type: key } as { lng: number; lat: number; type: string };
+    });
+    map.setMarkers(markers);
+  }
+
+  function setMarkerCount(n: number): void {
+    applyMarkerCount(n);
+  }
 
 	onMount(() => {
 		if (!container) return;
@@ -42,7 +78,10 @@
 			tileSize: 256,
 			tms: false,
 			wrapX: false
-		}).addTo(map);
+		}).addTo(map!);
+
+    // Load icon defs and seed initial markers
+    loadIconDefs().then(() => applyMarkerCount(markerCount)).catch(() => {});
 
 		// HUD handled by <Hud/> component
 
@@ -76,6 +115,7 @@
 		onDestroy(() => {
 			console.log('GTMap Svelte unmounting');
 			try { gridLayer?.remove?.(); } catch {}
+			try { map?.setMarkers([]); } catch {}
 			try { map?.remove?.(); } catch {}
 			if (resizeTimer) { try { clearTimeout(resizeTimer); } catch {} resizeTimer = null; }
 			try { ro?.disconnect?.(); } catch {}
@@ -89,7 +129,9 @@
 
 
 <div bind:this={container} class="map">
-  <Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} home={HOME} />
+  <Hud {map} fpsCap={60} wheelSpeed={1.0} wheelCtrlSpeed={0.4} home={HOME}
+    markerCount={markerCount} setMarkerCount={setMarkerCount}
+  />
  
 </div>
 

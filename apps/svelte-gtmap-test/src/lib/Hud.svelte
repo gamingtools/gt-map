@@ -2,12 +2,14 @@
   // Single status widget: subscribes to map events and shows key values
   import type { LeafletMapFacade, EventBus } from '@gtmap';
 
-  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, home } = $props<{
+  const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, home, markerCount, setMarkerCount } = $props<{
     map: LeafletMapFacade;
     fpsCap?: number;
     wheelSpeed?: number;
     wheelCtrlSpeed?: number;
     home: { lng: number; lat: number };
+    markerCount: number;
+    setMarkerCount: (n: number) => void;
   }>();
 
   let fps = $state(0);
@@ -19,6 +21,7 @@
   let wheelCtrlSpeed = $state(wheelCtrlSpeedInitial);
   let fpsCap = $state(fpsCapInitial);
   let gridEnabled = $state(true);
+  let markersLocal = $state<number>(markerCount ?? 0);
 
   function refresh(fromFrame = false, now?: number) {
     if (!map) return;
@@ -58,6 +61,11 @@
     if (!map || !home) return;
     map.setView([home.lat, home.lng], map.getZoom());
   }
+  function onMarkersChange() {
+    const n = Math.max(0, Math.min(999_999, Math.floor(markersLocal)));
+    markersLocal = n;
+    try { setMarkerCount(n); } catch {}
+  }
 </script>
 
 <div class="absolute left-2 top-2 z-10 rounded-md border border-gray-200/60 bg-white/80 backdrop-blur px-3 py-2 text-xs text-gray-800 shadow select-none pointer-events-none">
@@ -90,6 +98,13 @@
       <input class="pointer-events-auto" type="checkbox" bind:checked={gridEnabled} />
       <span>Show Grid</span>
     </label>
+    <div>
+      <label class="block text-gray-700" for="marker-count">Markers</label>
+      <div class="flex items-center gap-2">
+        <input id="marker-count" class="pointer-events-auto w-28 rounded border border-gray-300 bg-white/70 px-2 py-0.5" type="number" min="0" max="999999" bind:value={markersLocal} oninput={onMarkersChange} />
+        <span class="tabular-nums">{markersLocal}</span>
+      </div>
+    </div>
     <div class="my-2 h-px bg-gray-200"></div>
     <div class="space-y-1">
       <div class="font-semibold text-gray-700">More settings</div>

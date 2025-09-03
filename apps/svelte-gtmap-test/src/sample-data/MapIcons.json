@@ -1,0 +1,73 @@
+{
+  "player": {
+    "id": "player",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/player.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/playerx2.webp",
+    "width": 40,
+    "height": 40
+  },
+  "deathlocation": {
+    "id": "deathlocation",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/deathlocation.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/deathlocationx2.webp",
+    "width": 40,
+    "height": 40
+  },
+  "encounter": {
+    "id": "encounter",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/encounter.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/encounterx2.webp",
+    "width": 40,
+    "height": 40
+  },
+  "sandstorm": {
+    "id": "sandstorm",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/sandstorm.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/sandstormx2.webp",
+    "width": 50,
+    "height": 50
+  },
+  "xx_spicefield": {
+    "id": "xx_spicefield",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/xx_spicefield.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/xx_spicefieldx2.webp",
+    "width": 50,
+    "height": 50
+  },
+  "ecolab": {
+    "id": "ecolab",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/ecolab.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/ecolabx2.webp",
+    "width": 40,
+    "height": 40
+  },
+  "homebase": {
+    "id": "homebase",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/homebase.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/homebasex2.webp",
+    "width": 50,
+    "height": 50
+  },
+  "objective": {
+    "id": "objective",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/objective.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/objectivex2.webp",
+    "width": 50,
+    "height": 50
+  },
+  "otherplayer": {
+    "id": "otherplayer",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/otherplayer.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/otherplayerx2.webp",
+    "width": 40,
+    "height": 40
+  },
+  "personalmarker": {
+    "id": "personalmarker",
+    "iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/personalmarker.webp",
+    "x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/personalmarkerx2.webp",
+    "width": 40,
+    "height": 40
+  }
+}
+
