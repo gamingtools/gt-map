@@ -469,6 +469,24 @@ export default class GTMap {
     this.anchorMode = mode;
   }
 
+  // Inertia options (Leaflet-like) setters
+  public setInertiaOptions(opts: { inertia?: boolean; inertiaDeceleration?: number; inertiaMaxSpeed?: number; easeLinearity?: number }) {
+    if (typeof opts.inertia === 'boolean') this.inertia = opts.inertia;
+    if (Number.isFinite(opts.inertiaDeceleration as number)) {
+      // clamp to sensible range (px/s^2)
+      const v = Math.max(100, Math.min(20000, opts.inertiaDeceleration as number));
+      this.inertiaDeceleration = v;
+    }
+    if (Number.isFinite(opts.inertiaMaxSpeed as number)) {
+      const v = Math.max(10, Math.min(1e6, opts.inertiaMaxSpeed as number));
+      this.inertiaMaxSpeed = v;
+    }
+    if (Number.isFinite(opts.easeLinearity as number)) {
+      const v = Math.max(0.01, Math.min(1.0, opts.easeLinearity as number));
+      this.easeLinearity = v;
+    }
+  }
+
   private _initPrograms() {
     // Delegate to Graphics to set up programs and buffers
     this._gfx.initPrograms();
