@@ -23,6 +23,15 @@ Currently Implemented (GT.L Phase 1)
 - (impl) map.panBy(offset)
 - (impl) map.invalidateSize(options?), map.getSize(), map.getPixelBounds(), map.getPixelOrigin()
 
+Implementation notes (Phase 1)
+- panTo/flyTo/zoomIn/zoomOut/panBy: immediate (no animation yet); `zoomSnap` not applied (fractional zoom supported).
+- fitBounds: immediate; respects `padding`/`paddingTopLeft`/`paddingBottomRight` and optional `maxZoom`.
+- getBounds: computed from current center/zoom in Web Mercator; returns `[[south, west],[north, east]]`.
+- invalidateSize: resizes the canvas immediately; `debounceMoveend`/`noMoveStart` not wired.
+- TileLayer.setOpacity: sets global raster opacity for the tile draw; affects the single raster pass.
+- TileLayer.setZIndex: no-op until pane/stacking is introduced.
+- TileLayer.setUrl: clears cache and reloads tiles immediately; `noRedraw` parameter is accepted but ignored.
+
 ## Map (Core)
 - [1] L.map(container, options)
 - [1] map.setView(latlng, zoom?, options?)
