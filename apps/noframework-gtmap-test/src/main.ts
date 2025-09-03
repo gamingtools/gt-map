@@ -30,8 +30,8 @@ L.tileLayer(HAGGA.url, {
 // HUD updates on actual render frames (engine emits 'frame')
 (() => {
   const state: any = { prev: 0, fps: 0 };
-  map.events.on('frame').each((e: any) => {
-    const now = e?.now || performance.now();
+  const renderHud = (nowOpt?: number) => {
+    const now = nowOpt ?? (performance.now ? performance.now() : Date.now());
     if (!state.prev) state.prev = now;
     const dt = now - state.prev;
     state.prev = now;
@@ -44,7 +44,9 @@ L.tileLayer(HAGGA.url, {
     const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
     const z = map.getZoom() as number;
     hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps cap ${Math.round(state.fps)}${pText}`;
-  });
+  };
+  map.events.on('frame').each((e: any) => renderHud(e?.now));
+  map.events.on('pointermove').each(() => renderHud());
 })();
 
 attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';

@@ -74,6 +74,8 @@ export default class InputController {
       const zAbs = Math.floor(zMax);
       const factor = Math.pow(2, zAbs - zInt);
       deps.updatePointerAbs(wx * factor, wy * factor);
+      // emit pointermove so HUD can update even when idle
+      try { deps.emit('pointermove', { x: px, y: py, view: deps.getView() }); } catch {}
       if (!this.dragging) return;
       const dx = e.clientX - this.lastX,
         dy = e.clientY - this.lastY;
