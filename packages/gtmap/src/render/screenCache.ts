@@ -52,6 +52,11 @@ export class ScreenCache {
     this.state = null;
   }
 
+  clear() {
+    // Invalidate previous-frame state without deleting the texture
+    this.state = null;
+  }
+
   private ensureTex(width: number, height: number) {
     const gl = this.gl;
     if (!this.tex) {

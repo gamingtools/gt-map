@@ -29,6 +29,7 @@ export class LeafletTileLayerFacade {
       wrapX: this._options.tms ? false : true,
       clearCache: true,
     });
+    try { (map.__impl as any).setPrefetchOptions?.({ enabled: true, baselineLevel: 2 }); } catch {}
     if (typeof this._options.opacity === 'number') {
       (map.__impl as any).setRasterOpacity(Math.max(0, Math.min(1, this._options.opacity)));
     }

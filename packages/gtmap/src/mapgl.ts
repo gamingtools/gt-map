@@ -205,8 +205,7 @@ export default class GTMap {
   private _loaderDeps!: any;
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
-  private prefetchBaselineLevel = 2;
-  private prefetchEnabled = true;
+  private prefetchEnabled = false;
   // Wheel coalescing + velocity tail
   // removed: legacy wheel coalescing fields (handled via easing)
   private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = {
@@ -254,7 +253,6 @@ export default class GTMap {
     if (Number.isFinite(options.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (options.interactionIdleMs as number) | 0);
     if (options.prefetch) {
       if (typeof options.prefetch.enabled === 'boolean') this.prefetchEnabled = options.prefetch.enabled;
-      if (Number.isFinite(options.prefetch.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (options.prefetch.baselineLevel as number) | 0);
     }
     if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
     if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
@@ -349,7 +347,7 @@ export default class GTMap {
     this._initEvents();
     this._loop = this._loop.bind(this);
     this._raf = requestAnimationFrame(this._loop);
-    if (this.prefetchEnabled) this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel);
+    // Delay baseline prefetch until a tile source is explicitly set
     // DI in place for input/tiles/render; no need for TS usage hacks
   }
 
@@ -396,6 +394,8 @@ export default class GTMap {
       this._tileCache.clear();
       this._pendingKeys.clear();
       this._tiles.clear();
+      // also invalidate the screen cache to avoid ghosting from prior source
+      try { this._screenCache?.clear?.(); } catch {}
     }
     this._needsRender = true;
   }
@@ -616,7 +616,7 @@ export default class GTMap {
   }
   public setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number }) {
     if (typeof opts.enabled === 'boolean') this.prefetchEnabled = opts.enabled;
-    if (Number.isFinite(opts.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (opts.baselineLevel as number) | 0);
+    // baselineLevel no longer used
   }
   private _initEvents() {
     this._inputDeps = {
