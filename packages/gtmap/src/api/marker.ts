@@ -1,4 +1,5 @@
 import type Impl from '../mapgl';
+import Layer from './layer';
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
 
 export type LeafletIcon = { __type: string; __def?: any };
@@ -20,31 +21,28 @@ export function createIcon(opts: IconOptions): LeafletIcon {
   return { __type: type, __def: def };
 }
 
-export class LeafletMarkerFacade {
+export class LeafletMarkerFacade extends Layer {
   private _latlng: { lng: number; lat: number };
   private _icon: LeafletIcon | null;
-  private _map: Impl | null = null;
+  private _impl: Impl | null = null;
 
   constructor(latlng: LeafletLatLng, options?: MarkerOptions) {
+    super();
+    super();
     this._latlng = toLngLat(latlng);
     this._icon = options?.icon || null;
   }
 
-  addTo(map: Impl): this {
-    this._map = map;
-    ensureIconDefs(map, this._icon);
-    flushMarkers(map, this);
-    return this;
-  }
+  onAdd(map: any): void { this._impl = (map as any).__impl ?? map; ensureIconDefs(this._impl as Impl, this._icon); flushMarkers(this._impl as Impl, this); }
   remove(): this {
-    if (!this._map) return this;
-    removeMarker(this._map, this);
-    this._map = null;
+    if (!this._impl) return this;
+    removeMarker(this._impl, this);
+    this._impl = null;
     return this;
   }
   setLatLng(latlng: LeafletLatLng): this {
     this._latlng = toLngLat(latlng);
-    if (this._map) flushMarkers(this._map, this);
+    if (this._impl) flushMarkers(this._impl, this);
     return this;
   }
   getLatLng(): [number, number] {
@@ -52,9 +50,9 @@ export class LeafletMarkerFacade {
   }
   setIcon(icon: LeafletIcon): this {
     this._icon = icon;
-    if (this._map) {
-      ensureIconDefs(this._map, this._icon);
-      flushMarkers(this._map, this);
+    if (this._impl) {
+      ensureIconDefs(this._impl, this._icon);
+      flushMarkers(this._impl, this);
     }
     return this;
   }

@@ -22,6 +22,7 @@ type Listener = (...args: any[]) => void;
 export default class LeafletMapFacade {
   private _map: Impl;
   private _listeners = new Map<string, Set<Listener>>();
+  private _layers = new Set<any>();
 
   constructor(container: HTMLElement | string, options?: LeafletMapOptions) {
     const el = typeof container === 'string' ? document.getElementById(container)! : (container as HTMLElement);
@@ -157,7 +158,12 @@ export default class LeafletMapFacade {
 
   addLayer(layer: any): this { if (layer?.addTo) layer.addTo(this); return this; }
   removeLayer(layer: any): this { if (layer?.remove) layer.remove(); return this; }
+  hasLayer(layer: any): boolean { return this._layers.has(layer); }
+  eachLayer(fn: (layer: any) => void): this { for (const l of this._layers) fn(l); return this; }
 
   // Feature facades
   get __impl(): Impl { return this._map; }
+  // Internal hooks for Layer base
+  __addLayer(layer: { onAdd: (m: any) => void }) { this._layers.add(layer); try { layer.onAdd(this); } catch {} }
+  __removeLayer(layer: { onRemove: (m: any) => void }) { if (this._layers.delete(layer)) { try { layer.onRemove(this); } catch {} } }
 }
