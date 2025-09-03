@@ -439,10 +439,14 @@ export default class GTMap {
   // Marker icons API (simple, high-performance batch per type)
   async setIconDefs(defs: Record<string, IconDefInput>) {
     await this._icons.loadIcons(defs);
+    // Icon atlases changed; invalidate screen cache to avoid ghosting
+    try { this._screenCache?.clear?.(); } catch {}
     this._needsRender = true;
   }
   setMarkers(markers: MarkerInput[]) {
     this._icons.setMarkers(markers as any);
+    // Marker set changed; invalidate screen cache so removed markers don't linger
+    try { this._screenCache?.clear?.(); } catch {}
     this._needsRender = true;
   }
   setEaseOptions(_opts: EaseOptions) {
