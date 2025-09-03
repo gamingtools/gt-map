@@ -193,3 +193,14 @@ anchorSelect.addEventListener('change', () => {
 anchorWrap.appendChild(anchorLabel);
 anchorWrap.appendChild(anchorSelect);
 container.appendChild(anchorWrap);
+
+// Invalidate map size when the container resizes
+try {
+  const ro = new ResizeObserver(() => {
+    (map as any).invalidateSize();
+  });
+  ro.observe(container);
+} catch {
+  // Fallback to window resize
+  window.addEventListener('resize', () => (map as any).invalidateSize());
+}
