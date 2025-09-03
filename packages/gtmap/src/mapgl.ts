@@ -637,8 +637,9 @@ export default class GTMap {
       setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
       clampCenterWorld: (cw, zInt, scale, w, h) =>
         clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom),
-      updatePointerAbs: (x: number, y: number) => {
-        this.pointerAbs = { x, y };
+      updatePointerAbs: (x: number | null, y: number | null) => {
+        if (Number.isFinite(x as number) && Number.isFinite(y as number)) this.pointerAbs = { x: x as number, y: y as number };
+        else this.pointerAbs = null;
       },
       emit: (name: string, payload: any) => this._events.emit(name, payload),
       setLastInteractAt: (t: number) => {

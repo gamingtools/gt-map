@@ -5,6 +5,7 @@ export default class InputController {
   private dragging = false;
   private lastX = 0;
   private lastY = 0;
+  private over = false;
   private _positions: Array<{ x: number; y: number }> = [];
   private _times: number[] = [];
   private touchState: null | {
@@ -65,7 +66,7 @@ export default class InputController {
       const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
       // record position for inertia
       this._pushSample(e.clientX - rect.left, e.clientY - rect.top);
-      // update pointerAbs always
+      // update pointerAbs always while dragging; while idle, only when inside container
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
       const tl = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
@@ -73,9 +74,21 @@ export default class InputController {
       const wy = tl.y + py / scale;
       const zAbs = Math.floor(zMax);
       const factor = Math.pow(2, zAbs - zInt);
-      deps.updatePointerAbs(wx * factor, wy * factor);
-      // emit pointermove so HUD can update even when idle
-      try { deps.emit('pointermove', { x: px, y: py, view: deps.getView() }); } catch {}
+      const inside = px >= 0 && py >= 0 && px <= widthCSS && py <= heightCSS;
+      if (this.dragging) {
+        deps.updatePointerAbs(wx * factor, wy * factor);
+        try { deps.emit('pointermove', { x: px, y: py, view: deps.getView() }); } catch {}
+      } else {
+        if (inside) {
+          deps.updatePointerAbs(wx * factor, wy * factor);
+          this.over = true;
+          try { deps.emit('pointermove', { x: px, y: py, view: deps.getView() }); } catch {}
+        } else if (this.over) {
+          deps.updatePointerAbs(null, null);
+          this.over = false;
+          try { deps.emit('pointermove', { x: -1, y: -1, view: deps.getView() }); } catch {}
+        }
+      }
       if (!this.dragging) return;
       const dx = e.clientX - this.lastX,
         dy = e.clientY - this.lastY;

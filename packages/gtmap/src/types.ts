@@ -69,7 +69,7 @@ export interface InputDeps {
     widthCSS: number,
     heightCSS: number,
   ): { x: number; y: number };
-  updatePointerAbs(x: number, y: number): void;
+  updatePointerAbs(x: number | null, y: number | null): void;
   emit(name: string, payload: any): void;
   setLastInteractAt(t: number): void;
   getAnchorMode(): 'pointer' | 'center';
