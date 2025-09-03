@@ -10,17 +10,11 @@ export type LeafletMapOptions = {
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
-  mapSize?: { width: number; height: number };
   // Commonly used Leaflet flags we may accept and map later
   zoomAnimation?: boolean;
   zoomAnimationThreshold?: number;
   fadeAnimation?: boolean;
   markerZoomAnimation?: boolean;
-  // GT-specific options supported by the impl
-  tileUrl?: string;
-  tileSize?: number;
-  wrapX?: boolean;
-  freePan?: boolean;
 };
 
 type Listener = (...args: any[]) => void;
@@ -36,11 +30,6 @@ export default class LeafletMapFacade {
     if (typeof options?.zoom === 'number') init.zoom = options.zoom;
     if (typeof options?.minZoom === 'number') init.minZoom = options.minZoom;
     if (typeof options?.maxZoom === 'number') init.maxZoom = options.maxZoom;
-    if (options?.tileUrl) init.tileUrl = options.tileUrl;
-    if (typeof options?.tileSize === 'number') init.tileSize = options.tileSize;
-    if (options?.mapSize) init.mapSize = options.mapSize;
-    if (typeof options?.wrapX === 'boolean') init.wrapX = options.wrapX;
-    if (typeof options?.freePan === 'boolean') init.freePan = options.freePan;
     this._map = new Impl(el as HTMLDivElement, init);
     // Wire core events
     this._map.events.on('move').each((e: any) => this._emit('move', e));

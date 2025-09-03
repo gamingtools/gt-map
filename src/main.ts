@@ -13,17 +13,12 @@ const HAGGA = {
 };
 
 const map = L.map(container, {
-  mapSize: { width: 8192, height: 8192 },
   center: { lng: 4096, lat: 4096 },
   zoom: 2,
   minZoom: HAGGA.minZoom,
   maxZoom: HAGGA.maxZoom,
-  tileUrl: HAGGA.url,
-  wrapX: HAGGA.wrapX,
-  freePan: true,
-  tileSize: 256,
 } as any);
-L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSize: 256 }).addTo(map as any);
+L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSize: 256, tms: false }).addTo(map as any);
 
 
 function updateHUD() {
