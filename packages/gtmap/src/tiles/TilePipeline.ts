@@ -16,6 +16,7 @@ export default class TilePipeline {
     const key = tileKeyOf(z, x, y);
     if (this.deps.hasTile(key) || this.deps.isPending(key) || this.queue.has(key)) return;
     const url = this.deps.urlFor(z, x, y);
+    if (!url) return; // no source wired yet
     this.queue.enqueue({ key, url, z, x, y, priority });
     this.process();
   }

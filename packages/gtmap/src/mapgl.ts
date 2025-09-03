@@ -220,7 +220,7 @@ export default class GTMap {
 
   constructor(container: HTMLDivElement, options: MapOptions = {}) {
     this.container = container;
-    this.tileUrl = options.tileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    this.tileUrl = options.tileUrl ?? '';
     this.tileSize = Number.isFinite(options.tileSize as number)
       ? (options.tileSize as number)
       : 256;
@@ -710,6 +710,7 @@ export default class GTMap {
   }
 
   private _tileUrl(z: number, x: number, y: number) {
+    if (!this.tileUrl) return '' as any;
     return this.tileUrl
       .replace('{z}', String(z))
       .replace('{x}', String(x))
