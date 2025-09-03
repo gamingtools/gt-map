@@ -30,7 +30,7 @@ export type MapOptions = {
   freePan?: boolean;
   center?: LngLat;
   zoom?: number;
-  zoomOutCenterBias?: number;
+  zoomOutCenterBias?: number | boolean;
 };
 export type EaseOptions = {
   easeBaseMs?: number;
@@ -208,7 +208,9 @@ export default class GTMap {
     this.freePan = options.freePan ?? false;
     this.center = { lng: options.center?.lng ?? 0, lat: options.center?.lat ?? 0 };
     this.zoom = options.zoom ?? 2;
-    if (Number.isFinite(options.zoomOutCenterBias as number)) {
+    if (typeof options.zoomOutCenterBias === 'boolean') {
+      this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
+    } else if (Number.isFinite(options.zoomOutCenterBias as number)) {
       const v = Math.max(0, Math.min(1, options.zoomOutCenterBias as number));
       this.outCenterBias = v;
     }
@@ -494,8 +496,12 @@ export default class GTMap {
 
   // Zoom-out center bias: when zooming out, bias the center toward previous visual center
   // v is approximately per-unit-zoom bias (0..1), internally clamped and capped.
-  public setZoomOutCenterBias(v: number) {
-    if (Number.isFinite(v)) this.outCenterBias = Math.max(0, Math.min(1, v));
+  public setZoomOutCenterBias(v: number | boolean) {
+    if (typeof v === 'boolean') {
+      this.outCenterBias = v ? 0.15 : 0.0;
+      return;
+    }
+    if (Number.isFinite(v)) this.outCenterBias = Math.max(0, Math.min(1, v as number));
   }
 
   private _initPrograms() {
