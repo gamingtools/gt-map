@@ -28,18 +28,12 @@ export class LeafletMarkerFacade extends Layer {
 
   constructor(latlng: LeafletLatLng, options?: MarkerOptions) {
     super();
-    super();
     this._latlng = toLngLat(latlng);
     this._icon = options?.icon || null;
   }
 
   onAdd(map: any): void { this._impl = (map as any).__impl ?? map; ensureIconDefs(this._impl as Impl, this._icon); flushMarkers(this._impl as Impl, this); }
-  remove(): this {
-    if (!this._impl) return this;
-    removeMarker(this._impl, this);
-    this._impl = null;
-    return this;
-  }
+  onRemove(_map: any): void { if (this._impl) { removeMarker(this._impl, this); this._impl = null; } }
   setLatLng(latlng: LeafletLatLng): this {
     this._latlng = toLngLat(latlng);
     if (this._impl) flushMarkers(this._impl, this);
