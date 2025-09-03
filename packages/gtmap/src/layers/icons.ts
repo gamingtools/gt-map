@@ -115,9 +115,8 @@ export class IconRenderer {
         if (xCSS + w < 0 || yCSS + h < 0 || xCSS > widthCSS || yCSS > heightCSS) continue;
         gl.uniform2f(ctx.loc.u_translate, Math.round(xCSS) * ctx.dpr, Math.round(yCSS) * ctx.dpr);
         gl.uniform2f(ctx.loc.u_size, Math.round(w) * ctx.dpr, Math.round(h) * ctx.dpr);
-        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       }
     }
   }
 }
-
