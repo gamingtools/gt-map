@@ -13,6 +13,7 @@ export type LeafletMapOptions = {
   maxZoom?: number;
   maxBounds?: LeafletBoundsLike;
   maxBoundsViscosity?: number;
+  bounceAtZoomLimits?: boolean;
   // Commonly used Leaflet flags we may accept and map later
   zoomAnimation?: boolean;
   zoomAnimationThreshold?: number;
@@ -37,6 +38,7 @@ export default class LeafletMapFacade {
     if (typeof options?.minZoom === 'number') init.minZoom = options.minZoom;
     if (typeof options?.maxZoom === 'number') init.maxZoom = options.maxZoom;
     if (typeof options?.fpsCap === 'number') init.fpsCap = options.fpsCap;
+    if (typeof options?.bounceAtZoomLimits === 'boolean') (init as any).bounceAtZoomLimits = options.bounceAtZoomLimits;
     if (options?.maxBounds) {
       const sw = Array.isArray(options.maxBounds)
         ? { lat: options.maxBounds[0][0], lng: options.maxBounds[0][1] }

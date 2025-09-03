@@ -34,8 +34,7 @@
       fpsCap: 60,
       maxBounds: BOUNDS,
       maxBoundsViscosity: 1,
-      // bounceAtZoomLimits is accepted for parity but not used internally yet
-      bounceAtZoomLimits: true as any
+      bounceAtZoomLimits: true
     });
 		L.tileLayer(HAGGA.url, {
 			minZoom: HAGGA.minZoom,

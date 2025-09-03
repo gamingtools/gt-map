@@ -44,6 +44,7 @@ export type MapOptions = {
   // Leaflet-like bounds
   maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
   maxBoundsViscosity?: number;
+  bounceAtZoomLimits?: boolean;
 };
 export type EaseOptions = {
   easeBaseMs?: number;
@@ -123,6 +124,7 @@ export default class GTMap {
   private _glReleased = false;
   private _maxBoundsPx: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
   private _maxBoundsViscosity = 0;
+  _bounceAtZoomLimits = false;
   // Home view (initial center)
   private _homeCenter: LngLat | null = null;
   // Leaflet-like inertia options and state
@@ -275,6 +277,7 @@ export default class GTMap {
     if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
     if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
     if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
+    if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
 
     // Initialize screen cache module (uses detected format)
     this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
