@@ -8,6 +8,7 @@ export type TileLayerOptions = {
   subdomains?: string | string[];
   errorTileUrl?: string;
   tms?: boolean;
+  wrapX?: boolean; // horizontal world wrap
   opacity?: number;
   updateWhenIdle?: boolean;
 };
@@ -27,7 +28,8 @@ export class LeafletTileLayerFacade extends Layer {
       minZoom: this._options.minZoom,
       maxZoom: this._options.maxZoom,
       tileSize: this._options.tileSize,
-      wrapX: this._options.tms ? false : true,
+      // Default: no wrap for pixel-CRS images; allow explicit opt-in via wrapX option
+      wrapX: typeof this._options.wrapX === 'boolean' ? this._options.wrapX : false,
       clearCache: true,
     });
     try { (map.__impl as any).setPrefetchOptions?.({ enabled: true, baselineLevel: 2 }); } catch {}

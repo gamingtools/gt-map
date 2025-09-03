@@ -31,13 +31,15 @@
 			zoom: 2,
 			minZoom: HAGGA.minZoom,
 			maxZoom: HAGGA.maxZoom,
-			fpsCap: 60
+			fpsCap: 60,
+			freePan: true
 		});
 		L.tileLayer(HAGGA.url, {
 			minZoom: HAGGA.minZoom,
 			maxZoom: HAGGA.maxZoom,
 			tileSize: 256,
-			tms: false
+			tms: false,
+			wrapX: false
 		}).addTo(map);
 
 		// HUD updates on render frames

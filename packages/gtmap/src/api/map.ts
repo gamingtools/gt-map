@@ -10,6 +10,8 @@ export type LeafletMapOptions = {
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
+  // Pan behavior
+  freePan?: boolean;
   // Commonly used Leaflet flags we may accept and map later
   zoomAnimation?: boolean;
   zoomAnimationThreshold?: number;
@@ -34,6 +36,7 @@ export default class LeafletMapFacade {
     if (typeof options?.minZoom === 'number') init.minZoom = options.minZoom;
     if (typeof options?.maxZoom === 'number') init.maxZoom = options.maxZoom;
     if (typeof options?.fpsCap === 'number') init.fpsCap = options.fpsCap;
+    if (typeof options?.freePan === 'boolean') init.freePan = options.freePan;
     this._map = new Impl(el as HTMLDivElement, init);
     // Wire core events
     this._map.events.on('move').each((e: any) => this._emit('move', e));
