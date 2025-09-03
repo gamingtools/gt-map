@@ -48,6 +48,7 @@ export interface RenderCtx {
   useScreenCache: boolean;
   screenCache?: any;
   raster: any;
+  icons?: any;
   tileCache: any;
   tileSize: number;
   enqueueTile(z: number, x: number, y: number, priority?: number): void;

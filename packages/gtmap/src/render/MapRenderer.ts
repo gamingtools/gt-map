@@ -120,6 +120,23 @@ export default class MapRenderer {
       wrapX: ctx.wrapX,
       tileSize: ctx.tileSize,
     });
+
+    // Draw icon markers, if present (simple CPU cull + batch per icon type)
+    if ((ctx as any).icons) {
+      (ctx as any).icons.draw({
+        gl: ctx.gl,
+        prog: ctx.prog,
+        loc: ctx.loc,
+        quad: ctx.quad,
+        dpr: ctx.dpr,
+        tileSize: ctx.tileSize,
+        zoom: ctx.zoom,
+        center: ctx.center,
+        container: ctx.container,
+        lngLatToWorld,
+        wrapX: ctx.wrapX,
+      });
+    }
     if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
     const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
     const frac = ctx.zoom - baseZ;

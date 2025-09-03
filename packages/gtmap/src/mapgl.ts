@@ -8,6 +8,7 @@ import TilePipeline from './tiles/TilePipeline';
 import type { TileDeps } from './types';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
+import { IconRenderer } from './layers/icons';
 import { EventBus } from './events/stream';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
@@ -36,6 +37,8 @@ export type EaseOptions = {
   pinchEaseMs?: number;
   easePinch?: boolean;
 };
+export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
+export type MarkerInput = { lng: number; lat: number; type: string; size?: number };
 
 export default class GTMap {
   container: HTMLDivElement;
@@ -93,6 +96,7 @@ export default class GTMap {
   private _screenTexFormat: number | null = null;
   private _screenCache: ScreenCache | null = null;
   private _raster!: RasterRenderer;
+  private _icons!: IconRenderer;
   private _renderer!: MapRenderer;
   private _zoomCtrl!: ZoomController;
   private _gfx!: Graphics;
@@ -120,6 +124,7 @@ export default class GTMap {
       useScreenCache: this.useScreenCache,
       screenCache: this._screenCache,
       raster: this._raster,
+      icons: this._icons,
       tileCache: this._tileCache,
       tileSize: this.tileSize,
       enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
@@ -243,6 +248,7 @@ export default class GTMap {
     this._tiles = new TilePipeline(this._tileDeps);
     // Raster renderer
     this._raster = new RasterRenderer(this.gl);
+    this._icons = new IconRenderer(this.gl);
     this._renderer = new MapRenderer(() => this.getRenderCtx(), {
       stepAnimation: () => this._zoomCtrl.step(),
       zoomVelocityTick: () => this.zoomVelocityTick(),
@@ -324,6 +330,15 @@ export default class GTMap {
     }
     this._needsRender = true;
   }
+  // Marker icons API (simple, high-performance batch per type)
+  async setIconDefs(defs: Record<string, IconDefInput>) {
+    await this._icons.loadIcons(defs);
+    this._needsRender = true;
+  }
+  setMarkers(markers: MarkerInput[]) {
+    this._icons.setMarkers(markers as any);
+    this._needsRender = true;
+  }
   setEaseOptions(_opts: EaseOptions) {
     this._zoomCtrl.setOptions({ easeBaseMs: _opts.easeBaseMs, easePerUnitMs: _opts.easePerUnitMs });
     if (typeof _opts.easePinch === 'boolean') {
@@ -368,6 +383,7 @@ export default class GTMap {
       } catch {}
       this._prog = null;
     }
+    try { (this as any)._icons = null; } catch {}
     try {
       this.canvas.remove();
     } catch {}
