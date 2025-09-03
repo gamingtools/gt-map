@@ -26,8 +26,9 @@
 			maxZoom: 5,
 			wrapX: false
 		};
+		const HOME = { lng: 4096, lat: 4096 };
 		map = L.map(container, {
-			center: { lng: 4096, lat: 4096 },
+			center: HOME,
 			zoom: 2,
 			minZoom: HAGGA.minZoom,
 			maxZoom: HAGGA.maxZoom,
@@ -80,7 +81,8 @@
 	});
 
 	function recenter() {
-		map?.recenter?.();
+		if (!map) return;
+		map.setView([HOME.lat, HOME.lng], map.getZoom());
 	}
 
 	// Reactive runes: apply control state to the map

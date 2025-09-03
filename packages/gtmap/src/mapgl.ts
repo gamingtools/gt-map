@@ -433,11 +433,7 @@ export default class GTMap {
       this._needsRender = true;
     }
   }
-  recenter() {
-    // Return to initial map center (home)
-    const hc = this._homeCenter || { lng: this.mapSize.width / 2, lat: this.mapSize.height / 2 };
-    this.setCenter(hc.lng, hc.lat);
-  }
+  // recenter helper removed from public surface; use setCenter/setView via facade
   destroy() {
     if (this._raf != null) {
       cancelAnimationFrame(this._raf);

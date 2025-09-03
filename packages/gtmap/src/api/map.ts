@@ -145,8 +145,6 @@ export default class LeafletMapFacade {
   }
   remove() { this._listeners.clear(); (this._map as any).destroy?.(); return this; }
 
-  // Demo helpers passthrough (temporary until full options/events plumbed)
-  recenter() { (this._map as any).recenter?.(); return this; }
   setWheelSpeed(v: number) { (this._map as any).setWheelSpeed?.(v); return this; }
   setWheelCtrlSpeed(v: number) { (this._map as any).setWheelCtrlSpeed?.(v); return this; }
   setAnchorMode(m: 'pointer' | 'center') { (this._map as any).setAnchorMode?.(m); return this; }
