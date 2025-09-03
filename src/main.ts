@@ -67,12 +67,7 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
       const d = (defs as any)[k];
       icons[k] = L.icon({ iconUrl: d.iconPath, iconRetinaUrl: d.x2IconPath, iconSize: [d.width, d.height] });
     });
-    // Sample markers near center
-    L.marker([0, 0], { icon: icons['player'] }).addTo(map as any);
-    L.marker([8, 32], { icon: icons['objective'] }).addTo(map as any);
-    L.marker([-6, -28], { icon: icons['otherplayer'] }).addTo(map as any);
-    L.marker([-14, 12], { icon: icons['contract'] }).addTo(map as any);
-    L.marker([18, -40], { icon: icons['ecolab'] }).addTo(map as any);
+    // Optionally add markers via L.marker (no fixed markers at center)
     // A moderate number of random markers using L.marker
     const keys = Object.keys(icons);
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
