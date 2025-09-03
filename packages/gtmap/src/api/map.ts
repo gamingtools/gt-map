@@ -59,6 +59,7 @@ export default class LeafletMapFacade {
   getZoom(): number { return this._map.zoom; }
   getMinZoom(): number { return (this._map as any).minZoom; }
   getMaxZoom(): number { return (this._map as any).maxZoom; }
+  get pointerAbs(): { x: number; y: number } | null { return (this._map as any).pointerAbs ?? null; }
 
   // Common convenience methods (bridge to impl)
   panTo(latlng: LeafletLatLng, _opts?: any): this { const p = toLngLat(latlng); this._map.setCenter(p.lng, p.lat); return this; }
@@ -140,6 +141,15 @@ export default class LeafletMapFacade {
     return { min: { x: 0, y: 0 }, max: { x: s.x, y: s.y } };
     }
   getPixelOrigin(): { x: number; y: number } { return { x: 0, y: 0 }; }
+
+  // Native marker helpers (GT extensions for performance/testing)
+  async setIconDefs(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>): Promise<void> {
+    await (this._map as any).setIconDefs(defs);
+  }
+  setMarkers(markers: Array<{ lng: number; lat: number; type: string; size?: number }>): this {
+    (this._map as any).setMarkers(markers);
+    return this;
+  }
   remove() { this._listeners.clear(); (this._map as any).destroy?.(); return this; }
 
   // Demo helpers passthrough (temporary until full options/events plumbed)

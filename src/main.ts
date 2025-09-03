@@ -46,7 +46,7 @@ function updateHUD() {
     (updateHUD as any)._frames = 0;
     (updateHUD as any)._acc = 0;
   }
-  const p = map.pointerAbs;
+  const p = (map as any).pointerAbs as { x: number; y: number } | null;
   const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
   const z = (map as any).getZoom() as number;
   hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${(updateHUD as any)._fps}${pText}`;
@@ -61,8 +61,8 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
   try {
     const url = new URL('./sample-data/MapIcons.json', import.meta.url);
     const defs = await fetch(url).then((r) => r.json());
-    // Use underlying implementation for bulk icon setup (temporary)
-    await (map as any).__impl.icons.setDefs(defs);
+    // Bulk icon setup via GT extensions on the map facade
+    await (map as any).setIconDefs(defs);
     // Sample markers near center (demo only)
     const base: any[] = [
       { lng: 0, lat: 0, type: 'player' },
@@ -74,11 +74,11 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
     // Add 500 random icons within a window around center
     const keys = Object.keys(defs);
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
-    for (let i = 0; i < 150000; i++) {
+    for (let i = 0; i < 500; i++) {
       const type = keys[(Math.random() * keys.length) | 0];
       base.push({ lng: rand(-120, 120), lat: rand(-120, 120), type });
     }
-    (map as any).__impl.icons.setMarkers(base as any);
+    (map as any).setMarkers(base as any);
   } catch (err) {
     console.warn('Icon demo load failed:', err);
   }
