@@ -60,9 +60,10 @@
 			});
 		})();
 
-		// Grid layer init
+		// Grid layer init — add once so remove() can toggle visibility later
 		try {
 			gridLayer = (L as any).grid();
+			gridLayer.addTo(map);
 		} catch {
 			gridLayer = null;
 		}
