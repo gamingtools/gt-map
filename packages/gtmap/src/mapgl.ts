@@ -31,6 +31,13 @@ export type MapOptions = {
   center?: LngLat;
   zoom?: number;
   zoomOutCenterBias?: number | boolean;
+  // Recommended tunables
+  maxTiles?: number;
+  maxInflightLoads?: number;
+  interactionIdleMs?: number;
+  prefetch?: { enabled?: boolean; baselineLevel?: number };
+  screenCache?: boolean;
+  wheelSpeedCtrl?: number;
 };
 export type EaseOptions = {
   easeBaseMs?: number;
@@ -184,6 +191,7 @@ export default class GTMap {
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
   private prefetchBaselineLevel = 2;
+  private prefetchEnabled = true;
   // Wheel coalescing + velocity tail
   // removed: legacy wheel coalescing fields (handled via easing)
   private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = {
@@ -218,6 +226,17 @@ export default class GTMap {
     this._gfx = new Graphics(this as any);
     this._gfx.init();
     this._initPrograms();
+    // Apply recommended options
+    if (Number.isFinite(options.maxTiles as number)) this._maxTiles = Math.max(0, (options.maxTiles as number) | 0);
+    if (Number.isFinite(options.maxInflightLoads as number)) this._maxInflightLoads = Math.max(0, (options.maxInflightLoads as number) | 0);
+    if (Number.isFinite(options.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (options.interactionIdleMs as number) | 0);
+    if (options.prefetch) {
+      if (typeof options.prefetch.enabled === 'boolean') this.prefetchEnabled = options.prefetch.enabled;
+      if (Number.isFinite(options.prefetch.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (options.prefetch.baselineLevel as number) | 0);
+    }
+    if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
+    if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
+
     // Initialize screen cache module (uses detected format)
     this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
     // Initialize tile cache (LRU)
@@ -307,7 +326,7 @@ export default class GTMap {
     this._initEvents();
     this._loop = this._loop.bind(this);
     this._raf = requestAnimationFrame(this._loop);
-    this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel);
+    if (this.prefetchEnabled) this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel);
     // DI in place for input/tiles/render; no need for TS usage hacks
   }
 
@@ -472,6 +491,13 @@ export default class GTMap {
     const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
     this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
   }
+  public setWheelCtrlSpeed(speed: number) {
+    if (Number.isFinite(speed)) {
+      this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, speed));
+      const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
+      this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
+    }
+  }
   public setAnchorMode(mode: 'pointer' | 'center') {
     this.anchorMode = mode;
   }
@@ -531,6 +557,27 @@ export default class GTMap {
         this._needsRender = true;
       }
     }
+  }
+  // Toggle screen-space cache
+  public setScreenCacheEnabled(enabled: boolean) {
+    this.useScreenCache = !!enabled;
+    this._needsRender = true;
+  }
+  // Loader/cache options
+  public setLoaderOptions(opts: { maxTiles?: number; maxInflightLoads?: number; interactionIdleMs?: number }) {
+    if (Number.isFinite(opts.maxTiles as number) && (opts.maxTiles as number) !== this._maxTiles) {
+      this._maxTiles = Math.max(0, (opts.maxTiles as number) | 0);
+      // Recreate cache to apply new capacity
+      try { this._tileCache.clear(); } catch {}
+      this._tileCache = new TileCache(this.gl, this._maxTiles);
+    }
+    if (Number.isFinite(opts.maxInflightLoads as number)) this._maxInflightLoads = Math.max(0, (opts.maxInflightLoads as number) | 0);
+    if (Number.isFinite(opts.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (opts.interactionIdleMs as number) | 0);
+    this._needsRender = true;
+  }
+  public setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number }) {
+    if (typeof opts.enabled === 'boolean') this.prefetchEnabled = opts.enabled;
+    if (Number.isFinite(opts.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (opts.baselineLevel as number) | 0);
   }
   private _initEvents() {
     this._inputDeps = {
@@ -947,6 +994,7 @@ export default class GTMap {
     w: number,
     h: number,
   ) {
+    if (!this.prefetchEnabled) return;
     const TS = this.tileSize;
     const startX = Math.floor(tl.x / TS) - 1;
     const startY = Math.floor(tl.y / TS) - 1;
