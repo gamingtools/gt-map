@@ -1,4 +1,4 @@
-import { clampLat, lngLatToWorld, worldToLngLat } from './mercator';
+// Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
 import Graphics from './gl/Graphics';
 import { ScreenCache } from './render/screenCache';
@@ -26,6 +26,7 @@ export type MapOptions = {
   tileSize?: number;
   minZoom?: number;
   maxZoom?: number;
+  imageSize?: { width: number; height: number };
   wrapX?: boolean;
   freePan?: boolean;
   center?: LngLat;
@@ -56,6 +57,7 @@ export default class GTMap {
   tileSize: number;
   minZoom: number;
   maxZoom: number;
+  imageSize: { width: number; height: number };
   wrapX: boolean;
   freePan: boolean;
   center: LngLat;
@@ -141,6 +143,7 @@ export default class GTMap {
       center: this.center,
       minZoom: this.minZoom,
       maxZoom: this.maxZoom,
+      imageSize: this.imageSize,
       wrapX: this.wrapX,
       useScreenCache: this.useScreenCache,
       screenCache: this._screenCache,
@@ -149,6 +152,16 @@ export default class GTMap {
       icons: this._icons,
       tileCache: this._tileCache,
       tileSize: this.tileSize,
+      // Project image pixels at native resolution into level-z pixel coords
+      project: (x: number, y: number, z: number) => {
+        const s = Math.pow(2, this.maxZoom - z);
+        return { x: x / s, y: y / s };
+      },
+      // Unproject level-z pixel coords into image pixels at native resolution
+      unproject: (x: number, y: number, z: number) => {
+        const s = Math.pow(2, this.maxZoom - z);
+        return { x: x * s, y: y * s };
+      },
       enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
     } as any;
   }
@@ -212,11 +225,18 @@ export default class GTMap {
     this.tileSize = Number.isFinite(options.tileSize as number)
       ? (options.tileSize as number)
       : 256;
-    this.minZoom = options.minZoom ?? 1;
-    this.maxZoom = options.maxZoom ?? 19;
-    this.wrapX = options.wrapX ?? true;
+    this.minZoom = options.minZoom ?? 0;
+    // Infer maxZoom from imageSize if provided
+    if (options.imageSize && !Number.isFinite(options.maxZoom as number)) {
+      const maxDim = Math.max(options.imageSize.width, options.imageSize.height);
+      this.maxZoom = Math.max(0, Math.floor(Math.log2(Math.max(1, maxDim / this.tileSize))));
+    } else {
+      this.maxZoom = options.maxZoom ?? 19;
+    }
+    this.imageSize = options.imageSize ?? { width: this.tileSize * (1 << this.maxZoom), height: this.tileSize * (1 << this.maxZoom) };
+    this.wrapX = options.wrapX ?? false;
     this.freePan = options.freePan ?? false;
-    this.center = { lng: options.center?.lng ?? 0, lat: options.center?.lat ?? 0 };
+    this.center = { lng: options.center?.lng ?? (this.imageSize.width / 2), lat: options.center?.lat ?? (this.imageSize.height / 2) };
     this.zoom = options.zoom ?? 2;
     if (typeof options.zoomOutCenterBias === 'boolean') {
       this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
@@ -306,7 +326,7 @@ export default class GTMap {
       getMap: () => this,
       getOutCenterBias: () => this.outCenterBias,
       clampCenterWorld: (cw, zInt, s, w, h) =>
-        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize),
+        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.imageSize, this.maxZoom),
       emit: (name: string, payload: any) => this._events.emit(name, payload),
       requestRender: () => {
         this._needsRender = true;
@@ -333,8 +353,13 @@ export default class GTMap {
   }
 
   setCenter(lng: number, lat: number) {
-    this.center.lng = lng;
-    this.center.lat = clampLat(lat);
+    // clamp to image bounds unless freePan
+    const w = this.imageSize?.width ?? Math.pow(2, this.maxZoom) * this.tileSize;
+    const h = this.imageSize?.height ?? Math.pow(2, this.maxZoom) * this.tileSize;
+    const x = this.freePan ? lng : Math.max(0, Math.min(w, lng));
+    const y = this.freePan ? lat : Math.max(0, Math.min(h, lat));
+    this.center.lng = x;
+    this.center.lat = y;
     this._state.center = this.center;
     this._needsRender = true;
   }
@@ -351,6 +376,7 @@ export default class GTMap {
     tileSize?: number;
     minZoom?: number;
     maxZoom?: number;
+    imageSize?: { width: number; height: number };
     wrapX?: boolean;
     clearCache?: boolean;
   }) {
@@ -358,6 +384,7 @@ export default class GTMap {
     if (Number.isFinite(opts.tileSize as number)) this.tileSize = opts.tileSize as number;
     if (Number.isFinite(opts.minZoom as number)) this.minZoom = opts.minZoom as number;
     if (Number.isFinite(opts.maxZoom as number)) this.maxZoom = opts.maxZoom as number;
+    if (opts.imageSize) this.imageSize = { width: Math.max(1, opts.imageSize.width), height: Math.max(1, opts.imageSize.height) };
     if (typeof opts.wrapX === 'boolean') this.wrapX = opts.wrapX;
     // reflect to view state
     this._state.minZoom = this.minZoom;
@@ -599,7 +626,7 @@ export default class GTMap {
       getTileSize: () => this.tileSize,
       setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
       clampCenterWorld: (cw, zInt, scale, w, h) =>
-        clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize),
+        clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize, this.imageSize, this.maxZoom),
       updatePointerAbs: (x: number, y: number) => {
         this.pointerAbs = { x, y };
       },
@@ -650,7 +677,8 @@ export default class GTMap {
       const scale = Math.pow(2, this.zoom - baseZ);
       const widthCSS = rect.width;
       const heightCSS = rect.height;
-      const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ, this.tileSize);
+      const s = Math.pow(2, this.maxZoom - baseZ);
+      const centerWorld = { x: this.center.lng / s, y: this.center.lat / s };
       const tlWorld = {
         x: centerWorld.x - widthCSS / (2 * scale),
         y: centerWorld.y - heightCSS / (2 * scale),
@@ -693,11 +721,14 @@ export default class GTMap {
 
   // Finite-world center anchoring hysteresis
   private _viewportCoverageRatio(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
-    const worldSize = this.tileSize * (1 << zInt);
+    const s = Math.pow(2, this.maxZoom - zInt);
+    const levelW = this.imageSize.width / s;
+    const levelH = this.imageSize.height / s;
     const halfW = widthCSS / (2 * scale);
     const halfH = heightCSS / (2 * scale);
-    const halfWorld = worldSize / 2;
-    return Math.max(halfW, halfH) / halfWorld;
+    const covX = halfW / (levelW / 2);
+    const covY = halfH / (levelH / 2);
+    return Math.max(covX, covY);
   }
   private _shouldAnchorCenterForZoom(targetZoom: number) {
     if (this.wrapX) return false;
@@ -837,9 +868,14 @@ export default class GTMap {
     const widthCSS = rect.width; const heightCSS = rect.height;
     const from = a.from;
     const target = { x: from.x + a.offsetWorld.x * p, y: from.y + a.offsetWorld.y * p };
-    let newCenter = clampCenterWorldCore(target, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize);
-    const pll = worldToLngLat(newCenter.x, newCenter.y, zInt, this.tileSize);
-    this.center = { lng: pll.lng, lat: clampLat(pll.lat) };
+    let newCenter = clampCenterWorldCore(target, zInt, scale, widthCSS, heightCSS, this.wrapX, this.freePan, this.tileSize, this.imageSize, this.maxZoom);
+    const s0 = Math.pow(2, this.maxZoom - zInt);
+    const nx = newCenter.x * s0;
+    const ny = newCenter.y * s0;
+    const w = this.imageSize.width, h = this.imageSize.height;
+    const clampedX = this.freePan ? nx : Math.max(0, Math.min(w, nx));
+    const clampedY = this.freePan ? ny : Math.max(0, Math.min(h, ny));
+    this.center = { lng: clampedX, lat: clampedY };
     this._state.center = this.center;
     this._needsRender = true;
     if (t >= 1) { this._panAnim = null; this._events.emit('moveend', { view: this._view() }); }
@@ -848,7 +884,8 @@ export default class GTMap {
   private _startPanBy(dxPx: number, dyPx: number, durSec: number) {
     const zInt = Math.floor(this.zoom);
     const scale = Math.pow(2, this.zoom - zInt);
-    const cw = lngLatToWorld(this.center.lng, this.center.lat, zInt, this.tileSize);
+    const s = Math.pow(2, this.maxZoom - zInt);
+    const cw = { x: this.center.lng / s, y: this.center.lat / s };
     // Use the same screen->world sign convention as during drag updates
     const offsetWorld = { x: dxPx / scale, y: dyPx / scale };
     this._panAnim = { start: (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(), dur: Math.max(0.05, durSec), from: cw, offsetWorld };

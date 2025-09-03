@@ -99,7 +99,7 @@ export class IconRenderer {
     zoom: number;
     center: { lng: number; lat: number };
     container: HTMLElement;
-    lngLatToWorld: (lng: number, lat: number, z: number, ts: number) => { x: number; y: number };
+    project: (x: number, y: number, z: number) => { x: number; y: number };
     wrapX: boolean;
   }) {
     if (this.markers.length === 0) return;
@@ -109,7 +109,7 @@ export class IconRenderer {
     const rect = ctx.container.getBoundingClientRect();
     const widthCSS = rect.width;
     const heightCSS = rect.height;
-    const centerWorld = ctx.lngLatToWorld(ctx.center.lng, ctx.center.lat, zInt, ctx.tileSize);
+    const centerWorld = ctx.project(ctx.center.lng, ctx.center.lat, zInt);
     const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
 
     gl.useProgram(ctx.prog);
@@ -135,7 +135,7 @@ export class IconRenderer {
       if (!tex || !sz) continue;
       gl.bindTexture(gl.TEXTURE_2D, tex);
       for (const m of list) {
-        const p = ctx.lngLatToWorld(m.lng, m.lat, zInt, ctx.tileSize);
+        const p = ctx.project(m.lng, m.lat, zInt);
         let xCSS = (p.x - tlWorld.x) * scale;
         let yCSS = (p.y - tlWorld.y) * scale;
         const w = (m.size || sz.w);

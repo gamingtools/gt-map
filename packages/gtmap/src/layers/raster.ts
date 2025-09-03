@@ -26,10 +26,12 @@ export class RasterRenderer {
       heightCSS: number;
       wrapX: boolean;
       tileSize: number;
+      imageSize?: { width: number; height: number };
+      zMax?: number;
     },
   ) {
     const gl = this.gl;
-    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize } = params;
+    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, imageSize, zMax } = params as any;
     const TS = tileSize;
     const startX = Math.floor(tlWorld.x / TS);
     const startY = Math.floor(tlWorld.y / TS);
@@ -38,16 +40,31 @@ export class RasterRenderer {
     const tilePixelSizeCSS = TS * scale;
     const tilePixelSize = tilePixelSizeCSS * dpr;
 
+    // Limit tile ranges for finite, possibly non-square images
+    let tilesX = Infinity;
+    let tilesY = Infinity;
+    if (imageSize && typeof zMax === 'number') {
+      const s = Math.pow(2, zMax - zLevel);
+      const levelW = Math.ceil(imageSize.width / s);
+      const levelH = Math.ceil(imageSize.height / s);
+      tilesX = Math.ceil(levelW / TS);
+      tilesY = Math.ceil(levelH / TS);
+    }
+
     for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= 1 << zLevel) continue;
+      if (!Number.isFinite(tilesY)) { if (ty < 0 || ty >= 1 << zLevel) continue; } else { if (ty < 0 || ty >= tilesY) continue; }
       for (let tx = startX; tx <= endX; tx++) {
-        if (!wrapX && (tx < 0 || tx >= 1 << zLevel)) continue;
-        const tileX = wrapX ? wrapXTile(tx, zLevel) : tx;
+        if (!Number.isFinite(tilesX)) {
+          if (!wrapX && (tx < 0 || tx >= 1 << zLevel)) continue;
+        } else {
+          if (tx < 0 || tx >= tilesX) continue;
+        }
+        const tileX = wrapX && !Number.isFinite(tilesX) ? wrapXTile(tx, zLevel) : tx;
         const wx = tx * TS;
         const wy = ty * TS;
         let sxCSS = (wx - tlWorld.x) * scale;
         const syCSS = (wy - tlWorld.y) * scale;
-        if (wrapX && tileX !== tx) {
+        if (wrapX && !Number.isFinite(tilesX) && tileX !== tx) {
           const dxTiles = tx - tileX;
           sxCSS -= dxTiles * TS * scale;
         }
@@ -74,6 +91,8 @@ export class RasterRenderer {
     heightCSS: number,
     wrapX: boolean,
     tileSize: number,
+    imageSize?: { width: number; height: number },
+    zMax?: number,
   ): number {
     const TS = tileSize;
     const startX = Math.floor(tlWorld.x / TS);
@@ -82,12 +101,25 @@ export class RasterRenderer {
     const endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
     let total = 0;
     let ready = 0;
+    let tilesX = Infinity;
+    let tilesY = Infinity;
+    if (imageSize && typeof zMax === 'number') {
+      const s = Math.pow(2, zMax - zLevel);
+      const levelW = Math.ceil(imageSize.width / s);
+      const levelH = Math.ceil(imageSize.height / s);
+      tilesX = Math.ceil(levelW / TS);
+      tilesY = Math.ceil(levelH / TS);
+    }
     for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= 1 << zLevel) continue;
+      if (!Number.isFinite(tilesY)) { if (ty < 0 || ty >= 1 << zLevel) continue; } else { if (ty < 0 || ty >= tilesY) continue; }
       for (let tx = startX; tx <= endX; tx++) {
         let tileX = tx;
-        if (wrapX) tileX = wrapXTile(tx, zLevel);
-        else if (tx < 0 || tx >= 1 << zLevel) continue;
+        if (!Number.isFinite(tilesX)) {
+          if (wrapX) tileX = wrapXTile(tx, zLevel);
+          else if (tx < 0 || tx >= 1 << zLevel) continue;
+        } else {
+          if (tx < 0 || tx >= tilesX) continue;
+        }
         total++;
         const key = tileKeyOf(zLevel, tileX, ty);
         const rec = tileCache.get(key);

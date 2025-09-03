@@ -1,5 +1,4 @@
 import Impl from '../mapgl';
-import { lngLatToWorld, worldToLngLat } from '../mercator';
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
 
 type FitBoundsPadding = number | [number, number];
@@ -11,6 +10,7 @@ export type LeafletMapOptions = {
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
+  imageSize?: { width: number; height: number };
   // Commonly used Leaflet flags we may accept and map later
   zoomAnimation?: boolean;
   zoomAnimationThreshold?: number;
@@ -38,6 +38,7 @@ export default class LeafletMapFacade {
     if (typeof options?.maxZoom === 'number') init.maxZoom = options.maxZoom;
     if (options?.tileUrl) init.tileUrl = options.tileUrl;
     if (typeof options?.tileSize === 'number') init.tileSize = options.tileSize;
+    if (options?.imageSize) init.imageSize = options.imageSize;
     if (typeof options?.wrapX === 'boolean') init.wrapX = options.wrapX;
     if (typeof options?.freePan === 'boolean') init.freePan = options.freePan;
     this._map = new Impl(el as HTMLDivElement, init);
@@ -67,7 +68,6 @@ export default class LeafletMapFacade {
   fitBounds(bounds: LeafletBoundsLike, opts?: FitBoundsOptions): this {
     const sw = Array.isArray(bounds) ? { lat: bounds[0][0], lng: bounds[0][1] } : toLngLat(bounds.getSouthWest());
     const ne = Array.isArray(bounds) ? { lat: bounds[1][0], lng: bounds[1][1] } : toLngLat(bounds.getNorthEast());
-    const tileSize = (this._map as any).tileSize || 256;
     const el = (this._map as any).container as HTMLDivElement;
     const w = Math.max(1, el.clientWidth || el.getBoundingClientRect().width || 1);
     const h = Math.max(1, el.clientHeight || el.getBoundingClientRect().height || 1);
@@ -75,35 +75,29 @@ export default class LeafletMapFacade {
     const padBR = opts?.paddingBottomRight || (typeof opts?.padding === 'number' ? [opts.padding, opts.padding] : (opts?.padding as any)) || [0, 0];
     const availW = Math.max(1, w - (padTL[0] + padBR[0]));
     const availH = Math.max(1, h - (padTL[1] + padBR[1]));
-    const sw0 = lngLatToWorld(sw.lng, sw.lat, 0, tileSize);
-    const ne0 = lngLatToWorld(ne.lng, ne.lat, 0, tileSize);
-    const spanX0 = Math.abs(ne0.x - sw0.x);
-    const spanY0 = Math.abs(ne0.y - sw0.y);
-    const k = Math.min(availW / spanX0, availH / spanY0);
-    const minZ = (this._map as any).minZoom ?? 0;
-    const maxZ = Math.min((this._map as any).maxZoom ?? 24, typeof opts?.maxZoom === 'number' ? opts.maxZoom : Infinity);
-    const z = Math.max(minZ, Math.min(maxZ, Math.log2(Math.max(k, 1e-6))));
-    const swZ = lngLatToWorld(sw.lng, sw.lat, z, tileSize);
-    const neZ = lngLatToWorld(ne.lng, ne.lat, z, tileSize);
-    const cx = (swZ.x + neZ.x) * 0.5;
-    const cy = (swZ.y + neZ.y) * 0.5;
-    const c = worldToLngLat(cx, cy, z, tileSize);
-    this._map.setCenter(c.lng, c.lat);
+    const spanX = Math.abs(ne.lng - sw.lng);
+    const spanY = Math.abs(ne.lat - sw.lat);
+    const zMax = (this._map as any).maxZoom as number;
+    const scale = Math.min(availW / Math.max(1, spanX), availH / Math.max(1, spanY));
+    const z = Math.max((this._map as any).minZoom ?? 0, Math.min(typeof opts?.maxZoom === 'number' ? opts.maxZoom : zMax, zMax + Math.log2(Math.max(1e-6, scale))));
+    const cx = (sw.lng + ne.lng) * 0.5;
+    const cy = (sw.lat + ne.lat) * 0.5;
+    this._map.setCenter(cx, cy);
     this._map.setZoom(z);
     return this;
   }
   getBounds(): LeafletBoundsArray {
     const el = (this._map as any).container as HTMLDivElement;
-    const tileSize = (this._map as any).tileSize || 256;
     const w = Math.max(1, el.clientWidth || el.getBoundingClientRect().width || 1);
     const h = Math.max(1, el.clientHeight || el.getBoundingClientRect().height || 1);
     const z = this._map.zoom;
-    const c = this._map.center;
-    const cw = lngLatToWorld(c.lng, c.lat, z, tileSize);
-    const tl = { x: cw.x - w / 2, y: cw.y - h / 2 };
-    const br = { x: cw.x + w / 2, y: cw.y + h / 2 };
-    const sw = worldToLngLat(tl.x, br.y, z, tileSize);
-    const ne = worldToLngLat(br.x, tl.y, z, tileSize);
+    const c = this._map.center as { lng: number; lat: number };
+    const zMax = (this._map as any).maxZoom as number;
+    const scale = Math.pow(2, z - zMax);
+    const halfW = w / (2 * scale);
+    const halfH = h / (2 * scale);
+    const sw = { lat: c.lat + halfH, lng: c.lng - halfW };
+    const ne = { lat: c.lat - halfH, lng: c.lng + halfW };
     return [[sw.lat, sw.lng], [ne.lat, ne.lng]];
   }
 
@@ -120,13 +114,15 @@ export default class LeafletMapFacade {
     const scale = Math.pow(2, z - baseZ);
     const dx = Array.isArray(offset) ? offset[0] : offset.x;
     const dy = Array.isArray(offset) ? offset[1] : offset.y;
-    const tileSize = (this._map as any).tileSize || 256;
-    const c = this._map.center;
-    const cw = lngLatToWorld(c.lng, c.lat, baseZ, tileSize);
+    const zMax = (this._map as any).maxZoom as number;
+    const s = Math.pow(2, zMax - baseZ);
+    const c = this._map.center as { lng: number; lat: number };
+    const cw = { x: c.lng / s, y: c.lat / s };
     const nx = cw.x + dx / scale;
     const ny = cw.y + dy / scale;
-    const nl = worldToLngLat(nx, ny, baseZ, tileSize);
-    this._map.setCenter(nl.lng, nl.lat);
+    const px = nx * s;
+    const py = ny * s;
+    this._map.setCenter(px, py);
     return this;
   }
   stop(): this { /* no animation queue to stop yet */ return this; }

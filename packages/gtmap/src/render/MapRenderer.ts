@@ -1,5 +1,4 @@
 import type { RenderCtx } from '../types';
-import { lngLatToWorld } from '../mercator';
 
 export default class MapRenderer {
   private getCtx: () => RenderCtx;
@@ -37,7 +36,7 @@ export default class MapRenderer {
     const widthCSS = rect.width;
     const heightCSS = rect.height;
     const scale = Math.pow(2, ctx.zoom - baseZ);
-    const centerWorld = lngLatToWorld(ctx.center.lng, ctx.center.lat, baseZ, ctx.tileSize);
+    const centerWorld = (ctx as any).project(ctx.center.lng, ctx.center.lat, baseZ);
     const tlWorld = {
       x: centerWorld.x - widthCSS / (2 * scale),
       y: centerWorld.y - heightCSS / (2 * scale),
@@ -74,11 +73,13 @@ export default class MapRenderer {
       heightCSS,
       ctx.wrapX,
       ctx.tileSize,
+      (ctx as any).imageSize,
+      ctx.maxZoom,
     );
     const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
     if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
       for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
-        const centerL = lngLatToWorld(ctx.center.lng, ctx.center.lat, lvl, ctx.tileSize);
+        const centerL = (ctx as any).project(ctx.center.lng, ctx.center.lat, lvl);
         const scaleL = Math.pow(2, ctx.zoom - lvl);
         const tlL = {
           x: centerL.x - widthCSS / (2 * scaleL),
@@ -93,6 +94,8 @@ export default class MapRenderer {
           heightCSS,
           ctx.wrapX,
           ctx.tileSize,
+          (ctx as any).imageSize,
+          ctx.maxZoom,
         );
         // Backfill lower levels at full raster opacity
         gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, (ctx as any).rasterOpacity ?? 1.0)));
@@ -109,6 +112,8 @@ export default class MapRenderer {
             heightCSS,
             wrapX: ctx.wrapX,
             tileSize: ctx.tileSize,
+            imageSize: (ctx as any).imageSize,
+            zMax: ctx.maxZoom,
           },
         );
         if (covL >= 0.995) break;
@@ -125,12 +130,14 @@ export default class MapRenderer {
       heightCSS,
       wrapX: ctx.wrapX,
       tileSize: ctx.tileSize,
+      imageSize: (ctx as any).imageSize,
+      zMax: ctx.maxZoom,
     });
     if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
     const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
     const frac = ctx.zoom - baseZ;
     if (zIntNext > baseZ && frac > 0) {
-      const centerN = lngLatToWorld(ctx.center.lng, ctx.center.lat, zIntNext, ctx.tileSize);
+      const centerN = (ctx as any).project(ctx.center.lng, ctx.center.lat, zIntNext);
       const scaleN = Math.pow(2, ctx.zoom - zIntNext);
       const tlN = {
         x: centerN.x - widthCSS / (2 * scaleN),
@@ -152,6 +159,8 @@ export default class MapRenderer {
           heightCSS,
           wrapX: ctx.wrapX,
           tileSize: ctx.tileSize,
+          imageSize: (ctx as any).imageSize,
+          zMax: ctx.maxZoom,
         },
       );
       gl.uniform1f((ctx.loc as any).u_alpha, 1.0);
@@ -172,7 +181,7 @@ export default class MapRenderer {
         zoom: ctx.zoom,
         center: ctx.center,
         container: ctx.container,
-        lngLatToWorld,
+        project: (x: number, y: number, z: number) => (ctx as any).project(x, y, z),
         wrapX: ctx.wrapX,
       });
     }
