@@ -32,6 +32,36 @@ export class IconRenderer {
 
   private async createTextureFromUrl(url: string): Promise<WebGLTexture | null> {
     const gl = this.gl;
+    // Prefer fetch+createImageBitmap for proper CORS handling (same pattern as tiles)
+    if (typeof fetch === 'function' && typeof createImageBitmap === 'function') {
+      try {
+        const r = await fetch(url, { mode: 'cors', credentials: 'omit' });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const blob = await r.blob();
+        const bmp = await createImageBitmap(blob, {
+          premultiplyAlpha: 'none' as any,
+          colorSpaceConversion: 'none' as any,
+        } as any);
+        try {
+          const tex = gl.createTexture();
+          if (!tex) return null;
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+          gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp as any);
+          return tex;
+        } finally {
+          try { (bmp as any).close?.(); } catch {}
+        }
+      } catch (e) {
+        console.warn('Icon fetch/bitmap failed; falling back to Image()', e);
+      }
+    }
+    // Fallback: HTMLImageElement (requires CORS headers on server)
     try {
       const img = new Image();
       (img as any).crossOrigin = 'anonymous';
@@ -52,7 +82,8 @@ export class IconRenderer {
       gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img as any);
       return tex;
-    } catch {
+    } catch (err) {
+      console.warn('Icon Image() load failed', err);
       return null;
     }
   }
