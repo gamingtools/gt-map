@@ -17,8 +17,7 @@
 
 	onMount(() => {
 		if (!container) return;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const L = (GT as any).L;
+		const L = GT.L;
 		const HAGGA = {
 			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
 			minZoom: 0,
@@ -34,7 +33,7 @@
       maxZoom: HAGGA.maxZoom,
       fpsCap: 60,
       maxBounds: BOUNDS,
-      maxBoundsViscosity: 1.0,
+      maxBoundsViscosity: 1,
       // bounceAtZoomLimits is accepted for parity but not used internally yet
       bounceAtZoomLimits: true as any
     });
@@ -131,6 +130,5 @@
 		z-index: 10;
 	}
 
-/* HUD now includes controls */
-	.panel.speed input[type='range'] { width: 140px; }
+
 </style>

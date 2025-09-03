@@ -1,4 +1,5 @@
 import Impl from '../mapgl';
+import type { EventBus } from '../events/stream';
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
 
 type FitBoundsPadding = number | [number, number];
@@ -66,7 +67,7 @@ export default class LeafletMapFacade {
   getMinZoom(): number { return (this._map as any).minZoom; }
   getMaxZoom(): number { return (this._map as any).maxZoom; }
   get pointerAbs(): { x: number; y: number } | null { return (this._map as any).pointerAbs ?? null; }
-  get events(): any { return (this._map as any).events; }
+  get events(): EventBus { return (this._map as any).events as EventBus; }
 
   // Common convenience methods (bridge to impl)
   panTo(latlng: LeafletLatLng, _opts?: any): this { const p = toLngLat(latlng); this._map.setCenter(p.lng, p.lat); return this; }

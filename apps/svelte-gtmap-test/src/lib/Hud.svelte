@@ -1,14 +1,9 @@
 <script lang="ts">
   // Single status widget: subscribes to map events and shows key values
-  type MapLike = {
-    getCenter: () => [number, number];
-    getZoom: () => number;
-    pointerAbs: { x: number; y: number } | null;
-    events: { on: (name: string) => { each: (fn: (e: any) => () => void | void) => () => void } };
-  };
+  import type { LeafletMapFacade, EventBus } from '@gtmap';
 
   const { map, fpsCap: fpsCapInitial = 60, wheelSpeed: wheelSpeedInitial = 1.0, wheelCtrlSpeed: wheelCtrlSpeedInitial = 0.4, home } = $props<{
-    map: MapLike;
+    map: LeafletMapFacade;
     fpsCap?: number;
     wheelSpeed?: number;
     wheelCtrlSpeed?: number;
@@ -44,8 +39,8 @@
 
   $effect(() => {
     if (!map) return;
-    const offFrame = map.events.on('frame').each((e: any) => refresh(true, e?.now));
-    const offPointer = map.events.on('pointermove').each(() => refresh(false));
+    const offFrame = map.events.on<{ now: number }>('frame').each((e) => refresh(true, e.now));
+    const offPointer = map.events.on<{ x: number; y: number }>('pointermove').each(() => refresh(false));
     refresh(false);
     return () => {
       try { offFrame?.(); } catch {}
@@ -54,14 +49,14 @@
   });
 
   // Apply controls
-  $effect(() => { if (map) (map as any).setWheelSpeed?.(wheelSpeed); });
-  $effect(() => { if (map) (map as any).setWheelCtrlSpeed?.(wheelCtrlSpeed); });
-  $effect(() => { if (map) (map as any).setFpsCap?.(fpsCap); });
-  $effect(() => { if (map) (map as any).setGridVisible?.(gridEnabled); });
+  $effect(() => { map?.setWheelSpeed(wheelSpeed); });
+  $effect(() => { map?.setWheelCtrlSpeed(wheelCtrlSpeed); });
+  $effect(() => { map?.setFpsCap(fpsCap); });
+  $effect(() => { map?.setGridVisible(gridEnabled); });
 
   function recenter() {
     if (!map || !home) return;
-    (map as any).setView([home.lat, home.lng], (map as any).getZoom());
+    map.setView([home.lat, home.lng], map.getZoom());
   }
 </script>
 
