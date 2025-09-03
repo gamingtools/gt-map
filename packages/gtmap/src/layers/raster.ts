@@ -86,6 +86,14 @@ export class RasterRenderer {
           const hPx = Math.max(1, bottomPx - topPx);
           gl.uniform2f(loc.u_translate!, leftPx, topPx);
           gl.uniform2f(loc.u_size!, wPx, hPx);
+          // Provide texel size and upscale hint to the shader for improved filtering
+          const texW = Math.max(1, (rec as any).width || TS);
+          const texH = Math.max(1, (rec as any).height || TS);
+          const upscaleX = (wPx / dpr) / texW;
+          const upscaleY = (hPx / dpr) / texH;
+          const isUpscale = (upscaleX > 1.01 || upscaleY > 1.01) ? 1 : 0;
+          if ((loc as any).u_texel) gl.uniform2f((loc as any).u_texel, 1.0 / texW, 1.0 / texH);
+          if ((loc as any).u_filterMode) gl.uniform1i((loc as any).u_filterMode, isUpscale);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
       }
