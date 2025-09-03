@@ -9,4 +9,3 @@ export function createUnitQuad(gl: WebGLRenderingContext): WebGLBuffer {
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
   return buf;
 }
-

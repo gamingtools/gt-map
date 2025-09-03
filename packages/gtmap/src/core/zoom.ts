@@ -10,18 +10,29 @@ export function zoomToAnchored(
   pyCSS: number,
   anchorEff: 'pointer' | 'center',
   outCenterBias: number,
-  clampCenterWorld: (centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number) => { x: number; y: number },
+  clampCenterWorld: (
+    centerWorld: { x: number; y: number },
+    zInt: number,
+    scale: number,
+    widthCSS: number,
+    heightCSS: number,
+  ) => { x: number; y: number },
   requestRender: () => void,
   tileSize: number,
 ) {
   const zInt = Math.floor(map.zoom);
   const scale = Math.pow(2, map.zoom - zInt);
   const rect = map.container.getBoundingClientRect();
-  const widthCSS = rect.width; const heightCSS = rect.height;
+  const widthCSS = rect.width;
+  const heightCSS = rect.height;
   const centerNow = lngLatToWorld(map.center.lng, map.center.lat, zInt, tileSize);
-  const tlWorld = { x: centerNow.x - widthCSS / (2 * scale), y: centerNow.y - heightCSS / (2 * scale) };
+  const tlWorld = {
+    x: centerNow.x - widthCSS / (2 * scale),
+    y: centerNow.y - heightCSS / (2 * scale),
+  };
   const zClamped = Math.max(map.minZoom, Math.min(map.maxZoom, targetZoom));
-  const zInt2 = Math.floor(zClamped); const s2 = Math.pow(2, zClamped - zInt2);
+  const zInt2 = Math.floor(zClamped);
+  const s2 = Math.pow(2, zClamped - zInt2);
   let center2;
   if (anchorEff === 'center') {
     const factor = Math.pow(2, zInt2 - zInt);
@@ -37,7 +48,10 @@ export function zoomToAnchored(
       const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
       const dz = Math.max(0, map.zoom - zClamped);
       const bias = Math.max(0, Math.min(0.6, (outCenterBias ?? 0.15) * dz));
-      center2 = { x: pointerCenter.x * (1 - bias) + centerScaled.x * bias, y: pointerCenter.y * (1 - bias) + centerScaled.y * bias };
+      center2 = {
+        x: pointerCenter.x * (1 - bias) + centerScaled.x * bias,
+        y: pointerCenter.y * (1 - bias) + centerScaled.y * bias,
+      };
     } else {
       center2 = pointerCenter;
     }

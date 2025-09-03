@@ -68,4 +68,3 @@
 ## Compatibility
 
 - WebGL1 fallback: ANGLE instancing path can be added later if needed (~1%).
-

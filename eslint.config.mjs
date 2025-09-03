@@ -1,8 +1,8 @@
 // Flat config for ESLint v9+
-import globals from 'globals'
-import tseslint from 'typescript-eslint'
-import importPlugin from 'eslint-plugin-import'
-import prettier from 'eslint-config-prettier'
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import importPlugin from 'eslint-plugin-import';
+import prettier from 'eslint-config-prettier';
 
 export default [
   // Ignore JS and build artifacts (TS-first repo)
@@ -20,11 +20,17 @@ export default [
     },
     plugins: { import: importPlugin, '@typescript-eslint': tseslint.plugin },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       'import/no-unused-modules': ['warn', { unusedExports: true }],
       'import/order': [
         'error',
-        { groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'], 'newlines-between': 'always' },
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          'newlines-between': 'always',
+        },
       ],
     },
   },
@@ -52,15 +58,21 @@ export default [
       },
     },
     rules: {
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
       'import/no-unused-modules': ['warn', { unusedExports: true }],
       'import/order': [
         'error',
-        { groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'], 'newlines-between': 'always' },
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          'newlines-between': 'always',
+        },
       ],
     },
   },
 
   // Disable stylistic conflicts in favor of Prettier
   prettier,
-]
+];

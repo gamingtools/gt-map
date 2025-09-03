@@ -8,7 +8,14 @@ export type ViewState = {
   wrapX: boolean;
 };
 
-export type TileTask = { key: string; url: string; z: number; x: number; y: number; priority: number };
+export type TileTask = {
+  key: string;
+  url: string;
+  z: number;
+  x: number;
+  y: number;
+  priority: number;
+};
 
 export interface TileDeps {
   hasTile(key: string): boolean;
@@ -46,7 +53,6 @@ export interface RenderCtx {
   enqueueTile(z: number, x: number, y: number, priority?: number): void;
 }
 
-
 export interface InputDeps {
   getContainer(): HTMLElement;
   getCanvas(): HTMLCanvasElement;
@@ -54,7 +60,13 @@ export interface InputDeps {
   getView(): ViewState;
   getTileSize(): number;
   setCenter(lng: number, lat: number): void;
-  clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number): { x: number; y: number };
+  clampCenterWorld(
+    centerWorld: { x: number; y: number },
+    zInt: number,
+    scale: number,
+    widthCSS: number,
+    heightCSS: number,
+  ): { x: number; y: number };
   updatePointerAbs(x: number, y: number): void;
   emit(name: string, payload: any): void;
   setLastInteractAt(t: number): void;
@@ -73,7 +85,13 @@ export interface ZoomDeps {
   shouldAnchorCenterForZoom(targetZoom: number): boolean;
   getMap(): any;
   getOutCenterBias(): number;
-  clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number): { x: number; y: number };
+  clampCenterWorld(
+    centerWorld: { x: number; y: number },
+    zInt: number,
+    scale: number,
+    widthCSS: number,
+    heightCSS: number,
+  ): { x: number; y: number };
   emit(name: string, payload: any): void;
   requestRender(): void;
   now(): number;

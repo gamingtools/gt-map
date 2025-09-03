@@ -11,7 +11,12 @@ export function clampLat(lat: number): number {
  * Convert lng/lat (degrees) to "world" pixel coordinates at zoom z,
  * where the world size is TILE_SIZE * 2^z.
  */
-export function lngLatToWorld(lng: number, lat: number, z: number, tileSize: number = DEFAULT_TILE_SIZE): { x: number; y: number } {
+export function lngLatToWorld(
+  lng: number,
+  lat: number,
+  z: number,
+  tileSize: number = DEFAULT_TILE_SIZE,
+): { x: number; y: number } {
   const s = tileSize * Math.pow(2, z);
   const x = (lng + 180) / 360;
   const sinLat = Math.sin((clampLat(lat) * Math.PI) / 180);
@@ -20,7 +25,12 @@ export function lngLatToWorld(lng: number, lat: number, z: number, tileSize: num
 }
 
 /** Inverse of lngLatToWorld. */
-export function worldToLngLat(x: number, y: number, z: number, tileSize: number = DEFAULT_TILE_SIZE): { lng: number; lat: number } {
+export function worldToLngLat(
+  x: number,
+  y: number,
+  z: number,
+  tileSize: number = DEFAULT_TILE_SIZE,
+): { lng: number; lat: number } {
   const s = tileSize * Math.pow(2, z);
   const lng = (x / s) * 360 - 180;
   const n = Math.PI - 2 * Math.PI * (y / s);
@@ -28,6 +38,4 @@ export function worldToLngLat(x: number, y: number, z: number, tileSize: number 
   return { lng, lat };
 }
 
-export function tileXYZUrl(urlTemplate: string, z: number, x: number, y: number) {
-  return urlTemplate.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y));
-}
+// Note: tile URL templating is handled inside GTMap.

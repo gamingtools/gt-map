@@ -36,7 +36,7 @@ export class ScreenCache {
       let fmt: 6408 | 6407 = gl.RGBA as 6408;
       try {
         const attrs = (gl as any).getContextAttributes?.();
-        fmt = (attrs && attrs.alpha === false ? (gl.RGB as 6407) : (gl.RGBA as 6408));
+        fmt = attrs && attrs.alpha === false ? (gl.RGB as 6407) : (gl.RGBA as 6408);
       } catch {}
       this.internalFormat = fmt;
     }
@@ -44,7 +44,9 @@ export class ScreenCache {
 
   dispose() {
     if (this.tex) {
-      try { this.gl.deleteTexture(this.tex); } catch {}
+      try {
+        this.gl.deleteTexture(this.tex);
+      } catch {}
       this.tex = null;
     }
     this.state = null;
@@ -61,7 +63,17 @@ export class ScreenCache {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       const fmt = this.internalFormat as number;
       // Cast to number to satisfy TS' narrow WebGL enum overloads
-      gl.texImage2D(gl.TEXTURE_2D, 0, fmt as number, width, height, 0, fmt as number, gl.UNSIGNED_BYTE, null);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        fmt as number,
+        width,
+        height,
+        0,
+        fmt as number,
+        gl.UNSIGNED_BYTE,
+        null,
+      );
     } else {
       gl.bindTexture(gl.TEXTURE_2D, this.tex);
     }
@@ -95,7 +107,12 @@ export class ScreenCache {
     const prev = this.state;
     if (!prev || !this.tex) return;
     // Require same CSS size/DPR and same integer zoom level
-    if (prev.widthCSS !== curr.widthCSS || prev.heightCSS !== curr.heightCSS || prev.dpr !== curr.dpr) return;
+    if (
+      prev.widthCSS !== curr.widthCSS ||
+      prev.heightCSS !== curr.heightCSS ||
+      prev.dpr !== curr.dpr
+    )
+      return;
     if (prev.zInt !== curr.zInt) return;
 
     const gl = this.gl;

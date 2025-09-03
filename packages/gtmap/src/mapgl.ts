@@ -1,14 +1,12 @@
 import { clampLat, lngLatToWorld } from './mercator';
 // programs are initialized via Graphics
 import Graphics from './gl/Graphics';
-import { initCanvas, initGridCanvas, setGridVisible as setGridVisibleCore } from './core/canvas';
-import { resize as resizeCore } from './core/resize';
 import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
 // import { TileQueue } from './tiles/queue';
 import TilePipeline from './tiles/TilePipeline';
 import type { TileDeps } from './types';
-import { urlFromTemplate } from './tiles/source';
+// url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { EventBus } from './events/stream';
 // grid and wheel helpers are used via delegated modules
@@ -16,11 +14,9 @@ import { EventBus } from './events/stream';
 import ZoomController from './core/ZoomController';
 import InputController from './input/InputController';
 import type { InputDeps } from './types';
-import { startImageLoad as loaderStartImageLoad } from './tiles/loader';
 import MapRenderer from './render/MapRenderer';
 import type { ViewState } from './types';
-import { prefetchNeighborsCtx } from './tiles/prefetch';
-import { drawGrid } from './render/grid';
+// prefetch/grid helpers moved inline
 import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 
 export type LngLat = { lng: number; lat: number };
@@ -101,7 +97,9 @@ export default class GTMap {
   private _zoomCtrl!: ZoomController;
   private _gfx!: Graphics;
   private _state!: ViewState;
-  private _view(): ViewState { return this._state; }
+  private _view(): ViewState {
+    return this._state;
+  }
   // Build the rendering context (internal)
   public getRenderCtx() {
     return {
@@ -125,20 +123,26 @@ export default class GTMap {
       enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
     } as any;
   }
-  public prefetchNeighbors(z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) {
-    prefetchNeighborsCtx({ wrapX: this.wrapX, tileSize: this.tileSize, hasTile: (key: string) => this._tileCache.has(key), enqueueTile: (zz: number, xx: number, yy: number, p = 1) => this._enqueueTile(zz, xx, yy, p) }, z, tl, scale, w, h);
+  // prefetchNeighbors moved below (inline implementation)
+  public cancelUnwantedLoads() {
+    this._cancelUnwantedLoads();
   }
-  public cancelUnwantedLoads() { this._cancelUnwantedLoads(); }
-  public clearWantedKeys() { this._wantedKeys.clear(); }
+  public clearWantedKeys() {
+    this._wantedKeys.clear();
+  }
   public zoomVelocityTick() {
     if (Math.abs(this._zoomVel) <= 1e-4) return;
     const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
     const maxStep = Math.max(0.0001, this.maxZoomRate * dt);
-    let step = this._zoomVel * dt; step = Math.max(-maxStep, Math.min(maxStep, step));
+    let step = this._zoomVel * dt;
+    step = Math.max(-maxStep, Math.min(maxStep, step));
     const anchor = (this._wheelAnchor?.mode || this.anchorMode) as 'pointer' | 'center';
-    const px = this._wheelAnchor?.px ?? 0; const py = this._wheelAnchor?.py ?? 0;
+    const px = this._wheelAnchor?.px ?? 0;
+    const py = this._wheelAnchor?.py ?? 0;
     this._zoomCtrl.applyAnchoredZoom(this.zoom + step, px, py, anchor);
-    const k = Math.exp(-dt / this.zoomDamping); this._zoomVel *= k; if (Math.abs(this._zoomVel) < 1e-3) this._zoomVel = 0;
+    const k = Math.exp(-dt / this.zoomDamping);
+    this._zoomVel *= k;
+    if (Math.abs(this._zoomVel) < 1e-3) this._zoomVel = 0;
   }
   private _events = new EventBus();
   public readonly events = this._events; // experimental chainable events API
@@ -149,7 +153,8 @@ export default class GTMap {
   public pointerAbs: { x: number; y: number } | null = null;
   // Loading pacing/cancel
   private interactionIdleMs = 160;
-  private _lastInteractAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+  private _lastInteractAt =
+    typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
   private _maxInflightLoads = 8;
   private _inflightLoads = 0;
   private _pendingKeys = new Set<string>();
@@ -161,7 +166,11 @@ export default class GTMap {
   private prefetchBaselineLevel = 2;
   // Wheel coalescing + velocity tail
   // removed: legacy wheel coalescing fields (handled via easing)
-  private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = { px: 0, py: 0, mode: 'pointer' };
+  private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = {
+    px: 0,
+    py: 0,
+    mode: 'pointer',
+  };
   private _zoomVel = 0;
   // Loader checks this dynamically; no need to track read locally
   useImageBitmap = typeof createImageBitmap === 'function';
@@ -170,14 +179,16 @@ export default class GTMap {
   constructor(container: HTMLDivElement, options: MapOptions = {}) {
     this.container = container;
     this.tileUrl = options.tileUrl || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    this.tileSize = (Number.isFinite(options.tileSize as number) ? (options.tileSize as number) : 256);
+    this.tileSize = Number.isFinite(options.tileSize as number)
+      ? (options.tileSize as number)
+      : 256;
     this.minZoom = options.minZoom ?? 1;
     this.maxZoom = options.maxZoom ?? 19;
     this.wrapX = options.wrapX ?? true;
     this.freePan = options.freePan ?? false;
     this.center = { lng: options.center?.lng ?? 0, lat: options.center?.lat ?? 0 };
     this.zoom = options.zoom ?? 2;
-    initCanvas(this);
+    this._initCanvas();
     this._gfx = new Graphics(this as any);
     this._gfx.init();
     this._initPrograms();
@@ -190,42 +201,53 @@ export default class GTMap {
       isPending: (key: string) => this._pendingKeys.has(key),
       urlFor: (z: number, x: number, y: number) => this._tileUrl(z, x, y),
       hasCapacity: () => this._inflightLoads < this._maxInflightLoads,
-      now: () => (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(),
+      now: () =>
+        typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(),
       getInteractionIdleMs: () => this.interactionIdleMs,
       getLastInteractAt: () => this._lastInteractAt,
       getZoom: () => this.zoom,
       getCenter: () => this.center,
       getTileSize: () => this.tileSize,
-      startImageLoad: ({ key, url }: { key: string; url: string }) => this._startImageLoad({ key, url }),
-      addPinned: (key: string) => { this._pinnedKeys.add(key); },
+      startImageLoad: ({ key, url }: { key: string; url: string }) =>
+        this._startImageLoad({ key, url }),
+      addPinned: (key: string) => {
+        this._pinnedKeys.add(key);
+      },
     };
     this._loaderDeps = {
       addPending: (key: string) => this._pendingKeys.add(key),
       removePending: (key: string) => this._pendingKeys.delete(key),
-      incInflight: () => { this._inflightLoads++; },
-      decInflight: () => { this._inflightLoads = Math.max(0, this._inflightLoads - 1); this._tiles.process(); },
+      incInflight: () => {
+        this._inflightLoads++;
+      },
+      decInflight: () => {
+        this._inflightLoads = Math.max(0, this._inflightLoads - 1);
+        this._tiles.process();
+      },
       setLoading: (key: string) => this._tileCache.setLoading(key),
       setError: (key: string) => this._tileCache.setError(key),
-      setReady: (key: string, tex: WebGLTexture, width: number, height: number, frame: number) => this._tileCache.setReady(key, tex, width, height, frame),
+      setReady: (key: string, tex: WebGLTexture, width: number, height: number, frame: number) =>
+        this._tileCache.setReady(key, tex, width, height, frame),
       getGL: () => this.gl,
       getFrame: () => this._frame,
-      requestRender: () => { this._needsRender = true },
+      requestRender: () => {
+        this._needsRender = true;
+      },
       getUseImageBitmap: () => this.useImageBitmap,
-      setUseImageBitmap: (v: boolean) => { this.useImageBitmap = v },
+      setUseImageBitmap: (v: boolean) => {
+        this.useImageBitmap = v;
+      },
     };
     this._tiles = new TilePipeline(this._tileDeps);
     // Raster renderer
     this._raster = new RasterRenderer(this.gl);
-    this._renderer = new MapRenderer(
-      () => this.getRenderCtx(),
-      {
-        stepAnimation: () => this._zoomCtrl.step(),
-        zoomVelocityTick: () => this.zoomVelocityTick(),
-        prefetchNeighbors: (z, tl, scale, w, h) => this.prefetchNeighbors(z, tl, scale, w, h),
-        cancelUnwanted: () => this.cancelUnwantedLoads(),
-        clearWanted: () => this.clearWantedKeys(),
-      },
-    );
+    this._renderer = new MapRenderer(() => this.getRenderCtx(), {
+      stepAnimation: () => this._zoomCtrl.step(),
+      zoomVelocityTick: () => this.zoomVelocityTick(),
+      prefetchNeighbors: (z, tl, scale, w, h) => this.prefetchNeighbors(z, tl, scale, w, h),
+      cancelUnwanted: () => this.cancelUnwantedLoads(),
+      clearWanted: () => this.clearWantedKeys(),
+    });
     this._zoomCtrl = new ZoomController({
       getZoom: () => this.zoom,
       getMinZoom: () => this.minZoom,
@@ -234,15 +256,25 @@ export default class GTMap {
       shouldAnchorCenterForZoom: (target) => this._shouldAnchorCenterForZoom(target),
       getMap: () => this,
       getOutCenterBias: () => this.outCenterBias,
-      clampCenterWorld: (cw, zInt, s, w, h) => clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize),
+      clampCenterWorld: (cw, zInt, s, w, h) =>
+        clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize),
       emit: (name: string, payload: any) => this._events.emit(name, payload),
-      requestRender: () => { this._needsRender = true },
-      now: () => ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()),
+      requestRender: () => {
+        this._needsRender = true;
+      },
+      now: () =>
+        typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(),
     });
     // View state
-    this._state = { center: this.center, zoom: this.zoom, minZoom: this.minZoom, maxZoom: this.maxZoom, wrapX: this.wrapX };
+    this._state = {
+      center: this.center,
+      zoom: this.zoom,
+      minZoom: this.minZoom,
+      maxZoom: this.maxZoom,
+      wrapX: this.wrapX,
+    };
     // DI configured; no temporary TS-usage hacks required
-    initGridCanvas(this);
+    this._initGridCanvas();
     this.resize();
     this._initEvents();
     this._loop = this._loop.bind(this);
@@ -292,7 +324,9 @@ export default class GTMap {
   }
   setEaseOptions(_opts: EaseOptions) {
     this._zoomCtrl.setOptions({ easeBaseMs: _opts.easeBaseMs, easePerUnitMs: _opts.easePerUnitMs });
-    if (typeof _opts.easePinch === 'boolean') {/* reserved for future pinch easing */}
+    if (typeof _opts.easePinch === 'boolean') {
+      /* reserved for future pinch easing */
+    }
   }
   recenter() {
     const zInt = Math.floor(this.zoom);
@@ -308,20 +342,81 @@ export default class GTMap {
     }
     this._input?.dispose();
     this._input = null;
-    try { (this as any)._renderer?.dispose?.(); } catch {}
-    try { (this as any)._tiles?.clear?.(); } catch {}
-    try { (this as any)._gfx?.dispose?.(); } catch {}
+    try {
+      (this as any)._renderer?.dispose?.();
+    } catch {}
+    try {
+      (this as any)._tiles?.clear?.();
+    } catch {}
+    try {
+      (this as any)._gfx?.dispose?.();
+    } catch {}
     this._clearCache();
     const gl = this.gl;
     this._screenCache?.dispose();
-    if (this._quad) { try { gl.deleteBuffer(this._quad); } catch {} this._quad = null; }
-    if (this._prog) { try { gl.deleteProgram(this._prog); } catch {} this._prog = null; }
-    try { this.canvas.remove(); } catch {}
-    if (this.gridCanvas) { try { this.gridCanvas.remove(); } catch {} this.gridCanvas = null; this._gridCtx = null; }
+    if (this._quad) {
+      try {
+        gl.deleteBuffer(this._quad);
+      } catch {}
+      this._quad = null;
+    }
+    if (this._prog) {
+      try {
+        gl.deleteProgram(this._prog);
+      } catch {}
+      this._prog = null;
+    }
+    try {
+      this.canvas.remove();
+    } catch {}
+    if (this.gridCanvas) {
+      try {
+        this.gridCanvas.remove();
+      } catch {}
+      this.gridCanvas = null;
+      this._gridCtx = null;
+    }
   }
 
   // Public controls
-  public setGridVisible(visible: boolean) { setGridVisibleCore(this, visible); }
+  private _initCanvas() {
+    const canvas = document.createElement('canvas');
+    Object.assign(canvas.style, {
+      display: 'block',
+      position: 'absolute',
+      left: '0',
+      top: '0',
+      right: '0',
+      bottom: '0',
+      zIndex: '0',
+    } as CSSStyleDeclaration);
+    this.container.appendChild(canvas);
+    this.canvas = canvas;
+  }
+  private _initGridCanvas() {
+    const c = document.createElement('canvas');
+    this.gridCanvas = c;
+    c.style.display = 'block';
+    c.style.position = 'absolute';
+    c.style.left = '0';
+    c.style.top = '0';
+    c.style.right = '0';
+    c.style.bottom = '0';
+    c.style.zIndex = '5';
+    (c.style as any).pointerEvents = 'none';
+    this.container.appendChild(c);
+    this._gridCtx = c.getContext('2d');
+    c.style.display = this.showGrid ? 'block' : 'none';
+  }
+  public setGridVisible(visible: boolean) {
+    this.showGrid = !!visible;
+    if (this.gridCanvas) {
+      this.gridCanvas.style.display = this.showGrid ? 'block' : 'none';
+      if (!this.showGrid)
+        this._gridCtx?.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
+    }
+    this._needsRender = true;
+  }
   private _clearCache() {
     // Delete GPU textures in tile cache and reset queues
     this._tileCache.clear();
@@ -340,16 +435,39 @@ export default class GTMap {
     }
     // Keep ctrl-step in sync if desired
     const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
-    this.wheelImmediateCtrl = 0.10 + t2 * (1.90 - 0.10);
+    this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
   }
-  public setAnchorMode(mode: 'pointer' | 'center') { this.anchorMode = mode; }
+  public setAnchorMode(mode: 'pointer' | 'center') {
+    this.anchorMode = mode;
+  }
 
   private _initPrograms() {
     // Delegate to Graphics to set up programs and buffers
     this._gfx.initPrograms();
   }
   resize() {
-    resizeCore(this);
+    const dpr = Math.max(1, Math.min((window as any).devicePixelRatio || 1, 3));
+    const rect = this.container.getBoundingClientRect();
+    this.canvas.style.width = rect.width + 'px';
+    this.canvas.style.height = rect.height + 'px';
+    const w = Math.max(1, Math.floor(rect.width * dpr));
+    const h = Math.max(1, Math.floor(rect.height * dpr));
+    if (this.canvas.width !== w || this.canvas.height !== h) {
+      this.canvas.width = w;
+      this.canvas.height = h;
+      this._dpr = dpr;
+      this.gl.viewport(0, 0, w, h);
+      this._needsRender = true;
+    }
+    if (this.gridCanvas) {
+      this.gridCanvas.style.width = rect.width + 'px';
+      this.gridCanvas.style.height = rect.height + 'px';
+      if (this.gridCanvas.width !== w || this.gridCanvas.height !== h) {
+        this.gridCanvas.width = w;
+        this.gridCanvas.height = h;
+        this._needsRender = true;
+      }
+    }
   }
   private _initEvents() {
     this._inputDeps = {
@@ -359,25 +477,35 @@ export default class GTMap {
       getView: () => this._view(),
       getTileSize: () => this.tileSize,
       setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
-      clampCenterWorld: (cw, zInt, scale, w, h) => clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize),
-      updatePointerAbs: (x: number, y: number) => { this.pointerAbs = { x, y }; },
+      clampCenterWorld: (cw, zInt, scale, w, h) =>
+        clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize),
+      updatePointerAbs: (x: number, y: number) => {
+        this.pointerAbs = { x, y };
+      },
       emit: (name: string, payload: any) => this._events.emit(name, payload),
-      setLastInteractAt: (t: number) => { this._lastInteractAt = t; },
+      setLastInteractAt: (t: number) => {
+        this._lastInteractAt = t;
+      },
       getAnchorMode: () => this.anchorMode,
-      getWheelStep: (ctrl: boolean) => ctrl ? (this.wheelImmediateCtrl || this.wheelImmediate || 0.16) : (this.wheelImmediate || 0.16),
+      getWheelStep: (ctrl: boolean) =>
+        ctrl ? this.wheelImmediateCtrl || this.wheelImmediate || 0.16 : this.wheelImmediate || 0.16,
       startEase: (dz, px, py, anchor) => this._zoomCtrl.startEase(dz, px, py, anchor),
-      cancelZoomAnim: () => { this._zoomCtrl.cancel(); },
-      applyAnchoredZoom: (targetZoom, px, py, anchor) => this._zoomCtrl.applyAnchoredZoom(targetZoom, px, py, anchor),
+      cancelZoomAnim: () => {
+        this._zoomCtrl.cancel();
+      },
+      applyAnchoredZoom: (targetZoom, px, py, anchor) =>
+        this._zoomCtrl.applyAnchoredZoom(targetZoom, px, py, anchor),
     };
     this._input = new InputController(this._inputDeps);
     this._input.attach();
   }
-  // wheel normalization handled in input/handlers via core/wheel
+  // wheel normalization handled in input/handlers internally
   private _loop() {
     this._raf = requestAnimationFrame(this._loop);
     this._frame++;
     // Compute dt like JS for smooth velocity tail
-    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const now =
+      typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     if (this._lastTS == null) this._lastTS = now;
     this._dt = (now - this._lastTS) / 1000;
     this._lastTS = now;
@@ -393,13 +521,27 @@ export default class GTMap {
       const rect = this.container.getBoundingClientRect();
       const baseZ = Math.floor(this.zoom);
       const scale = Math.pow(2, this.zoom - baseZ);
-      const widthCSS = rect.width; const heightCSS = rect.height;
+      const widthCSS = rect.width;
+      const heightCSS = rect.height;
       const centerWorld = lngLatToWorld(this.center.lng, this.center.lat, baseZ, this.tileSize);
-      const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
-      drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, this.maxZoom, this.tileSize);
+      const tlWorld = {
+        x: centerWorld.x - widthCSS / (2 * scale),
+        y: centerWorld.y - heightCSS / (2 * scale),
+      };
+      this._drawGrid(
+        this._gridCtx,
+        this.gridCanvas,
+        baseZ,
+        scale,
+        widthCSS,
+        heightCSS,
+        tlWorld,
+        this._dpr,
+        this.maxZoom,
+        this.tileSize,
+      );
     }
   }
-  
 
   // Prefetch a 1-tile border beyond current viewport at the given level
   // grid drawing via render/grid.drawGrid
@@ -407,10 +549,15 @@ export default class GTMap {
   // (moved to the main definition above)
   // public setGridVisible removed (duplicate)
 
-  private _enqueueTile(z: number, x: number, y: number, priority = 1) { this._tiles.enqueue(z, x, y, priority); }
+  private _enqueueTile(z: number, x: number, y: number, priority = 1) {
+    this._tiles.enqueue(z, x, y, priority);
+  }
 
   private _tileUrl(z: number, x: number, y: number) {
-    return urlFromTemplate(this.tileUrl, z, x, y);
+    return this.tileUrl
+      .replace('{z}', String(z))
+      .replace('{x}', String(x))
+      .replace('{y}', String(y));
   }
 
   // wrapX and eviction helpers now provided by tiles/source and TileCache
@@ -428,37 +575,265 @@ export default class GTMap {
   private _shouldAnchorCenterForZoom(targetZoom: number) {
     if (this.wrapX) return false;
     const rect = this.container.getBoundingClientRect();
-    const widthCSS = rect.width; const heightCSS = rect.height;
+    const widthCSS = rect.width;
+    const heightCSS = rect.height;
     const zClamped = Math.max(this.minZoom, Math.min(this.maxZoom, targetZoom));
-    const zInt2 = Math.floor(zClamped); const s2 = Math.pow(2, zClamped - zInt2);
+    const zInt2 = Math.floor(zClamped);
+    const s2 = Math.pow(2, zClamped - zInt2);
     const ratio = this._viewportCoverageRatio(zInt2, s2, widthCSS, heightCSS);
-    const enter = 0.995; const exit = 0.90;
-    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const enter = 0.995;
+    const exit = 0.9;
+    const now =
+      typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     if (this._stickyCenterAnchor) {
       if (this._stickyAnchorUntil && now < this._stickyAnchorUntil) return true;
       if (ratio <= exit) this._stickyCenterAnchor = false;
     } else {
-      if (ratio >= enter) { this._stickyCenterAnchor = true; this._stickyAnchorUntil = now + 300; }
+      if (ratio >= enter) {
+        this._stickyCenterAnchor = true;
+        this._stickyAnchorUntil = now + 300;
+      }
     }
     return this._stickyCenterAnchor;
   }
 
-
-
   // (TEMP helper removed after Render DI completion)
 
   // Bounds clamping similar to JS version
-  
+
   // Deprecated: loader now calls _tiles.process() directly
-  private _startImageLoad({ key, url }: { key: string; url: string }) { loaderStartImageLoad(this._loaderDeps, { key, url }); }
+  private _startImageLoad({ key, url }: { key: string; url: string }) {
+    const deps = this._loaderDeps;
+    deps.addPending(key);
+    deps.incInflight();
+    deps.setLoading(key);
+    const onFinally = () => {
+      try {
+        /* noop */
+      } finally {
+        deps.removePending(key);
+        deps.decInflight();
+      }
+    };
+    if (deps.getUseImageBitmap()) {
+      fetch(url, { mode: 'cors', credentials: 'omit' } as any)
+        .then((r: any) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.blob();
+        })
+        .then((blob: any) =>
+          (self as any).createImageBitmap(blob, {
+            premultiplyAlpha: 'none',
+            colorSpaceConversion: 'none',
+          }),
+        )
+        .then((bmp: any) => {
+          try {
+            const gl: WebGLRenderingContext = deps.getGL();
+            const tex = gl.createTexture();
+            if (!tex) {
+              deps.setError(key);
+              return;
+            }
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+            gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp as any);
+            gl.generateMipmap(gl.TEXTURE_2D);
+            deps.setReady(key, tex, (bmp as any).width, (bmp as any).height, deps.getFrame());
+            deps.requestRender();
+          } finally {
+            try {
+              (bmp as any).close?.();
+            } catch {}
+            onFinally();
+          }
+        })
+        .catch(() => {
+          deps.setUseImageBitmap(false);
+          this._startImageLoad({ key, url });
+        });
+      return;
+    }
+    const img: any = new Image();
+    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
+    img.onload = () => {
+      try {
+        const gl: WebGLRenderingContext = deps.getGL();
+        const tex = gl.createTexture();
+        if (!tex) {
+          deps.setError(key);
+          return;
+        }
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img as any);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        deps.setReady(
+          key,
+          tex,
+          (img as any).naturalWidth,
+          (img as any).naturalHeight,
+          deps.getFrame(),
+        );
+        deps.requestRender();
+      } finally {
+        onFinally();
+      }
+    };
+    img.onerror = () => {
+      deps.setError(key);
+      onFinally();
+    };
+    img.src = url;
+  }
+
+  private static _chooseGridSpacing(scale: number, tileSize: number): number {
+    const base = tileSize;
+    const candidates = [
+      base / 16,
+      base / 8,
+      base / 4,
+      base / 2,
+      base,
+      base * 2,
+      base * 4,
+      base * 8,
+      base * 16,
+      base * 32,
+      base * 64,
+    ];
+    const targetPx = 100;
+    let best = candidates[0];
+    let bestErr = Infinity;
+    for (const w of candidates) {
+      const css = w * scale;
+      const err = Math.abs(css - targetPx);
+      if (err < bestErr) {
+        bestErr = err;
+        best = w;
+      }
+    }
+    return Math.max(1, Math.round(best));
+  }
+  private _drawGrid(
+    ctx: CanvasRenderingContext2D | null,
+    canvas: HTMLCanvasElement | null,
+    zInt: number,
+    scale: number,
+    widthCSS: number,
+    heightCSS: number,
+    tlWorld: { x: number; y: number },
+    dpr: number,
+    maxZoom: number,
+    tileSize: number,
+  ): void {
+    if (!ctx || !canvas) return;
+    ctx.clearRect(0, 0, (canvas as any).width, (canvas as any).height);
+    ctx.save();
+    ctx.scale(dpr || 1, dpr || 1);
+    const spacingWorld = GTMap._chooseGridSpacing(scale, tileSize);
+    const base = tileSize;
+    const zAbs = Math.floor(maxZoom);
+    const factorAbs = Math.pow(2, zAbs - zInt);
+    ctx.font =
+      '11px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    let startWX = Math.floor(tlWorld.x / spacingWorld) * spacingWorld;
+    for (
+      let wx = startWX;
+      (wx - tlWorld.x) * scale <= widthCSS + spacingWorld * scale;
+      wx += spacingWorld
+    ) {
+      const xCSS = (wx - tlWorld.x) * scale;
+      const isMajor = Math.round(wx) % base === 0;
+      ctx.beginPath();
+      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = isMajor ? 1.2 : 0.8;
+      ctx.moveTo(Math.round(xCSS) + 0.5, 0);
+      ctx.lineTo(Math.round(xCSS) + 0.5, heightCSS);
+      ctx.stroke();
+      if (isMajor) {
+        const xAbs = Math.round(wx * factorAbs);
+        const label = `x ${xAbs}`;
+        const tx = Math.round(xCSS) + 2;
+        const ty = 2;
+        const m = ctx.measureText(label);
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillRect(tx - 2, ty - 1, (m as any).width + 4, 12);
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillText(label, tx, ty);
+      }
+    }
+    let startWY = Math.floor(tlWorld.y / spacingWorld) * spacingWorld;
+    for (
+      let wy = startWY;
+      (wy - tlWorld.y) * scale <= heightCSS + spacingWorld * scale;
+      wy += spacingWorld
+    ) {
+      const yCSS = (wy - tlWorld.y) * scale;
+      const isMajor = Math.round(wy) % base === 0;
+      ctx.beginPath();
+      ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)';
+      ctx.lineWidth = isMajor ? 1.2 : 0.8;
+      ctx.moveTo(0, Math.round(yCSS) + 0.5);
+      ctx.lineTo(widthCSS, Math.round(yCSS) + 0.5);
+      ctx.stroke();
+      if (isMajor) {
+        const yAbs = Math.round(wy * factorAbs);
+        const label = `y ${yAbs}`;
+        const tx = 2;
+        const ty = Math.round(yCSS) + 2;
+        const m = ctx.measureText(label);
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillRect(tx - 2, ty - 1, (m as any).width + 4, 12);
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillText(label, tx, ty);
+      }
+    }
+    ctx.restore();
+  }
+
+  public prefetchNeighbors(
+    z: number,
+    tl: { x: number; y: number },
+    scale: number,
+    w: number,
+    h: number,
+  ) {
+    const TS = this.tileSize;
+    const startX = Math.floor(tl.x / TS) - 1;
+    const startY = Math.floor(tl.y / TS) - 1;
+    const endX = Math.floor((tl.x + w / scale) / TS) + 1;
+    const endY = Math.floor((tl.y + h / scale) / TS) + 1;
+    for (let ty = startY; ty <= endY; ty++) {
+      if (ty < 0 || ty >= 1 << z) continue;
+      for (let tx = startX; tx <= endX; tx++) {
+        let tileX = tx;
+        if (this.wrapX) {
+          const n = 1 << z;
+          tileX = ((tx % n) + n) % n;
+        } else if (tx < 0 || tx >= 1 << z) continue;
+        const key = `${z}/${tileX}/${ty}`;
+        if (!this._tileCache.has(key)) this._enqueueTile(z, tileX, ty, 1);
+      }
+    }
+  }
   private _cancelUnwantedLoads() {
     // Only prune queued tasks that are no longer wanted; keep inflight loads to avoid churn
     this._tiles.cancelUnwanted(this._wantedKeys);
     this._wantedKeys.clear();
     this._tiles.process();
   }
-
-  
-
-
 }

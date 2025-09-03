@@ -1,11 +1,7 @@
 // Minimal GL program utilities: compile/link with readable errors.
 // Keep WebGL1-compatible; no shader source changes here.
 
-export function compileShader(
-  gl: WebGLRenderingContext,
-  type: number,
-  src: string,
-): WebGLShader {
+export function compileShader(gl: WebGLRenderingContext, type: number, src: string): WebGLShader {
   const sh = gl.createShader(type) as WebGLShader;
   gl.shaderSource(sh, src);
   gl.compileShader(sh);
@@ -43,4 +39,3 @@ export function createProgramFromSources(
   const fs = compileShader(gl, gl.FRAGMENT_SHADER, fsSrc);
   return linkProgram(gl, vs, fs);
 }
-

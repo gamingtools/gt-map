@@ -38,4 +38,3 @@
 - Handles Large Sets: Render thousands of static markers smoothly; animate many at once.
 - Desktop & Mobile: Works with mouse, touch, and high‑DPI displays.
 - Lightweight: No heavy frameworks; quick to load and embed.
-

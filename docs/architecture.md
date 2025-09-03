@@ -10,7 +10,7 @@ Modules & Classes
 - Graphics
   - Initializes WebGL context and program/buffer setup; disposes GL resources
 - MapRenderer
-  - Orchestrates per‑frame rendering (delegates to `render/frame`) via DI hooks/ctx provider
+  - Orchestrates per‑frame rendering (render loop logic now in class) via DI hooks/ctx provider
 - ScreenCache
   - Manages the screen‑space texture; update/draw
 - RasterRenderer
@@ -28,11 +28,8 @@ Modules & Classes
 Stateless Helpers (kept as functions)
 
 - Projection: `mercator.ts`
-- Templating & wrap: `tiles/source.ts`
-- Grid overlay: `render/grid.ts`
-- Wheel normalization: `core/wheel.ts`
-- Resize & canvas helpers: `core/resize.ts`, `core/canvas.ts`
-- Frame glue: `render/frame.ts` (pure orchestrator used by MapRenderer)
+- Templating & wrap: `tiles/source.ts` (wrapX, tileKey)
+  - Note: URL templating, grid drawing, wheel normalization, and resize/canvas are now class methods.
 
 High‑Level Flow
 
@@ -49,13 +46,13 @@ GTMap (shell, ViewState)
   |-- Graphics (GL init, programs, buffers)
   |-- ScreenCache
   |-- RasterRenderer
-  |-- MapRenderer -> render/frame (pure)
-  |-- TilePipeline -> tiles/{queue,loader,cache,prefetch}
-  |-- ZoomController -> core/zoom
-  |-- InputController -> core/wheel, EventBus
+  |-- MapRenderer (render loop)
+  |-- TilePipeline -> tiles/{queue,cache}
+  |-- ZoomController (anchored zoom math)
+  |-- InputController (wheel normalization in-class), EventBus
   |-- EventBus
 
-Helpers: mercator, tiles/source, render/grid, core/{resize,canvas}
+Helpers: mercator, tiles/source
 ```
 
 Notes
@@ -63,4 +60,4 @@ Notes
 - Controllers accept dependencies via constructors (DI); no singletons.
 - Pure helpers remain functions for readability and testability.
 - Dispose path: InputController → Renderer → TilePipeline → Graphics → caches/buffers.
- - Zoom math: `GTMap._zoomToAnchored` now computes effective anchor and bias, delegating core math to `core/zoom.zoomToAnchored` with explicit params.
+- Zoom math: anchoring and easing is handled inside ZoomController; no separate `core/zoom.zoomToAnchored` export.

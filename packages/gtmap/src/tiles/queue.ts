@@ -1,5 +1,11 @@
-
-export type TileTask = { key: string; url: string; z: number; x: number; y: number; priority: number };
+export type TileTask = {
+  key: string;
+  url: string;
+  z: number;
+  x: number;
+  y: number;
+  priority: number;
+};
 
 export class TileQueue {
   private queue: TileTask[] = [];
@@ -15,12 +21,18 @@ export class TileQueue {
     if (!this.queue.length) return;
     const keep: TileTask[] = [];
     for (const t of this.queue) {
-      if (wantedKeys.has(t.key)) keep.push(t); else this.set.delete(t.key);
+      if (wantedKeys.has(t.key)) keep.push(t);
+      else this.set.delete(t.key);
     }
     this.queue = keep;
   }
 
-  next(baseZ: number, centerWorld: { x: number; y: number }, idle: boolean, tileSize: number): TileTask | null {
+  next(
+    baseZ: number,
+    centerWorld: { x: number; y: number },
+    idle: boolean,
+    tileSize: number,
+  ): TileTask | null {
     if (!this.queue.length) return null;
     let bestIdx = -1;
     let bestScore = Infinity;
@@ -30,11 +42,16 @@ export class TileQueue {
       const factor = Math.pow(2, baseZ - t.z);
       const centerTileX = Math.floor(centerWorld.x / factor / tileSize);
       const centerTileY = Math.floor(centerWorld.y / factor / tileSize);
-      const dx = t.x - centerTileX; const dy = t.y - centerTileY;
+      const dx = t.x - centerTileX;
+      const dy = t.y - centerTileY;
       const dist = Math.hypot(dx, dy);
       const zBias = Math.abs(t.z - baseZ);
       const score = t.priority * 100 + zBias * 10 + dist;
-      if (score < bestScore) { bestScore = score; bestIdx = i; if (score === 0) break; }
+      if (score < bestScore) {
+        bestScore = score;
+        bestIdx = i;
+        if (score === 0) break;
+      }
     }
     if (bestIdx === -1) return null;
     const task = this.queue.splice(bestIdx, 1)[0];
@@ -42,6 +59,10 @@ export class TileQueue {
     return task;
   }
 
-  has(key: string) { return this.set.has(key); }
-  get length() { return this.queue.length; }
+  has(key: string) {
+    return this.set.has(key);
+  }
+  get length() {
+    return this.queue.length;
+  }
 }

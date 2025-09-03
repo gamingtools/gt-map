@@ -39,9 +39,9 @@ export class RasterRenderer {
     const tilePixelSize = tilePixelSizeCSS * dpr;
 
     for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= (1 << zLevel)) continue;
+      if (ty < 0 || ty >= 1 << zLevel) continue;
       for (let tx = startX; tx <= endX; tx++) {
-        if (!wrapX && (tx < 0 || tx >= (1 << zLevel))) continue;
+        if (!wrapX && (tx < 0 || tx >= 1 << zLevel)) continue;
         const tileX = wrapX ? wrapXTile(tx, zLevel) : tx;
         const wx = tx * TS;
         const wy = ty * TS;
@@ -83,11 +83,11 @@ export class RasterRenderer {
     let total = 0;
     let ready = 0;
     for (let ty = startY; ty <= endY; ty++) {
-      if (ty < 0 || ty >= (1 << zLevel)) continue;
+      if (ty < 0 || ty >= 1 << zLevel) continue;
       for (let tx = startX; tx <= endX; tx++) {
         let tileX = tx;
         if (wrapX) tileX = wrapXTile(tx, zLevel);
-        else if (tx < 0 || tx >= (1 << zLevel)) continue;
+        else if (tx < 0 || tx >= 1 << zLevel) continue;
         total++;
         const key = tileKeyOf(zLevel, tileX, ty);
         const rec = tileCache.get(key);

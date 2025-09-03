@@ -31,10 +31,12 @@ export default class TilePipeline {
   }
 
   scheduleBaselinePrefetch(level: number) {
-    const z = level; const n = 1 << z;
+    const z = level;
+    const n = 1 << z;
     for (let y = 0; y < n; y++) {
       for (let x = 0; x < n; x++) {
-        const key = `${z}/${x}/${y}`; this.deps.addPinned(key);
+        const key = `${z}/${x}/${y}`;
+        this.deps.addPinned(key);
         if (!this.deps.hasTile(key)) this.enqueue(z, x, y, 2);
       }
     }
@@ -43,7 +45,7 @@ export default class TilePipeline {
   process() {
     while (this.deps.hasCapacity()) {
       const now = this.deps.now();
-      const idle = (now - this.deps.getLastInteractAt()) > this.deps.getInteractionIdleMs();
+      const idle = now - this.deps.getLastInteractAt() > this.deps.getInteractionIdleMs();
       const baseZ = Math.floor(this.deps.getZoom());
       const c = this.deps.getCenter();
       const centerWorld = lngLatToWorld(c.lng, c.lat, baseZ);

@@ -31,10 +31,16 @@ Examples
 map.events.when('moveend').then(() => console.log('move ended'));
 
 // Log clicks, throttled
-map.events.on('click').throttle(200).each(({ x, y }) => console.log(x, y));
+map.events
+  .on('click')
+  .throttle(200)
+  .each(({ x, y }) => console.log(x, y));
 
 // Async iterator for zoom events
-for await (const z of map.events.on('zoom').map(e => e.zoom).toAsyncIterator()) {
+for await (const z of map.events
+  .on('zoom')
+  .map((e) => e.zoom)
+  .toAsyncIterator()) {
   console.log('zoom', z);
 }
 ```
@@ -44,4 +50,3 @@ Next Steps
 - Pool payload objects; integrate per-layer event picking in renderer.
 - Add `merge`, `once`, `takeUntil` patterns to examples.
 - Document performance notes and unsub best practices.
-
