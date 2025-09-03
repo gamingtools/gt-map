@@ -694,6 +694,11 @@ export default class GTMap {
   }
   private _render() {
     this._renderer.render();
+    // Emit a frame event for HUD/diagnostics
+    try {
+      const t = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      (this as any)._events?.emit?.('frame', { now: t });
+    } catch {}
     if (this.showGrid) {
       const rect = this.container.getBoundingClientRect();
       const baseZ = Math.floor(this.zoom);

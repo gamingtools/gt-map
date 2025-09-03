@@ -17,31 +17,30 @@ const map = L.map(container, {
   zoom: 2,
   minZoom: HAGGA.minZoom,
   maxZoom: HAGGA.maxZoom,
+  targetFps: 30,
 } as any);
 L.tileLayer(HAGGA.url, { minZoom: HAGGA.minZoom, maxZoom: HAGGA.maxZoom, tileSize: 256, tms: false }).addTo(map as any);
 
 
-function updateHUD() {
-  const cArr = map.getCenter() as [number, number];
-  const c = { lng: cArr[1], lat: cArr[0] };
-  const now = performance.now();
-  if (!(updateHUD as any)._prev) {
-    (updateHUD as any)._prev = now;
-    (updateHUD as any)._fps = 0;
-  }
-  const dt = now - (updateHUD as any)._prev;
-  (updateHUD as any)._prev = now;
-  // Instantaneous FPS with light smoothing (EMA)
-  const inst = dt > 0 ? 1000 / dt : 0;
-  const alpha = 0.15; // responsiveness of the FPS readout
-  (updateHUD as any)._fps = (1 - alpha) * (updateHUD as any)._fps + alpha * inst;
-  const p = map.pointerAbs as { x: number; y: number } | null;
-  const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
-  const z = map.getZoom() as number;
-  hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${Math.round((updateHUD as any)._fps)}${pText}`;
-  requestAnimationFrame(updateHUD);
-}
-updateHUD();
+// HUD updates on actual render frames (engine emits 'frame')
+(() => {
+  const state: any = { prev: 0, fps: 0 };
+  map.events.on('frame').each((e: any) => {
+    const now = e?.now || performance.now();
+    if (!state.prev) state.prev = now;
+    const dt = now - state.prev;
+    state.prev = now;
+    const inst = dt > 0 ? 1000 / dt : 0;
+    const alpha = 0.2;
+    state.fps = (1 - alpha) * state.fps + alpha * inst;
+    const cArr = map.getCenter() as [number, number];
+    const c = { lng: cArr[1], lat: cArr[0] };
+    const p = map.pointerAbs as { x: number; y: number } | null;
+    const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
+    const z = map.getZoom() as number;
+    hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;
+  });
+})();
 
 attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
 
