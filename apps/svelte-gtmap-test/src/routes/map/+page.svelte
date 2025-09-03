@@ -25,12 +25,18 @@
 			maxZoom: 5,
 			wrapX: false
 		};
+    // Full image bounds (pixel CRS): 0..8192 for 8k base (256 * 2^5)
+    const BOUNDS: [[number, number], [number, number]] = [[0, 0], [8192, 8192]];
     map = L.map(container, {
       center: HOME,
       zoom: 2,
       minZoom: HAGGA.minZoom,
       maxZoom: HAGGA.maxZoom,
-      fpsCap: 60
+      fpsCap: 60,
+      maxBounds: BOUNDS,
+      maxBoundsViscosity: 1.0,
+      // bounceAtZoomLimits is accepted for parity but not used internally yet
+      bounceAtZoomLimits: true as any
     });
 		L.tileLayer(HAGGA.url, {
 			minZoom: HAGGA.minZoom,
@@ -101,12 +107,14 @@
 <style>
 	.map {
 		position: relative;
-		width: 100%;
-		height: 80vh;
 		background: #ddd;
 		user-select: none;
 		-webkit-user-select: none;
 		touch-action: none;
+		/* Make container square based on viewport height, capped by width */
+		aspect-ratio: 1 / 1;
+		width: min(80vh, 100%);
+		height: auto;
 	}
 
 /* HUD styles moved into Hud.svelte */
