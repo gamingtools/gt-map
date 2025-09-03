@@ -182,6 +182,8 @@ export default class MapRenderer {
     if ((ctx as any).icons) {
       // Ensure alpha is 1 for icons
       gl.uniform1f((ctx.loc as any).u_alpha, 1.0);
+      // Icons use native texture filtering
+      if ((ctx.loc as any).u_filterMode) gl.uniform1i((ctx.loc as any).u_filterMode, 0);
       (ctx as any).icons.draw({
         gl: ctx.gl,
         prog: ctx.prog,

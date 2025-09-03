@@ -45,7 +45,7 @@ export default class Graphics {
       }
     `;
     const fsSrc = `
-      precision mediump float;
+      precision highp float;
       varying vec2 v_uv;
       uniform sampler2D u_tex;
       uniform float u_alpha;
@@ -74,7 +74,10 @@ export default class Graphics {
 
       void main(){
         vec2 uv = mix(u_uv0, u_uv1, v_uv);
-        vec4 c = (u_filterMode == 1) ? texBicubic(u_tex, uv, u_texel) : texture2D(u_tex, uv);
+        // Avoid bicubic near the tile edges to prevent seams (requires neighbor texels)
+        vec2 edge = vec2(2.0) * u_texel;
+        bool nearEdge = (uv.x < edge.x) || (uv.x > 1.0 - edge.x) || (uv.y < edge.y) || (uv.y > 1.0 - edge.y);
+        vec4 c = (u_filterMode == 1 && !nearEdge) ? texBicubic(u_tex, uv, u_texel) : texture2D(u_tex, uv);
         gl_FragColor = vec4(c.rgb, c.a * u_alpha);
       }
     `;

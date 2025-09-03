@@ -141,6 +141,8 @@ export class ScreenCache {
     gl.bindTexture(gl.TEXTURE_2D, this.tex);
     gl.uniform1i(loc.u_tex!, 0);
     gl.uniform1f(loc.u_alpha!, 0.85);
+    if ((loc as any).u_filterMode) gl.uniform1i((loc as any).u_filterMode, 0);
+    if ((loc as any).u_texel) gl.uniform2f((loc as any).u_texel, 1.0, 1.0);
     gl.uniform2f(loc.u_uv0!, 0.0, 1.0);
     gl.uniform2f(loc.u_uv1!, 1.0, 0.0);
     gl.uniform2f(loc.u_translate!, dxPx, dyPx);
