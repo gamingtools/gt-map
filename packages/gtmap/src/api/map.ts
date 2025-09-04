@@ -168,6 +168,12 @@ export default class LeafletMapFacade {
     (this._map as any).setUpscaleFilter(mode);
     return this;
   }
+
+  // Inertia tuning (desktop vs touch feel)
+  setInertiaOptions(opts: { inertia?: boolean; inertiaDeceleration?: number; inertiaMaxSpeed?: number; easeLinearity?: number }): this {
+    (this._map as any).setInertiaOptions?.(opts);
+    return this;
+  }
   remove() { this._listeners.clear(); (this._map as any).destroy?.(); return this; }
 
   setWheelSpeed(v: number) { (this._map as any).setWheelSpeed?.(v); return this; }
