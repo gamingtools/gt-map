@@ -9,6 +9,11 @@ export class IconRenderer {
   private urlCache = new Map<string, WebGLTexture>();
   private inflight = new Map<string, Promise<WebGLTexture | null>>();
   private markers: Marker[] = [];
+  // Texture atlas
+  private atlasTex: WebGLTexture | null = null;
+  private atlasW = 0;
+  private atlasH = 0;
+  private uvRect = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();
   // Instancing support
   private instExt: any | null = null;
   private instProg: WebGLProgram | null = null;
@@ -26,7 +31,7 @@ export class IconRenderer {
     u_uv0: WebGLUniformLocation | null;
     u_uv1: WebGLUniformLocation | null;
   } | null = null;
-  private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number }>();
+  private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number; capacityBytes: number }>();
   private typeData = new Map<string, { data: Float32Array; version: number }>();
 
   constructor(gl: WebGLRenderingContext) {
@@ -36,34 +41,57 @@ export class IconRenderer {
   async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>) {
     const useX2 = (typeof devicePixelRatio !== 'undefined') && devicePixelRatio >= 1.75;
     const entries = Object.entries(defs);
-    await Promise.all(
-      entries.map(async ([key, d]) => {
-        // Skip if already loaded for this key
-        if (this.textures.has(key)) { this.texSize.set(key, { w: d.width, h: d.height }); return; }
-        const url = (useX2 && d.x2IconPath) ? d.x2IconPath : d.iconPath;
-        // If URL already cached, reuse the texture
-        const cached = this.urlCache.get(url);
-        if (cached) {
-          this.textures.set(key, cached);
-          this.texSize.set(key, { w: d.width, h: d.height });
-          return;
-        }
-        // Coalesce concurrent requests for the same URL
-        let p = this.inflight.get(url);
-        if (!p) {
-          p = this.createTextureFromUrl(url).then((tex) => {
-            if (tex) this.urlCache.set(url, tex);
-            return tex;
-          }).finally(() => { this.inflight.delete(url); });
-          this.inflight.set(url, p);
-        }
-        const tex = await p;
-        if (tex) {
-          this.textures.set(key, tex);
-          this.texSize.set(key, { w: d.width, h: d.height });
-        }
-      }),
-    );
+    // Load all images first for atlas packing
+    const imgs: Array<{ key: string; w: number; h: number; src: any }> = [];
+    for (const [key, d] of entries) {
+      this.texSize.set(key, { w: d.width, h: d.height });
+      const url = (useX2 && d.x2IconPath) ? d.x2IconPath : d.iconPath;
+      const src = await this.loadImageSource(url);
+      if (src) imgs.push({ key, w: d.width, h: d.height, src });
+    }
+    // Pack into a single atlas (simple shelf pack)
+    const MAX_W = 2048;
+    let x = 0, y = 0, rowH = 0, atlasW = 0, atlasH = 0;
+    // Sort by height descending for better packing
+    imgs.sort((a, b) => b.h - a.h);
+    const pos: Record<string, { x: number; y: number; w: number; h: number }> = {} as any;
+    for (const img of imgs) {
+      if (img.w > MAX_W) { continue; }
+      if (x + img.w > MAX_W) { x = 0; y += rowH; rowH = 0; }
+      pos[img.key] = { x, y, w: img.w, h: img.h };
+      x += img.w; rowH = Math.max(rowH, img.h);
+      atlasW = Math.max(atlasW, x); atlasH = Math.max(atlasH, y + rowH);
+    }
+    // Create canvas and draw
+    const canvas = document.createElement('canvas');
+    canvas.width = atlasW || 1; canvas.height = atlasH || 1;
+    const ctx2d = canvas.getContext('2d')!;
+    ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+    for (const img of imgs) {
+      const p = pos[img.key]; if (!p) continue;
+      try { ctx2d.drawImage(img.src, 0, 0, (img.src as any).width, (img.src as any).height, p.x, p.y, p.w, p.h); } catch {}
+    }
+    // Upload atlas texture
+    const gl = this.gl;
+    const tex = gl.createTexture();
+    if (tex) {
+      gl.bindTexture(gl.TEXTURE_2D, tex);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas as any);
+      this.atlasTex = tex; this.atlasW = atlasW; this.atlasH = atlasH;
+      // Fill uv rects and assign same atlas texture for each key
+      for (const img of imgs) {
+        const p = pos[img.key]; if (!p) continue;
+        const u0 = p.x / atlasW, v0 = p.y / atlasH, u1 = (p.x + p.w) / atlasW, v1 = (p.y + p.h) / atlasH;
+        this.uvRect.set(img.key, { u0, v0, u1, v1 });
+        this.textures.set(img.key, tex);
+      }
+    }
   }
 
   setMarkers(markers: Marker[]) {
@@ -149,6 +177,25 @@ export class IconRenderer {
     }
   }
 
+  private async loadImageSource(url: string): Promise<any | null> {
+    // Try fetch + createImageBitmap, fallback to Image element
+    if (typeof fetch === 'function' && typeof createImageBitmap === 'function') {
+      try {
+        const r = await fetch(url, { mode: 'cors', credentials: 'omit' } as any);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const blob = await r.blob();
+        const bmp = await createImageBitmap(blob, { premultiplyAlpha: 'none' as any, colorSpaceConversion: 'none' as any } as any);
+        return bmp as any;
+      } catch {}
+    }
+    try {
+      const img = new Image();
+      (img as any).crossOrigin = 'anonymous'; (img as any).decoding = 'async';
+      await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(new Error('icon load failed')); img.src = url; });
+      return img as any;
+    } catch { return null; }
+  }
+
   draw(ctx: {
     gl: WebGLRenderingContext;
     prog: WebGLProgram;
@@ -184,8 +231,7 @@ export class IconRenderer {
       gl.uniform2f(this.instLoc!.u_resolution, ctx.canvas.width, ctx.canvas.height);
       gl.uniform1i(this.instLoc!.u_tex, 0);
       gl.uniform1f(this.instLoc!.u_alpha, 1.0);
-      gl.uniform2f(this.instLoc!.u_uv0!, 0.0, 0.0);
-      gl.uniform2f(this.instLoc!.u_uv1!, 1.0, 1.0);
+      // UVs set per type when using atlas
       gl.uniform2f(this.instLoc!.u_tlWorld!, tlWorld.x, tlWorld.y);
       gl.uniform1f(this.instLoc!.u_scale!, scale);
       gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
@@ -200,15 +246,32 @@ export class IconRenderer {
         const td = this.typeData.get(type);
         if (!tex || !td) continue;
         let rec = this.instBuffers.get(type);
+        const byteLen = td.data.byteLength;
         if (!rec) {
           const buf = gl.createBuffer()!;
-          rec = { buf, count: td.data.length / 4, version: td.version, uploaded: -1 };
+          const capacityBytes = roundCapacity(byteLen);
+          gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+          gl.bufferData(gl.ARRAY_BUFFER, capacityBytes, gl.DYNAMIC_DRAW);
+          gl.bufferSubData(gl.ARRAY_BUFFER, 0, td.data);
+          rec = { buf, count: td.data.length / 4, version: td.version, uploaded: td.version, capacityBytes };
           this.instBuffers.set(type, rec);
-        }
-        if (rec.uploaded !== td.version) {
+        } else if (rec.uploaded !== td.version) {
           gl.bindBuffer(gl.ARRAY_BUFFER, rec.buf);
-          gl.bufferData(gl.ARRAY_BUFFER, td.data, gl.DYNAMIC_DRAW);
-          rec.count = td.data.length / 4;
+          const LARGE_BYTES = 1 << 20; // 1MB
+          const prevCount = Math.max(1, rec.count);
+          const newCount = td.data.length / 4;
+          const deltaRatio = Math.abs(newCount - prevCount) / prevCount;
+          const needResize = byteLen > rec.capacityBytes;
+          const shouldOrphan = needResize || byteLen >= LARGE_BYTES || deltaRatio >= 0.25;
+          if (shouldOrphan) {
+            const newCap = needResize ? roundCapacity(byteLen) : rec.capacityBytes;
+            gl.bufferData(gl.ARRAY_BUFFER, newCap, gl.DYNAMIC_DRAW); // orphan
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, td.data);
+            rec.capacityBytes = newCap;
+          } else {
+            gl.bufferSubData(gl.ARRAY_BUFFER, 0, td.data);
+          }
+          rec.count = newCount;
           rec.uploaded = td.version;
         } else {
           gl.bindBuffer(gl.ARRAY_BUFFER, rec.buf);
@@ -223,6 +286,10 @@ export class IconRenderer {
         if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_size, 1);
         else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_size, 1);
         gl.bindTexture(gl.TEXTURE_2D, tex);
+        // Set UVs based on atlas packing (or full if missing)
+        const uv = this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
+        gl.uniform2f(this.instLoc!.u_uv0!, uv.u0, uv.v0);
+        gl.uniform2f(this.instLoc!.u_uv1!, uv.u1, uv.v1);
         if (isGL2) (gl as any).drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, rec.count);
         else this.instExt!.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, rec.count);
       }
@@ -236,8 +303,7 @@ export class IconRenderer {
     gl.uniform2f(ctx.loc.u_resolution, ctx.canvas.width, ctx.canvas.height);
     gl.uniform1i(ctx.loc.u_tex, 0);
     gl.uniform1f(ctx.loc.u_alpha, 1.0);
-    gl.uniform2f(ctx.loc.u_uv0!, 0.0, 0.0);
-    gl.uniform2f(ctx.loc.u_uv1!, 1.0, 1.0);
+    // UVs set per type if atlas
 
     // Group markers by type to minimize texture binds
     const groups = new Map<string, Marker[]>();
@@ -251,6 +317,9 @@ export class IconRenderer {
       const sz = this.texSize.get(type);
       if (!tex || !sz) continue;
       gl.bindTexture(gl.TEXTURE_2D, tex);
+      const uv = this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
+      gl.uniform2f(ctx.loc.u_uv0!, uv.u0, uv.v0);
+      gl.uniform2f(ctx.loc.u_uv1!, uv.u1, uv.v1);
       for (const m of list) {
         const p = ctx.project(m.lng, m.lat, zInt);
         let xCSS = (p.x - tlWorld.x) * scale;
@@ -359,4 +428,13 @@ export class IconRenderer {
     }
     return prog;
   }
+
+}
+
+function roundCapacity(n: number): number {
+  // grow with 1.5x headroom up to next power-of-two-like boundary
+  const target = Math.floor(n * 1.5);
+  let p = 1;
+  while (p < target) p <<= 1;
+  return p;
 }

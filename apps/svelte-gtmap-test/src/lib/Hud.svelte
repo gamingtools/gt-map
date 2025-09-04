@@ -27,6 +27,7 @@
 	let fpsCap = $state(fpsCapInitial);
 	let gridEnabled = $state(false);
 	let markersLocal = $state<number>(markerCount ?? 0);
+	let markersDebounce: number | null = null;
 
 	function refresh(fromFrame = false, now?: number) {
 		if (!map) return;
@@ -89,7 +90,13 @@
 		const n = Math.max(0, Math.min(999_999, Math.floor(markersLocal)));
 		markersLocal = n;
 		try {
-			setMarkerCount(n);
+			if (markersDebounce != null) {
+				try { clearTimeout(markersDebounce); } catch {}
+			}
+			markersDebounce = setTimeout(() => {
+				markersDebounce = null;
+				try { setMarkerCount(n); } catch {}
+			}, 200) as unknown as number;
 		} catch {}
 	}
 </script>

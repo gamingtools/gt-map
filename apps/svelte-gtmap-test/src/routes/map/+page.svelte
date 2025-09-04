@@ -15,7 +15,7 @@
 
 	const HOME = { lng: 4096, lat: 4096 };
 
-	let markerCount = 20000;
+	let markerCount = 1000;
 
 	function clampMarkerCount(n: number): number {
 		if (!Number.isFinite(n)) return 0;
@@ -42,7 +42,7 @@
 		markerGroup = (L as any).layerGroup();
 		markerGroup.addTo(map);
 		const iconCache: Record<string, any> = {};
-		const CREATE_BATCH = 2000;
+		const CREATE_BATCH = 10000;
 		let i = 0;
 		const step = () => {
 			const end = Math.min(count, i + CREATE_BATCH);
