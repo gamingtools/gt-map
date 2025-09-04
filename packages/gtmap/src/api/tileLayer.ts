@@ -23,7 +23,7 @@ export class LeafletTileLayerFacade extends Layer {
     this._options = options || {};
   }
   onAdd(map: LeafletMapFacade) {
-    (map.__impl as any).setTileSource({
+    map.__impl.setTileSource({
       url: this._url,
       sourceMinZoom: this._options.minZoom,
       sourceMaxZoom: this._options.maxZoom,
@@ -32,19 +32,19 @@ export class LeafletTileLayerFacade extends Layer {
       wrapX: typeof this._options.wrapX === 'boolean' ? this._options.wrapX : false,
       clearCache: true,
     });
-    try { (map.__impl as any).setPrefetchOptions?.({ enabled: true, baselineLevel: 2 }); } catch {}
+    try { map.__impl.setPrefetchOptions({ enabled: true, baselineLevel: 2 }); } catch {}
     if (typeof this._options.opacity === 'number') {
-      (map.__impl as any).setRasterOpacity(Math.max(0, Math.min(1, this._options.opacity)));
+      map.__impl.setRasterOpacity(Math.max(0, Math.min(1, this._options.opacity)));
     }
   }
   onRemove(_map: LeafletMapFacade) { /* no-op for now */ }
   setUrl(url: string, _noRedraw?: boolean): this {
     this._url = url;
-    if (this._map) (this._map.__impl as any).setTileSource({ url: this._url, clearCache: true });
+    if (this._map) this._map.__impl.setTileSource({ url: this._url, clearCache: true });
     return this;
   }
   setOpacity(_opacity: number): this {
-    if (this._map) (this._map.__impl as any).setRasterOpacity(Math.max(0, Math.min(1, _opacity)));
+    if (this._map) this._map.__impl.setRasterOpacity(Math.max(0, Math.min(1, _opacity)));
     return this;
   }
   setZIndex(_z: number): this {

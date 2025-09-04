@@ -6,7 +6,7 @@ import { TileCache } from './tiles/cache';
 // import { TileQueue } from './tiles/queue';
 import TilePipeline from './tiles/TilePipeline';
 import { TileLoader, type TileLoaderDeps } from './tiles/loader';
-import type { TileDeps, RenderCtx } from './types';
+import type { TileDeps, RenderCtx, MapImpl } from './types';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
@@ -57,7 +57,7 @@ export type EaseOptions = {
 export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
 export type MarkerInput = { lng: number; lat: number; type: string; size?: number };
 
-export default class GTMap {
+export default class GTMap implements MapImpl {
   container: HTMLDivElement;
   canvas!: HTMLCanvasElement;
   gl!: WebGLRenderingContext;

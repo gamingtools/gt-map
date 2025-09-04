@@ -4,6 +4,7 @@ import type { RasterRenderer } from './layers/raster';
 import type { IconRenderer } from './layers/icons';
 import type { ScreenCache } from './render/screenCache';
 import type { TileCache } from './tiles/cache';
+import type { EventBus } from './events/stream';
 
 export type ViewState = {
   center: LngLat;
@@ -120,6 +121,39 @@ export interface ZoomDeps {
   emit(name: string, payload: any): void;
   requestRender(): void;
   now(): number;
+}
+
+export interface MapImpl {
+  // state
+  container: HTMLElement;
+  mapSize: { width: number; height: number };
+  center: LngLat;
+  zoom: number;
+  events: EventBus;
+  pointerAbs: { x: number; y: number } | null;
+  // controls
+  setCenter(lng: number, lat: number): void;
+  setZoom(z: number): void;
+  setTileSource(opts: {
+    url?: string;
+    tileSize?: number;
+    sourceMinZoom?: number;
+    sourceMaxZoom?: number;
+    mapSize?: { width: number; height: number };
+    wrapX?: boolean;
+    clearCache?: boolean;
+  }): void;
+  setRasterOpacity(v: number): void;
+  setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number }): void;
+  setGridVisible(on: boolean): void;
+  setInertiaOptions(opts: { inertia?: boolean; inertiaDeceleration?: number; inertiaMaxSpeed?: number; easeLinearity?: number }): void;
+  setFpsCap(v: number): void;
+  setWrapX(on: boolean): void;
+  setMaxBoundsPx(bounds: { minX: number; minY: number; maxX: number; maxY: number } | null): void;
+  setMaxBoundsViscosity(v: number): void;
+  setIconDefs(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>): Promise<void>;
+  setMarkers(markers: Array<{ lng: number; lat: number; type: string; size?: number }>): void;
+  destroy(): void;
 }
 
 // Intentionally left as any for now to avoid exposing private internals

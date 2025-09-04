@@ -1,4 +1,5 @@
 import Impl from '../mapgl';
+import type { MapImpl } from '../types';
 import type { EventBus } from '../events/stream';
 
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
@@ -32,7 +33,7 @@ export type LeafletMapOptions = {
 type Listener = (...args: any[]) => void;
 
 export default class LeafletMapFacade {
-  private _map: Impl;
+  private _map: MapImpl;
   private _listeners = new Map<string, Set<Listener>>();
   private _layers = new Set<any>();
 
@@ -84,7 +85,7 @@ export default class LeafletMapFacade {
   getMinZoom(): number { return (this._map as any).minZoom; }
   getMaxZoom(): number { return (this._map as any).maxZoom; }
   get pointerAbs(): { x: number; y: number } | null { return (this._map as any).pointerAbs ?? null; }
-  get events(): EventBus { return (this._map as any).events as EventBus; }
+  get events(): EventBus { return this._map.events as EventBus; }
 
   // Common convenience methods (bridge to impl)
   panTo(latlng: LeafletLatLng, _opts?: any): this { const p = toLngLat(latlng); this._map.setCenter(p.lng, p.lat); return this; }
@@ -219,7 +220,7 @@ export default class LeafletMapFacade {
   eachLayer(fn: (layer: any) => void): this { for (const l of this._layers) fn(l); return this; }
 
   // Feature facades
-  get __impl(): Impl { return this._map; }
+  get __impl(): MapImpl { return this._map; }
   // Internal hooks for Layer base
   __addLayer(layer: { onAdd: (m: any) => void }) { this._layers.add(layer); try { layer.onAdd(this); } catch {} }
   __removeLayer(layer: { onRemove: (m: any) => void }) { if (this._layers.delete(layer)) { try { layer.onRemove(this); } catch {} } }
