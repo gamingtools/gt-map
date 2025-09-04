@@ -1,5 +1,6 @@
 import type { InputDeps } from '../types';
 import { DEBUG } from '../../debug';
+import * as Coords from '../coords';
 
 export default class InputController {
 	private deps: InputDeps;
@@ -80,20 +81,16 @@ export default class InputController {
 			// update pointerAbs always while dragging; while idle, only when inside container
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
-			const tl = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
-			const wx = tl.x + px / scale;
-			const wy = tl.y + py / scale;
-			const zAbs = Math.floor(zImg);
-			const factor = Math.pow(2, zAbs - zInt);
 			const inside = px >= 0 && py >= 0 && px <= widthCSS && py <= heightCSS;
+			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
 			if (this.dragging) {
-				deps.updatePointerAbs(wx * factor, wy * factor);
+				deps.updatePointerAbs(wNat.x, wNat.y);
 				try {
 					deps.emit('pointermove', { x: px, y: py, view: deps.getView(), originalEvent: e });
 				} catch {}
 			} else {
 				if (inside) {
-					deps.updatePointerAbs(wx * factor, wy * factor);
+					deps.updatePointerAbs(wNat.x, wNat.y);
 					this.over = true;
 					try {
 						deps.emit('pointermove', { x: px, y: py, view: deps.getView(), originalEvent: e });
@@ -183,16 +180,11 @@ export default class InputController {
 				const midPx = (t0.clientX + t1.clientX) / 2 - rect.left;
 				const midPy = (t0.clientY + t1.clientY) / 2 - rect.top;
 				// Compute the native-pixel latlng under the initial pinch midpoint
-				const zInt = Math.floor(view.zoom);
-				const scale = Math.pow(2, view.zoom - zInt);
 				const widthCSS = rect.width,
 					heightCSS = rect.height;
 				const zImg = deps.getImageMaxZoom();
-				const s0 = Math.pow(2, zImg - zInt);
-				const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
-				const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
-				const midWorld = { x: tlWorld.x + midPx / scale, y: tlWorld.y + midPy / scale };
-				const pinchStartNative = { x: midWorld.x * s0, y: midWorld.y * s0 };
+				const pinchStartWorld = Coords.cssToWorld({ x: midPx, y: midPy }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
+				const pinchStartNative = { x: pinchStartWorld.x, y: pinchStartWorld.y };
 				this.touchState = {
 					mode: 'pinch',
 					cx: (t0.clientX + t1.clientX) / 2,
