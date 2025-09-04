@@ -149,6 +149,42 @@ import { L, type LeafletMapFacade } from '@gtmap';
 		}
 		applyMarkerCount(markerCount);
 
+    // Basic vectors demo
+    try {
+      const vLine = L.polyline(
+        [
+          [1000, 1000],
+          [2000, 1400],
+          [3000, 1200]
+        ],
+        { color: '#1e90ff', weight: 2, opacity: 0.9 }
+      ).addTo(map as any);
+      const vPoly = L.polygon(
+        [
+          [2600, 2600],
+          [3000, 3000],
+          [2600, 3200],
+          [2300, 3000]
+        ],
+        { color: '#10b981', weight: 2, opacity: 0.9, fill: true, fillColor: '#10b981', fillOpacity: 0.25 }
+      ).addTo(map as any);
+      const vRect = L.rectangle(
+        [ [1200, 3800], [1800, 4400] ],
+        { color: '#ef4444', weight: 2, opacity: 0.9, fill: true, fillColor: '#ef4444', fillOpacity: 0.2 }
+      ).addTo(map as any);
+      const vCircle = L.circle(
+        [4096, 4096],
+        { color: '#f59e0b', weight: 2, opacity: 0.9, fill: true, fillColor: '#f59e0b', fillOpacity: 0.2, radius: 200 }
+      ).addTo(map as any);
+      // Clean up on destroy
+      onDestroy(() => {
+        try { (vLine as any)?.remove?.(); } catch {}
+        try { (vPoly as any)?.remove?.(); } catch {}
+        try { (vRect as any)?.remove?.(); } catch {}
+        try { (vCircle as any)?.remove?.(); } catch {}
+      });
+    } catch {}
+
 		// Teardown on navigation/unmount per Svelte docs
 		onDestroy(() => {
 			console.log('GTMap Svelte unmounting');
