@@ -210,6 +210,10 @@ export default class GTMap implements MapImpl {
 	private showGrid = true;
 	private gridCanvas: HTMLCanvasElement | null = null;
 	private _gridCtx: CanvasRenderingContext2D | null = null;
+	// Vector overlay (initially 2D canvas; upgradeable to WebGL later)
+	private vectorCanvas: HTMLCanvasElement | null = null;
+	private _vectorCtx: CanvasRenderingContext2D | null = null;
+	private _vectors: Array<{ type: string; [k: string]: any }> = [];
 	public pointerAbs: { x: number; y: number } | null = null;
 	// Loading pacing/cancel
 	private interactionIdleMs = 160;
@@ -370,6 +374,7 @@ export default class GTMap implements MapImpl {
 		};
 		// DI configured; no temporary TS-usage hacks required
 		this._initGridCanvas();
+		this._initVectorCanvas();
 		this.resize();
 		this._initEvents();
 		this._frameLoop = new FrameLoop(
@@ -800,6 +805,8 @@ export default class GTMap implements MapImpl {
 			tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize);
 		}
+		// Draw vector overlay (if any)
+		try { this._drawVectors(); } catch {}
 	}
 
 	// Prefetch a 1-tile border beyond current viewport at the given level
@@ -1003,3 +1010,97 @@ export default class GTMap implements MapImpl {
 		this._tiles.process();
 	}
 }
+
+	private _initVectorCanvas() {
+		const c = document.createElement('canvas');
+		this.vectorCanvas = c;
+		c.style.display = 'block';
+		c.style.position = 'absolute';
+		c.style.left = '0';
+		c.style.top = '0';
+		c.style.right = '0';
+		c.style.bottom = '0';
+		c.style.zIndex = '6';
+		(c.style as any).pointerEvents = 'none';
+		this.container.appendChild(c);
+		this._vectorCtx = c.getContext('2d');
+	}
+
+	public setVectors(vectors: Array<{ type: string; [k: string]: any }>) {
+		this._vectors = vectors.slice();
+		this._needsRender = true;
+	}
+
+	private _ensureOverlaySizes() {
+		const rect = this.container.getBoundingClientRect();
+		const w = Math.max(1, rect.width | 0);
+		const h = Math.max(1, rect.height | 0);
+		if (this.gridCanvas && (this.gridCanvas.width !== w || this.gridCanvas.height !== h)) {
+			this.gridCanvas.width = w;
+			this.gridCanvas.height = h;
+		}
+		if (this.vectorCanvas && (this.vectorCanvas.width !== w || this.vectorCanvas.height !== h)) {
+			this.vectorCanvas.width = w;
+			this.vectorCanvas.height = h;
+		}
+	}
+
+	private _drawVectors() {
+		if (!this._vectorCtx) this._initVectorCanvas();
+		this._ensureOverlaySizes();
+		const ctx = this._vectorCtx!;
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		if (!this._vectors.length) return;
+		const z = this.zoom;
+		const zInt = Math.floor(z);
+		const scale = Math.pow(2, z - zInt);
+		const imageMaxZ = (this as any)._sourceMaxZoom || this.maxZoom;
+		const s = Math.pow(2, imageMaxZ - zInt);
+		const rect = this.container.getBoundingClientRect();
+		const widthCSS = rect.width;
+		const heightCSS = rect.height;
+		const center = this.center;
+		const centerWorld = { x: center.lng / s, y: center.lat / s };
+		const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
+		for (const prim of this._vectors) {
+			const style: any = prim.style || {};
+			ctx.lineWidth = Math.max(1, style.weight ?? 2);
+			ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
+			ctx.globalAlpha = style.opacity ?? 1;
+			const begin = () => ctx.beginPath();
+			const finishStroke = () => ctx.stroke();
+			const finishFill = () => {
+				if (style.fill) {
+					ctx.globalAlpha = style.fillOpacity ?? 0.25;
+					ctx.fillStyle = style.fillColor || style.color || 'rgba(0,0,0,0.25)';
+					ctx.fill();
+					ctx.globalAlpha = style.opacity ?? 1;
+				}
+			};
+			if (prim.type === 'polyline' || prim.type === 'polygon') {
+				const pts = prim.points as Array<{ lng: number; lat: number }>;
+				if (!pts.length) continue;
+				begin();
+				for (let i = 0; i < pts.length; i++) {
+					const p = pts[i];
+					const world = { x: p.lng / s, y: p.lat / s };
+					const xCSS = (world.x - tlWorld.x) * scale;
+					const yCSS = (world.y - tlWorld.y) * scale;
+					if (i === 0) ctx.moveTo(xCSS, yCSS);
+					else ctx.lineTo(xCSS, yCSS);
+				}
+				if (prim.type === 'polygon') ctx.closePath();
+				finishStroke();
+				finishFill();
+			} else if (prim.type === 'circle') {
+				const c = prim.center as { lng: number; lat: number };
+				const world = { x: c.lng / s, y: c.lat / s };
+				const xCSS = (world.x - tlWorld.x) * scale;
+				const yCSS = (world.y - tlWorld.y) * scale;
+				begin();
+				ctx.arc(xCSS, yCSS, (prim.radius / s) * scale, 0, Math.PI * 2);
+				finishStroke();
+				finishFill();
+			}
+		}
+	}

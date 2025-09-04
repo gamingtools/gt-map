@@ -66,6 +66,9 @@ export interface RenderCtx {
 	// Projection helpers
 	project(x: number, y: number, z: number): { x: number; y: number };
 	enqueueTile(z: number, x: number, y: number, priority?: number): void;
+	// Vectors (optional 2D overlay for early implementation)
+	vectorCtx?: CanvasRenderingContext2D | null;
+	drawVectors?: () => void;
 }
 
 export interface InputDeps {
@@ -136,3 +139,17 @@ export interface MapImpl {
 }
 
 // Intentionally left as any for now to avoid exposing private internals
+
+export type VectorStyle = {
+	color?: string;
+	weight?: number;
+	opacity?: number;
+	fill?: boolean;
+	fillColor?: string;
+	fillOpacity?: number;
+};
+
+export type VectorPrimitive =
+	| { type: 'polyline'; points: { lng: number; lat: number }[]; style?: VectorStyle }
+	| { type: 'polygon'; points: { lng: number; lat: number }[]; style?: VectorStyle }
+	| { type: 'circle'; center: { lng: number; lat: number }; radius: number; style?: VectorStyle };
