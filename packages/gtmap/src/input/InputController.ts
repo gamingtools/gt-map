@@ -355,24 +355,34 @@ export default class InputController {
     const duration = Math.max(0.008, (lastT - firstT) / 1000);
     // very small windows produce noisy velocity; skip
     if (duration < 0.02) return;
-    const dir = { x: last.x - first.x, y: last.y - first.y };
+    const dir = { x: last.x - first.x, y: first ? (last.y - first.y) : 0 };
     // Require a small displacement minimum to avoid accidental throws
     const disp = Math.hypot(dir.x, dir.y);
     if (disp < 10) return;
-    const speedVec = { x: (dir.x * ease) / duration, y: (dir.y * ease) / duration };
-    const speed = Math.hypot(speedVec.x, speedVec.y);
-    // On recent touch, cap inertia speed to a lower value for comfort
     const touchRecent = (now - this.lastTouchAt) < 250;
-    // Allow a bit higher cap for deliberate touch flicks
+    let speedVec;
+    let speed;
+    if (touchRecent) {
+      // On touch, compute raw velocity in px/s (no 'ease' attenuation)
+      const vx = dir.x / duration;
+      const vy = dir.y / duration;
+      speedVec = { x: vx, y: vy };
+      speed = Math.hypot(vx, vy);
+    } else {
+      // Desktop: keep prior behavior (attenuated by ease)
+      speedVec = { x: (dir.x * ease) / duration, y: (dir.y * ease) / duration };
+      speed = Math.hypot(speedVec.x, speedVec.y);
+    }
+    // Cap speeds
     const localMax = touchRecent ? Math.min(maxSpeed, 1400) : maxSpeed;
     const limited = Math.min(localMax, speed);
     if (DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel, duration, samples: this._positions.length });
     if (!isFinite(limited) || limited <= 0) return;
     const scale = (limited / speed) || 0;
     const limitedVec = { x: speedVec.x * scale, y: speedVec.y * scale };
-    let decelDuration = limited / (decel * ease);
+    let decelDuration = touchRecent ? (limited / decel) : (limited / (decel * ease));
     // Ensure touch throws are not too short
-    if (touchRecent) decelDuration = Math.max(0.45, decelDuration);
+    if (touchRecent) decelDuration = Math.max(0.65, decelDuration);
     decelDuration = Math.min(1.5, decelDuration);
     // offset is negative half of deceleration impulse
     const offset = { x: Math.round(limitedVec.x * (-decelDuration / 2)), y: Math.round(limitedVec.y * (-decelDuration / 2)) };
