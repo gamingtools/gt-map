@@ -1,6 +1,7 @@
 import type { ProgramLocs } from '../render/screenCache';
 // per-level tile size provided via params
 import { tileKey as tileKeyOf, wrapX as wrapXTile } from '../tiles/source';
+import * as Coords from '../coords';
 
 type TileCacheLike = {
 	get(key: string): { status: 'ready' | 'loading' | 'error'; tex?: WebGLTexture } | undefined;
@@ -47,7 +48,7 @@ export class RasterRenderer {
 		// Prefer the image pyramid max (sourceMaxZoom) over viewer max (zMax)
 		const imgMax = (typeof sourceMaxZoom === 'number' ? sourceMaxZoom : zMax) as number | undefined;
 		if (imageSize && typeof imgMax === 'number') {
-			const s = Math.pow(2, imgMax - zLevel);
+			const s = Coords.sFor(imgMax, zLevel);
 			const levelW = Math.ceil(imageSize.width / s);
 			const levelH = Math.ceil(imageSize.height / s);
 			tilesX = Math.ceil(levelW / TS);
@@ -138,7 +139,7 @@ export class RasterRenderer {
 		const imageSize = mapSize as any;
 		const imgMax = (typeof sourceMaxZoom === 'number' ? sourceMaxZoom : zMax) as number | undefined;
 		if (imageSize && typeof imgMax === 'number') {
-			const s = Math.pow(2, imgMax - zLevel);
+			const s = Coords.sFor(imgMax, zLevel);
 			const levelW = Math.ceil(imageSize.width / s);
 			const levelH = Math.ceil(imageSize.height / s);
 			tilesX = Math.ceil(levelW / TS);

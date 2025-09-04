@@ -1,3 +1,5 @@
+import * as Coords from '../coords';
+
 export type IconDef = { id: string; url: string; width: number; height: number };
 export type Marker = { lng: number; lat: number; type: string; size?: number };
 
@@ -178,16 +180,17 @@ export class IconRenderer {
 	}) {
 		if (this.markers.length === 0) return;
 		const gl = ctx.gl;
-		const zInt = Math.floor(ctx.zoom);
-		const scale = Math.pow(2, ctx.zoom - zInt);
+		const { zInt: baseZ, scale: effScale } = Coords.zParts(ctx.zoom);
 		const rect = ctx.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
-		const centerWorld = ctx.project(ctx.center.lng, ctx.center.lat, zInt);
-		const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
+		const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
+		let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
+		const snap = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
+		tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 
 		// Try instanced path first
-		const invS = ctx.project(1, 0, zInt).x - ctx.project(0, 0, zInt).x;
+		const invS = ctx.project(1, 0, baseZ).x - ctx.project(0, 0, baseZ).x;
 		if (this.ensureInstanced(gl)) {
 			gl.useProgram(this.instProg!);
 			// bind unit quad
@@ -199,7 +202,7 @@ export class IconRenderer {
 			gl.uniform1f(this.instLoc!.u_alpha, 1.0);
 			// UVs set per type when using atlas
 			gl.uniform2f(this.instLoc!.u_tlWorld!, tlWorld.x, tlWorld.y);
-			gl.uniform1f(this.instLoc!.u_scale!, scale);
+			gl.uniform1f(this.instLoc!.u_scale!, effScale);
 			gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
 			gl.uniform1f(this.instLoc!.u_invS!, invS);
 

@@ -51,7 +51,7 @@ export default class MapRenderer {
 		if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
 			for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
 				const centerL = ctx.project(ctx.center.lng, ctx.center.lat, lvl);
-				const scaleL = Math.pow(2, ctx.zoom - lvl);
+				const scaleL = Coords.scaleAtLevel(ctx.zoom, lvl);
 				let tlL = Coords.tlLevelForWithScale(centerL, scaleL, { x: widthCSS, y: heightCSS });
 				const snapL = (v: number) => Coords.snapLevelToDevice(v, scaleL, ctx.dpr);
 				tlL = { x: snapL(tlL.x), y: snapL(tlL.y) };
@@ -95,7 +95,7 @@ export default class MapRenderer {
 		const frac = ctx.zoom - baseZ;
 		if (zIntNext > baseZ && frac > 0) {
 			const centerN = ctx.project(ctx.center.lng, ctx.center.lat, zIntNext);
-			const scaleN = Math.pow(2, ctx.zoom - zIntNext);
+			const scaleN = Coords.scaleAtLevel(ctx.zoom, zIntNext);
 			let tlN = Coords.tlLevelForWithScale(centerN, scaleN, { x: widthCSS, y: heightCSS });
 			const snapN = (v: number) => Coords.snapLevelToDevice(v, scaleN, ctx.dpr);
 			tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };

@@ -1106,9 +1106,8 @@ export default class GTMap implements MapImpl {
 				const c = prim.center as { lng: number; lat: number };
 				const css = (Coords as any).worldToCSS({ x: c.lng, y: c.lat }, z, this.center as any, viewport, imageMaxZ as number);
 				// Radius: specified in native px; convert to CSS using current zInt/scale
-				const zInt = Math.floor(z);
-				const s = Math.pow(2, (imageMaxZ as number) - zInt);
-				const scale = Math.pow(2, z - zInt);
+				const { zInt, scale } = Coords.zParts(z);
+				const s = Coords.sFor(imageMaxZ as number, zInt);
 				const rCss = (prim.radius / s) * scale;
 				begin();
 				ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);

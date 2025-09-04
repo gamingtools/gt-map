@@ -34,7 +34,7 @@ export class TileQueue {
 		for (let i = 0; i < this.queue.length; i++) {
 			const t = this.queue[i];
 			if (!idle && t.z > baseZ) continue;
-			const factor = Math.pow(2, baseZ - t.z);
+			const factor = levelFactor(baseZ, t.z);
 			const centerTileX = Math.floor(centerWorld.x / factor / tileSize);
 			const centerTileY = Math.floor(centerWorld.y / factor / tileSize);
 			const dx = t.x - centerTileX;
@@ -63,3 +63,4 @@ export class TileQueue {
 		return this.queue.length;
 	}
 }
+import { levelFactor } from '../coords';

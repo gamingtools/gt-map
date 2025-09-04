@@ -15,6 +15,8 @@ export function chooseGridSpacing(scale: number, tileSize: number): number {
 	return Math.max(1, Math.round(best));
 }
 
+import * as Coords from '../coords';
+
 export function drawGrid(
 	ctx: CanvasRenderingContext2D | null,
 	canvas: HTMLCanvasElement | null,
@@ -34,7 +36,7 @@ export function drawGrid(
 	const spacingWorld = chooseGridSpacing(scale, tileSize);
 	const base = tileSize;
 	const zAbs = Math.floor(maxZoom);
-	const factorAbs = Math.pow(2, zAbs - zInt);
+	const factorAbs = Coords.sFor(zAbs, zInt);
 	ctx.font = '11px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
 	ctx.textBaseline = 'top';
 	ctx.textAlign = 'left';

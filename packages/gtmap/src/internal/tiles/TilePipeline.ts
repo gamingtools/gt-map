@@ -1,4 +1,5 @@
 import type { TileDeps } from '../types';
+import * as Coords from '../coords';
 
 import { TileQueue } from './queue';
 import { tileKey as tileKeyOf } from './source';
@@ -37,7 +38,7 @@ export default class TilePipeline {
 		const c = this.deps.getCenter();
 		const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
 		const TS = this.deps.getTileSize();
-		const s = Math.pow(2, zMax - z);
+		const s = Coords.sFor(zMax, z);
 		const centerLevel = { x: c.lng / s, y: c.lat / s };
 		const cx = Math.floor(centerLevel.x / TS);
 		const cy = Math.floor(centerLevel.y / TS);
@@ -61,7 +62,7 @@ export default class TilePipeline {
 			const baseZ = Math.floor(this.deps.getZoom());
 			const c = this.deps.getCenter();
 			const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
-			const s0 = Math.pow(2, zMax - baseZ);
+			const s0 = Coords.sFor(zMax, baseZ);
 			const centerWorld = { x: c.lng / s0, y: c.lat / s0 } as any;
 			const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());
 			if (!task) break;

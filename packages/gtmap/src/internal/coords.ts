@@ -21,6 +21,11 @@ export function zParts(z: number): { zInt: number; scale: number } {
   return { zInt, scale };
 }
 
+// Effective fractional scale when rendering level `level` at zoom `z`.
+export function scaleAtLevel(z: number, level: number): number {
+  return Math.pow(2, z - level);
+}
+
 export function worldToLevel(world: XY, imageMaxZ: number, zInt: number): XY {
   const s = sFor(imageMaxZ, zInt);
   return { x: world.x / s, y: world.y / s };
@@ -106,4 +111,9 @@ export function tileIndex(world: XY, mapW: number, mapH: number, tileSize: numbe
   }
   ty = Math.max(0, Math.min(NY - 1, ty));
   return { x: tx, y: ty, NX, NY };
+}
+
+// Relative scale factor between two integer zoom levels (level space)
+export function levelFactor(fromZInt: number, toZInt: number): number {
+  return Math.pow(2, fromZInt - toZInt);
 }
