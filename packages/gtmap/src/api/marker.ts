@@ -41,11 +41,11 @@ export class LeafletMarkerFacade extends Layer {
     }
   }
 
-  onAdd(map: any): void { this._impl = (map as any).__impl ?? map; ensureIconDefs(this._impl as Impl, this._icon); flushMarkers(this._impl as Impl, this); }
+  onAdd(map: any): void { this._impl = (map as any).__impl ?? map; ensureIconDefs(this._impl as Impl, this._icon); scheduleFlush(this._impl as Impl, this); }
   onRemove(_map: any): void { if (this._impl) { removeMarker(this._impl, this); this._impl = null; } }
   setLatLng(latlng: LeafletLatLng): this {
     this._latlng = toLngLat(latlng);
-    if (this._impl) flushMarkers(this._impl, this);
+    if (this._impl) scheduleFlush(this._impl, this);
     return this;
   }
   getLatLng(): [number, number] {
@@ -55,7 +55,7 @@ export class LeafletMarkerFacade extends Layer {
     this._icon = icon;
     if (this._impl) {
       ensureIconDefs(this._impl, this._icon);
-      flushMarkers(this._impl, this);
+      scheduleFlush(this._impl, this);
     }
     const def = (icon as any)?.__def as any | undefined;
     if (def && Number.isFinite(def.width) && Number.isFinite(def.height)) {
@@ -95,6 +95,7 @@ export class LeafletMarkerFacade extends Layer {
 const markersByMap = new WeakMap<Impl, Set<LeafletMarkerFacade>>();
 type GridIndex = { cell: number; grid: Map<string, LeafletMarkerFacade[]> };
 const gridByMap = new WeakMap<Impl, GridIndex>();
+const pendingFlushByMap = new WeakMap<Impl, any>();
 const eventsHooked = new WeakSet<Impl>();
 const hoverByMap = new WeakMap<Impl, LeafletMarkerFacade | null>();
 const lastClickByMap = new WeakMap<Impl, { t: number; m: LeafletMarkerFacade | null; x: number; y: number }>();
@@ -114,20 +115,27 @@ function ensureIconDefs(map: Impl, icon: LeafletIcon | null) {
   }
 }
 
-function flushMarkers(map: Impl, recent?: LeafletMarkerFacade) {
+function scheduleFlush(map: Impl, recent?: LeafletMarkerFacade) {
   const set = getSet(map);
   if (recent) set.add(recent);
-  const arr: any[] = [];
-  for (const m of set) arr.push({ lng: m.__getLngLat().lng, lat: m.__getLngLat().lat, type: m.__getType() });
-  (map as any).setMarkers(arr);
   hookMapPointerEvents(map);
-  rebuildIndex(map);
+  if (pendingFlushByMap.get(map)) return;
+  const timer = setTimeout(() => { pendingFlushByMap.delete(map); flushNow(map); }, 0);
+  pendingFlushByMap.set(map, timer);
 }
 
 function removeMarker(map: Impl, marker: LeafletMarkerFacade) {
   const set = getSet(map);
   set.delete(marker);
-  flushMarkers(map);
+  scheduleFlush(map);
+}
+
+function flushNow(map: Impl) {
+  const set = getSet(map);
+  const arr: any[] = [];
+  for (const m of set) arr.push({ lng: m.__getLngLat().lng, lat: m.__getLngLat().lat, type: m.__getType() });
+  (map as any).setMarkers(arr);
+  rebuildIndex(map);
 }
 
 function hookMapPointerEvents(map: Impl) {
