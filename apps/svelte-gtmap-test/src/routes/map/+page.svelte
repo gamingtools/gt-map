@@ -62,9 +62,7 @@
 				m.on('click', (ev: any) => {
 					console.log('marker click', ev);
 				});
-				m.on('mouseover', (ev: any) => {
-					console.log('marker mouseover', ev);
-				});
+
 				markerGroup.addLayer(m);
 				leafletMarkers.push(m);
 			}

@@ -36,13 +36,16 @@
 				[8192, 8192]
 			]
 		}).addTo(map!);
-		L.marker([4096, 4096], {
+		const m = L.marker([4096, 4096], {
 			icon: L.icon({
 				iconUrl: typedIconDefs.sandstorm.iconPath,
 				iconRetinaUrl: typedIconDefs.sandstorm.x2IconPath,
 				iconSize: [typedIconDefs.sandstorm.width, typedIconDefs.sandstorm.height]
 			})
 		}).addTo(map);
+		m.on('click', (ev: any) => {
+			console.log('marker click', ev);
+		});
 
 		// Resize handling (debounced): wait until user stops resizing
 		let resizeTimer: any = null;

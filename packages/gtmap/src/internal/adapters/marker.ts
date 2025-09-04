@@ -317,23 +317,33 @@ function summarizeMarker(m: LeafletMarkerFacade) {
 }
 
 function hitTest(map: Impl, xCSS: number, yCSS: number, log?: boolean): LeafletMarkerFacade | null {
-	const idx = gridByMap.get(map);
-	const rect = (map as any).container.getBoundingClientRect();
-	const widthCSS = rect.width;
-	const heightCSS = rect.height;
-	const z = (map as any).zoom as number;
-	const imageMaxZ = (map as any)._sourceMaxZoom || (map as any).maxZoom;
-	const center = (map as any).center as { lng: number; lat: number };
-	let candidates: LeafletMarkerFacade[] = [];
-	if (idx) {
-		const cell = idx.cell;
-		// Convert pointer CSS to world to locate nearby cells
-		const pw = Coords.cssToWorld({ x: xCSS, y: yCSS }, z, center as any, { x: widthCSS, y: heightCSS }, imageMaxZ as number);
-		const cx = Math.floor(pw.x / cell);
-		const cy = Math.floor(pw.y / cell);
-		if (DEBUG && log) {
-			try { console.debug('[marker.hitTest.index]', { xCSS, yCSS, z, imageMaxZ, center, viewport: { widthCSS, heightCSS }, world: pw, gridCell: { cx, cy } }); } catch {}
-		}
+    const idx = gridByMap.get(map);
+    const rect = (map as any).container.getBoundingClientRect();
+    const widthCSS = rect.width;
+    const heightCSS = rect.height;
+    const z = (map as any).zoom as number;
+    const imageMaxZ = (map as any)._sourceMaxZoom || (map as any).maxZoom;
+    const center = (map as any).center as { lng: number; lat: number };
+    // Align pointer world computation with renderer by using snapped TL in level space
+    const { zInt, scale } = Coords.zParts(z);
+    const s0 = Coords.sFor(imageMaxZ as number, zInt);
+    const centerLevel = { x: center.lng / s0, y: center.lat / s0 };
+    let tlLevel = Coords.tlLevelFor(centerLevel, z, { x: widthCSS, y: heightCSS });
+    try {
+        const canvas: HTMLCanvasElement | null = (map as any).canvas || null;
+        const dpr = canvas ? Math.max(1, (canvas as any).width / Math.max(1, widthCSS)) : (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
+        tlLevel = { x: Coords.snapLevelToDevice(tlLevel.x, scale, dpr), y: Coords.snapLevelToDevice(tlLevel.y, scale, dpr) };
+    } catch {}
+    const pointerLevel = { x: xCSS / scale + tlLevel.x, y: yCSS / scale + tlLevel.y };
+    const pw = { x: pointerLevel.x * s0, y: pointerLevel.y * s0 };
+    let candidates: LeafletMarkerFacade[] = [];
+    if (idx) {
+        const cell = idx.cell;
+        const cx = Math.floor(pw.x / cell);
+        const cy = Math.floor(pw.y / cell);
+        if (DEBUG && log) {
+            try { console.debug('[marker.hitTest.index]', { xCSS, yCSS, z, imageMaxZ, center, viewport: { widthCSS, heightCSS }, world: pw, gridCell: { cx, cy } }); } catch {}
+        }
     const R = 2; // search a slightly larger neighborhood to be robust
     for (let dy = -R; dy <= R; dy++) {
         for (let dx = -R; dx <= R; dx++) {
@@ -356,16 +366,7 @@ function hitTest(map: Impl, xCSS: number, yCSS: number, log?: boolean): LeafletM
             if (DEBUG && log) console.debug('[marker.hitTest.fallbackLinear]', { count: candidates.length });
         } catch {}
     }
-    // Compute TL in level space with the same rounding as the renderer/icons to minimize subpixel drift
-    const { zInt, scale } = Coords.zParts(z);
-    const s0 = Coords.sFor(imageMaxZ as number, zInt);
-    const centerLevel = { x: center.lng / s0, y: center.lat / s0 };
-    let tlLevel = Coords.tlLevelFor(centerLevel, z, { x: widthCSS, y: heightCSS });
-    try {
-        const canvas: HTMLCanvasElement | null = (map as any).canvas || null;
-        const dpr = canvas ? Math.max(1, (canvas as any).width / Math.max(1, widthCSS)) : (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
-        tlLevel = { x: Coords.snapLevelToDevice(tlLevel.x, scale, dpr), y: Coords.snapLevelToDevice(tlLevel.y, scale, dpr) };
-    } catch {}
+    // We already computed snapped tlLevel/scale/s0 above; use them for CSS projection too
     let hit: LeafletMarkerFacade | null = null;
     for (const m of candidates) {
         const p = m.__getLngLat();
