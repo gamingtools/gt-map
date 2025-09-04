@@ -39,8 +39,7 @@ export class RasterRenderer {
     const startY = Math.floor(tlWorld.y / TS);
     const endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
     const endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
-    const tilePixelSizeCSS = TS * scale;
-    const tilePixelSize = tilePixelSizeCSS * dpr;
+    // const tilePixelSizeCSS = TS * scale; // reserved for future heuristics
 
     // Limit tile ranges for finite, possibly non-square images
     let tilesX = Infinity;

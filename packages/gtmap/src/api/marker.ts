@@ -222,7 +222,6 @@ function handleContextMenu(map: Impl, e: MapPointerEvent) {
 function rebuildIndex(map: Impl) {
   const set = markersByMap.get(map);
   if (!set || set.size === 0) { gridByMap.delete(map); return; }
-  const ms = (map as any).mapSize as { width: number; height: number } | undefined;
   const cell = 256; // native px
   const grid = new Map<string, LeafletMarkerFacade[]>();
   for (const m of Array.from(set)) {

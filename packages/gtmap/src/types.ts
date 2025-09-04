@@ -1,4 +1,9 @@
-import type { LngLat } from '../src/mapgl';
+import type { LngLat } from './mapgl';
+import type { ProgramLocs } from './render/screenCache';
+import type { RasterRenderer } from './layers/raster';
+import type { IconRenderer } from './layers/icons';
+import type { ScreenCache } from './render/screenCache';
+import type { TileCache } from './tiles/cache';
 
 export type ViewState = {
   center: LngLat;
@@ -36,7 +41,7 @@ export interface TileDeps {
 export interface RenderCtx {
   gl: WebGLRenderingContext;
   prog: WebGLProgram;
-  loc: any;
+  loc: ProgramLocs;
   quad: WebGLBuffer;
   canvas: HTMLCanvasElement;
   dpr: number;
@@ -45,16 +50,20 @@ export interface RenderCtx {
   center: LngLat;
   minZoom: number;
   maxZoom: number;
+  mapSize: { width: number; height: number };
   wrapX: boolean;
   useScreenCache: boolean;
-  screenCache?: any;
-  raster: any;
-  icons?: any;
-  tileCache: any;
+  screenCache: ScreenCache | null;
+  raster: RasterRenderer;
+  icons?: IconRenderer | null;
+  tileCache: TileCache;
   tileSize: number;
   sourceMaxZoom?: number;
+  rasterOpacity: number;
   // Raster rendering options
   upscaleFilter?: 'auto' | 'linear' | 'bicubic';
+  // Projection helpers
+  project(x: number, y: number, z: number): { x: number; y: number };
   enqueueTile(z: number, x: number, y: number, priority?: number): void;
 }
 
@@ -88,7 +97,7 @@ export interface InputDeps {
   getInertiaDecel(): number; // px/s^2
   getInertiaMaxSpeed(): number; // px/s
   getEaseLinearity(): number;
-  startPanBy(offsetXPx: number, offsetYPx: number, durationSec: number, ease: number): void;
+  startPanBy(offsetXPx: number, offsetYPx: number, durationSec: number, ease?: number): void;
   cancelPanAnim(): void;
 }
 
@@ -112,3 +121,5 @@ export interface ZoomDeps {
   requestRender(): void;
   now(): number;
 }
+
+// Intentionally left as any for now to avoid exposing private internals

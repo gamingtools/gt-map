@@ -5,7 +5,7 @@ import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
 // import { TileQueue } from './tiles/queue';
 import TilePipeline from './tiles/TilePipeline';
-import type { TileDeps } from './types';
+import type { TileDeps, RenderCtx } from './types';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
@@ -127,10 +127,9 @@ export default class GTMap {
   private _maxBoundsViscosity = 0;
   _bounceAtZoomLimits = false;
   // Tile source availability
-  private _sourceMinZoom: number = 0;
   private _sourceMaxZoom: number = 0;
   // Home view (initial center)
-  private _homeCenter: LngLat | null = null;
+  // Home view (initial center) no longer tracked
   // Leaflet-like inertia options and state
   private inertia = true;
   private inertiaDeceleration = 3400; // px/s^2
@@ -147,11 +146,11 @@ export default class GTMap {
     };
   }
   // Build the rendering context (internal)
-  public getRenderCtx() {
+  public getRenderCtx(): RenderCtx {
     return {
       gl: this.gl,
       prog: this._prog!,
-      loc: this._loc!,
+      loc: this._loc as any,
       quad: this._quad!,
       canvas: this.canvas,
       dpr: this._dpr,
@@ -177,14 +176,8 @@ export default class GTMap {
         const s = Math.pow(2, imageMaxZ - z);
         return { x: x / s, y: y / s };
       },
-      // Unproject level-z pixel coords into image pixels at native resolution
-      unproject: (x: number, y: number, z: number) => {
-        const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-        const s = Math.pow(2, imageMaxZ - z);
-        return { x: x * s, y: y * s };
-      },
       enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
-    } as any;
+    };
   }
   // prefetchNeighbors moved below (inline implementation)
   public cancelUnwantedLoads() {
@@ -257,8 +250,7 @@ export default class GTMap {
     this.wrapX = options.wrapX ?? false;
     this.freePan = options.freePan ?? false;
     this.center = { lng: options.center?.lng ?? (this.mapSize.width / 2), lat: options.center?.lat ?? (this.mapSize.height / 2) };
-    // Remember initial center as the 'home' for recenter()
-    this._homeCenter = { lng: this.center.lng, lat: this.center.lat };
+    // Initial center captured by the app as needed
     this.zoom = options.zoom ?? 2;
     if (typeof options.zoomOutCenterBias === 'boolean') {
       this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
@@ -422,7 +414,6 @@ export default class GTMap {
   }) {
     if (typeof opts.url === 'string') this.tileUrl = opts.url;
     if (Number.isFinite(opts.tileSize as number)) this.tileSize = opts.tileSize as number;
-    if (Number.isFinite(opts.sourceMinZoom as number)) this._sourceMinZoom = (opts.sourceMinZoom as number) | 0;
     if (Number.isFinite(opts.sourceMaxZoom as number)) this._sourceMaxZoom = (opts.sourceMaxZoom as number) | 0;
     if (opts.mapSize) this.mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
     if (typeof opts.wrapX === 'boolean') this.wrapX = opts.wrapX;
@@ -720,7 +711,7 @@ export default class GTMap {
       getInertiaDecel: () => this.inertiaDeceleration,
       getInertiaMaxSpeed: () => this.inertiaMaxSpeed,
       getEaseLinearity: () => this.easeLinearity,
-      startPanBy: (dxPx: number, dyPx: number, durSec: number) => this._startPanBy(dxPx, dyPx, durSec),
+      startPanBy: (dxPx: number, dyPx: number, durSec: number, _ease?: number) => this._startPanBy(dxPx, dyPx, durSec),
       cancelPanAnim: () => { this._panAnim = null; },
     };
     this._input = new InputController(this._inputDeps);

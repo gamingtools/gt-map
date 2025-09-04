@@ -5,14 +5,9 @@ export class IconRenderer {
   private gl: WebGLRenderingContext;
   private textures = new Map<string, WebGLTexture>();
   private texSize = new Map<string, { w: number; h: number }>();
-  // Deduplicate by URL and coalesce concurrent fetches
-  private urlCache = new Map<string, WebGLTexture>();
-  private inflight = new Map<string, Promise<WebGLTexture | null>>();
   private markers: Marker[] = [];
   // Texture atlas
-  private atlasTex: WebGLTexture | null = null;
-  private atlasW = 0;
-  private atlasH = 0;
+  // Atlas bookkeeping kept local in load; we do not need fields on the class.
   private uvRect = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();
   // Instancing support
   private instExt: any | null = null;
@@ -83,7 +78,6 @@ export class IconRenderer {
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
       gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas as any);
-      this.atlasTex = tex; this.atlasW = atlasW; this.atlasH = atlasH;
       // Fill uv rects and assign same atlas texture for each key
       for (const img of imgs) {
         const p = pos[img.key]; if (!p) continue;
@@ -119,63 +113,6 @@ export class IconRenderer {
     }
   }
 
-  private async createTextureFromUrl(url: string): Promise<WebGLTexture | null> {
-    const gl = this.gl;
-    // Prefer fetch+createImageBitmap for proper CORS handling (same pattern as tiles)
-    if (typeof fetch === 'function' && typeof createImageBitmap === 'function') {
-      try {
-        const r = await fetch(url, { mode: 'cors', credentials: 'omit' });
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const blob = await r.blob();
-        const bmp = await createImageBitmap(blob, {
-          premultiplyAlpha: 'none' as any,
-          colorSpaceConversion: 'none' as any,
-        } as any);
-        try {
-          const tex = gl.createTexture();
-          if (!tex) return null;
-          gl.bindTexture(gl.TEXTURE_2D, tex);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-          gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp as any);
-          return tex;
-        } finally {
-          try { (bmp as any).close?.(); } catch {}
-        }
-      } catch (e) {
-        console.warn('Icon fetch/bitmap failed; falling back to Image()', e);
-      }
-    }
-    // Fallback: HTMLImageElement (requires CORS headers on server)
-    try {
-      const img = new Image();
-      (img as any).crossOrigin = 'anonymous';
-      (img as any).decoding = 'async';
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('icon load failed'));
-        img.src = url;
-      });
-      const tex = gl.createTexture();
-      if (!tex) return null;
-      gl.bindTexture(gl.TEXTURE_2D, tex);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-      gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img as any);
-      return tex;
-    } catch (err) {
-      console.warn('Icon Image() load failed', err);
-      return null;
-    }
-  }
 
   private async loadImageSource(url: string): Promise<any | null> {
     // Try fetch + createImageBitmap, fallback to Image element

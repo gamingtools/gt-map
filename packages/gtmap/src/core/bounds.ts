@@ -6,10 +6,10 @@ export function clampCenterWorld(
   scale: number,
   widthCSS: number,
   heightCSS: number,
-  wrapX: boolean,
-  freePan: boolean,
-  tileSize: number,
-  mapSize?: { width: number; height: number },
+  _wrapX: boolean,
+  _freePan: boolean,
+  _tileSize: number,
+  _mapSize?: { width: number; height: number },
   zMax?: number,
   // Optional Leaflet-like bounds clamp (in image pixels at native resolution)
   maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null,
@@ -46,23 +46,4 @@ export function clampCenterWorld(
   // Leaflet semantics: if no explicit maxBounds are set, do not clamp the view
   // (panning can go beyond the image/world unless application sets bounds).
   return centerWorld;
-  // Derive level dimensions; fallback to square world if not provided
-  let worldW = tileSize * (1 << zInt);
-  let worldH = worldW;
-  if (mapSize && typeof zMax === 'number') {
-    const s = Math.pow(2, zMax - zInt);
-    worldW = mapSize.width / s;
-    worldH = mapSize.height / s;
-  }
-  const halfW = widthCSS / (2 * scale);
-  const halfH = heightCSS / (2 * scale);
-  let cx = centerWorld.x;
-  let cy = centerWorld.y;
-  if (!wrapX) {
-    if (halfW >= worldW / 2) cx = worldW / 2;
-    else cx = Math.max(halfW, Math.min(worldW - halfW, cx));
-  }
-  if (halfH >= worldH / 2) cy = worldH / 2;
-  else cy = Math.max(halfH, Math.min(worldH - halfH, cy));
-  return { x: cx, y: cy };
 }

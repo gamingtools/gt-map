@@ -36,7 +36,7 @@ export default class MapRenderer {
     const widthCSS = rect.width;
     const heightCSS = rect.height;
     const scale = Math.pow(2, ctx.zoom - baseZ);
-    const centerWorld = (ctx as any).project(ctx.center.lng, ctx.center.lat, baseZ);
+    const centerWorld = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
     let tlWorld = {
       x: centerWorld.x - widthCSS / (2 * scale),
       y: centerWorld.y - heightCSS / (2 * scale),
@@ -76,13 +76,13 @@ export default class MapRenderer {
       heightCSS,
       ctx.wrapX,
       ctx.tileSize,
-      (ctx as any).mapSize,
+      ctx.mapSize,
       ctx.maxZoom,
     );
     const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
     if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
       for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
-        const centerL = (ctx as any).project(ctx.center.lng, ctx.center.lat, lvl);
+        const centerL = ctx.project(ctx.center.lng, ctx.center.lat, lvl);
         const scaleL = Math.pow(2, ctx.zoom - lvl);
         let tlL = {
           x: centerL.x - widthCSS / (2 * scaleL),
@@ -99,11 +99,11 @@ export default class MapRenderer {
           heightCSS,
           ctx.wrapX,
           ctx.tileSize,
-          (ctx as any).mapSize,
+          ctx.mapSize,
           ctx.maxZoom,
         );
         // Backfill lower levels at full raster opacity
-        gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, (ctx as any).rasterOpacity ?? 1.0)));
+        gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
         (ctx.raster as any).drawTilesForLevel(
           ctx.loc! as any,
           ctx.tileCache as any,
@@ -117,16 +117,16 @@ export default class MapRenderer {
             heightCSS,
             wrapX: ctx.wrapX,
             tileSize: ctx.tileSize,
-            mapSize: (ctx as any).mapSize,
+            mapSize: ctx.mapSize,
             zMax: ctx.maxZoom,
-            sourceMaxZoom: (ctx as any).sourceMaxZoom,
+            sourceMaxZoom: ctx.sourceMaxZoom,
           },
         );
         if (covL >= 0.995) break;
       }
     }
     // Base level draw at raster opacity
-    gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, (ctx as any).rasterOpacity ?? 1.0)));
+    gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
     (ctx.raster as any).drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, {
       zLevel: baseZ,
       tlWorld,
@@ -136,16 +136,16 @@ export default class MapRenderer {
       heightCSS,
       wrapX: ctx.wrapX,
       tileSize: ctx.tileSize,
-      mapSize: (ctx as any).mapSize,
+      mapSize: ctx.mapSize,
       zMax: ctx.maxZoom,
-      sourceMaxZoom: (ctx as any).sourceMaxZoom,
-      filterMode: (ctx as any).upscaleFilter || 'auto',
+      sourceMaxZoom: ctx.sourceMaxZoom,
+      filterMode: ctx.upscaleFilter || 'auto',
     });
     if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
     const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
     const frac = ctx.zoom - baseZ;
     if (zIntNext > baseZ && frac > 0) {
-      const centerN = (ctx as any).project(ctx.center.lng, ctx.center.lat, zIntNext);
+      const centerN = ctx.project(ctx.center.lng, ctx.center.lat, zIntNext);
       const scaleN = Math.pow(2, ctx.zoom - zIntNext);
       let tlN = {
         x: centerN.x - widthCSS / (2 * scaleN),
@@ -154,7 +154,7 @@ export default class MapRenderer {
       const snapN = (v: number) => Math.round(v * scaleN * ctx.dpr) / (scaleN * ctx.dpr);
       tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };
       const baseAlpha = Math.max(0, Math.min(1, frac));
-      const layerAlpha = Math.max(0, Math.min(1, (ctx as any).rasterOpacity ?? 1.0));
+      const layerAlpha = Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0));
       gl.uniform1f((ctx.loc as any).u_alpha, baseAlpha * layerAlpha);
       (ctx.raster as any).drawTilesForLevel(
         ctx.loc! as any,
@@ -169,22 +169,22 @@ export default class MapRenderer {
           heightCSS,
           wrapX: ctx.wrapX,
           tileSize: ctx.tileSize,
-          mapSize: (ctx as any).mapSize,
+          mapSize: ctx.mapSize,
           zMax: ctx.maxZoom,
-          sourceMaxZoom: (ctx as any).sourceMaxZoom,
-          filterMode: (ctx as any).upscaleFilter || 'auto',
+          sourceMaxZoom: ctx.sourceMaxZoom,
+          filterMode: ctx.upscaleFilter || 'auto',
         },
       );
       gl.uniform1f((ctx.loc as any).u_alpha, 1.0);
     }
 
     // Draw icon markers after all tile layers so they are not faded by blended tiles
-    if ((ctx as any).icons) {
+    if (ctx.icons) {
       // Ensure alpha is 1 for icons
       gl.uniform1f((ctx.loc as any).u_alpha, 1.0);
       // Icons use native texture filtering
       if ((ctx.loc as any).u_filterMode) gl.uniform1i((ctx.loc as any).u_filterMode, 0);
-      (ctx as any).icons.draw({
+      ctx.icons.draw({
         gl: ctx.gl,
         prog: ctx.prog,
         loc: ctx.loc,
@@ -195,7 +195,7 @@ export default class MapRenderer {
         zoom: ctx.zoom,
         center: ctx.center,
         container: ctx.container,
-        project: (x: number, y: number, z: number) => (ctx as any).project(x, y, z),
+        project: (x: number, y: number, z: number) => ctx.project(x, y, z),
         wrapX: ctx.wrapX,
       });
     }

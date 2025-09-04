@@ -8,7 +8,6 @@ export default class InputController {
   private lastY = 0;
   private over = false;
   private inertiaActive = false;
-  private static readonly DEBUG = false;
   private _positions: Array<{ x: number; y: number }> = [];
   private _times: number[] = [];
   private lastTouchAt = 0;
