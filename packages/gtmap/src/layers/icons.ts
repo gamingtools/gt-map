@@ -5,6 +5,9 @@ export class IconRenderer {
   private gl: WebGLRenderingContext;
   private textures = new Map<string, WebGLTexture>();
   private texSize = new Map<string, { w: number; h: number }>();
+  // Deduplicate by URL and coalesce concurrent fetches
+  private urlCache = new Map<string, WebGLTexture>();
+  private inflight = new Map<string, Promise<WebGLTexture | null>>();
   private markers: Marker[] = [];
 
   constructor(gl: WebGLRenderingContext) {
@@ -16,8 +19,26 @@ export class IconRenderer {
     const entries = Object.entries(defs);
     await Promise.all(
       entries.map(async ([key, d]) => {
+        // Skip if already loaded for this key
+        if (this.textures.has(key)) { this.texSize.set(key, { w: d.width, h: d.height }); return; }
         const url = (useX2 && d.x2IconPath) ? d.x2IconPath : d.iconPath;
-        const tex = await this.createTextureFromUrl(url);
+        // If URL already cached, reuse the texture
+        const cached = this.urlCache.get(url);
+        if (cached) {
+          this.textures.set(key, cached);
+          this.texSize.set(key, { w: d.width, h: d.height });
+          return;
+        }
+        // Coalesce concurrent requests for the same URL
+        let p = this.inflight.get(url);
+        if (!p) {
+          p = this.createTextureFromUrl(url).then((tex) => {
+            if (tex) this.urlCache.set(url, tex);
+            return tex;
+          }).finally(() => { this.inflight.delete(url); });
+          this.inflight.set(url, p);
+        }
+        const tex = await p;
         if (tex) {
           this.textures.set(key, tex);
           this.texSize.set(key, { w: d.width, h: d.height });
