@@ -8,7 +8,7 @@
 		wheelSpeed: wheelSpeedInitial = 1.0,
 		home,
 		markerCount,
-		setMarkerCount
+		setMarkerCount,
 		setMarkersEnabled,
 		setVectorsEnabled
 	} = $props<{
