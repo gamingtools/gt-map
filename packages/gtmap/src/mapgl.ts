@@ -592,6 +592,10 @@ export default class GTMap implements MapImpl {
       this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
     }
   }
+  public setWheelOptions(opts: { base?: number; ctrl?: number }) {
+    if (Number.isFinite(opts.base as number)) this.setWheelSpeed(opts.base as number);
+    if (Number.isFinite(opts.ctrl as number)) this.setWheelCtrlSpeed(opts.ctrl as number);
+  }
   public setAnchorMode(mode: 'pointer' | 'center') {
     this.anchorMode = mode;
   }
