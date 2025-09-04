@@ -143,15 +143,18 @@ function ensureIconDefs(map: Impl, icon: LeafletIcon | null) {
 }
 
 function scheduleFlush(map: Impl, recent?: LeafletMarkerFacade) {
-	const set = getSet(map);
-	if (recent) set.add(recent);
-	hookMapPointerEvents(map);
-	if (pendingFlushByMap.get(map)) return;
-	const timer = setTimeout(() => {
-		pendingFlushByMap.delete(map);
-		flushNow(map);
-	}, 0);
-	pendingFlushByMap.set(map, timer);
+    const set = getSet(map);
+    if (recent) set.add(recent);
+    hookMapPointerEvents(map);
+    if (pendingFlushByMap.get(map)) return;
+    const timer = setTimeout(() => {
+        pendingFlushByMap.delete(map);
+        if (DEBUG) {
+            try { console.debug('[marker.flush.schedule]', { count: getSet(map).size }); } catch {}
+        }
+        flushNow(map);
+    }, 0);
+    pendingFlushByMap.set(map, timer);
 }
 
 function removeMarker(map: Impl, marker: LeafletMarkerFacade) {
@@ -161,11 +164,12 @@ function removeMarker(map: Impl, marker: LeafletMarkerFacade) {
 }
 
 function flushNow(map: Impl) {
-	const set = getSet(map);
-	const arr: any[] = [];
-	for (const m of set) arr.push({ lng: m.__getLngLat().lng, lat: m.__getLngLat().lat, type: m.__getType() });
-	(map as any).setMarkers(arr);
-	rebuildIndex(map);
+    const set = getSet(map);
+    const arr: any[] = [];
+    for (const m of set) arr.push({ lng: m.__getLngLat().lng, lat: m.__getLngLat().lat, type: m.__getType() });
+    if (DEBUG) { try { console.debug('[marker.flush.now]', { count: arr.length }); } catch {} }
+    (map as any).setMarkers(arr);
+    rebuildIndex(map);
 }
 
 function hookMapPointerEvents(map: Impl) {
@@ -276,26 +280,32 @@ function handleContextMenu(map: Impl, e: MapPointerEvent) {
 }
 
 function rebuildIndex(map: Impl) {
-	const set = markersByMap.get(map);
-	if (!set || set.size === 0) {
-		gridByMap.delete(map);
-		return;
-	}
-	const cell = 256; // native px
-	const grid = new Map<string, LeafletMarkerFacade[]>();
-	for (const m of Array.from(set)) {
-		const p = m.__getLngLat();
-		const cx = Math.floor((p.lng as number) / cell);
-		const cy = Math.floor((p.lat as number) / cell);
-		const key = `${cx},${cy}`;
-		let arr = grid.get(key);
-		if (!arr) {
-			arr = [];
-			grid.set(key, arr);
-		}
-		arr.push(m);
-	}
-	gridByMap.set(map, { cell, grid });
+    const set = markersByMap.get(map);
+    if (!set || set.size === 0) {
+        gridByMap.delete(map);
+        return;
+    }
+    const cell = 256; // native px
+    const grid = new Map<string, LeafletMarkerFacade[]>();
+    for (const m of Array.from(set)) {
+        const p = m.__getLngLat();
+        const cx = Math.floor((p.lng as number) / cell);
+        const cy = Math.floor((p.lat as number) / cell);
+        const key = `${cx},${cy}`;
+        let arr = grid.get(key);
+        if (!arr) {
+            arr = [];
+            grid.set(key, arr);
+        }
+        arr.push(m);
+    }
+    gridByMap.set(map, { cell, grid });
+    if (DEBUG) {
+        try {
+            const keys = Array.from(grid.keys());
+            console.debug('[marker.index.rebuild]', { markers: set.size, cells: keys.length, sample: keys.slice(0, 8) });
+        } catch {}
+    }
 }
 
 function summarizeMarker(m: LeafletMarkerFacade) {
@@ -324,19 +334,28 @@ function hitTest(map: Impl, xCSS: number, yCSS: number, log?: boolean): LeafletM
 		if (DEBUG && log) {
 			try { console.debug('[marker.hitTest.index]', { xCSS, yCSS, z, imageMaxZ, center, viewport: { widthCSS, heightCSS }, world: pw, gridCell: { cx, cy } }); } catch {}
 		}
-		for (let dy = -1; dy <= 1; dy++) {
-			for (let dx = -1; dx <= 1; dx++) {
-				const key = `${cx + dx},${cy + dy}`;
-				const arr = idx.grid.get(key);
-				if (arr && arr.length) candidates = candidates.concat(arr);
-			}
-		}
+    const R = 2; // search a slightly larger neighborhood to be robust
+    for (let dy = -R; dy <= R; dy++) {
+        for (let dx = -R; dx <= R; dx++) {
+            const key = `${cx + dx},${cy + dy}`;
+            const arr = idx.grid.get(key);
+            if (arr && arr.length) candidates = candidates.concat(arr);
+        }
+    }
 	} else {
 		// Fallback: linear scan if no index
 		const set = getSet(map);
 		candidates = Array.from(set);
 	}
-	if (DEBUG && log) { try { console.debug('[marker.hitTest.candidates]', { count: candidates.length }); } catch {} }
+    if (DEBUG && log) { try { console.debug('[marker.hitTest.candidates]', { count: candidates.length }); } catch {} }
+    if (candidates.length === 0) {
+        // Fallback: try linear scan to avoid grid mismatch issues
+        try {
+            const set = getSet(map);
+            candidates = Array.from(set);
+            if (DEBUG && log) console.debug('[marker.hitTest.fallbackLinear]', { count: candidates.length });
+        } catch {}
+    }
 	let hit: LeafletMarkerFacade | null = null;
 	for (const m of candidates) {
 		const p = m.__getLngLat();

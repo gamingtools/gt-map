@@ -464,6 +464,9 @@ export default class GTMap implements MapImpl {
 	setMarkers(markers: MarkerInput[]) {
 		if (!this._icons) return;
 		this._icons.setMarkers(markers as any);
+		try {
+			if ((globalThis as any).DEBUG) console.debug('[map.setMarkers]', { count: markers.length });
+		} catch {}
 		// Marker set changed; invalidate screen cache so removed markers don't linger
 		try {
 			this._screenCache?.clear?.();
