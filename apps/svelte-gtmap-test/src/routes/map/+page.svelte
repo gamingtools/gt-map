@@ -96,6 +96,42 @@ import { L, type LeafletMapFacade } from '@gtmap';
 		}
 	}
 
+
+	function addVectors(): void {
+		if (!map) return;
+		try {
+			const vLine = L.polyline(
+				[[1000, 1000], [2000, 1400], [3000, 1200]],
+				{ color: '#1e90ff', weight: 2, opacity: 0.9 }
+			).addTo(map as any);
+			const vPoly = L.polygon(
+				[[2600, 2600], [3000, 3000], [2600, 3200], [2300, 3000]],
+				{ color: '#10b981', weight: 2, opacity: 0.9, fill: true, fillColor: '#10b981', fillOpacity: 0.25 }
+			).addTo(map as any);
+			const vRect = L.rectangle(
+				[[1200, 3800], [1800, 4400]],
+				{ color: '#ef4444', weight: 2, opacity: 0.9, fill: true, fillColor: '#ef4444', fillOpacity: 0.2 }
+			).addTo(map as any);
+			const vCircle = L.circle(
+				[4096, 4096],
+				{ color: '#f59e0b', weight: 2, opacity: 0.9, fill: true, fillColor: '#f59e0b', fillOpacity: 0.2, radius: 200 }
+			).addTo(map as any);
+			vectorLayers.push(vLine, vPoly, vRect, vCircle);
+		} catch {}
+	}
+
+	function clearVectors(): void {
+		if (!vectorLayers.length) return;
+		for (const v of vectorLayers) { try { v?.remove?.(); } catch {} }
+		vectorLayers = [];
+	}
+
+	function setMarkersEnabled(on: boolean): void {
+		if (on) applyMarkerCount(markerCount); else clearLeafletMarkers();
+	}
+
+	function setVectorsEnabled(on: boolean): void { if (on) addVectors(); else clearVectors(); }
+
 	onMount(() => {
 		if (!container) return;
 		const HAGGA = {
@@ -150,7 +186,8 @@ import { L, type LeafletMapFacade } from '@gtmap';
 		}
 		applyMarkerCount(markerCount);
     addVectors();
-    try {
+
+		// Teardown on navigation/unmount per Svelte docs
       const vLine = L.polyline(
         [
           [1000, 1000],
