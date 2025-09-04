@@ -2,7 +2,7 @@
 	type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
 
 	import { onMount, onDestroy } from 'svelte';
-	import GT, { type LeafletMapFacade } from '@gtmap';
+import { L, type LeafletMapFacade } from '@gtmap';
 	import Hud from '$lib/Hud.svelte';
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
@@ -37,7 +37,6 @@
 			return;
 		}
 		clearLeafletMarkers();
-		const L = GT.L as any;
 		// Create an empty group and add it first so per-batch addLayer goes to map
 		markerGroup = (L as any).layerGroup();
 		markerGroup.addTo(map);
@@ -96,7 +95,6 @@
 
 	onMount(() => {
 		if (!container) return;
-		const L = GT.L;
 		const HAGGA = {
 			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
 			minZoom: 0,
