@@ -17,6 +17,7 @@ export default class TilePipeline {
 		if (this.deps.hasTile(key) || this.deps.isPending(key) || this.queue.has(key)) return;
 		const url = this.deps.urlFor(z, x, y);
 		if (!url) return; // no source wired yet
+    if ((globalThis as any).DEBUG) { try { console.debug('[tile.enqueue]', { key, url }); } catch {} }
 		this.queue.enqueue({ key, url, z, x, y, priority });
 		this.process();
 	}
@@ -41,7 +42,8 @@ export default class TilePipeline {
 		const cx = Math.floor(centerLevel.x / TS);
 		const cy = Math.floor(centerLevel.y / TS);
 		const R = 2; // 5x5 ring around center
-		for (let dy = -R; dy <= R; dy++) {
+		if ((globalThis as any).DEBUG) { try { console.debug('[baseline.prefetch]', { z, cx, cy, R }); } catch {} }
+    for (let dy = -R; dy <= R; dy++) {
 			for (let dx = -R; dx <= R; dx++) {
 				const tx = cx + dx;
 				const ty = cy + dy;

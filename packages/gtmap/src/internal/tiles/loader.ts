@@ -21,6 +21,7 @@ export class TileLoader {
 	}
 
 	start({ key, url }: { key: string; url: string }) {
+		if ((globalThis as any).DEBUG) { try { console.debug('[loader.start]', { key, url }); } catch {} }
 		const deps = this.deps;
 		deps.addPending(key);
 		deps.incInflight();

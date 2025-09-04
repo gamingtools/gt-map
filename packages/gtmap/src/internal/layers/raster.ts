@@ -52,7 +52,13 @@ export class RasterRenderer {
 			tilesY = Math.ceil(levelH / TS);
 		}
 
-		for (let ty = startY; ty <= endY; ty++) {
+		if ((globalThis as any).DEBUG) {
+			try { console.debug('[raster.draw] z', zLevel, { tlWorld, scale, widthCSS, heightCSS, tilesX, tilesY, startX, startY, endX, endY, sourceMaxZoom }); } catch {}
+		}
+		if ((globalThis as any).DEBUG) {
+		try { console.debug('[raster.cov] z', zLevel, { tlWorld, scale, widthCSS, heightCSS, tilesX, tilesY, startX, startY, endX, endY }); } catch {}
+	}
+	for (let ty = startY; ty <= endY; ty++) {
 			if (!Number.isFinite(tilesY)) {
 				if (ty < 0 || ty >= 1 << zLevel) continue;
 			} else {
@@ -76,7 +82,7 @@ export class RasterRenderer {
 				if (typeof sourceMaxZoom === 'number' && zLevel > sourceMaxZoom) continue;
 				const key = tileKeyOf(zLevel, tileX, ty);
 				const rec = tileCache.get(key);
-				if (!rec) enqueueTile(zLevel, tileX, ty, 0);
+				if (!rec) { if ((globalThis as any).DEBUG) { try { console.debug('[tile.enqueue]', { z: zLevel, x: tileX, y: ty }); } catch {} } enqueueTile(zLevel, tileX, ty, 0); }
 				if (rec?.status === 'ready' && rec.tex) {
 					gl.activeTexture(gl.TEXTURE0);
 					gl.bindTexture(gl.TEXTURE_2D, rec.tex);
@@ -141,6 +147,9 @@ export class RasterRenderer {
 			const levelH = Math.ceil(imageSize.height / s);
 			tilesX = Math.ceil(levelW / TS);
 			tilesY = Math.ceil(levelH / TS);
+		}
+		if ((globalThis as any).DEBUG) {
+			try { console.debug('[raster.draw] z', zLevel, { tlWorld, scale, widthCSS, heightCSS, tilesX, tilesY, startX, startY, endX, endY, sourceMaxZoom }); } catch {}
 		}
 		for (let ty = startY; ty <= endY; ty++) {
 			if (!Number.isFinite(tilesY)) {
