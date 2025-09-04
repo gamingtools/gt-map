@@ -1,4 +1,5 @@
 import type { RenderCtx } from '../types';
+import * as Coords from '../coords';
 
 export default class MapRenderer {
 	private getCtx: () => RenderCtx;
