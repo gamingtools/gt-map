@@ -18,7 +18,7 @@
   let _prev = 0;
   let wheelSpeed = $state(wheelSpeedInitial);
   let fpsCap = $state(fpsCapInitial);
-  let gridEnabled = $state(true);
+  let gridEnabled = $state(false);
   let markersLocal = $state<number>(markerCount ?? 0);
 
   function refresh(fromFrame = false, now?: number) {

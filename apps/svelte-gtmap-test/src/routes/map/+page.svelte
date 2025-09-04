@@ -4,7 +4,7 @@
 	import Hud from '$lib/Hud.svelte';
 
 	let container: HTMLDivElement | null = null;
-	let map: LeafletMapFacade | null = null;
+	let map: LeafletMapFacade;
 	let gridLayer: any | null = null;
 
 	const HOME = { lng: 4096, lat: 4096 };
