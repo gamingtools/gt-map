@@ -18,18 +18,27 @@ export default class Graphics {
 
   init() {
     const canvas: HTMLCanvasElement = this.map.canvas;
-    const gl = canvas.getContext('webgl', {
+    // Prefer WebGL2 (no need for ANGLE_instanced_arrays)
+    const gl2 = (canvas.getContext('webgl2', {
       alpha: false,
       antialias: false,
-    }) as WebGLRenderingContext | null;
+    }) as any) as WebGL2RenderingContext | null;
+    let gl: WebGLRenderingContext | WebGL2RenderingContext | null = gl2;
+    if (!gl) {
+      // Fallback to WebGL1 if WebGL2 is unavailable
+      gl = canvas.getContext('webgl', {
+        alpha: false,
+        antialias: false,
+      }) as WebGLRenderingContext | null;
+    }
     if (!gl) throw new Error('WebGL not supported');
-    this.map.gl = gl;
+    this.map.gl = gl as any;
     // Match app's dark theme to avoid white flashes between tile draws
     gl.clearColor(0.10, 0.10, 0.10, 1);
     gl.disable(gl.DEPTH_TEST);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    this.map._screenTexFormat = Graphics.detectScreenFormat(gl);
+    this.map._screenTexFormat = Graphics.detectScreenFormat(gl as any);
   }
 
   initPrograms() {
