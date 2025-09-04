@@ -31,13 +31,24 @@ export default class TilePipeline {
 	}
 
 	scheduleBaselinePrefetch(level: number) {
+		// Prefetch a small ring around the current center at the given level
 		const z = level;
-		const n = 1 << z;
-		for (let y = 0; y < n; y++) {
-			for (let x = 0; x < n; x++) {
-				const key = `${z}/${x}/${y}`;
+		const c = this.deps.getCenter();
+		const zMax = this.deps.getMaxZoom();
+		const TS = this.deps.getTileSize();
+		const s = Math.pow(2, zMax - z);
+		const centerLevel = { x: c.lng / s, y: c.lat / s };
+		const cx = Math.floor(centerLevel.x / TS);
+		const cy = Math.floor(centerLevel.y / TS);
+		const R = 2; // 5x5 ring around center
+		for (let dy = -R; dy <= R; dy++) {
+			for (let dx = -R; dx <= R; dx++) {
+				const tx = cx + dx;
+				const ty = cy + dy;
+				if (tx < 0 || ty < 0) continue;
+				const key = `${z}/${tx}/${ty}`;
 				this.deps.addPinned(key);
-				if (!this.deps.hasTile(key)) this.enqueue(z, x, y, 2);
+				if (!this.deps.hasTile(key)) this.enqueue(z, tx, ty, 2);
 			}
 		}
 	}
