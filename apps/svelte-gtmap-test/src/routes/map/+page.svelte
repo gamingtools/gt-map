@@ -10,7 +10,8 @@
 	let container: HTMLDivElement | null = null;
 	let map: LeafletMapFacade;
 	let gridLayer: any | null = null;
-	let leafletMarkers: Array<any> = [];
+let leafletMarkers: Array<any> = [];
+let markerGroup: any | null = null;
 
 	const HOME = { lng: 4096, lat: 4096 };
 
@@ -26,56 +27,66 @@
 		return Math.random() * (max - min) + min;
 	}
 
-	function applyMarkerCount(n: number): void {
-		if (!map) return;
-		const count = clampMarkerCount(n);
-		markerCount = count;
-		const keys = Object.keys(typedIconDefs);
-		if (keys.length === 0) {
-			clearLeafletMarkers();
-			return;
-		}
-		clearLeafletMarkers();
-		const L = GT.L as any;
-		const layers: any[] = [];
-		const iconCache: Record<string, any> = {};
-		for (let i = 0; i < count; i++) {
-			const key = keys[(Math.random() * keys.length) | 0];
-			const def = typedIconDefs[key];
-			const icon =
-				iconCache[key] ||
-				(iconCache[key] = L.icon({
-					iconUrl: def.iconPath,
-					iconRetinaUrl: def.x2IconPath,
-					iconSize: [def.width, def.height]
-				}));
-			const m = L.marker([rand(0, 8192), rand(0, 8192)], { icon });
-			m.on('click', (ev: any) => {
-				console.log('marker click', ev);
-			});
-			layers.push(m);
-		}
-		const group = (L as any).layerGroup(layers);
-		group.addTo(map);
-		leafletMarkers = layers;
-	}
+  function applyMarkerCount(n: number): void {
+    if (!map) return;
+    const count = clampMarkerCount(n);
+    markerCount = count;
+    const keys = Object.keys(typedIconDefs);
+    if (keys.length === 0) {
+      clearLeafletMarkers();
+      return;
+    }
+    clearLeafletMarkers();
+    const L = GT.L as any;
+    // Create an empty group and add it first so per-batch addLayer goes to map
+    markerGroup = (L as any).layerGroup();
+    markerGroup.addTo(map);
+    const iconCache: Record<string, any> = {};
+    const CREATE_BATCH = 2000;
+    let i = 0;
+    const step = () => {
+      const end = Math.min(count, i + CREATE_BATCH);
+      for (; i < end; i++) {
+        const key = keys[(Math.random() * keys.length) | 0];
+        const def = typedIconDefs[key];
+        const icon =
+          iconCache[key] ||
+          (iconCache[key] = L.icon({
+            iconUrl: def.iconPath,
+            iconRetinaUrl: def.x2IconPath,
+            iconSize: [def.width, def.height]
+          }));
+        const m = L.marker([rand(0, 8192), rand(0, 8192)], { icon });
+        m.on('click', (ev: any) => {
+          console.log('marker click', ev);
+        });
+        markerGroup.addLayer(m);
+        leafletMarkers.push(m);
+      }
+      if (i < count) {
+        requestAnimationFrame(step);
+      }
+    };
+    step();
+  }
 
 	function setMarkerCount(n: number): void {
 		applyMarkerCount(n);
 	}
 
-	function clearLeafletMarkers(): void {
-		if (!leafletMarkers || leafletMarkers.length === 0) return;
-		try {
-			for (const m of leafletMarkers) {
-				try {
-					m.remove?.();
-				} catch {}
-			}
-		} finally {
-			leafletMarkers = [];
-		}
-	}
+  function clearLeafletMarkers(): void {
+    try {
+      if (markerGroup) {
+        try { markerGroup.remove?.(); } catch {}
+        markerGroup = null;
+      }
+      if (leafletMarkers && leafletMarkers.length) {
+        for (const m of leafletMarkers) { try { m.remove?.(); } catch {} }
+      }
+    } finally {
+      leafletMarkers = [];
+    }
+  }
 
 	onMount(() => {
 		if (!container) return;
