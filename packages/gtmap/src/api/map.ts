@@ -14,6 +14,11 @@ export type LeafletMapOptions = {
   maxBounds?: LeafletBoundsLike;
   maxBoundsViscosity?: number;
   bounceAtZoomLimits?: boolean;
+  // Inertia options (Leaflet-compatible names)
+  inertia?: boolean;
+  inertiaDeceleration?: number; // px/s^2
+  inertiaMaxSpeed?: number; // px/s
+  easeLinearity?: number; // 0..1
   // Commonly used Leaflet flags we may accept and map later
   zoomAnimation?: boolean;
   zoomAnimationThreshold?: number;
@@ -50,6 +55,15 @@ export default class LeafletMapFacade {
     }
     if (typeof options?.maxBoundsViscosity === 'number') (init as any).maxBoundsViscosity = options.maxBoundsViscosity;
     this._map = new Impl(el as HTMLDivElement, init);
+    // Apply inertia options if provided (Leaflet-compatible)
+    const inertiaOpts: any = {};
+    if (typeof options?.inertia === 'boolean') inertiaOpts.inertia = options.inertia;
+    if (Number.isFinite(options?.inertiaDeceleration as number)) inertiaOpts.inertiaDeceleration = options?.inertiaDeceleration;
+    if (Number.isFinite(options?.inertiaMaxSpeed as number)) inertiaOpts.inertiaMaxSpeed = options?.inertiaMaxSpeed;
+    if (Number.isFinite(options?.easeLinearity as number)) inertiaOpts.easeLinearity = options?.easeLinearity;
+    if (Object.keys(inertiaOpts).length > 0) {
+      (this._map as any).setInertiaOptions?.(inertiaOpts);
+    }
     // Wire core events
     this._map.events.on('move').each((e: any) => this._emit('move', e));
     this._map.events.on('moveend').each((e: any) => this._emit('moveend', e));
