@@ -122,6 +122,7 @@ export class RasterRenderer {
 		tileSize: number,
 		mapSize?: { width: number; height: number },
 		zMax?: number,
+		sourceMaxZoom?: number,
 	): number {
 		const TS = tileSize;
 		const startX = Math.floor(tlWorld.x / TS);
@@ -133,8 +134,9 @@ export class RasterRenderer {
 		let tilesX = Infinity;
 		let tilesY = Infinity;
 		const imageSize = mapSize as any;
-		if (imageSize && typeof zMax === 'number') {
-			const s = Math.pow(2, zMax - zLevel);
+		const imgMax = (typeof sourceMaxZoom === 'number' ? sourceMaxZoom : zMax) as number | undefined;
+		if (imageSize && typeof imgMax === 'number') {
+			const s = Math.pow(2, imgMax - zLevel);
 			const levelW = Math.ceil(imageSize.width / s);
 			const levelH = Math.ceil(imageSize.height / s);
 			tilesX = Math.ceil(levelW / TS);
