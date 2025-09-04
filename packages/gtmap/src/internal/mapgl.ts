@@ -1044,23 +1044,16 @@ export default class GTMap implements MapImpl {
 		}
 	}
 
-	private _drawVectors() {
+		private _drawVectors() {
 		if (!this._vectorCtx) this._initVectorCanvas();
 		this._ensureOverlaySizes();
 		const ctx = this._vectorCtx!;
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		if (!this._vectors.length) return;
 		const z = this.zoom;
-		const zInt = Math.floor(z);
-		const scale = Math.pow(2, z - zInt);
-		const imageMaxZ = (this as any)._sourceMaxZoom || this.maxZoom;
-		const s = Math.pow(2, imageMaxZ - zInt);
 		const rect = this.container.getBoundingClientRect();
-		const widthCSS = rect.width;
-		const heightCSS = rect.height;
-		const center = this.center;
-		const centerWorld = { x: center.lng / s, y: center.lat / s };
-		const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
+		const viewport = { x: rect.width, y: rect.height };
+		const imageMaxZ = (this as any)._sourceMaxZoom || this.maxZoom;
 		for (const prim of this._vectors) {
 			const style: any = prim.style || {};
 			ctx.lineWidth = Math.max(1, style.weight ?? 2);
@@ -1082,25 +1075,27 @@ export default class GTMap implements MapImpl {
 				begin();
 				for (let i = 0; i < pts.length; i++) {
 					const p = pts[i];
-					const world = { x: p.lng / s, y: p.lat / s };
-					const xCSS = (world.x - tlWorld.x) * scale;
-					const yCSS = (world.y - tlWorld.y) * scale;
-					if (i === 0) ctx.moveTo(xCSS, yCSS);
-					else ctx.lineTo(xCSS, yCSS);
+					const css = (Coords as any).worldToCSS({ x: p.lng, y: p.lat }, z, this.center as any, viewport, imageMaxZ as number);
+					if (i === 0) ctx.moveTo(css.x, css.y);
+					else ctx.lineTo(css.x, css.y);
 				}
 				if (prim.type === 'polygon') ctx.closePath();
 				finishStroke();
 				finishFill();
 			} else if (prim.type === 'circle') {
 				const c = prim.center as { lng: number; lat: number };
-				const world = { x: c.lng / s, y: c.lat / s };
-				const xCSS = (world.x - tlWorld.x) * scale;
-				const yCSS = (world.y - tlWorld.y) * scale;
+				const css = (Coords as any).worldToCSS({ x: c.lng, y: c.lat }, z, this.center as any, viewport, imageMaxZ as number);
+				// Radius: specified in native px; convert to CSS using current zInt/scale
+				const zInt = Math.floor(z);
+				const s = Math.pow(2, (imageMaxZ as number) - zInt);
+				const scale = Math.pow(2, z - zInt);
+				const rCss = (prim.radius / s) * scale;
 				begin();
-				ctx.arc(xCSS, yCSS, (prim.radius / s) * scale, 0, Math.PI * 2);
+				ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
 				finishStroke();
 				finishFill();
 			}
 		}
 	}
+
 }

@@ -1,4 +1,5 @@
 import type Impl from '../mapgl';
+import * as Coords from '../coords';
 
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
 import Layer from './layer';
@@ -278,21 +279,15 @@ function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | n
 	const widthCSS = rect.width;
 	const heightCSS = rect.height;
 	const z = (map as any).zoom as number;
-	const zInt = Math.floor(z);
-	const scale = Math.pow(2, z - zInt);
 	const imageMaxZ = (map as any)._sourceMaxZoom || (map as any).maxZoom;
-	const s = Math.pow(2, imageMaxZ - zInt);
 	const center = (map as any).center as { lng: number; lat: number };
-	const centerWorld = { x: center.lng / s, y: center.lat / s };
-	const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
-	// Convert pointer CSS -> native
-	const pointerWorld = { x: tlWorld.x + xCSS / scale, y: tlWorld.y + yCSS / scale };
-	const pointerNative = { x: pointerWorld.x * s, y: pointerWorld.y * s };
 	let candidates: LeafletMarkerFacade[] = [];
 	if (idx) {
 		const cell = idx.cell;
-		const cx = Math.floor(pointerNative.x / cell);
-		const cy = Math.floor(pointerNative.y / cell);
+		// Convert pointer CSS to world to locate nearby cells
+		const pw = Coords.cssToWorld({ x: xCSS, y: yCSS }, z, center as any, { x: widthCSS, y: heightCSS }, imageMaxZ as number);
+		const cx = Math.floor(pw.x / cell);
+		const cy = Math.floor(pw.y / cell);
 		for (let dy = -1; dy <= 1; dy++) {
 			for (let dx = -1; dx <= 1; dx++) {
 				const key = `${cx + dx},${cy + dy}`;
@@ -310,11 +305,9 @@ function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | n
 		const p = m.__getLngLat();
 		const w = m.__getSize().w || 32;
 		const h = m.__getSize().h || 32;
-		const mw = { x: p.lng / s, y: p.lat / s };
-		const xCSSm = (mw.x - tlWorld.x) * scale;
-		const yCSSm = (mw.y - tlWorld.y) * scale;
-		const left = xCSSm - w / 2;
-		const top = yCSSm - h / 2;
+		const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, center as any, { x: widthCSS, y: heightCSS }, imageMaxZ as number);
+		const left = css.x - w / 2;
+		const top = css.y - h / 2;
 		if (xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h) hit = m;
 	}
 	return hit;
