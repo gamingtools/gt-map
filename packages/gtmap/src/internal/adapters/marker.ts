@@ -341,31 +341,26 @@ function hitTest(map: Impl, xCSS: number, yCSS: number, log?: boolean): LeafletM
         const cell = idx.cell;
         const cx = Math.floor(pw.x / cell);
         const cy = Math.floor(pw.y / cell);
+        // Scale-aware neighborhood to cover at least an icon-sized radius in CSS pixels
+        const approxCssRadius = 64; // px, conservative half-size for typical icons
+        const radiusWorld = (approxCssRadius / scale) * s0;
+        const R = Math.max(1, Math.min(4, Math.ceil(radiusWorld / cell)));
         if (DEBUG && log) {
-            try { console.debug('[marker.hitTest.index]', { xCSS, yCSS, z, imageMaxZ, center, viewport: { widthCSS, heightCSS }, world: pw, gridCell: { cx, cy } }); } catch {}
+            try { console.debug('[marker.hitTest.index]', { xCSS, yCSS, z, imageMaxZ, center, viewport: { widthCSS, heightCSS }, world: pw, gridCell: { cx, cy }, R }); } catch {}
         }
-    const R = 2; // search a slightly larger neighborhood to be robust
-    for (let dy = -R; dy <= R; dy++) {
-        for (let dx = -R; dx <= R; dx++) {
-            const key = `${cx + dx},${cy + dy}`;
-            const arr = idx.grid.get(key);
-            if (arr && arr.length) candidates = candidates.concat(arr);
+        for (let dy = -R; dy <= R; dy++) {
+            for (let dx = -R; dx <= R; dx++) {
+                const key = `${cx + dx},${cy + dy}`;
+                const arr = idx.grid.get(key);
+                if (arr && arr.length) candidates = candidates.concat(arr);
+            }
         }
-    }
 	} else {
 		// Fallback: linear scan if no index
 		const set = getSet(map);
 		candidates = Array.from(set);
 	}
     if (DEBUG && log) { try { console.debug('[marker.hitTest.candidates]', { count: candidates.length }); } catch {} }
-    if (candidates.length === 0) {
-        // Fallback: try linear scan to avoid grid mismatch issues
-        try {
-            const set = getSet(map);
-            candidates = Array.from(set);
-            if (DEBUG && log) console.debug('[marker.hitTest.fallbackLinear]', { count: candidates.length });
-        } catch {}
-    }
     // We already computed snapped tlLevel/scale/s0 above; use them for CSS projection too
     let hit: LeafletMarkerFacade | null = null;
     for (const m of candidates) {
@@ -376,20 +371,15 @@ function hitTest(map: Impl, xCSS: number, yCSS: number, log?: boolean): LeafletM
         const css = { x: (lvl.x - tlLevel.x) * scale, y: (lvl.y - tlLevel.y) * scale };
         const left = css.x - w / 2;
         const top = css.y - h / 2;
-		const contains = xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h;
-		if (DEBUG && log) {
-			try {
-				console.debug('[marker.hitTest.test]', {
-					marker: { type: m.__getType(), lng: p.lng, lat: p.lat, w, h },
-					css,
-					rect: { left, top, w, h },
-					pointer: { xCSS, yCSS },
-					contains,
-				});
-			} catch {}
-		}
-		if (contains) hit = m;
-	}
-	if (DEBUG && log) { try { console.debug('[marker.hitTest.result]', { hit: hit ? summarizeMarker(hit) : null }); } catch {} }
-	return hit;
+        const contains = xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h;
+        if (contains) hit = m;
+    }
+    if (DEBUG && log) {
+        try {
+            console.debug('[marker.hitTest.result]', {
+                hit: hit ? summarizeMarker(hit) : null,
+            });
+        } catch {}
+    }
+    return hit;
 }
