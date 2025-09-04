@@ -1,5 +1,5 @@
 import type { InputDeps } from '../types';
-import { DEBUG } from '../debug';
+import { DEBUG } from '../../debug';
 
 export default class InputController {
 	private deps: InputDeps;

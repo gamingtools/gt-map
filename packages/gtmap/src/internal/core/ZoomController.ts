@@ -1,5 +1,5 @@
 import type { ZoomDeps } from '../types';
-import { DEBUG } from '../debug';
+import { DEBUG } from '../../debug';
 
 export default class ZoomController {
 	private deps: ZoomDeps;
