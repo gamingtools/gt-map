@@ -20,6 +20,7 @@ import MapRenderer from './render/MapRenderer';
 import type { ViewState } from './types';
 // prefetch/grid helpers moved inline
 import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
+import { FrameLoop } from './core/FrameLoop';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -71,7 +72,8 @@ export default class GTMap {
   zoom: number;
 
   private _needsRender = true;
-  private _raf: number | null = null;
+  private _raf: number | null = null; // deprecated, kept for backward compat in setActive
+  private _frameLoop: FrameLoop | null = null;
   private _input: InputController | null = null;
   private _inputDeps!: InputDeps;
   private _dpr = 1;
@@ -92,7 +94,7 @@ export default class GTMap {
   private _frame = 0;
   private _lastTS: number | null = null;
   private _dt = 0;
-  private _lastFrameAt: number | null = null;
+  // lastFrameAt handled by FrameLoop
   private _targetFps = 60;
   // Simple zoom easing
   private wheelSpeed = 1.0;
@@ -371,8 +373,11 @@ export default class GTMap {
     this._initGridCanvas();
     this.resize();
     this._initEvents();
-    this._loop = this._loop.bind(this);
-    this._raf = requestAnimationFrame(this._loop);
+    this._frameLoop = new FrameLoop(
+      () => this._targetFps,
+      (now: number, allowRender: boolean) => this._tick(now, allowRender),
+    );
+    this._frameLoop.start();
     // Delay baseline prefetch until a tile source is explicitly set
     // DI in place for input/tiles/render; no need for TS usage hacks
   }
@@ -721,24 +726,14 @@ export default class GTMap {
     this._input.attach();
   }
   // wheel normalization handled in input/handlers internally
-  private _loop() {
-    this._raf = requestAnimationFrame(this._loop);
+  private _tick(now: number, allowRender: boolean) {
     this._frame++;
-    // Compute dt like JS for smooth velocity tail
-    const now =
-      typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
     if (this._lastTS == null) this._lastTS = now;
     this._dt = (now - this._lastTS) / 1000;
     this._lastTS = now;
-    // Render if we have work or an active animation (zoom or pan inertia)
     const animating = this._zoomCtrl.isAnimating() || !!this._panAnim;
     if (!this._needsRender && !animating) return;
-    // Frame pacing
-    const minInterval = 1000 / Math.max(1, this._targetFps);
-    const sinceLast = this._lastFrameAt == null ? Infinity : (now - this._lastFrameAt);
-    const allowRender = sinceLast >= minInterval - 0.5; // small epsilon
     if (!allowRender) {
-      // Step animations without drawing to keep time-based motion smooth
       try { this._zoomCtrl.step(); } catch {}
       try { this.zoomVelocityTick(); } catch {}
       try { this.panVelocityTick(); } catch {}
@@ -746,8 +741,6 @@ export default class GTMap {
       return;
     }
     this._render();
-    this._lastFrameAt = now;
-    // Keep rendering while animating
     if (!this._zoomCtrl.isAnimating() && !this._panAnim) this._needsRender = false;
   }
   private _render() {
@@ -892,6 +885,7 @@ export default class GTMap {
     if (active === this._active && !(active && this._glReleased)) return;
     if (!active) {
       this._active = false;
+      try { this._frameLoop?.stop?.(); } catch {}
       if (this._raf != null) { try { cancelAnimationFrame(this._raf); } catch {} this._raf = null; }
       try { this._input?.dispose(); } catch {}
       if (opts?.releaseGL && this.gl) {
@@ -920,7 +914,7 @@ export default class GTMap {
     this._active = true;
     this._needsRender = true;
     try { this._tiles.process(); } catch {}
-    this._raf = requestAnimationFrame(this._loop);
+    try { this._frameLoop?.start?.(); } catch {}
   }
 
   private static _chooseGridSpacing(scale: number, tileSize: number): number {
