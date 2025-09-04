@@ -1009,7 +1009,6 @@ export default class GTMap implements MapImpl {
 		this._wantedKeys.clear();
 		this._tiles.process();
 	}
-}
 
 	private _initVectorCanvas() {
 		const c = document.createElement('canvas');
@@ -1104,3 +1103,4 @@ export default class GTMap implements MapImpl {
 			}
 		}
 	}
+}
