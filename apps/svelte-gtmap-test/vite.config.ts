@@ -10,6 +10,17 @@ export default defineConfig({
 			'@gtmap': resolve(__dirname, '../../packages/gtmap/src')
 		}
 	},
+	server: {
+		fs: {
+			allow: [
+				resolve(__dirname, '..'),
+				resolve(__dirname, '../..'),
+				resolve(__dirname, '../../packages/gtmap'),
+				resolve(__dirname, '../../packages/gtmap/src')
+			]
+		},
+		watch: { usePolling: true, interval: 100 }
+	},
 	optimizeDeps: {
 		exclude: ['@gtmap']
 	}
