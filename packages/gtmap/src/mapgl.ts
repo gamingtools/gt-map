@@ -5,6 +5,7 @@ import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
 // import { TileQueue } from './tiles/queue';
 import TilePipeline from './tiles/TilePipeline';
+import { TileLoader, type TileLoaderDeps } from './tiles/loader';
 import type { TileDeps, RenderCtx } from './types';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
@@ -216,7 +217,8 @@ export default class GTMap {
   private _pendingKeys = new Set<string>();
   private _tiles!: TilePipeline;
   private _tileDeps!: TileDeps;
-  private _loaderDeps!: any;
+  private _loader!: TileLoader;
+  private _loaderDeps!: TileLoaderDeps;
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
   private prefetchEnabled = false;
@@ -297,7 +299,7 @@ export default class GTMap {
       getCenter: () => this.center,
       getTileSize: () => this.tileSize,
       startImageLoad: ({ key, url }: { key: string; url: string }) =>
-        this._startImageLoad({ key, url }),
+        this._loader.start({ key, url }),
       addPinned: (key: string) => {
         this._pinnedKeys.add(key);
       },
@@ -327,6 +329,7 @@ export default class GTMap {
       },
     };
     this._tiles = new TilePipeline(this._tileDeps);
+    this._loader = new TileLoader(this._loaderDeps);
     // Raster renderer
     this._raster = new RasterRenderer(this.gl);
     this._icons = new IconRenderer(this.gl);
@@ -847,102 +850,7 @@ export default class GTMap {
 
   // Bounds clamping similar to JS version
 
-  // Deprecated: loader now calls _tiles.process() directly
-  private _startImageLoad({ key, url }: { key: string; url: string }) {
-    const deps = this._loaderDeps;
-    deps.addPending(key);
-    deps.incInflight();
-    deps.setLoading(key);
-    const onFinally = () => {
-      try {
-        /* noop */
-      } finally {
-        deps.removePending(key);
-        deps.decInflight();
-      }
-    };
-    if (deps.getUseImageBitmap()) {
-      fetch(url, { mode: 'cors', credentials: 'omit' } as any)
-        .then((r: any) => {
-          if (!r.ok) throw new Error(`HTTP ${r.status}`);
-          return r.blob();
-        })
-        .then((blob: any) =>
-          (self as any).createImageBitmap(blob, {
-            premultiplyAlpha: 'none',
-            colorSpaceConversion: 'none',
-          }),
-        )
-        .then((bmp: any) => {
-          try {
-            const gl: WebGLRenderingContext = deps.getGL();
-            const tex = gl.createTexture();
-            if (!tex) {
-              deps.setError(key);
-              return;
-            }
-            gl.bindTexture(gl.TEXTURE_2D, tex);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-            gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp as any);
-            gl.generateMipmap(gl.TEXTURE_2D);
-            deps.setReady(key, tex, (bmp as any).width, (bmp as any).height, deps.getFrame());
-            deps.requestRender();
-          } finally {
-            try {
-              (bmp as any).close?.();
-            } catch {}
-            onFinally();
-          }
-        })
-        .catch(() => {
-          deps.setUseImageBitmap(false);
-          this._startImageLoad({ key, url });
-        });
-      return;
-    }
-    const img: any = new Image();
-    img.crossOrigin = 'anonymous';
-    img.decoding = 'async';
-    img.onload = () => {
-      try {
-        const gl: WebGLRenderingContext = deps.getGL();
-        const tex = gl.createTexture();
-        if (!tex) {
-          deps.setError(key);
-          return;
-        }
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img as any);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        deps.setReady(
-          key,
-          tex,
-          (img as any).naturalWidth,
-          (img as any).naturalHeight,
-          deps.getFrame(),
-        );
-        deps.requestRender();
-      } finally {
-        onFinally();
-      }
-    };
-    img.onerror = () => {
-      deps.setError(key);
-      onFinally();
-    };
-    img.src = url;
-  }
+  // image tile loading handled by TileLoader
 
   public panVelocityTick() {
     if (!this._panAnim) return;
