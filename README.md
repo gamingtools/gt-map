@@ -19,22 +19,24 @@ Run locally
 
 Files
 
-- `apps/svelte-gtmap-test/src/routes/map/+page.svelte`: Minimal GT.L usage in Svelte.
-- `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
+- `apps/svelte-gtmap-test/src/routes/map/+page.svelte`: Minimal usage with `L` facade in Svelte.
 - `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
 - Pixel CRS only: coordinates are image pixels (x=lng, y=lat) at native resolution. No Web Mercator.
 
 Public API
 
-- Primary (and default): Leaflet‑compatible facade `GT.L` (see docs/public-api.md). Use factories like `GT.L.map`, `GT.L.tileLayer`, `GT.L.marker`, `GT.L.icon`.
-  - The previous native facades (`GTMap`, `createMap`, `MapApi`) are no longer exported. Internals remain, but apps should use `GT.L`.
+- Preferred: Leaflet‑compatible facade `L` via `import { L } from '@gtmap'`.
+- Compatibility: `default` export exposes `GT.L` which mirrors `L` (legacy alias).
+- Use factories like `L.map`, `L.tileLayer`, `L.marker`, `L.icon`.
+- Internal implementations (`GTMap`, renderers, pipelines) are private; use the facades.
 
 Demo app
 
 - Default demo app (SvelteKit): `apps/svelte-gtmap-test` → open `/map`
 - Legacy no-framework demo: `apps/noframework-gtmap-test/index.html`
 
-See `docs/public-api.md` for the `GT.L` facade and how to use it. Native facades are considered internal.
+Notes
+- Svelte docs are available under `docs/svelte/` and should be used for Svelte v5 syntax and runes.
 
 Visibility Control (suspend/resume)
 
