@@ -138,6 +138,8 @@ export default class MapRenderer {
 				container: ctx.container,
 				project: (x: number, y: number, z: number) => ctx.project(x, y, z),
 				wrapX: ctx.wrapX,
+				mapSize: ctx.mapSize,
+				imageMaxZ: (ctx as any).sourceMaxZoom || ctx.maxZoom,
 			});
 			}
 			// Update screen cache after full draw so it matches the frame
