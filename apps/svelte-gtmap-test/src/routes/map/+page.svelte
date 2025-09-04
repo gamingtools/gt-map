@@ -14,6 +14,7 @@ import { L, type LeafletMapFacade } from '@gtmap';
 	let gridLayer: any | null = null;
 	let leafletMarkers: Array<any> = [];
 	let markerGroup: any | null = null;
+  let vectorLayers: Array<any> = [];
 
 	const HOME = { lng: 4096, lat: 4096 };
 
@@ -148,8 +149,7 @@ import { L, type LeafletMapFacade } from '@gtmap';
 			usedWindowResize = true;
 		}
 		applyMarkerCount(markerCount);
-
-    // Basic vectors demo
+    addVectors();
     try {
       const vLine = L.polyline(
         [
@@ -194,6 +194,7 @@ import { L, type LeafletMapFacade } from '@gtmap';
 			try {
 				clearLeafletMarkers();
 			} catch {}
+			try { clearVectors(); } catch {}
 			try {
 				map?.remove?.();
 			} catch {}
@@ -217,7 +218,7 @@ import { L, type LeafletMapFacade } from '@gtmap';
 </script>
 
 <div bind:this={container} class="map">
-	<Hud {map} fpsCap={60} wheelSpeed={1.0} home={HOME} {markerCount} {setMarkerCount} />
+	<Hud {map} fpsCap={60} wheelSpeed={1.0} home={HOME} {markerCount} {setMarkerCount} setMarkersEnabled={setMarkersEnabled} setVectorsEnabled={setVectorsEnabled} />
   {#if map}
     <ZoomControl {map} position="top-right" step={1} />
     <AttributionControl {map} position="bottom-right" text="Hagga Basin tiles © respective owners (game map)" />

@@ -9,6 +9,8 @@
 		home,
 		markerCount,
 		setMarkerCount
+		setMarkersEnabled,
+		setVectorsEnabled
 	} = $props<{
 		map: LeafletMapFacade;
 		fpsCap?: number;
@@ -16,6 +18,8 @@
 		home: { lng: number; lat: number };
 		markerCount: number;
 		setMarkerCount: (n: number) => void;
+		setMarkersEnabled: (on: boolean) => void;
+		setVectorsEnabled: (on: boolean) => void;
 	}>();
 
 	let fps = $state(0);
@@ -26,6 +30,8 @@
 	let wheelSpeed = $state(wheelSpeedInitial);
 	let fpsCap = $state(fpsCapInitial);
 	let gridEnabled = $state(false);
+	let markersEnabled = $state(true);
+	let vectorsEnabled = $state(true);
 	let markersLocal = $state<number>(markerCount ?? 0);
 	let markersDebounce: number | null = null;
 
@@ -81,6 +87,8 @@
 	$effect(() => {
 		map?.setGridVisible(gridEnabled);
 	});
+	$effect(() => { try { setMarkersEnabled?.(markersEnabled); } catch {} });
+	$effect(() => { try { setVectorsEnabled?.(vectorsEnabled); } catch {} });
 
 	function recenter() {
 		if (!map || !home) return;
@@ -152,6 +160,14 @@
 		<label class="flex items-center gap-2">
 			<input class="pointer-events-auto" type="checkbox" bind:checked={gridEnabled} />
 			<span>Show Grid</span>
+		</label>
+		<label class="flex items-center gap-2">
+			<input class="pointer-events-auto" type="checkbox" bind:checked={markersEnabled} />
+			<span>Show Markers</span>
+		</label>
+		<label class="flex items-center gap-2">
+			<input class="pointer-events-auto" type="checkbox" bind:checked={vectorsEnabled} />
+			<span>Show Vectors</span>
 		</label>
 		<div>
 			<label class="block text-gray-700" for="marker-count">Markers</label>
