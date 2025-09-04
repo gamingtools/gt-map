@@ -332,8 +332,8 @@ export default class InputController {
     const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     this._positions.push({ x, y });
     this._times.push(now);
-    // keep only last ~50ms
-    while (this._positions.length > 1 && now - (this._times[0] || 0) > 50) {
+    // keep only last ~120ms (gives touch enough history to estimate velocity)
+    while (this._positions.length > 1 && now - (this._times[0] || 0) > 120) {
       this._positions.shift(); this._times.shift();
     }
   }
@@ -352,7 +352,9 @@ export default class InputController {
     const first = this._positions[firstIdx];
     const lastT = this._times[lastIdx];
     const firstT = this._times[firstIdx];
-    const duration = Math.max(0.001, (lastT - firstT) / 1000);
+    const duration = Math.max(0.008, (lastT - firstT) / 1000);
+    // very small windows produce noisy velocity; skip
+    if (duration < 0.02) return;
     const dir = { x: last.x - first.x, y: last.y - first.y };
     // Require a small displacement minimum to avoid accidental throws
     const disp = Math.hypot(dir.x, dir.y);
@@ -360,14 +362,18 @@ export default class InputController {
     const speedVec = { x: (dir.x * ease) / duration, y: (dir.y * ease) / duration };
     const speed = Math.hypot(speedVec.x, speedVec.y);
     // On recent touch, cap inertia speed to a lower value for comfort
-    const touchRecent = (now - this.lastTouchAt) < 200;
-    const localMax = touchRecent ? Math.min(maxSpeed, 900) : maxSpeed;
+    const touchRecent = (now - this.lastTouchAt) < 250;
+    // Allow a bit higher cap for deliberate touch flicks
+    const localMax = touchRecent ? Math.min(maxSpeed, 1400) : maxSpeed;
     const limited = Math.min(localMax, speed);
     if (DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel, duration, samples: this._positions.length });
     if (!isFinite(limited) || limited <= 0) return;
     const scale = (limited / speed) || 0;
     const limitedVec = { x: speedVec.x * scale, y: speedVec.y * scale };
-    const decelDuration = limited / (decel * ease);
+    let decelDuration = limited / (decel * ease);
+    // Ensure touch throws are not too short
+    if (touchRecent) decelDuration = Math.max(0.45, decelDuration);
+    decelDuration = Math.min(1.5, decelDuration);
     // offset is negative half of deceleration impulse
     const offset = { x: Math.round(limitedVec.x * (-decelDuration / 2)), y: Math.round(limitedVec.y * (-decelDuration / 2)) };
     if (DEBUG) console.debug('[inertia] offset', { offset, decelDuration });
