@@ -119,8 +119,6 @@ export default class MapRenderer {
 			gl.uniform1f((ctx.loc as any).u_alpha, 1.0);
 		}
 
-			// Update screen cache BEFORE drawing icons so cached frame contains raster only
-			if (ctx.useScreenCache && ctx.screenCache) (ctx.screenCache as any).update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.canvas);
 			// Draw icon markers after all tile layers so they are not faded by blended tiles
 			if (ctx.icons) {
 			// Ensure alpha is 1 for icons
@@ -142,6 +140,8 @@ export default class MapRenderer {
 				wrapX: ctx.wrapX,
 			});
 			}
+			// Update screen cache after full draw so it matches the frame
+			if (ctx.useScreenCache && ctx.screenCache) (ctx.screenCache as any).update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.canvas);
 		if (opts?.cancelUnwanted) opts.cancelUnwanted();
 	}
 	dispose() {}
