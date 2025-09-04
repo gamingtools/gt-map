@@ -111,6 +111,12 @@ export class ZoomControl extends Control {
     this._onZoomIn = undefined;
     this._onZoomOut = undefined;
   }
+
+  public setStep(step: number): this {
+    const v = Number.isFinite(step) ? (step as number) : 1;
+    this._step = v;
+    return this;
+  }
 }
 
 // Attribution control
