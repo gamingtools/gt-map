@@ -25,19 +25,14 @@ export default class MapRenderer {
 		if (!(ctx.prog && ctx.loc && ctx.quad)) return;
 		if (opts?.clearWanted) opts.clearWanted();
 		if (opts?.stepAnimation) opts.stepAnimation();
-		const zIntActual = Math.floor(ctx.zoom);
-		const baseZ = zIntActual;
+		const { zInt: baseZ, scale } = Coords.zParts(ctx.zoom);
 		const rect = ctx.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
-		const scale = Math.pow(2, ctx.zoom - baseZ);
-		const centerWorld = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
-		let tlWorld = {
-			x: centerWorld.x - widthCSS / (2 * scale),
-			y: centerWorld.y - heightCSS / (2 * scale),
-		};
+		const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
+		let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
 		// Snap tlWorld to device pixel grid to stabilize sampling during pan
-		const snap = (v: number) => Math.round(v * scale * ctx.dpr) / (scale * ctx.dpr);
+		const snap = (v: number) => Coords.snapLevelToDevice(v, scale, ctx.dpr);
 		tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 		gl.useProgram(ctx.prog);
 		gl.bindBuffer(gl.ARRAY_BUFFER, ctx.quad);
@@ -57,11 +52,8 @@ export default class MapRenderer {
 			for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
 				const centerL = ctx.project(ctx.center.lng, ctx.center.lat, lvl);
 				const scaleL = Math.pow(2, ctx.zoom - lvl);
-				let tlL = {
-					x: centerL.x - widthCSS / (2 * scaleL),
-					y: centerL.y - heightCSS / (2 * scaleL),
-				};
-				const snapL = (v: number) => Math.round(v * scaleL * ctx.dpr) / (scaleL * ctx.dpr);
+				let tlL = Coords.tlLevelForWithScale(centerL, scaleL, { x: widthCSS, y: heightCSS });
+				const snapL = (v: number) => Coords.snapLevelToDevice(v, scaleL, ctx.dpr);
 				tlL = { x: snapL(tlL.x), y: snapL(tlL.y) };
 				const covL = (ctx.raster as any).coverage(ctx.tileCache as any, lvl, tlL, scaleL, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, (ctx as any).sourceMaxZoom);
 				// Backfill lower levels at full raster opacity
@@ -104,11 +96,8 @@ export default class MapRenderer {
 		if (zIntNext > baseZ && frac > 0) {
 			const centerN = ctx.project(ctx.center.lng, ctx.center.lat, zIntNext);
 			const scaleN = Math.pow(2, ctx.zoom - zIntNext);
-			let tlN = {
-				x: centerN.x - widthCSS / (2 * scaleN),
-				y: centerN.y - heightCSS / (2 * scaleN),
-			};
-			const snapN = (v: number) => Math.round(v * scaleN * ctx.dpr) / (scaleN * ctx.dpr);
+			let tlN = Coords.tlLevelForWithScale(centerN, scaleN, { x: widthCSS, y: heightCSS });
+			const snapN = (v: number) => Coords.snapLevelToDevice(v, scaleN, ctx.dpr);
 			tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };
 			const baseAlpha = Math.max(0, Math.min(1, frac));
 			const layerAlpha = Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0));

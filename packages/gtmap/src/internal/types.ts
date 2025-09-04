@@ -33,8 +33,12 @@ export interface TileDeps {
 	getLastInteractAt(): number;
 	getZoom(): number;
 	getMaxZoom(): number;
+	getImageMaxZoom(): number;
 	getCenter(): LngLat;
 	getTileSize(): number;
+	getMapSize(): { width: number; height: number };
+	getWrapX(): boolean;
+	getViewportSizeCSS(): { width: number; height: number };
 	startImageLoad(task: { key: string; url: string }): void;
 	addPinned(key: string): void;
 }
@@ -126,7 +130,7 @@ export interface MapImpl {
 	setZoom(z: number): void;
 	setTileSource(opts: { url?: string; tileSize?: number; sourceMinZoom?: number; sourceMaxZoom?: number; mapSize?: { width: number; height: number }; wrapX?: boolean; clearCache?: boolean }): void;
 	setRasterOpacity(v: number): void;
-	setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number }): void;
+	setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number; ring?: number }): void;
 	setGridVisible(on: boolean): void;
 	setInertiaOptions(opts: { inertia?: boolean; inertiaDeceleration?: number; inertiaMaxSpeed?: number; easeLinearity?: number }): void;
 	setFpsCap(v: number): void;

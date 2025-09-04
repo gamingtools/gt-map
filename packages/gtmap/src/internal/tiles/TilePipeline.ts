@@ -12,7 +12,7 @@ export default class TilePipeline {
 		this.queue = new TileQueue();
 	}
 
-	enqueue(z: number, x: number, y: number, priority = 1) {
+		enqueue(z: number, x: number, y: number, priority = 1) {
 		const key = tileKeyOf(z, x, y);
 		if (this.deps.hasTile(key) || this.deps.isPending(key) || this.queue.has(key)) return;
 		const url = this.deps.urlFor(z, x, y);
@@ -31,17 +31,17 @@ export default class TilePipeline {
 		this.queue = new TileQueue();
 	}
 
-	scheduleBaselinePrefetch(level: number) {
+		scheduleBaselinePrefetch(level: number, ring?: number) {
 		// Prefetch a small ring around the current center at the given level
 		const z = level;
 		const c = this.deps.getCenter();
-		const zMax = this.deps.getMaxZoom();
+		const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
 		const TS = this.deps.getTileSize();
 		const s = Math.pow(2, zMax - z);
 		const centerLevel = { x: c.lng / s, y: c.lat / s };
 		const cx = Math.floor(centerLevel.x / TS);
 		const cy = Math.floor(centerLevel.y / TS);
-		const R = 2; // 5x5 ring around center
+		const R = Number.isFinite(ring as number) ? Math.max(0, Math.min(8, (ring as number) | 0)) : 2; // default 5x5
 		for (let dy = -R; dy <= R; dy++) {
 			for (let dx = -R; dx <= R; dx++) {
 				const tx = cx + dx;
@@ -60,7 +60,7 @@ export default class TilePipeline {
 			const idle = now - this.deps.getLastInteractAt() > this.deps.getInteractionIdleMs();
 			const baseZ = Math.floor(this.deps.getZoom());
 			const c = this.deps.getCenter();
-			const zMax = this.deps.getMaxZoom();
+			const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
 			const s0 = Math.pow(2, zMax - baseZ);
 			const centerWorld = { x: c.lng / s0, y: c.lat / s0 } as any;
 			const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());

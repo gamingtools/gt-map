@@ -1,4 +1,5 @@
 import Impl from '../mapgl';
+import * as Coords from '../coords';
 import type { MapImpl } from '../types';
 import type { EventBus } from '../events/stream';
 
@@ -36,6 +37,7 @@ export default class LeafletMapFacade {
 	private _map: MapImpl;
 	private _listeners = new Map<string, Set<Listener>>();
 	private _layers = new Set<any>();
+	private _eventUnsubs: Array<() => void> = [];
 
 	constructor(container: HTMLElement | string, options?: LeafletMapOptions) {
 		const el = typeof container === 'string' ? document.getElementById(container)! : (container as HTMLElement);
@@ -65,11 +67,11 @@ export default class LeafletMapFacade {
 		if (Object.keys(inertiaOpts).length > 0) {
 			(this._map as any).setInertiaOptions?.(inertiaOpts);
 		}
-		// Wire core events
-		this._map.events.on('move').each((e: any) => this._emit('move', e));
-		this._map.events.on('moveend').each((e: any) => this._emit('moveend', e));
-		this._map.events.on('zoom').each((e: any) => this._emit('zoom', e));
-		this._map.events.on('zoomend').each((e: any) => this._emit('zoomend', e));
+		// Wire core events and track unsubs for cleanup
+		this._eventUnsubs.push(this._map.events.on('move').each((e: any) => this._emit('move', e)));
+		this._eventUnsubs.push(this._map.events.on('moveend').each((e: any) => this._emit('moveend', e)));
+		this._eventUnsubs.push(this._map.events.on('zoom').each((e: any) => this._emit('zoom', e)));
+		this._eventUnsubs.push(this._map.events.on('zoomend').each((e: any) => this._emit('zoomend', e)));
 	}
 
 	// API
@@ -137,8 +139,7 @@ export default class LeafletMapFacade {
 		const h = Math.max(1, el.clientHeight || el.getBoundingClientRect().height || 1);
 		const z = this._map.zoom;
 		const c = this._map.center as { lng: number; lat: number };
-		const zMax = (this._map as any).maxZoom as number;
-		const scale = Math.pow(2, z - zMax);
+		const { scale } = Coords.zParts(z);
 		const halfW = w / (2 * scale);
 		const halfH = h / (2 * scale);
 		const sw = { lat: c.lat + halfH, lng: c.lng - halfW };
@@ -167,12 +168,11 @@ export default class LeafletMapFacade {
 		void w;
 		void h;
 		const z = this._map.zoom;
-		const baseZ = Math.floor(z);
-		const scale = Math.pow(2, z - baseZ);
+		const { zInt: baseZ, scale } = Coords.zParts(z);
 		const dx = Array.isArray(offset) ? offset[0] : offset.x;
 		const dy = Array.isArray(offset) ? offset[1] : offset.y;
-		const zMax = (this._map as any).maxZoom as number;
-		const s = Math.pow(2, zMax - baseZ);
+		const zImg: number = (this._map as any)._sourceMaxZoom ?? (this._map as any).maxZoom;
+		const s = Coords.sFor(zImg, baseZ);
 		const c = this._map.center as { lng: number; lat: number };
 		const cw = { x: c.lng / s, y: c.lat / s };
 		const nx = cw.x + dx / scale;
@@ -225,9 +225,24 @@ export default class LeafletMapFacade {
 		(this._map as any).setInertiaOptions?.(opts);
 		return this;
 	}
+		// Non-Leaflet extension: configure tile prefetch behavior
+		setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number; ring?: number }): this {
+			(this._map as any).setPrefetchOptions?.(opts);
+			return this;
+		}
 	remove() {
+		// Unsubscribe bridged event listeners
+		for (const off of this._eventUnsubs.splice(0)) {
+			try { off(); } catch {}
+		}
+		// Remove all layers
+		if (this._layers.size) {
+			for (const l of Array.from(this._layers)) {
+				try { (l as any)?.remove?.(); } catch {}
+			}
+		}
 		this._listeners.clear();
-		(this._map as any).destroy?.();
+		try { (this._map as any).destroy?.(); } catch {}
 		return this;
 	}
 

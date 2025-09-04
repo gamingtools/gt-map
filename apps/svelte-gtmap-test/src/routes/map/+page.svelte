@@ -2,10 +2,10 @@
 	type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
 
 	import { onMount, onDestroy } from 'svelte';
-import { L, type LeafletMapFacade } from '@gtmap';
-    import Hud from '$lib/Hud.svelte';
-    import ZoomControl from '$lib/ZoomControl.svelte';
-    import AttributionControl from '$lib/AttributionControl.svelte';
+	import { L, type LeafletMapFacade } from '@gtmap';
+	import Hud from '$lib/Hud.svelte';
+	import ZoomControl from '$lib/ZoomControl.svelte';
+	import AttributionControl from '$lib/AttributionControl.svelte';
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
 
@@ -14,7 +14,7 @@ import { L, type LeafletMapFacade } from '@gtmap';
 	let gridLayer: any | null = null;
 	let leafletMarkers: Array<any> = [];
 	let markerGroup: any | null = null;
-  let vectorLayers: Array<any> = [];
+	let vectorLayers: Array<any> = [];
 
 	const HOME = { lng: 4096, lat: 4096 };
 
@@ -41,7 +41,7 @@ import { L, type LeafletMapFacade } from '@gtmap';
 		}
 		clearLeafletMarkers();
 		// Create an empty group and add it first so per-batch addLayer goes to map
-		markerGroup = (L as any).layerGroup();
+		markerGroup = L.layerGroup();
 		markerGroup.addTo(map);
 		const iconCache: Record<string, any> = {};
 		const CREATE_BATCH = 10000;
@@ -61,6 +61,9 @@ import { L, type LeafletMapFacade } from '@gtmap';
 				const m = L.marker([rand(0, 8192), rand(0, 8192)], { icon });
 				m.on('click', (ev: any) => {
 					console.log('marker click', ev);
+				});
+				m.on('mouseover', (ev: any) => {
+					console.log('marker mouseover', ev);
 				});
 				markerGroup.addLayer(m);
 				leafletMarkers.push(m);
@@ -96,73 +99,101 @@ import { L, type LeafletMapFacade } from '@gtmap';
 		}
 	}
 
-
 	function addVectors(): void {
 		if (!map) return;
 		try {
 			const vLine = L.polyline(
-				[[1000, 1000], [2000, 1400], [3000, 1200]],
+				[
+					[1000, 1000],
+					[2000, 1400],
+					[3000, 1200]
+				],
 				{ color: '#1e90ff', weight: 2, opacity: 0.9 }
-			).addTo(map as any);
+			).addTo(map);
 			const vPoly = L.polygon(
-				[[2600, 2600], [3000, 3000], [2600, 3200], [2300, 3000]],
-				{ color: '#10b981', weight: 2, opacity: 0.9, fill: true, fillColor: '#10b981', fillOpacity: 0.25 }
-			).addTo(map as any);
+				[
+					[2600, 2600],
+					[3000, 3000],
+					[2600, 3200],
+					[2300, 3000]
+				],
+				{
+					color: '#10b981',
+					weight: 2,
+					opacity: 0.9,
+					fill: true,
+					fillColor: '#10b981',
+					fillOpacity: 0.25
+				}
+			).addTo(map);
 			const vRect = L.rectangle(
-				[[1200, 3800], [1800, 4400]],
-				{ color: '#ef4444', weight: 2, opacity: 0.9, fill: true, fillColor: '#ef4444', fillOpacity: 0.2 }
-			).addTo(map as any);
-			const vCircle = L.circle(
-				[4096, 4096],
-				{ color: '#f59e0b', weight: 2, opacity: 0.9, fill: true, fillColor: '#f59e0b', fillOpacity: 0.2, radius: 200 }
-			).addTo(map as any);
+				[
+					[1200, 3800],
+					[1800, 4400]
+				],
+				{
+					color: '#ef4444',
+					weight: 2,
+					opacity: 0.9,
+					fill: true,
+					fillColor: '#ef4444',
+					fillOpacity: 0.2
+				}
+			).addTo(map);
+			const vCircle = L.circle([4096, 4096], {
+				color: '#f59e0b',
+				weight: 2,
+				opacity: 0.9,
+				fill: true,
+				fillColor: '#f59e0b',
+				fillOpacity: 0.2,
+				radius: 200
+			}).addTo(map);
 			vectorLayers.push(vLine, vPoly, vRect, vCircle);
 		} catch {}
 	}
 
 	function clearVectors(): void {
 		if (!vectorLayers.length) return;
-		for (const v of vectorLayers) { try { v?.remove?.(); } catch {} }
+		for (const v of vectorLayers) {
+			try {
+				v?.remove?.();
+			} catch {}
+		}
 		vectorLayers = [];
 	}
 
 	function setMarkersEnabled(on: boolean): void {
-		if (on) applyMarkerCount(markerCount); else clearLeafletMarkers();
+		if (on) applyMarkerCount(markerCount);
+		else clearLeafletMarkers();
 	}
 
-	function setVectorsEnabled(on: boolean): void { if (on) addVectors(); else clearVectors(); }
+	function setVectorsEnabled(on: boolean): void {
+		if (on) addVectors();
+		else clearVectors();
+	}
 
 	onMount(() => {
 		if (!container) return;
-		const HAGGA = {
-			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
-			minZoom: 0,
-			maxZoom: 5,
-			noWrap: true,
-			bounds: [[0, 0], [8192, 8192]] as [[number, number], [number, number]]
-		};
-		// Full image bounds (pixel CRS): 0..8192 for 8k base (256 * 2^5)
-		const BOUNDS: [[number, number], [number, number]] = [
-			[0, 0],
-			[8192, 8192]
-		];
+
 		map = L.map(container, {
 			center: HOME,
 			zoom: 2,
-			minZoom: HAGGA.minZoom,
+			minZoom: 0,
 			maxZoom: 10,
 			fpsCap: 60
-			//   maxBounds: BOUNDS,
-			//   maxBoundsViscosity: 1,
-			//   bounceAtZoomLimits: true
 		});
-		L.tileLayer(HAGGA.url, {
-			minZoom: HAGGA.minZoom,
-			maxZoom: HAGGA.maxZoom,
+		map.setPrefetchOptions({ enabled: true, baselineLevel: 2, ring: 0 });
+		L.tileLayer('https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp', {
+			minZoom: 0,
+			maxZoom: 5,
 			tileSize: 256,
 			tms: false,
 			noWrap: true,
-			bounds: HAGGA.bounds
+			bounds: [
+				[0, 0],
+				[8192, 8192]
+			]
 		}).addTo(map!);
 
 		gridLayer = L.grid();
@@ -187,48 +218,52 @@ import { L, type LeafletMapFacade } from '@gtmap';
 			usedWindowResize = true;
 		}
 		applyMarkerCount(markerCount);
-    addVectors();
+		addVectors();
+
+		map.events.on('pointerup').each((e) => console.log('up', e));
 
 		// Teardown on navigation/unmount per Svelte docs
 
 		// Teardown on navigation/unmount per Svelte docs
-		onDestroy(() => {
-			console.log('GTMap Svelte unmounting');
-			try {
-				gridLayer?.remove?.();
-			} catch {}
-			try {
-				clearLeafletMarkers();
-			} catch {}
-			try { clearVectors(); } catch {}
-			try {
-				map?.remove?.();
-			} catch {}
-			if (resizeTimer) {
+		return () => {
+			map?.remove?.();
+			if (ro) {
 				try {
-					clearTimeout(resizeTimer);
+					ro.disconnect();
 				} catch {}
+				ro = null;
+			}
+			if (usedWindowResize) {
+				window.removeEventListener('resize', scheduleInvalidate);
+				usedWindowResize = false;
+			}
+			if (resizeTimer) {
+				clearTimeout(resizeTimer);
 				resizeTimer = null;
 			}
-			try {
-				ro?.disconnect?.();
-			} catch {}
-			if (usedWindowResize) {
-				try {
-					window.removeEventListener('resize', scheduleInvalidate);
-				} catch {}
-			}
-			console.log('GTMap Svelte unmounted');
-		});
+		};
 	});
 </script>
 
 <div bind:this={container} class="map">
-	<Hud {map} fpsCap={60} wheelSpeed={1.0} home={HOME} {markerCount} {setMarkerCount} setMarkersEnabled={setMarkersEnabled} setVectorsEnabled={setVectorsEnabled} />
-  {#if map}
-    <ZoomControl {map} position="top-right" step={1} />
-    <AttributionControl {map} position="bottom-right" text="Hagga Basin tiles © respective owners (game map)" />
-  {/if}
+	<Hud
+		{map}
+		fpsCap={60}
+		wheelSpeed={1.0}
+		home={HOME}
+		{markerCount}
+		{setMarkerCount}
+		{setMarkersEnabled}
+		{setVectorsEnabled}
+	/>
+	{#if map}
+		<ZoomControl {map} position="top-right" step={1} />
+		<AttributionControl
+			{map}
+			position="bottom-right"
+			text="Hagga Basin tiles © respective owners (game map)"
+		/>
+	{/if}
 </div>
 
 <style>

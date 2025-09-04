@@ -61,20 +61,30 @@ export default class InputController {
 			const rect = deps.getContainer().getBoundingClientRect();
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
-			deps.emit('pointerdown', { x: px, y: py, view: deps.getView(), originalEvent: e });
+			const view = deps.getView();
+			const widthCSS = rect.width, heightCSS = rect.height;
+			const zImg = deps.getImageMaxZoom();
+			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
+			deps.emit('pointerdown', {
+				x: px,
+				y: py,
+				world: { x: wNat.x, y: wNat.y },
+				latlng: { lat: wNat.y, lng: wNat.x },
+				view: deps.getView(),
+				originalEvent: e,
+			});
 		};
 
 		const onMove = (e: PointerEvent) => {
 			deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 			const view = deps.getView();
-			const zInt = Math.floor(view.zoom);
+			const { zInt, scale } = Coords.zParts(view.zoom);
 			const rect = deps.getContainer().getBoundingClientRect();
-			const scale = Math.pow(2, view.zoom - zInt);
 			// screen-locked panning while dragging (Leaflet-like)
 			const widthCSS = rect.width,
 				heightCSS = rect.height;
 			const zImg = deps.getImageMaxZoom();
-			const s0 = Math.pow(2, zImg - zInt);
+			const s0 = Coords.sFor(zImg, zInt);
 			const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
 			// record position for inertia
 			this._pushSample(e.clientX - rect.left, e.clientY - rect.top);
@@ -86,20 +96,34 @@ export default class InputController {
 			if (this.dragging) {
 				deps.updatePointerAbs(wNat.x, wNat.y);
 				try {
-					deps.emit('pointermove', { x: px, y: py, view: deps.getView(), originalEvent: e });
+					deps.emit('pointermove', {
+						x: px,
+						y: py,
+						world: { x: wNat.x, y: wNat.y },
+						latlng: { lat: wNat.y, lng: wNat.x },
+						view: deps.getView(),
+						originalEvent: e,
+					});
 				} catch {}
 			} else {
 				if (inside) {
 					deps.updatePointerAbs(wNat.x, wNat.y);
 					this.over = true;
 					try {
-						deps.emit('pointermove', { x: px, y: py, view: deps.getView(), originalEvent: e });
+						deps.emit('pointermove', {
+							x: px,
+							y: py,
+							world: { x: wNat.x, y: wNat.y },
+							latlng: { lat: wNat.y, lng: wNat.x },
+							view: deps.getView(),
+							originalEvent: e,
+						});
 					} catch {}
 				} else if (this.over) {
 					deps.updatePointerAbs(null, null);
 					this.over = false;
 					try {
-						deps.emit('pointermove', { x: -1, y: -1, view: deps.getView(), originalEvent: e });
+						deps.emit('pointermove', { x: -1, y: -1, world: null, latlng: null, view: deps.getView(), originalEvent: e });
 					} catch {}
 				}
 			}
@@ -128,7 +152,18 @@ export default class InputController {
 			const rect = deps.getContainer().getBoundingClientRect();
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
-			deps.emit('pointerup', { x: px, y: py, view: deps.getView(), originalEvent: e });
+			const view = deps.getView();
+			const widthCSS = rect.width, heightCSS = rect.height;
+			const zImg = deps.getImageMaxZoom();
+			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
+			deps.emit('pointerup', {
+				x: px,
+				y: py,
+				world: { x: wNat.x, y: wNat.y },
+				latlng: { lat: wNat.y, lng: wNat.x },
+				view: deps.getView(),
+				originalEvent: e,
+			});
 			if (DEBUG) console.debug('[inertia] pointerup');
 			this.inertiaActive = false;
 			this._maybeStartInertia();
@@ -231,13 +266,12 @@ export default class InputController {
 				touchState.x = t.clientX;
 				touchState.y = t.clientY;
 				const view = deps.getView();
-				const zInt = Math.floor(view.zoom);
+				const { zInt, scale } = Coords.zParts(view.zoom);
 				const rect = deps.getContainer().getBoundingClientRect();
-				const scale = Math.pow(2, view.zoom - zInt);
 				const widthCSS = rect.width,
 					heightCSS = rect.height;
 				const zImg = deps.getImageMaxZoom();
-				const s0 = Math.pow(2, zImg - zInt);
+				const s0 = Coords.sFor(zImg, zInt);
 				const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
 				this._pushSample(t.clientX - rect.left, t.clientY - rect.top);
 				let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };

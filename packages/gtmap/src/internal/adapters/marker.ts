@@ -29,7 +29,7 @@ export class LeafletMarkerFacade extends Layer {
 	private _impl: Impl | null = null;
 	private _hitW = 32;
 	private _hitH = 32;
-	private _listeners = new Map<string, Set<(e: any) => void>>();
+	private _listeners = new Map<MarkerEventName, Set<(e: MarkerMouseEvent) => void>>();
 
 	constructor(latlng: LeafletLatLng, options?: MarkerOptions) {
 		super();
@@ -86,13 +86,13 @@ export class LeafletMarkerFacade extends Layer {
 		return { w: this._hitW, h: this._hitH };
 	}
 
-	// Leaflet-like events API
-	on(name: string, fn: (e: any) => void): this {
+	// Leaflet-like events API (typed)
+	on(name: MarkerEventName, fn: (e: MarkerMouseEvent) => void): this {
 		if (!this._listeners.has(name)) this._listeners.set(name, new Set());
 		this._listeners.get(name)!.add(fn);
 		return this;
 	}
-	off(name: string, fn?: (e: any) => void): this {
+	off(name: MarkerEventName, fn?: (e: MarkerMouseEvent) => void): this {
 		const s = this._listeners.get(name);
 		if (!s) return this;
 		if (!fn) {
@@ -102,7 +102,7 @@ export class LeafletMarkerFacade extends Layer {
 		s.delete(fn);
 		return this;
 	}
-	__fire(name: string, payload: any): void {
+	__fire(name: MarkerEventName, payload: MarkerMouseEvent): void {
 		const s = this._listeners.get(name);
 		if (!s || s.size === 0) return;
 		for (const cb of Array.from(s)) {
@@ -191,9 +191,27 @@ function hookMapPointerEvents(map: Impl) {
 	} catch {}
 }
 
-type MapPointerEvent = { x: number; y: number; view: any; originalEvent?: any };
+type MapPointerEvent = { x: number; y: number; view: any; originalEvent?: PointerEvent | MouseEvent };
 
-function buildMouseEvent(m: LeafletMarkerFacade, type: string, e: MapPointerEvent) {
+export type MarkerEventName = 'click' | 'dblclick' | 'mousedown' | 'mouseup' | 'mouseover' | 'mouseout' | 'mousemove' | 'contextmenu';
+
+export type MarkerMouseEvent = {
+	// Event meta
+	type: MarkerEventName;
+	// Targets
+	target: LeafletMarkerFacade;
+	sourceTarget: LeafletMarkerFacade;
+	propagatedFrom?: undefined;
+	layer?: undefined;
+	// Positions (Leaflet-like names; Pixel-CRS lat=Y, lng=X)
+	latlng: { lat: number; lng: number };
+	layerPoint: { x: number; y: number };
+	containerPoint: { x: number; y: number };
+	// Original DOM event when available
+	originalEvent?: PointerEvent | MouseEvent;
+};
+
+function buildMouseEvent(m: LeafletMarkerFacade, type: MarkerEventName, e: MapPointerEvent): MarkerMouseEvent {
 	const latlngObj = { lat: m.__getLngLat().lat, lng: m.__getLngLat().lng };
 	const containerPoint = { x: e.x, y: e.y };
 	const layerPoint = { x: e.x, y: e.y };

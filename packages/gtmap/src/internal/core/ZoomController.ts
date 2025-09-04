@@ -92,18 +92,14 @@ export default class ZoomController {
 		const map = this.deps.getMap();
 		// Respect the requested anchor; default is 'pointer'.
 		const anchorEff: 'pointer' | 'center' = anchor;
-		const zInt = Math.floor(map.zoom);
-		const scale = Math.pow(2, map.zoom - zInt);
+		const { zInt, scale } = Coords.zParts(map.zoom);
 		const rect = map.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
 		const zImg = this.deps.getImageMaxZoom();
-		const s0 = Math.pow(2, zImg - zInt);
+		const s0 = Coords.sFor(zImg, zInt);
 		const centerNow = { x: map.center.lng / s0, y: map.center.lat / s0 };
-		const tlWorld = {
-			x: centerNow.x - widthCSS / (2 * scale),
-			y: centerNow.y - heightCSS / (2 * scale),
-		};
+		const tlWorld = Coords.tlLevelFor(centerNow, map.zoom, { x: widthCSS, y: heightCSS });
 		let zClamped = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), targetZoom));
 		// If maxBounds are set, prevent zooming out beyond bounds (Leaflet-like)
 		try {
@@ -122,8 +118,7 @@ export default class ZoomController {
 				if (isFinite(minZByBounds)) zClamped = Math.max(zClamped, minZByBounds);
 			}
 		} catch {}
-		const zInt2 = Math.floor(zClamped);
-		const s2 = Math.pow(2, zClamped - zInt2);
+		const { zInt: zInt2, scale: s2 } = Coords.zParts(zClamped);
 		let center2: { x: number; y: number };
 		if (anchorEff === 'center') {
 			const factor = Math.pow(2, zInt2 - zInt);
@@ -147,7 +142,7 @@ export default class ZoomController {
 			}
 		}
 		center2 = this.deps.clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
-		const s2f = Math.pow(2, zImg - zInt2);
+		const s2f = Coords.sFor(zImg, zInt2);
 		map.center = { lng: center2.x * s2f, lat: center2.y * s2f };
 		map.zoom = zClamped;
 		if (DEBUG)

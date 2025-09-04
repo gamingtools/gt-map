@@ -42,7 +42,7 @@ export type MapOptions = {
 	maxTiles?: number;
 	maxInflightLoads?: number;
 	interactionIdleMs?: number;
-	prefetch?: { enabled?: boolean; baselineLevel?: number };
+	prefetch?: { enabled?: boolean; baselineLevel?: number; ring?: number };
 	screenCache?: boolean;
 	wheelSpeedCtrl?: number;
 	// Leaflet-like bounds
@@ -229,6 +229,7 @@ export default class GTMap implements MapImpl {
 	private _pinnedKeys = new Set<string>();
 	private prefetchEnabled = false;
 	private prefetchBaselineLevel: number | null = null;
+	private prefetchRing: number = 2;
 	// Wheel coalescing + velocity tail
 	// removed: legacy wheel coalescing fields (handled via easing)
 	private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = {
@@ -280,6 +281,7 @@ export default class GTMap implements MapImpl {
 		if (options.prefetch) {
 			if (typeof options.prefetch.enabled === 'boolean') this.prefetchEnabled = options.prefetch.enabled;
 			if (Number.isFinite(options.prefetch.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (options.prefetch.baselineLevel as number) | 0);
+			if (Number.isFinite(options.prefetch.ring as number)) this.prefetchRing = Math.max(0, Math.min(8, (options.prefetch.ring as number) | 0));
 		}
 		if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
 		if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
@@ -301,8 +303,15 @@ export default class GTMap implements MapImpl {
 			getLastInteractAt: () => this._lastInteractAt,
 			getZoom: () => this.zoom,
 			getMaxZoom: () => this.maxZoom,
+			getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
 			getCenter: () => this.center,
 			getTileSize: () => this.tileSize,
+			getMapSize: () => this.mapSize,
+			getWrapX: () => this.wrapX,
+			getViewportSizeCSS: () => {
+				const r = this.container.getBoundingClientRect();
+				return { width: Math.max(1, r.width), height: Math.max(1, r.height) };
+			},
 			startImageLoad: ({ key, url }: { key: string; url: string }) => this._loader.start({ key, url }),
 			addPinned: (key: string) => {
 				this._pinnedKeys.add(key);
@@ -389,13 +398,12 @@ export default class GTMap implements MapImpl {
 	setCenter(lng: number, lat: number) {
 		// If bounds are set, strictly clamp center against bounds (Leaflet-like)
 		if (this._maxBoundsPx) {
-			const zInt = Math.floor(this.zoom);
-			const scale = Math.pow(2, this.zoom - zInt);
+			const { zInt, scale } = Coords.zParts(this.zoom);
 			const rect = this.container.getBoundingClientRect();
 			const wCSS = rect.width,
 				hCSS = rect.height;
 			const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-			const s0 = Math.pow(2, imageMaxZ - zInt);
+			const s0 = Coords.sFor(imageMaxZ, zInt);
 			const cw = { x: lng / s0, y: lat / s0 };
 			const clamped = clampCenterWorldCore(cw, zInt, scale, wCSS, hCSS, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false);
 			this.center.lng = clamped.x * s0;
@@ -437,13 +445,14 @@ export default class GTMap implements MapImpl {
 		// Optional baseline prefetch
 		if (this.prefetchEnabled && Number.isFinite(this.prefetchBaselineLevel as number)) {
 			try {
-				this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel as number);
+				this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel as number, this.prefetchRing);
 			} catch {}
 		}
 		this._needsRender = true;
 	}
 	// Marker icons API (simple, high-performance batch per type)
 	async setIconDefs(defs: Record<string, IconDefInput>) {
+		if (!this._icons) return;
 		await this._icons.loadIcons(defs);
 		// Icon atlases changed; invalidate screen cache to avoid ghosting
 		try {
@@ -452,6 +461,7 @@ export default class GTMap implements MapImpl {
 		this._needsRender = true;
 	}
 	setMarkers(markers: MarkerInput[]) {
+		if (!this._icons) return;
 		this._icons.setMarkers(markers as any);
 		// Marker set changed; invalidate screen cache so removed markers don't linger
 		try {
@@ -484,6 +494,7 @@ export default class GTMap implements MapImpl {
 	}
 	// recenter helper removed from public surface; use setCenter/setView via facade
 	destroy() {
+		if (this._frameLoop) { try { this._frameLoop.stop(); } catch {} this._frameLoop = null; }
 		if (this._raf != null) {
 			cancelAnimationFrame(this._raf);
 			this._raf = null;
@@ -526,6 +537,14 @@ export default class GTMap implements MapImpl {
 			} catch {}
 			this.gridCanvas = null;
 			this._gridCtx = null;
+			if (this.vectorCanvas) {
+				try {
+					this.vectorCanvas.remove();
+				} catch {}
+				this.vectorCanvas = null;
+				this._vectorCtx = null;
+				this._vectors = [];
+			}
 		}
 	}
 
@@ -705,9 +724,10 @@ export default class GTMap implements MapImpl {
 		if (Number.isFinite(opts.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (opts.interactionIdleMs as number) | 0);
 		this._needsRender = true;
 	}
-	public setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number }) {
+	public setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number; ring?: number }) {
 		if (typeof opts.enabled === 'boolean') this.prefetchEnabled = opts.enabled;
 		if (Number.isFinite(opts.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (opts.baselineLevel as number) | 0);
+		if (Number.isFinite(opts.ring as number)) this.prefetchRing = Math.max(0, Math.min(8, (opts.ring as number) | 0));
 	}
 	public setMaxBoundsPx(bounds: { minX: number; minY: number; maxX: number; maxY: number } | null) {
 		this._maxBoundsPx = bounds ? { ...bounds } : null;
@@ -789,19 +809,15 @@ export default class GTMap implements MapImpl {
 		} catch {}
 		if (this.showGrid) {
 			const rect = this.container.getBoundingClientRect();
-			const baseZ = Math.floor(this.zoom);
-			const scale = Math.pow(2, this.zoom - baseZ);
+			const { zInt: baseZ, scale } = Coords.zParts(this.zoom);
 			const widthCSS = rect.width;
 			const heightCSS = rect.height;
 			const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-			const s = Math.pow(2, imageMaxZ - baseZ);
-			const centerWorld = { x: this.center.lng / s, y: this.center.lat / s };
-			let tlWorld = {
-				x: centerWorld.x - widthCSS / (2 * scale),
-				y: centerWorld.y - heightCSS / (2 * scale),
-			};
+			const s = Coords.sFor(imageMaxZ, baseZ);
+			const centerLevel = { x: this.center.lng / s, y: this.center.lat / s };
+			let tlWorld = Coords.tlLevelFor(centerLevel, this.zoom, { x: widthCSS, y: heightCSS });
 			// Snap to device pixel grid to reduce shimmer during pan
-			const snap = (v: number) => Math.round(v * scale * this._dpr) / (scale * this._dpr);
+			const snap = (v: number) => Coords.snapLevelToDevice(v, scale, this._dpr);
 			tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize);
 		}
@@ -830,7 +846,8 @@ export default class GTMap implements MapImpl {
 
 	// Finite-world center anchoring hysteresis
 	private _viewportCoverageRatio(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
-		const s = Math.pow(2, this.maxZoom - zInt);
+		const zImg = (this._sourceMaxZoom || this.maxZoom) as number;
+		const s = Coords.sFor(zImg, zInt);
 		const levelW = this.mapSize.width / s;
 		const levelH = this.mapSize.height / s;
 		const halfW = widthCSS / (2 * scale);
@@ -875,8 +892,7 @@ export default class GTMap implements MapImpl {
 		const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 		const t = Math.min(1, (now - a.start) / (a.dur * 1000));
 		const p = 1 - Math.pow(1 - t, 3); // easeOutCubic
-		const zInt = Math.floor(this.zoom);
-		const scale = Math.pow(2, this.zoom - zInt);
+		const { zInt, scale } = Coords.zParts(this.zoom);
 		const rect = this.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
@@ -898,7 +914,7 @@ export default class GTMap implements MapImpl {
 			false,
 		);
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-		const s0 = Math.pow(2, imageMaxZ - zInt);
+		const s0 = Coords.sFor(imageMaxZ, zInt);
 		const nx = newCenter.x * s0;
 		const ny = newCenter.y * s0;
 		this.center = { lng: nx, lat: ny };
@@ -911,10 +927,9 @@ export default class GTMap implements MapImpl {
 	}
 
 	private _startPanBy(dxPx: number, dyPx: number, durSec: number) {
-		const zInt = Math.floor(this.zoom);
-		const scale = Math.pow(2, this.zoom - zInt);
+		const { zInt, scale } = Coords.zParts(this.zoom);
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-		const s = Math.pow(2, imageMaxZ - zInt);
+		const s = Coords.sFor(imageMaxZ, zInt);
 		const cw = { x: this.center.lng / s, y: this.center.lat / s };
 		// Use the same screen->world sign convention as during drag updates
 		const offsetWorld = { x: dxPx / scale, y: dyPx / scale };
@@ -992,10 +1007,9 @@ export default class GTMap implements MapImpl {
 		const endX = Math.floor((tl.x + w / scale) / TS) + 1;
 		const endY = Math.floor((tl.y + h / scale) / TS) + 1;
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-		const levelW = Math.ceil(this.mapSize.width / Math.pow(2, imageMaxZ - zInt));
-		const levelH = Math.ceil(this.mapSize.height / Math.pow(2, imageMaxZ - zInt));
-		const NX = Math.ceil(levelW / TS);
-		const NY = Math.ceil(levelH / TS);
+		const counts = Coords.tileCounts(this.mapSize.width, this.mapSize.height, TS, imageMaxZ, zInt);
+		const NX = counts.NX;
+		const NY = counts.NY;
         for (let ty = startY; ty <= endY; ty++) {
 			if (ty < 0 || ty >= NY) continue;
 			for (let tx = startX; tx <= endX; tx++) {

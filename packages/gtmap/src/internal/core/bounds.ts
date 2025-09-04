@@ -1,4 +1,5 @@
 // Bounds utilities using per-instance tile size
+import { sFor } from '../coords';
 
 export function clampCenterWorld(
 	centerWorld: { x: number; y: number },
@@ -19,7 +20,7 @@ export function clampCenterWorld(
 	// If explicit bounds are provided, apply them (Leaflet-like maxBounds behavior)
 	if (maxBoundsPx) {
 		const visc = Math.max(0, Math.min(1, maxBoundsViscosity ?? 0));
-		const s = Math.pow(2, (zMax ?? zInt) - zInt);
+		const s = sFor((zMax ?? zInt) as number, zInt);
 		const minXw = maxBoundsPx.minX / s;
 		const minYw = maxBoundsPx.minY / s;
 		const maxXw = maxBoundsPx.maxX / s;

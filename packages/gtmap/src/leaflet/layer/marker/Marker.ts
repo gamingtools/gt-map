@@ -1,4 +1,9 @@
-import { LeafletMarkerFacade as BaseMarker, type MarkerOptions } from '../../../internal/adapters/marker';
+import {
+	LeafletMarkerFacade as BaseMarker,
+	type MarkerOptions,
+	type MarkerMouseEvent,
+	type MarkerEventName,
+} from '../../../internal/adapters/marker';
 import type { LeafletLatLng } from '../../../internal/adapters/util';
 
 export class Marker extends BaseMarker {
@@ -14,3 +19,4 @@ export function marker(latlng: LeafletLatLng, options?: MarkerOptions): Marker {
 // Public types
 export type { MarkerOptions };
 export type { LeafletLatLng };
+export type { MarkerMouseEvent, MarkerEventName };
