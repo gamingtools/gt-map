@@ -985,21 +985,27 @@ export default class GTMap implements MapImpl {
 	public prefetchNeighbors(z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) {
 		if (!this.prefetchEnabled) return;
 		const zClamped = Math.min(z, this._sourceMaxZoom || z);
+		const zInt = Math.floor(zClamped);
 		const TS = this.tileSize;
 		const startX = Math.floor(tl.x / TS) - 1;
 		const startY = Math.floor(tl.y / TS) - 1;
 		const endX = Math.floor((tl.x + w / scale) / TS) + 1;
 		const endY = Math.floor((tl.y + h / scale) / TS) + 1;
+		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+		const levelW = Math.ceil(this.mapSize.width / Math.pow(2, imageMaxZ - zInt));
+		const levelH = Math.ceil(this.mapSize.height / Math.pow(2, imageMaxZ - zInt));
+		const NX = Math.ceil(levelW / TS);
+		const NY = Math.ceil(levelH / TS);
 		for (let ty = startY; ty <= endY; ty++) {
-			if (ty < 0 || ty >= 1 << zClamped) continue;
+			if (ty < 0 || ty >= NY) continue;
 			for (let tx = startX; tx <= endX; tx++) {
 				let tileX = tx;
 				if (this.wrapX) {
-					const n = 1 << zClamped;
+					const n = NX;
 					tileX = ((tx % n) + n) % n;
-				} else if (tx < 0 || tx >= 1 << zClamped) continue;
-				const key = `${zClamped}/${tileX}/${ty}`;
-				if (!this._tileCache.has(key)) this._enqueueTile(zClamped, tileX, ty, 1);
+				} else if (tx < 0 || tx >= NX) continue;
+				const key = `${zInt}/${tileX}/${ty}`;
+				if (!this._tileCache.has(key)) this._enqueueTile(zInt, tileX, ty, 1);
 			}
 		}
 	}
