@@ -22,3 +22,6 @@ export function tileLayer(url: string, options?: TileLayerOptions): TileLayer {
 export function tileLayerWMS(url: string, options?: any): TileLayerWMS {
 	return new TileLayerWMS(url, options);
 }
+
+// Public types
+export type { TileLayerOptions };

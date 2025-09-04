@@ -10,3 +10,7 @@ export class Marker extends BaseMarker {
 export function marker(latlng: LeafletLatLng, options?: MarkerOptions): Marker {
 	return new Marker(latlng, options);
 }
+
+// Public types
+export type { MarkerOptions };
+export type { LeafletLatLng };

@@ -13,3 +13,6 @@ export class Icon implements LeafletIcon {
 export function icon(options: IconOptions): Icon {
 	return new Icon(options);
 }
+
+// Public types
+export type { IconOptions, LeafletIcon };

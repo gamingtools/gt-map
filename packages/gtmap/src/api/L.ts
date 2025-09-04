@@ -1,24 +1,15 @@
-import LeafletMapFacade, { type LeafletMapOptions } from './map';
-import { LeafletTileLayerFacade } from './tileLayer';
-import { LeafletMarkerFacade, createIcon } from './marker';
-import type { TileLayerOptions } from './tileLayer';
-import type { IconOptions, LeafletIcon, MarkerOptions } from './marker';
-import { createGridLayer, type GridLayerOptions } from './grid';
-import { createLayerGroup, createFeatureGroup } from './layerGroup';
-import Layer from './layer';
-import type { LeafletLatLng } from './util';
+/**
+ * @deprecated Use the `L` namespace from `leaflet/L` (re-exported at package root).
+ * This file remains for backwards compatibility and proxies to the latest facade.
+ */
+import { L } from '../leaflet/L';
+export { L };
+export const GT = { L } as const;
+export default GT;
 
-export const GT = {
-	L: {
-		map: (container: string | HTMLElement, options?: LeafletMapOptions): LeafletMapFacade => new LeafletMapFacade(container as any, options),
-		tileLayer: (url: string, options?: TileLayerOptions): LeafletTileLayerFacade => new LeafletTileLayerFacade(url, options),
-		marker: (latlng: LeafletLatLng, options?: MarkerOptions): LeafletMarkerFacade => new LeafletMarkerFacade(latlng, options),
-		icon: (options: IconOptions): LeafletIcon => createIcon(options),
-		grid: (options?: GridLayerOptions) => createGridLayer(options),
-		layerGroup: (layers?: Layer[]) => createLayerGroup(layers),
-		featureGroup: (layers?: Layer[]) => createFeatureGroup(layers),
-		control: {}, // placeholder for Phase 2
-	},
-};
-
-export type { LeafletMapOptions, TileLayerOptions, IconOptions, LeafletIcon, MarkerOptions, LeafletLatLng, GridLayerOptions };
+// Re-export public types from latest facade for compatibility
+export type { LeafletMapOptions } from '../leaflet/map/Map';
+export type { TileLayerOptions } from '../api/tileLayer';
+export type { IconOptions, LeafletIcon, MarkerOptions } from '../api/marker';
+export type { LeafletLatLng } from '../api/util';
+export type { GridLayerOptions } from '../api/grid';

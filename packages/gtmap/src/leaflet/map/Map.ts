@@ -10,3 +10,6 @@ export class Map extends BaseMap {}
 export function createMap(container: string | HTMLElement, options?: LeafletMapOptions): Map {
 	return new Map(container, options);
 }
+
+// Compatibility type alias — prefer using `Map` directly
+export type LeafletMapFacade = Map;
