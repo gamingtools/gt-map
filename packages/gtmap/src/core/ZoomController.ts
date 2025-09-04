@@ -2,168 +2,163 @@ import type { ZoomDeps } from '../types';
 import { DEBUG } from '../debug';
 
 export default class ZoomController {
-  private deps: ZoomDeps;
-  private easeBaseMs = 150;
-  private easePerUnitMs = 240;
-  private easeMinMs = 120;
-  private easeMaxMs = 420;
-  private zoomAnim: null | {
-    from: number;
-    to: number;
-    px: number;
-    py: number;
-    start: number;
-    dur: number;
-    anchor: 'pointer' | 'center';
-    bounce?: boolean;
-  } = null;
+	private deps: ZoomDeps;
+	private easeBaseMs = 150;
+	private easePerUnitMs = 240;
+	private easeMinMs = 120;
+	private easeMaxMs = 420;
+	private zoomAnim: null | {
+		from: number;
+		to: number;
+		px: number;
+		py: number;
+		start: number;
+		dur: number;
+		anchor: 'pointer' | 'center';
+		bounce?: boolean;
+	} = null;
 
-  constructor(deps: ZoomDeps) {
-    this.deps = deps;
-  }
-  isAnimating(): boolean {
-    return !!this.zoomAnim;
-  }
-  cancel() {
-    this.zoomAnim = null;
-  }
-  startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') {
-    const now = this.deps.now();
-    let current = this.deps.getZoom();
-    if (this.zoomAnim) {
-      const a = this.zoomAnim;
-      const t = Math.min(1, (now - a.start) / a.dur);
-      const ease = 1 - Math.pow(1 - t, 3);
-      current = a.from + (a.to - a.from) * ease;
-    }
-    let to = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), current + dz));
-    // Bounds-based min zoom + optional bounce at zoom limits
-    let bounce = false;
-    try {
-      const map: any = this.deps.getMap();
-      const rect = map?.container?.getBoundingClientRect?.();
-      const mb = map?._maxBoundsPx;
-      if (mb && rect) {
-        const widthCSS = rect.width;
-        const heightCSS = rect.height;
-        const boundsW = Math.max(1, (mb.maxX - mb.minX));
-        const boundsH = Math.max(1, (mb.maxY - mb.minY));
-        const zMaxImg = this.deps.getImageMaxZoom();
-        const minZByW = zMaxImg + Math.log2(widthCSS / boundsW);
-        const minZByH = zMaxImg + Math.log2(heightCSS / boundsH);
-        const minZByBounds = Math.max(minZByW, minZByH);
-        if (isFinite(minZByBounds) && to < minZByBounds) {
-          bounce = !!map?._bounceAtZoomLimits;
-          to = minZByBounds;
-        }
-      }
-    } catch {}
-    const dist = Math.abs(to - current);
-    const raw = this.easeBaseMs + this.easePerUnitMs * dist;
-    const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
-    this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor, bounce };
-    this.deps.requestRender();
-  }
-  step(): boolean {
-    if (!this.zoomAnim) return false;
-    const now = this.deps.now();
-    const a = this.zoomAnim;
-    const t = Math.min(1, (now - a.start) / a.dur);
-    const ease = 1 - Math.pow(1 - t, 3);
-    let z = a.from + (a.to - a.from) * ease;
-    if (a.bounce) {
-      // easeOutBack to create a slight overshoot and return
-      const c1 = 1.70158, c3 = c1 + 1;
-      const tb = t - 1;
-      const outBack = 1 + c3 * (tb * tb * tb) + c1 * (tb * tb);
-      z = a.from + (a.to - a.from) * outBack;
-    }
-    this.applyAnchoredZoom(z, a.px, a.py, a.anchor);
-    if (t >= 1) {
-      this.zoomAnim = null;
-      this.deps.emit('zoomend', {});
-    }
-    return true;
-  }
+	constructor(deps: ZoomDeps) {
+		this.deps = deps;
+	}
+	isAnimating(): boolean {
+		return !!this.zoomAnim;
+	}
+	cancel() {
+		this.zoomAnim = null;
+	}
+	startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') {
+		const now = this.deps.now();
+		let current = this.deps.getZoom();
+		if (this.zoomAnim) {
+			const a = this.zoomAnim;
+			const t = Math.min(1, (now - a.start) / a.dur);
+			const ease = 1 - Math.pow(1 - t, 3);
+			current = a.from + (a.to - a.from) * ease;
+		}
+		let to = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), current + dz));
+		// Bounds-based min zoom + optional bounce at zoom limits
+		let bounce = false;
+		try {
+			const map: any = this.deps.getMap();
+			const rect = map?.container?.getBoundingClientRect?.();
+			const mb = map?._maxBoundsPx;
+			if (mb && rect) {
+				const widthCSS = rect.width;
+				const heightCSS = rect.height;
+				const boundsW = Math.max(1, mb.maxX - mb.minX);
+				const boundsH = Math.max(1, mb.maxY - mb.minY);
+				const zMaxImg = this.deps.getImageMaxZoom();
+				const minZByW = zMaxImg + Math.log2(widthCSS / boundsW);
+				const minZByH = zMaxImg + Math.log2(heightCSS / boundsH);
+				const minZByBounds = Math.max(minZByW, minZByH);
+				if (isFinite(minZByBounds) && to < minZByBounds) {
+					bounce = !!map?._bounceAtZoomLimits;
+					to = minZByBounds;
+				}
+			}
+		} catch {}
+		const dist = Math.abs(to - current);
+		const raw = this.easeBaseMs + this.easePerUnitMs * dist;
+		const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
+		this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor, bounce };
+		this.deps.requestRender();
+	}
+	step(): boolean {
+		if (!this.zoomAnim) return false;
+		const now = this.deps.now();
+		const a = this.zoomAnim;
+		const t = Math.min(1, (now - a.start) / a.dur);
+		const ease = 1 - Math.pow(1 - t, 3);
+		let z = a.from + (a.to - a.from) * ease;
+		if (a.bounce) {
+			// easeOutBack to create a slight overshoot and return
+			const c1 = 1.70158,
+				c3 = c1 + 1;
+			const tb = t - 1;
+			const outBack = 1 + c3 * (tb * tb * tb) + c1 * (tb * tb);
+			z = a.from + (a.to - a.from) * outBack;
+		}
+		this.applyAnchoredZoom(z, a.px, a.py, a.anchor);
+		if (t >= 1) {
+			this.zoomAnim = null;
+			this.deps.emit('zoomend', {});
+		}
+		return true;
+	}
 
-  applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center') {
-    const map = this.deps.getMap();
-    // Respect the requested anchor; default is 'pointer'.
-    const anchorEff: 'pointer' | 'center' = anchor;
-    const zInt = Math.floor(map.zoom);
-    const scale = Math.pow(2, map.zoom - zInt);
-    const rect = map.container.getBoundingClientRect();
-    const widthCSS = rect.width;
-    const heightCSS = rect.height;
-    const zImg = this.deps.getImageMaxZoom();
-    const s0 = Math.pow(2, zImg - zInt);
-    const centerNow = { x: map.center.lng / s0, y: map.center.lat / s0 };
-    const tlWorld = {
-      x: centerNow.x - widthCSS / (2 * scale),
-      y: centerNow.y - heightCSS / (2 * scale),
-    };
-    let zClamped = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), targetZoom));
-    // If maxBounds are set, prevent zooming out beyond bounds (Leaflet-like)
-    try {
-      const map: any = this.deps.getMap();
-      const mb = map?._maxBoundsPx;
-      if (mb) {
-        const rect = map.container.getBoundingClientRect();
-        const widthCSS = rect.width;
-        const heightCSS = rect.height;
-        const boundsW = Math.max(1, (mb.maxX - mb.minX));
-        const boundsH = Math.max(1, (mb.maxY - mb.minY));
-        const zMaxImg = this.deps.getImageMaxZoom();
-        const minZByW = zMaxImg + Math.log2(widthCSS / boundsW);
-        const minZByH = zMaxImg + Math.log2(heightCSS / boundsH);
-        const minZByBounds = Math.max(minZByW, minZByH);
-        if (isFinite(minZByBounds)) zClamped = Math.max(zClamped, minZByBounds);
-      }
-    } catch {}
-    const zInt2 = Math.floor(zClamped);
-    const s2 = Math.pow(2, zClamped - zInt2);
-    let center2: { x: number; y: number };
-    if (anchorEff === 'center') {
-      const factor = Math.pow(2, zInt2 - zInt);
-      center2 = { x: centerNow.x * factor, y: centerNow.y * factor };
-    } else {
-      const worldBefore = { x: tlWorld.x + px / scale, y: tlWorld.y + py / scale };
-      const factor = Math.pow(2, zInt2 - zInt);
-      const worldBefore2 = { x: worldBefore.x * factor, y: worldBefore.y * factor };
-      const tl2 = { x: worldBefore2.x - px / s2, y: worldBefore2.y - py / s2 };
-      const pointerCenter = { x: tl2.x + widthCSS / (2 * s2), y: tl2.y + heightCSS / (2 * s2) };
-      if (zClamped < map.zoom) {
-        const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
-        const dz = Math.max(0, map.zoom - zClamped);
-        const bias = Math.max(0, Math.min(0.6, (this.deps.getOutCenterBias() ?? 0.15) * dz));
-        center2 = {
-          x: pointerCenter.x * (1 - bias) + centerScaled.x * bias,
-          y: pointerCenter.y * (1 - bias) + centerScaled.y * bias,
-        };
-      } else {
-        center2 = pointerCenter;
-      }
-    }
-    center2 = this.deps.clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
-    const s2f = Math.pow(2, zImg - zInt2);
-    map.center = { lng: center2.x * s2f, lat: center2.y * s2f };
-    map.zoom = zClamped;
-    if (DEBUG) try { console.debug('[center] zoom', { lng: map.center.lng, lat: map.center.lat, z: map.zoom }); } catch {}
-    this.deps.requestRender();
-  }
-  setOptions(opts: {
-    easeBaseMs?: number;
-    easePerUnitMs?: number;
-    easeMinMs?: number;
-    easeMaxMs?: number;
-  }) {
-    if (Number.isFinite(opts.easeBaseMs as number))
-      this.easeBaseMs = Math.max(40, Math.min(600, opts.easeBaseMs as number));
-    if (Number.isFinite(opts.easePerUnitMs as number))
-      this.easePerUnitMs = Math.max(0, Math.min(600, opts.easePerUnitMs as number));
-    if (Number.isFinite(opts.easeMinMs as number))
-      this.easeMinMs = Math.max(20, Math.min(600, opts.easeMinMs as number));
-    if (Number.isFinite(opts.easeMaxMs as number))
-      this.easeMaxMs = Math.max(40, Math.min(1200, opts.easeMaxMs as number));
-  }
+	applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center') {
+		const map = this.deps.getMap();
+		// Respect the requested anchor; default is 'pointer'.
+		const anchorEff: 'pointer' | 'center' = anchor;
+		const zInt = Math.floor(map.zoom);
+		const scale = Math.pow(2, map.zoom - zInt);
+		const rect = map.container.getBoundingClientRect();
+		const widthCSS = rect.width;
+		const heightCSS = rect.height;
+		const zImg = this.deps.getImageMaxZoom();
+		const s0 = Math.pow(2, zImg - zInt);
+		const centerNow = { x: map.center.lng / s0, y: map.center.lat / s0 };
+		const tlWorld = {
+			x: centerNow.x - widthCSS / (2 * scale),
+			y: centerNow.y - heightCSS / (2 * scale),
+		};
+		let zClamped = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), targetZoom));
+		// If maxBounds are set, prevent zooming out beyond bounds (Leaflet-like)
+		try {
+			const map: any = this.deps.getMap();
+			const mb = map?._maxBoundsPx;
+			if (mb) {
+				const rect = map.container.getBoundingClientRect();
+				const widthCSS = rect.width;
+				const heightCSS = rect.height;
+				const boundsW = Math.max(1, mb.maxX - mb.minX);
+				const boundsH = Math.max(1, mb.maxY - mb.minY);
+				const zMaxImg = this.deps.getImageMaxZoom();
+				const minZByW = zMaxImg + Math.log2(widthCSS / boundsW);
+				const minZByH = zMaxImg + Math.log2(heightCSS / boundsH);
+				const minZByBounds = Math.max(minZByW, minZByH);
+				if (isFinite(minZByBounds)) zClamped = Math.max(zClamped, minZByBounds);
+			}
+		} catch {}
+		const zInt2 = Math.floor(zClamped);
+		const s2 = Math.pow(2, zClamped - zInt2);
+		let center2: { x: number; y: number };
+		if (anchorEff === 'center') {
+			const factor = Math.pow(2, zInt2 - zInt);
+			center2 = { x: centerNow.x * factor, y: centerNow.y * factor };
+		} else {
+			const worldBefore = { x: tlWorld.x + px / scale, y: tlWorld.y + py / scale };
+			const factor = Math.pow(2, zInt2 - zInt);
+			const worldBefore2 = { x: worldBefore.x * factor, y: worldBefore.y * factor };
+			const tl2 = { x: worldBefore2.x - px / s2, y: worldBefore2.y - py / s2 };
+			const pointerCenter = { x: tl2.x + widthCSS / (2 * s2), y: tl2.y + heightCSS / (2 * s2) };
+			if (zClamped < map.zoom) {
+				const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
+				const dz = Math.max(0, map.zoom - zClamped);
+				const bias = Math.max(0, Math.min(0.6, (this.deps.getOutCenterBias() ?? 0.15) * dz));
+				center2 = {
+					x: pointerCenter.x * (1 - bias) + centerScaled.x * bias,
+					y: pointerCenter.y * (1 - bias) + centerScaled.y * bias,
+				};
+			} else {
+				center2 = pointerCenter;
+			}
+		}
+		center2 = this.deps.clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
+		const s2f = Math.pow(2, zImg - zInt2);
+		map.center = { lng: center2.x * s2f, lat: center2.y * s2f };
+		map.zoom = zClamped;
+		if (DEBUG)
+			try {
+				console.debug('[center] zoom', { lng: map.center.lng, lat: map.center.lat, z: map.zoom });
+			} catch {}
+		this.deps.requestRender();
+	}
+	setOptions(opts: { easeBaseMs?: number; easePerUnitMs?: number; easeMinMs?: number; easeMaxMs?: number }) {
+		if (Number.isFinite(opts.easeBaseMs as number)) this.easeBaseMs = Math.max(40, Math.min(600, opts.easeBaseMs as number));
+		if (Number.isFinite(opts.easePerUnitMs as number)) this.easePerUnitMs = Math.max(0, Math.min(600, opts.easePerUnitMs as number));
+		if (Number.isFinite(opts.easeMinMs as number)) this.easeMinMs = Math.max(20, Math.min(600, opts.easeMinMs as number));
+		if (Number.isFinite(opts.easeMaxMs as number)) this.easeMaxMs = Math.max(40, Math.min(1200, opts.easeMaxMs as number));
+	}
 }
