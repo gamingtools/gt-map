@@ -6,6 +6,7 @@
 	let container: HTMLDivElement | null = null;
 	let map: LeafletMapFacade;
 	let gridLayer: any | null = null;
+  let leafletMarkers: Array<any> = [];
 
 	const HOME = { lng: 4096, lat: 4096 };
 
@@ -34,15 +35,42 @@
     markerCount = count;
     const keys = Object.keys(iconDefs);
     if (keys.length === 0) { map.setMarkers([]); return; }
-    const markers = new Array(Math.max(0, count)).fill(0).map(() => {
-      const key = keys[(Math.random() * keys.length) | 0];
-      return { lng: rand(0, 8192), lat: rand(0, 8192), type: key } as { lng: number; lat: number; type: string };
-    });
-    map.setMarkers(markers);
+    clearLeafletMarkers();
+    const THRESHOLD_FACADE = 800;
+    if (count <= THRESHOLD_FACADE) {
+      const L = GT.L as any;
+      for (let i = 0; i < count; i++) {
+        const key = keys[(Math.random() * keys.length) | 0];
+        const def = (iconDefs as any)[key];
+        const icon = L.icon({ iconUrl: def.iconPath, iconRetinaUrl: def.x2IconPath, iconSize: [def.width, def.height] });
+        const m = L.marker([rand(0, 8192), rand(0, 8192)], { icon });
+		m.on('click', (ev: any) => {
+          console.log('marker click',  ev );
+        });
+        m.addTo(map);
+        leafletMarkers.push(m);
+      }
+      // Do NOT clear batch markers here; L.marker facade renders via the batch layer under the hood
+    } else {
+      const markers = new Array(Math.max(0, count)).fill(0).map(() => {
+        const key = keys[(Math.random() * keys.length) | 0];
+        return { lng: rand(0, 8192), lat: rand(0, 8192), type: key } as { lng: number; lat: number; type: string };
+      });
+      map.setMarkers(markers);
+    }
   }
 
   function setMarkerCount(n: number): void {
     applyMarkerCount(n);
+  }
+
+  function clearLeafletMarkers(): void {
+    if (!leafletMarkers || leafletMarkers.length === 0) return;
+    try {
+      for (const m of leafletMarkers) { try { m.remove?.(); } catch {} }
+    } finally {
+      leafletMarkers = [];
+    }
   }
 
 	onMount(() => {
@@ -109,6 +137,7 @@
 		onDestroy(() => {
 			console.log('GTMap Svelte unmounting');
 			try { gridLayer?.remove?.(); } catch {}
+			try { clearLeafletMarkers(); } catch {}
 			try { map?.setMarkers([]); } catch {}
 			try { map?.remove?.(); } catch {}
 			if (resizeTimer) { try { clearTimeout(resizeTimer); } catch {} resizeTimer = null; }

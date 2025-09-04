@@ -59,7 +59,7 @@ export default class InputController {
       const rect = deps.getContainer().getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
-      deps.emit('pointerdown', { x: px, y: py, view: deps.getView() });
+      deps.emit('pointerdown', { x: px, y: py, view: deps.getView(), originalEvent: e });
     };
 
     const onMove = (e: PointerEvent) => {
@@ -89,16 +89,16 @@ export default class InputController {
       const inside = px >= 0 && py >= 0 && px <= widthCSS && py <= heightCSS;
       if (this.dragging) {
         deps.updatePointerAbs(wx * factor, wy * factor);
-        try { deps.emit('pointermove', { x: px, y: py, view: deps.getView() }); } catch {}
+        try { deps.emit('pointermove', { x: px, y: py, view: deps.getView(), originalEvent: e }); } catch {}
       } else {
         if (inside) {
           deps.updatePointerAbs(wx * factor, wy * factor);
           this.over = true;
-          try { deps.emit('pointermove', { x: px, y: py, view: deps.getView() }); } catch {}
+          try { deps.emit('pointermove', { x: px, y: py, view: deps.getView(), originalEvent: e }); } catch {}
         } else if (this.over) {
           deps.updatePointerAbs(null, null);
           this.over = false;
-          try { deps.emit('pointermove', { x: -1, y: -1, view: deps.getView() }); } catch {}
+          try { deps.emit('pointermove', { x: -1, y: -1, view: deps.getView(), originalEvent: e }); } catch {}
         }
       }
       if (!this.dragging) return;
@@ -123,7 +123,7 @@ export default class InputController {
       const rect = deps.getContainer().getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;
-      deps.emit('pointerup', { x: px, y: py, view: deps.getView() });
+      deps.emit('pointerup', { x: px, y: py, view: deps.getView(), originalEvent: e });
       if (DEBUG) console.debug('[inertia] pointerup');
       this.inertiaActive = false;
       this._maybeStartInertia();

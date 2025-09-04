@@ -95,6 +95,7 @@ export class LeafletMarkerFacade extends Layer {
 const markersByMap = new WeakMap<Impl, Set<LeafletMarkerFacade>>();
 const eventsHooked = new WeakSet<Impl>();
 const hoverByMap = new WeakMap<Impl, LeafletMarkerFacade | null>();
+const lastClickByMap = new WeakMap<Impl, { t: number; m: LeafletMarkerFacade | null; x: number; y: number }>();
 
 function getSet(map: Impl): Set<LeafletMarkerFacade> {
   let s = markersByMap.get(map);
@@ -133,30 +134,78 @@ function hookMapPointerEvents(map: Impl) {
     (map as any).events.on('pointermove').each((e: any) => handlePointerMove(map, e));
     (map as any).events.on('pointerdown').each((e: any) => handlePointerDown(map, e));
     (map as any).events.on('pointerup').each((e: any) => handlePointerUp(map, e));
+    // Context menu from DOM (right click / long press)
+    const container: HTMLElement | null = (map as any).container as HTMLElement;
+    if (container && container.addEventListener) {
+      const onCtx = (ev: MouseEvent) => {
+        try { ev.preventDefault(); } catch {}
+        const rect = container.getBoundingClientRect();
+        const x = ev.clientX - rect.left;
+        const y = ev.clientY - rect.top;
+        handleContextMenu(map, { x, y, view: (map as any)._view?.() || {}, originalEvent: ev } as any);
+      };
+      container.addEventListener('contextmenu', onCtx as any);
+    }
   } catch {}
 }
 
-function handlePointerMove(map: Impl, e: { x: number; y: number; view: any }) {
+type MapPointerEvent = { x: number; y: number; view: any; originalEvent?: any };
+
+function buildMouseEvent(m: LeafletMarkerFacade, type: string, e: MapPointerEvent) {
+  const latlngObj = { lat: m.__getLngLat().lat, lng: m.__getLngLat().lng };
+  const containerPoint = { x: e.x, y: e.y };
+  const layerPoint = { x: e.x, y: e.y };
+  return {
+    type,
+    target: m,
+    sourceTarget: m,
+    propagatedFrom: undefined,
+    layer: undefined,
+    latlng: latlngObj,
+    layerPoint,
+    containerPoint,
+    originalEvent: e.originalEvent,
+  };
+}
+
+function handlePointerMove(map: Impl, e: MapPointerEvent) {
   const over = hitTest(map, e.x, e.y);
   const prev = hoverByMap.get(map) || null;
   if (over !== prev) {
-    if (prev) prev.__fire('mouseout', { type: 'mouseout', originalEvent: e, target: prev });
-    if (over) over.__fire('mouseover', { type: 'mouseover', originalEvent: e, target: over });
+    if (prev) prev.__fire('mouseout', buildMouseEvent(prev, 'mouseout', e));
+    if (over) over.__fire('mouseover', buildMouseEvent(over, 'mouseover', e));
     hoverByMap.set(map, over || null);
   }
-  if (over) over.__fire('mousemove', { type: 'mousemove', originalEvent: e, target: over });
+  if (over) over.__fire('mousemove', buildMouseEvent(over, 'mousemove', e));
 }
 
-function handlePointerDown(map: Impl, e: { x: number; y: number; view: any }) {
+function handlePointerDown(map: Impl, e: MapPointerEvent) {
   const over = hitTest(map, e.x, e.y);
-  if (over) over.__fire('mousedown', { type: 'mousedown', originalEvent: e, target: over });
+  if (over) over.__fire('mousedown', buildMouseEvent(over, 'mousedown', e));
 }
-function handlePointerUp(map: Impl, e: { x: number; y: number; view: any }) {
+function handlePointerUp(map: Impl, e: MapPointerEvent) {
   const over = hitTest(map, e.x, e.y);
   if (over) {
-    over.__fire('mouseup', { type: 'mouseup', originalEvent: e, target: over });
-    over.__fire('click', { type: 'click', originalEvent: e, target: over, latlng: over.getLatLng?.() });
+    over.__fire('mouseup', buildMouseEvent(over, 'mouseup', e));
+    over.__fire('click', buildMouseEvent(over, 'click', e));
+    // dblclick detection
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const last = lastClickByMap.get(map);
+    if (last && last.m === over && (now - last.t) <= 320) {
+      // within time window; also ensure within small radius (6px)
+      const dx = (e.x - last.x);
+      const dy = (e.y - last.y);
+      if (dx * dx + dy * dy <= 36) {
+        over.__fire('dblclick', buildMouseEvent(over, 'dblclick', e));
+      }
+    }
+    lastClickByMap.set(map, { t: now, m: over, x: e.x, y: e.y });
   }
+}
+
+function handleContextMenu(map: Impl, e: MapPointerEvent) {
+  const over = hitTest(map, e.x, e.y);
+  if (over) over.__fire('contextmenu', buildMouseEvent(over, 'contextmenu', e));
 }
 
 function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | null {
