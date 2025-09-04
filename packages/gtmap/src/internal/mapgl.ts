@@ -7,6 +7,7 @@ import { TileCache } from './tiles/cache';
 import TilePipeline from './tiles/TilePipeline';
 import { TileLoader, type TileLoaderDeps } from './tiles/loader';
 import type { TileDeps, RenderCtx, MapImpl } from './types';
+import * as Coords from './coords';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
@@ -177,8 +178,7 @@ export default class GTMap implements MapImpl {
 			// Project image pixels at native resolution into level-z pixel coords
 			project: (x: number, y: number, z: number) => {
 				const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-				const s = Math.pow(2, imageMaxZ - z);
-				return { x: x / s, y: y / s };
+				return Coords.worldToLevel({ x, y }, imageMaxZ, Math.floor(z));
 			},
 			enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
 		};
