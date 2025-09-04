@@ -170,14 +170,7 @@ export default class LeafletMapFacade {
     return this.getBounds();
   }
 
-  // Native marker helpers (GT extensions for performance/testing)
-  async setIconDefs(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>): Promise<void> {
-    await (this._map as any).setIconDefs(defs);
-  }
-  setMarkers(markers: Array<{ lng: number; lat: number; type: string; size?: number }>): this {
-    (this._map as any).setMarkers(markers);
-    return this;
-  }
+  // Native batch helpers are intentionally not exposed on the public facade
   setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
     (this._map as any).setUpscaleFilter(mode);
     return this;

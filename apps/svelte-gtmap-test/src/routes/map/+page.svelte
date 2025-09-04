@@ -26,7 +26,6 @@
     const url = new URL('../../sample-data/MapIcons.json', import.meta.url);
     const defs = (await fetch(url).then((r) => r.json())) as Record<string, IconDef>;
     iconDefs = defs;
-    await map!.setIconDefs(defs);
   }
 
   function applyMarkerCount(n: number): void {
@@ -34,30 +33,22 @@
     const count = clampMarkerCount(n);
     markerCount = count;
     const keys = Object.keys(iconDefs);
-    if (keys.length === 0) { map.setMarkers([]); return; }
+    if (keys.length === 0) { clearLeafletMarkers(); return; }
     clearLeafletMarkers();
-    const THRESHOLD_FACADE = 20000;
-    if (count <= THRESHOLD_FACADE) {
-      const L = GT.L as any;
-      for (let i = 0; i < count; i++) {
-        const key = keys[(Math.random() * keys.length) | 0];
-        const def = (iconDefs as any)[key];
-        const icon = L.icon({ iconUrl: def.iconPath, iconRetinaUrl: def.x2IconPath, iconSize: [def.width, def.height] });
-        const m = L.marker([rand(0, 8192), rand(0, 8192)], { icon });
-		m.on('click', (ev: any) => {
-          console.log('marker click',  ev );
-        });
-        m.addTo(map);
-        leafletMarkers.push(m);
-      }
-      // Do NOT clear batch markers here; L.marker facade renders via the batch layer under the hood
-    } else {
-      const markers = new Array(Math.max(0, count)).fill(0).map(() => {
-        const key = keys[(Math.random() * keys.length) | 0];
-        return { lng: rand(0, 8192), lat: rand(0, 8192), type: key } as { lng: number; lat: number; type: string };
-      });
-      map.setMarkers(markers);
+    const L = GT.L as any;
+    const layers: any[] = [];
+    const iconCache: Record<string, any> = {};
+    for (let i = 0; i < count; i++) {
+      const key = keys[(Math.random() * keys.length) | 0];
+      const def = (iconDefs as any)[key];
+      const icon = iconCache[key] || (iconCache[key] = L.icon({ iconUrl: def.iconPath, iconRetinaUrl: def.x2IconPath, iconSize: [def.width, def.height] }));
+      const m = L.marker([rand(0, 8192), rand(0, 8192)], { icon });
+      m.on('click', (ev: any) => { console.log('marker click', ev); });
+      layers.push(m);
     }
+    const group = (L as any).layerGroup(layers);
+    group.addTo(map);
+    leafletMarkers = layers;
   }
 
   function setMarkerCount(n: number): void {
@@ -136,10 +127,9 @@
 		// Teardown on navigation/unmount per Svelte docs
 		onDestroy(() => {
 			console.log('GTMap Svelte unmounting');
-			try { gridLayer?.remove?.(); } catch {}
-			try { clearLeafletMarkers(); } catch {}
-			try { map?.setMarkers([]); } catch {}
-			try { map?.remove?.(); } catch {}
+      try { gridLayer?.remove?.(); } catch {}
+      try { clearLeafletMarkers(); } catch {}
+      try { map?.remove?.(); } catch {}
 			if (resizeTimer) { try { clearTimeout(resizeTimer); } catch {} resizeTimer = null; }
 			try { ro?.disconnect?.(); } catch {}
 			if (usedWindowResize) { try { window.removeEventListener('resize', scheduleInvalidate); } catch {} }
