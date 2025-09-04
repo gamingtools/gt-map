@@ -11,6 +11,7 @@ export default class InputController {
   private static readonly DEBUG = false;
   private _positions: Array<{ x: number; y: number }> = [];
   private _times: number[] = [];
+  private lastTouchAt = 0;
   private touchState: null | {
     mode: 'pan' | 'pinch';
     x?: number;
@@ -157,9 +158,11 @@ export default class InputController {
     };
 
     const onTouchStart = (e: TouchEvent) => {
+      this.lastTouchAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       if (e.touches.length === 1) {
         this.touchState = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
       } else if (e.touches.length === 2) {
+        this.lastTouchAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
         const t0 = e.touches[0];
         const t1 = e.touches[1];
         const dx = t1.clientX - t0.clientX;
@@ -194,6 +197,7 @@ export default class InputController {
       }
     };
     const onTouchMove = (e: TouchEvent) => {
+      this.lastTouchAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
       const touchState = this.touchState;
       if (!touchState) return;
       // If pinch transitioned to one finger, switch to pan smoothly
@@ -278,7 +282,13 @@ export default class InputController {
       }
       e.preventDefault();
     };
-    const onTouchEnd = () => {
+    const onTouchEnd = (e: TouchEvent) => {
+      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      this.lastTouchAt = now;
+      // If pinch was active or just ended, suppress inertia longer
+      if (this.touchState?.mode === 'pinch' || (e.touches && e.touches.length === 0)) {
+        this.suppressInertiaUntil = Math.max(this.suppressInertiaUntil, now + 300);
+      }
       if (this.touchState?.mode === 'pan') this._maybeStartInertia();
       this.touchState = null;
       deps.emit('moveend', { view: deps.getView() });
@@ -344,9 +354,15 @@ export default class InputController {
     const firstT = this._times[firstIdx];
     const duration = Math.max(0.001, (lastT - firstT) / 1000);
     const dir = { x: last.x - first.x, y: last.y - first.y };
+    // Require a small displacement minimum to avoid accidental throws
+    const disp = Math.hypot(dir.x, dir.y);
+    if (disp < 10) return;
     const speedVec = { x: (dir.x * ease) / duration, y: (dir.y * ease) / duration };
     const speed = Math.hypot(speedVec.x, speedVec.y);
-    const limited = Math.min(maxSpeed, speed);
+    // On recent touch, cap inertia speed to a lower value for comfort
+    const touchRecent = (now - this.lastTouchAt) < 200;
+    const localMax = touchRecent ? Math.min(maxSpeed, 900) : maxSpeed;
+    const limited = Math.min(localMax, speed);
     if (DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel, duration, samples: this._positions.length });
     if (!isFinite(limited) || limited <= 0) return;
     const scale = (limited / speed) || 0;

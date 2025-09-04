@@ -82,7 +82,7 @@
 		// Grid layer init — add once so remove() can toggle visibility later
 		try {
 			gridLayer = (L as any).grid();
-			gridLayer.addTo(map);
+			// gridLayer.addTo(map);
 		} catch {
 			gridLayer = null;
 		}
@@ -92,7 +92,7 @@
 		const scheduleInvalidate = () => {
 			if (resizeTimer) clearTimeout(resizeTimer);
 			resizeTimer = setTimeout(() => {
-				try { map.invalidateSize(); } catch {}
+				try { map?.invalidateSize(); } catch {}
 			}, 160);
 		};
 		let ro: ResizeObserver | null = null;
