@@ -44,8 +44,10 @@ export class RasterRenderer {
 		// Limit tile ranges for finite, possibly non-square images
 		let tilesX = Infinity;
 		let tilesY = Infinity;
-		if (imageSize && typeof zMax === 'number') {
-			const s = Math.pow(2, zMax - zLevel);
+		// Prefer the image pyramid max (sourceMaxZoom) over viewer max (zMax)
+		const imgMax = (typeof sourceMaxZoom === 'number' ? sourceMaxZoom : zMax) as number | undefined;
+		if (imageSize && typeof imgMax === 'number') {
+			const s = Math.pow(2, imgMax - zLevel);
 			const levelW = Math.ceil(imageSize.width / s);
 			const levelH = Math.ceil(imageSize.height / s);
 			tilesX = Math.ceil(levelW / TS);
