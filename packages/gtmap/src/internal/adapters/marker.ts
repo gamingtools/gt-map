@@ -356,14 +356,25 @@ function hitTest(map: Impl, xCSS: number, yCSS: number, log?: boolean): LeafletM
             if (DEBUG && log) console.debug('[marker.hitTest.fallbackLinear]', { count: candidates.length });
         } catch {}
     }
-	let hit: LeafletMarkerFacade | null = null;
-	for (const m of candidates) {
-		const p = m.__getLngLat();
-		const w = m.__getSize().w || 32;
-		const h = m.__getSize().h || 32;
-		const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, center as any, { x: widthCSS, y: heightCSS }, imageMaxZ as number);
-		const left = css.x - w / 2;
-		const top = css.y - h / 2;
+    // Compute TL in level space with the same rounding as the renderer/icons to minimize subpixel drift
+    const { zInt, scale } = Coords.zParts(z);
+    const s0 = Coords.sFor(imageMaxZ as number, zInt);
+    const centerLevel = { x: center.lng / s0, y: center.lat / s0 };
+    let tlLevel = Coords.tlLevelFor(centerLevel, z, { x: widthCSS, y: heightCSS });
+    try {
+        const canvas: HTMLCanvasElement | null = (map as any).canvas || null;
+        const dpr = canvas ? Math.max(1, (canvas as any).width / Math.max(1, widthCSS)) : (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
+        tlLevel = { x: Coords.snapLevelToDevice(tlLevel.x, scale, dpr), y: Coords.snapLevelToDevice(tlLevel.y, scale, dpr) };
+    } catch {}
+    let hit: LeafletMarkerFacade | null = null;
+    for (const m of candidates) {
+        const p = m.__getLngLat();
+        const w = m.__getSize().w || 32;
+        const h = m.__getSize().h || 32;
+        const lvl = { x: (p.lng as number) / s0, y: (p.lat as number) / s0 };
+        const css = { x: (lvl.x - tlLevel.x) * scale, y: (lvl.y - tlLevel.y) * scale };
+        const left = css.x - w / 2;
+        const top = css.y - h / 2;
 		const contains = xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h;
 		if (DEBUG && log) {
 			try {

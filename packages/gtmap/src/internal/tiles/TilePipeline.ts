@@ -13,12 +13,12 @@ export default class TilePipeline {
 		this.queue = new TileQueue();
 	}
 
-		enqueue(z: number, x: number, y: number, priority = 1) {
+	enqueue(z: number, x: number, y: number, priority = 1) {
 		const key = tileKeyOf(z, x, y);
 		if (this.deps.hasTile(key) || this.deps.isPending(key) || this.queue.has(key)) return;
 		const url = this.deps.urlFor(z, x, y);
 		if (!url) return; // no source wired yet
-    if ((globalThis as any).DEBUG) { try { console.debug('[tile.enqueue]', { key, url }); } catch {} }
+
 		this.queue.enqueue({ key, url, z, x, y, priority });
 		this.process();
 	}
@@ -32,7 +32,7 @@ export default class TilePipeline {
 		this.queue = new TileQueue();
 	}
 
-		scheduleBaselinePrefetch(level: number, ring?: number) {
+	scheduleBaselinePrefetch(level: number, ring?: number) {
 		// Prefetch a small ring around the current center at the given level
 		const z = level;
 		const c = this.deps.getCenter();
