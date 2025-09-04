@@ -28,6 +28,7 @@ export default class InputController {
   } = null;
   private cleanup: (() => void) | null = null;
   private suppressInertiaUntil = 0;
+  private pinchCooldownUntil = 0;
   private static normalizeWheel(e: WheelEvent, canvasHeight: number): number {
     const lineHeight = 16;
     if ((e as any).deltaMode === 1) return (e as any).deltaY;
@@ -163,6 +164,8 @@ export default class InputController {
         this.touchState = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
       } else if (e.touches.length === 2) {
         this.lastTouchAt = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        // While pinching, keep a cooldown window active to block inertia after pinch
+        this.pinchCooldownUntil = this.lastTouchAt + 500;
         const t0 = e.touches[0];
         const t1 = e.touches[1];
         const dx = t1.clientX - t0.clientX;
@@ -211,7 +214,8 @@ export default class InputController {
         this._times = [];
         // Suppress inertia briefly after pinch
         const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-        this.suppressInertiaUntil = now + 250;
+        this.suppressInertiaUntil = now + 400;
+        this.pinchCooldownUntil = Math.max(this.pinchCooldownUntil, now + 600);
         // Do not process as pan in the same frame
         e.preventDefault();
         return;
@@ -245,6 +249,8 @@ export default class InputController {
         deps.setCenter(nx, ny);
         deps.emit('move', { view: deps.getView() });
       } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
+        // Update cooldown on every pinch frame
+        this.pinchCooldownUntil = Math.max(this.pinchCooldownUntil, this.lastTouchAt + 500);
         const t0 = e.touches[0];
         const t1 = e.touches[1];
         const dx = t1.clientX - t0.clientX;
@@ -287,7 +293,8 @@ export default class InputController {
       this.lastTouchAt = now;
       // If pinch was active or just ended, suppress inertia longer
       if (this.touchState?.mode === 'pinch' || (e.touches && e.touches.length === 0)) {
-        this.suppressInertiaUntil = Math.max(this.suppressInertiaUntil, now + 300);
+        this.suppressInertiaUntil = Math.max(this.suppressInertiaUntil, now + 500);
+        this.pinchCooldownUntil = Math.max(this.pinchCooldownUntil, now + 700);
       }
       if (this.touchState?.mode === 'pan') this._maybeStartInertia();
       this.touchState = null;
@@ -342,6 +349,7 @@ export default class InputController {
     const deps = this.deps;
     const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
     if (now < this.suppressInertiaUntil) return;
+    if (now < this.pinchCooldownUntil) return;
     if (!deps.getInertia() || this._times.length < 2) return;
     const ease = deps.getEaseLinearity();
     const maxSpeed = deps.getInertiaMaxSpeed();
