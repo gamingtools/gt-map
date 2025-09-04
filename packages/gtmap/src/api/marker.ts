@@ -25,11 +25,20 @@ export class LeafletMarkerFacade extends Layer {
   private _latlng: { lng: number; lat: number };
   private _icon: LeafletIcon | null;
   private _impl: Impl | null = null;
+  private _hitW = 32;
+  private _hitH = 32;
+  private _listeners = new Map<string, Set<(e: any) => void>>();
 
   constructor(latlng: LeafletLatLng, options?: MarkerOptions) {
     super();
     this._latlng = toLngLat(latlng);
     this._icon = options?.icon || null;
+    // Seed hit size from icon if available
+    const def = (this._icon as any)?.__def as any | undefined;
+    if (def && Number.isFinite(def.width) && Number.isFinite(def.height)) {
+      this._hitW = def.width | 0;
+      this._hitH = def.height | 0;
+    }
   }
 
   onAdd(map: any): void { this._impl = (map as any).__impl ?? map; ensureIconDefs(this._impl as Impl, this._icon); flushMarkers(this._impl as Impl, this); }
@@ -48,16 +57,44 @@ export class LeafletMarkerFacade extends Layer {
       ensureIconDefs(this._impl, this._icon);
       flushMarkers(this._impl, this);
     }
+    const def = (icon as any)?.__def as any | undefined;
+    if (def && Number.isFinite(def.width) && Number.isFinite(def.height)) {
+      this._hitW = def.width | 0;
+      this._hitH = def.height | 0;
+    }
     return this;
   }
   // internal getters
   __getLngLat(): { lng: number; lat: number } { return this._latlng; }
   __getType(): string { return (this._icon && this._icon.__type) || 'default'; }
-  __getSize(): number | undefined { return undefined; }
+  __getSize(): { w: number; h: number } { return { w: this._hitW, h: this._hitH }; }
+
+  // Leaflet-like events API
+  on(name: string, fn: (e: any) => void): this {
+    if (!this._listeners.has(name)) this._listeners.set(name, new Set());
+    this._listeners.get(name)!.add(fn);
+    return this;
+  }
+  off(name: string, fn?: (e: any) => void): this {
+    const s = this._listeners.get(name);
+    if (!s) return this;
+    if (!fn) { this._listeners.delete(name); return this; }
+    s.delete(fn);
+    return this;
+  }
+  __fire(name: string, payload: any): void {
+    const s = this._listeners.get(name);
+    if (!s || s.size === 0) return;
+    for (const cb of Array.from(s)) {
+      try { cb(payload); } catch {}
+    }
+  }
 }
 
 // Simple global registry per map instance
 const markersByMap = new WeakMap<Impl, Set<LeafletMarkerFacade>>();
+const eventsHooked = new WeakSet<Impl>();
+const hoverByMap = new WeakMap<Impl, LeafletMarkerFacade | null>();
 
 function getSet(map: Impl): Set<LeafletMarkerFacade> {
   let s = markersByMap.get(map);
@@ -80,10 +117,74 @@ function flushMarkers(map: Impl, recent?: LeafletMarkerFacade) {
   const arr: any[] = [];
   for (const m of set) arr.push({ lng: m.__getLngLat().lng, lat: m.__getLngLat().lat, type: m.__getType() });
   (map as any).setMarkers(arr);
+  hookMapPointerEvents(map);
 }
 
 function removeMarker(map: Impl, marker: LeafletMarkerFacade) {
   const set = getSet(map);
   set.delete(marker);
   flushMarkers(map);
+}
+
+function hookMapPointerEvents(map: Impl) {
+  if (eventsHooked.has(map)) return;
+  eventsHooked.add(map);
+  try {
+    (map as any).events.on('pointermove').each((e: any) => handlePointerMove(map, e));
+    (map as any).events.on('pointerdown').each((e: any) => handlePointerDown(map, e));
+    (map as any).events.on('pointerup').each((e: any) => handlePointerUp(map, e));
+  } catch {}
+}
+
+function handlePointerMove(map: Impl, e: { x: number; y: number; view: any }) {
+  const over = hitTest(map, e.x, e.y);
+  const prev = hoverByMap.get(map) || null;
+  if (over !== prev) {
+    if (prev) prev.__fire('mouseout', { type: 'mouseout', originalEvent: e, target: prev });
+    if (over) over.__fire('mouseover', { type: 'mouseover', originalEvent: e, target: over });
+    hoverByMap.set(map, over || null);
+  }
+  if (over) over.__fire('mousemove', { type: 'mousemove', originalEvent: e, target: over });
+}
+
+function handlePointerDown(map: Impl, e: { x: number; y: number; view: any }) {
+  const over = hitTest(map, e.x, e.y);
+  if (over) over.__fire('mousedown', { type: 'mousedown', originalEvent: e, target: over });
+}
+function handlePointerUp(map: Impl, e: { x: number; y: number; view: any }) {
+  const over = hitTest(map, e.x, e.y);
+  if (over) {
+    over.__fire('mouseup', { type: 'mouseup', originalEvent: e, target: over });
+    over.__fire('click', { type: 'click', originalEvent: e, target: over, latlng: over.getLatLng?.() });
+  }
+}
+
+function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | null {
+  const set = getSet(map);
+  if (set.size === 0) return null;
+  // Compute CSS position of each marker and test bounds
+  const rect = (map as any).container.getBoundingClientRect();
+  const widthCSS = rect.width;
+  const heightCSS = rect.height;
+  const z = (map as any).zoom as number;
+  const zInt = Math.floor(z);
+  const scale = Math.pow(2, z - zInt);
+  const imageMaxZ = (map as any)._sourceMaxZoom || (map as any).maxZoom;
+  const s = Math.pow(2, imageMaxZ - zInt);
+  const center = (map as any).center as { lng: number; lat: number };
+  const centerWorld = { x: center.lng / s, y: center.lat / s };
+  const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
+  let hit: LeafletMarkerFacade | null = null;
+  for (const m of Array.from(set)) {
+    const p = m.__getLngLat();
+    const w = m.__getSize().w || 32;
+    const h = m.__getSize().h || 32;
+    const mw = { x: p.lng / s, y: p.lat / s };
+    const xCSSm = (mw.x - tlWorld.x) * scale;
+    const yCSSm = (mw.y - tlWorld.y) * scale;
+    const left = xCSSm - w / 2;
+    const top = yCSSm - h / 2;
+    if (xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h) hit = m; // last wins (topmost)
+  }
+  return hit;
 }
