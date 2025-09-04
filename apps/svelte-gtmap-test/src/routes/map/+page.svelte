@@ -183,7 +183,7 @@ import { L, type LeafletMapFacade } from '@gtmap';
 <div bind:this={container} class="map">
 	<Hud {map} fpsCap={60} wheelSpeed={1.0} home={HOME} {markerCount} {setMarkerCount} />
   {#if map}
-    <ZoomControl {map} position="top-left" step={1} />
+    <ZoomControl {map} position="top-right" step={1} />
     <AttributionControl {map} position="bottom-right" text="Hagga Basin tiles © respective owners (game map)" />
   {/if}
 </div>
