@@ -31,6 +31,18 @@ export class IconRenderer {
 	private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number; capacityBytes: number }>();
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
 
+	// Expose resolved marker sizes for debug overlays (hitboxes)
+	getMarkerInfo(): Array<{ lng: number; lat: number; w: number; h: number; type: string }> {
+		const out: Array<{ lng: number; lat: number; w: number; h: number; type: string }> = [];
+		for (const m of this.markers) {
+			const sz = this.texSize.get(m.type) || { w: 32, h: 32 };
+			const w = m.size || sz.w;
+			const h = m.size || sz.h;
+			out.push({ lng: m.lng, lat: m.lat, w, h, type: m.type });
+		}
+		return out;
+	}
+
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
 	}

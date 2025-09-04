@@ -126,6 +126,7 @@ export default class GTMap implements MapImpl {
 	private _zoomCtrl!: ZoomController;
 	private _gfx!: Graphics;
 	private _state!: ViewState;
+	private _showMarkerHitboxes = false;
 	private _active = true;
 	private _glReleased = false;
 	private _maxBoundsPx: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
@@ -1050,6 +1051,11 @@ export default class GTMap implements MapImpl {
 		this._needsRender = true;
 	}
 
+	public setMarkerHitboxesVisible(on: boolean) {
+		this._showMarkerHitboxes = !!on;
+		this._needsRender = true;
+	}
+
 	private _ensureOverlaySizes() {
 		const rect = this.container.getBoundingClientRect();
 		const wCSS = Math.max(1, rect.width | 0);
@@ -1074,12 +1080,12 @@ export default class GTMap implements MapImpl {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		ctx.save();
 		try { ctx.scale(this._dpr || 1, this._dpr || 1); } catch {}
-		if (!this._vectors.length) return;
-		const z = this.zoom;
-		const rect = this.container.getBoundingClientRect();
-		const viewport = { x: rect.width, y: rect.height };
-		const imageMaxZ = (this as any)._sourceMaxZoom || this.maxZoom;
-		for (const prim of this._vectors) {
+		if (this._vectors.length) {
+			const z = this.zoom;
+			const rect = this.container.getBoundingClientRect();
+			const viewport = { x: rect.width, y: rect.height };
+			const imageMaxZ = (this as any)._sourceMaxZoom || this.maxZoom;
+			for (const prim of this._vectors) {
 			const style: any = prim.style || {};
 			ctx.lineWidth = Math.max(1, style.weight ?? 2);
 			ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
@@ -1119,8 +1125,37 @@ export default class GTMap implements MapImpl {
 				finishStroke();
 				finishFill();
 			}
+			}
 		}
 		ctx.restore();
+
+		// Draw marker hitboxes (debug aid)
+		if (this._showMarkerHitboxes && this._icons) {
+			ctx.save();
+			try { ctx.scale(this._dpr || 1, this._dpr || 1); } catch {}
+			const rect = this.container.getBoundingClientRect();
+			const viewport = { x: rect.width, y: rect.height };
+			const imageMaxZ = (this as any)._sourceMaxZoom || this.maxZoom;
+			const info = this._icons.getMarkerInfo();
+			ctx.lineWidth = 1;
+			ctx.strokeStyle = 'rgba(255,0,0,0.9)';
+			ctx.fillStyle = 'rgba(255,0,0,0.06)';
+			ctx.font = '10px system-ui, sans-serif';
+			ctx.textBaseline = 'top';
+			for (const it of info) {
+				const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, this.center as any, viewport, imageMaxZ as number);
+				const left = css.x - it.w / 2;
+				const top = css.y - it.h / 2;
+				// Skip if completely outside viewport
+				if (left + it.w < 0 || top + it.h < 0 || left > viewport.x || top > viewport.y) continue;
+				ctx.beginPath();
+				ctx.rect(Math.round(left) + 0.5, Math.round(top) + 0.5, Math.round(it.w), Math.round(it.h));
+				ctx.fill();
+				ctx.stroke();
+				try { ctx.fillText(it.type, Math.round(left) + 2, Math.round(top) + 2); } catch {}
+			}
+			ctx.restore();
+		}
 	}
 
 }

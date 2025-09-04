@@ -139,6 +139,7 @@ export interface MapImpl {
 	setMaxBoundsViscosity(v: number): void;
 	setIconDefs(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>): Promise<void>;
 	setMarkers(markers: Array<{ lng: number; lat: number; type: string; size?: number }>): void;
+	setMarkerHitboxesVisible?(on: boolean): void;
 	destroy(): void;
 }
 

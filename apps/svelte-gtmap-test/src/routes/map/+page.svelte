@@ -195,7 +195,7 @@
 				[8192, 8192]
 			]
 		}).addTo(map!);
-
+		map.__impl.setMarkerHitboxesVisible(true);
 		gridLayer = L.grid();
 
 		// Resize handling (debounced): wait until user stops resizing
