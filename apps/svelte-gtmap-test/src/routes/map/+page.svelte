@@ -3,7 +3,9 @@
 
 	import { onMount, onDestroy } from 'svelte';
 import { L, type LeafletMapFacade } from '@gtmap';
-	import Hud from '$lib/Hud.svelte';
+    import Hud from '$lib/Hud.svelte';
+    import ZoomControl from '$lib/ZoomControl.svelte';
+    import AttributionControl from '$lib/AttributionControl.svelte';
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
 
@@ -180,6 +182,10 @@ import { L, type LeafletMapFacade } from '@gtmap';
 
 <div bind:this={container} class="map">
 	<Hud {map} fpsCap={60} wheelSpeed={1.0} home={HOME} {markerCount} {setMarkerCount} />
+  {#if map}
+    <ZoomControl {map} position="top-left" step={1} />
+    <AttributionControl {map} position="bottom-right" text="Hagga Basin tiles © respective owners (game map)" />
+  {/if}
 </div>
 
 <style>
