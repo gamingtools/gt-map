@@ -46,7 +46,9 @@ export class TileQueue {
       const dy = t.y - centerTileY;
       const dist = Math.hypot(dx, dy);
       const zBias = Math.abs(t.z - baseZ);
-      const score = t.priority * 100 + zBias * 10 + dist;
+      // favor current-level tiles near center; when idle, allow more lookahead
+      const distWeight = idle ? 1.0 : 2.0;
+      const score = t.priority * 100 + zBias * 12 + dist * distWeight;
       if (score < bestScore) {
         bestScore = score;
         bestIdx = i;

@@ -224,6 +224,7 @@ export default class GTMap implements MapImpl {
   private _wantedKeys = new Set<string>();
   private _pinnedKeys = new Set<string>();
   private prefetchEnabled = false;
+  private prefetchBaselineLevel: number | null = null;
   // Wheel coalescing + velocity tail
   // removed: legacy wheel coalescing fields (handled via easing)
   private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = {
@@ -276,6 +277,7 @@ export default class GTMap implements MapImpl {
     }
     if (options.prefetch) {
       if (typeof options.prefetch.enabled === 'boolean') this.prefetchEnabled = options.prefetch.enabled;
+      if (Number.isFinite(options.prefetch.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (options.prefetch.baselineLevel as number) | 0);
     }
     if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
     if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
@@ -304,6 +306,7 @@ export default class GTMap implements MapImpl {
         this._loader.start({ key, url }),
       addPinned: (key: string) => {
         this._pinnedKeys.add(key);
+        try { this._tileCache.pin(key); } catch {}
       },
     };
     this._loaderDeps = {
@@ -434,6 +437,10 @@ export default class GTMap implements MapImpl {
       this._tiles.clear();
       // also invalidate the screen cache to avoid ghosting from prior source
       try { this._screenCache?.clear?.(); } catch {}
+    }
+    // Optional baseline prefetch
+    if (this.prefetchEnabled && Number.isFinite(this.prefetchBaselineLevel as number)) {
+      try { this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel as number); } catch {}
     }
     this._needsRender = true;
   }
@@ -676,7 +683,7 @@ export default class GTMap implements MapImpl {
   }
   public setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number }) {
     if (typeof opts.enabled === 'boolean') this.prefetchEnabled = opts.enabled;
-    // baselineLevel no longer used
+    if (Number.isFinite(opts.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (opts.baselineLevel as number) | 0);
   }
   public setMaxBoundsPx(bounds: { minX: number; minY: number; maxX: number; maxY: number } | null) {
     this._maxBoundsPx = bounds ? { ...bounds } : null;
