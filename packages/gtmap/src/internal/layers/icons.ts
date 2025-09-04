@@ -291,10 +291,10 @@ export class IconRenderer {
 			const uv = this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
 			gl.uniform2f(ctx.loc.u_uv0!, uv.u0, uv.v0);
 			gl.uniform2f(ctx.loc.u_uv1!, uv.u1, uv.v1);
-			for (const m of list) {
-				const p = ctx.project(m.lng, m.lat, zInt);
-				let xCSS = (p.x - tlWorld.x) * scale;
-				let yCSS = (p.y - tlWorld.y) * scale;
+				for (const m of list) {
+					const p = ctx.project(m.lng, m.lat, baseZ);
+					let xCSS = (p.x - tlWorld.x) * effScale;
+					let yCSS = (p.y - tlWorld.y) * effScale;
 				const w = m.size || sz.w;
 				const h = m.size || sz.h;
 				// Center the icon on (xCSS, yCSS)
