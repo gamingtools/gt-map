@@ -177,8 +177,6 @@ export class IconRenderer {
 		container: HTMLElement;
 		project: (x: number, y: number, z: number) => { x: number; y: number };
 		wrapX: boolean;
-		mapSize: { width: number; height: number };
-		imageMaxZ: number;
 	}) {
 		if (this.markers.length === 0) return;
 		const gl = ctx.gl;
@@ -191,26 +189,7 @@ export class IconRenderer {
 		const snap = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
 		tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 		// Compute map scissor in device pixels to clip icons outside the finite image
-		const s = Coords.sFor(ctx.imageMaxZ, baseZ);
-		const levelW = ctx.mapSize.width / s;
-		const levelH = ctx.mapSize.height / s;
-		const mapLeftCSS = -tlWorld.x * effScale;
-		const mapTopCSS = -tlWorld.y * effScale;
-		const mapRightCSS = (levelW - tlWorld.x) * effScale;
-		const mapBottomCSS = (levelH - tlWorld.y) * effScale;
-		const cutLeft = Math.max(0, mapLeftCSS);
-		const cutTop = Math.max(0, mapTopCSS);
-		const cutRight = Math.min(widthCSS, mapRightCSS);
-		const cutBottom = Math.min(heightCSS, mapBottomCSS);
-		const hasOverlap = cutRight > cutLeft && cutBottom > cutTop;
-		if (!hasOverlap) return;
-		const scX = Math.max(0, Math.round(cutLeft * ctx.dpr));
-		const scY = Math.max(0, Math.round((heightCSS - cutBottom) * ctx.dpr));
-		const scW = Math.max(0, Math.round((cutRight - cutLeft) * ctx.dpr));
-		const scH = Math.max(0, Math.round((cutBottom - cutTop) * ctx.dpr));
-		const prevScissor = (ctx.gl as any).isEnabled?.(ctx.gl.SCISSOR_TEST) || false;
-		ctx.gl.enable(ctx.gl.SCISSOR_TEST);
-		ctx.gl.scissor(scX, scY, scW, scH);
+		// Icons themselves are not clipped here; screen cache draw is clipped to map extent in renderer.
 
 		// Try instanced path first
 		const invS = ctx.project(1, 0, baseZ).x - ctx.project(0, 0, baseZ).x;
@@ -287,8 +266,6 @@ export class IconRenderer {
 				if (isGL2) (gl as any).drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, rec.count);
 				else this.instExt!.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, rec.count);
 			}
-				// Restore scissor state and return
-				if (!prevScissor) ctx.gl.disable(ctx.gl.SCISSOR_TEST);
 				return;
 			}
 
@@ -336,8 +313,7 @@ export class IconRenderer {
 				gl.uniform2f(ctx.loc.u_size, tw, th);
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 			}
-			// Restore scissor state
-			if (!prevScissor) ctx.gl.disable(ctx.gl.SCISSOR_TEST);
+			// no scissor state changes here
 		}
 	}
 

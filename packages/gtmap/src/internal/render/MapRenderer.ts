@@ -45,7 +45,32 @@ export default class MapRenderer {
 		gl.uniform2f((ctx.loc as any).u_uv1, 1.0, 1.0);
 		if (opts?.zoomVelocityTick) opts.zoomVelocityTick();
 		if (opts?.panVelocityTick) opts.panVelocityTick();
-		if (ctx.useScreenCache && ctx.screenCache) (ctx.screenCache as any).draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.loc!, ctx.prog!, ctx.quad!, ctx.canvas);
+			if (ctx.useScreenCache && ctx.screenCache) {
+				// Clip cached frame to the finite map extent to avoid overlay ghosts outside tiles
+				const imgMax = (ctx as any).sourceMaxZoom || ctx.maxZoom;
+				const sLvl = Coords.sFor(imgMax, baseZ);
+				const levelW = ctx.mapSize.width / sLvl;
+				const levelH = ctx.mapSize.height / sLvl;
+				const mapLeftCSS = -tlWorld.x * scale;
+				const mapTopCSS = -tlWorld.y * scale;
+				const mapRightCSS = (levelW - tlWorld.x) * scale;
+				const mapBottomCSS = (levelH - tlWorld.y) * scale;
+				const cutLeft = Math.max(0, mapLeftCSS);
+				const cutTop = Math.max(0, mapTopCSS);
+				const cutRight = Math.min(widthCSS, mapRightCSS);
+				const cutBottom = Math.min(heightCSS, mapBottomCSS);
+				if (cutRight > cutLeft && cutBottom > cutTop) {
+					const scX = Math.max(0, Math.round(cutLeft * ctx.dpr));
+					const scY = Math.max(0, Math.round((heightCSS - cutBottom) * ctx.dpr));
+					const scW = Math.max(0, Math.round((cutRight - cutLeft) * ctx.dpr));
+					const scH = Math.max(0, Math.round((cutBottom - cutTop) * ctx.dpr));
+					const prevScissor = (gl as any).isEnabled?.(gl.SCISSOR_TEST) || false;
+					gl.enable(gl.SCISSOR_TEST);
+					gl.scissor(scX, scY, scW, scH);
+					(ctx.screenCache as any).draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.loc!, ctx.prog!, ctx.quad!, ctx.canvas);
+					if (!prevScissor) gl.disable(gl.SCISSOR_TEST);
+				}
+			}
 		const coverage = (ctx.raster as any).coverage(ctx.tileCache as any, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, (ctx as any).sourceMaxZoom);
 		const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
 		if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
