@@ -21,6 +21,8 @@ export const L = {
   divIcon,
   layerGroup,
   featureGroup,
+  // compatibility alias for legacy `GT.L.grid()`
+  grid: gridLayer,
   gridLayer,
   popup,
   tooltip,
@@ -37,4 +39,3 @@ export const L = {
 } as const;
 
 export default L;
-
