@@ -93,6 +93,8 @@ export class LeafletMarkerFacade extends Layer {
 
 // Simple global registry per map instance
 const markersByMap = new WeakMap<Impl, Set<LeafletMarkerFacade>>();
+type GridIndex = { cell: number; grid: Map<string, LeafletMarkerFacade[]> };
+const gridByMap = new WeakMap<Impl, GridIndex>();
 const eventsHooked = new WeakSet<Impl>();
 const hoverByMap = new WeakMap<Impl, LeafletMarkerFacade | null>();
 const lastClickByMap = new WeakMap<Impl, { t: number; m: LeafletMarkerFacade | null; x: number; y: number }>();
@@ -119,6 +121,7 @@ function flushMarkers(map: Impl, recent?: LeafletMarkerFacade) {
   for (const m of set) arr.push({ lng: m.__getLngLat().lng, lat: m.__getLngLat().lat, type: m.__getType() });
   (map as any).setMarkers(arr);
   hookMapPointerEvents(map);
+  rebuildIndex(map);
 }
 
 function removeMarker(map: Impl, marker: LeafletMarkerFacade) {
@@ -208,10 +211,26 @@ function handleContextMenu(map: Impl, e: MapPointerEvent) {
   if (over) over.__fire('contextmenu', buildMouseEvent(over, 'contextmenu', e));
 }
 
+function rebuildIndex(map: Impl) {
+  const set = markersByMap.get(map);
+  if (!set || set.size === 0) { gridByMap.delete(map); return; }
+  const ms = (map as any).mapSize as { width: number; height: number } | undefined;
+  const cell = 256; // native px
+  const grid = new Map<string, LeafletMarkerFacade[]>();
+  for (const m of Array.from(set)) {
+    const p = m.__getLngLat();
+    const cx = Math.floor((p.lng as number) / cell);
+    const cy = Math.floor((p.lat as number) / cell);
+    const key = `${cx},${cy}`;
+    let arr = grid.get(key);
+    if (!arr) { arr = []; grid.set(key, arr); }
+    arr.push(m);
+  }
+  gridByMap.set(map, { cell, grid });
+}
+
 function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | null {
-  const set = getSet(map);
-  if (set.size === 0) return null;
-  // Compute CSS position of each marker and test bounds
+  const idx = gridByMap.get(map);
   const rect = (map as any).container.getBoundingClientRect();
   const widthCSS = rect.width;
   const heightCSS = rect.height;
@@ -223,8 +242,28 @@ function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | n
   const center = (map as any).center as { lng: number; lat: number };
   const centerWorld = { x: center.lng / s, y: center.lat / s };
   const tlWorld = { x: centerWorld.x - widthCSS / (2 * scale), y: centerWorld.y - heightCSS / (2 * scale) };
+  // Convert pointer CSS -> native
+  const pointerWorld = { x: tlWorld.x + xCSS / scale, y: tlWorld.y + yCSS / scale };
+  const pointerNative = { x: pointerWorld.x * s, y: pointerWorld.y * s };
+  let candidates: LeafletMarkerFacade[] = [];
+  if (idx) {
+    const cell = idx.cell;
+    const cx = Math.floor(pointerNative.x / cell);
+    const cy = Math.floor(pointerNative.y / cell);
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const key = `${cx + dx},${cy + dy}`;
+        const arr = idx.grid.get(key);
+        if (arr && arr.length) candidates = candidates.concat(arr);
+      }
+    }
+  } else {
+    // Fallback: linear scan if no index
+    const set = getSet(map);
+    candidates = Array.from(set);
+  }
   let hit: LeafletMarkerFacade | null = null;
-  for (const m of Array.from(set)) {
+  for (const m of candidates) {
     const p = m.__getLngLat();
     const w = m.__getSize().w || 32;
     const h = m.__getSize().h || 32;
@@ -233,7 +272,7 @@ function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | n
     const yCSSm = (mw.y - tlWorld.y) * scale;
     const left = xCSSm - w / 2;
     const top = yCSSm - h / 2;
-    if (xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h) hit = m; // last wins (topmost)
+    if (xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h) hit = m;
   }
   return hit;
 }

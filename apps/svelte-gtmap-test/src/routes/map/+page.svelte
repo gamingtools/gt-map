@@ -12,7 +12,7 @@
 
   type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
   let iconDefs: Record<string, IconDef> = {};
-  let markerCount = 8000;
+  let markerCount = 20000;
 
   function clampMarkerCount(n: number): number {
     if (!Number.isFinite(n)) return 0;
@@ -36,7 +36,7 @@
     const keys = Object.keys(iconDefs);
     if (keys.length === 0) { map.setMarkers([]); return; }
     clearLeafletMarkers();
-    const THRESHOLD_FACADE = 80000;
+    const THRESHOLD_FACADE = 20000;
     if (count <= THRESHOLD_FACADE) {
       const L = GT.L as any;
       for (let i = 0; i < count; i++) {
