@@ -67,10 +67,6 @@
 			usedWindowResize = true;
 		}
 
-		map.events.on('pointerup').each((e) => console.log('up', e));
-
-		// Teardown on navigation/unmount per Svelte docs
-
 		// Teardown on navigation/unmount per Svelte docs
 		return () => {
 			map?.remove?.();

@@ -1,4 +1,5 @@
 import Impl from '../mapgl';
+import { registerPublic } from '../publicBridge';
 import * as Coords from '../coords';
 import type { MapImpl } from '../types';
 import type { EventBus } from '../events/stream';
@@ -58,6 +59,8 @@ export default class LeafletMapFacade {
 		}
 		if (typeof options?.maxBoundsViscosity === 'number') (init as any).maxBoundsViscosity = options.maxBoundsViscosity;
 		this._map = new Impl(el as HTMLDivElement, init);
+		// Register public proxy for this map impl so events can expose public instances
+		try { registerPublic(this._map as any, this as any); } catch {}
 		// Apply inertia options if provided (Leaflet-compatible)
 		const inertiaOpts: any = {};
 		if (typeof options?.inertia === 'boolean') inertiaOpts.inertia = options.inertia;

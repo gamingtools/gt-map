@@ -1,5 +1,6 @@
 import type Impl from '../mapgl';
 import * as Coords from '../coords';
+import { toPublic } from '../publicBridge';
 import { DEBUG } from '../../debug';
 
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
@@ -217,20 +218,21 @@ export type MarkerMouseEvent = {
 };
 
 function buildMouseEvent(m: LeafletMarkerFacade, type: MarkerEventName, e: MapPointerEvent): MarkerMouseEvent {
-	const latlngObj = { lat: m.__getLngLat().lat, lng: m.__getLngLat().lng };
-	const containerPoint = { x: e.x, y: e.y };
-	const layerPoint = { x: e.x, y: e.y };
-	return {
-		type,
-		target: m,
-		sourceTarget: m,
-		propagatedFrom: undefined,
-		layer: undefined,
-		latlng: latlngObj,
-		layerPoint,
-		containerPoint,
-		originalEvent: e.originalEvent,
-	};
+    const latlngObj = { lat: m.__getLngLat().lat, lng: m.__getLngLat().lng };
+    const containerPoint = { x: e.x, y: e.y };
+    const layerPoint = { x: e.x, y: e.y };
+    const pub = (toPublic<any>(m) as any) || (m as any);
+    return {
+        type,
+        target: pub,
+        sourceTarget: pub,
+        propagatedFrom: undefined,
+        layer: undefined,
+        latlng: latlngObj,
+        layerPoint,
+        containerPoint,
+        originalEvent: e.originalEvent,
+    } as any;
 }
 
 function handlePointerMove(map: Impl, e: MapPointerEvent) {
