@@ -26,6 +26,7 @@ export default class InputController {
     pinchStartNative?: { x: number; y: number };
   } = null;
   private cleanup: (() => void) | null = null;
+  private suppressInertiaUntil = 0;
   private static normalizeWheel(e: WheelEvent, canvasHeight: number): number {
     const lineHeight = 16;
     if ((e as any).deltaMode === 1) return (e as any).deltaY;
@@ -195,10 +196,31 @@ export default class InputController {
     const onTouchMove = (e: TouchEvent) => {
       const touchState = this.touchState;
       if (!touchState) return;
+      // If pinch transitioned to one finger, switch to pan smoothly
+      if (touchState.mode === 'pinch' && e.touches.length === 1) {
+        const t = e.touches[0];
+        touchState.mode = 'pan';
+        touchState.x = t.clientX;
+        touchState.y = t.clientY;
+        // Reset inertia samples to avoid a large throw from stale data
+        this._positions = [];
+        this._times = [];
+        // Suppress inertia briefly after pinch
+        const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        this.suppressInertiaUntil = now + 250;
+        // Do not process as pan in the same frame
+        e.preventDefault();
+        return;
+      }
       if (touchState.mode === 'pan' && e.touches.length === 1) {
         const t = e.touches[0];
-        const dx = t.clientX - (touchState.x || 0);
-        const dy = t.clientY - (touchState.y || 0);
+        // Initialize baseline if missing (first pan frame)
+        if (touchState.x == null || touchState.y == null) {
+          touchState.x = t.clientX;
+          touchState.y = t.clientY;
+        }
+        const dx = t.clientX - touchState.x;
+        const dy = t.clientY - touchState.y;
         touchState.x = t.clientX;
         touchState.y = t.clientY;
         const view = deps.getView();
@@ -308,6 +330,8 @@ export default class InputController {
 
   private _maybeStartInertia() {
     const deps = this.deps;
+    const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (now < this.suppressInertiaUntil) return;
     if (!deps.getInertia() || this._times.length < 2) return;
     const ease = deps.getEaseLinearity();
     const maxSpeed = deps.getInertiaMaxSpeed();
