@@ -4,7 +4,7 @@ export { GT as default } from './api/L';
 
 // Also expose a Leaflet-compatible surface: named exports and `L` alias
 export * from './leaflet/index';
-export { GT as L } from './api/L';
+export { L } from './leaflet/L';
 
 // Types
 export type { EventBus, EventStream } from './events/stream';
