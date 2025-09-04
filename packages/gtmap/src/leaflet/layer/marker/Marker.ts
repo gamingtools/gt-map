@@ -1,5 +1,5 @@
-import { LeafletMarkerFacade as BaseMarker, type MarkerOptions } from '../../../adapters/marker';
-import type { LeafletLatLng } from '../../../adapters/util';
+import { LeafletMarkerFacade as BaseMarker, type MarkerOptions } from '../../../internal/adapters/marker';
+import type { LeafletLatLng } from '../../../internal/adapters/util';
 
 export class Marker extends BaseMarker {
 	constructor(latlng: LeafletLatLng, options?: MarkerOptions) {

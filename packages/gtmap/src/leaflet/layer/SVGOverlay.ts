@@ -1,4 +1,4 @@
-import Layer from '../../adapters/layer';
+import Layer from '../../internal/adapters/layer';
 import { notImplemented } from '../util';
 
 export class SVGOverlay extends Layer {

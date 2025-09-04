@@ -47,7 +47,7 @@ class TouchZoom {
 (Map as any).TouchZoom = TouchZoom;
 
 export { Map, createMap as map };
-export { default as Layer } from '../../adapters/layer';
-export { LeafletLayerGroupFacade as LayerGroup, createLayerGroup as layerGroup, LeafletFeatureGroupFacade as FeatureGroup, createFeatureGroup as featureGroup } from '../../adapters/layerGroup';
+export { default as Layer } from '../../internal/adapters/layer';
+export { LeafletLayerGroupFacade as LayerGroup, createLayerGroup as layerGroup, LeafletFeatureGroupFacade as FeatureGroup, createFeatureGroup as featureGroup } from '../../internal/adapters/layerGroup';
 
 export * from '../layer/index';

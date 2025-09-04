@@ -1,1 +1,1 @@
-export { default as Layer } from '../../adapters/layer';
+export { default as Layer } from '../../internal/adapters/layer';

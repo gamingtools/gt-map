@@ -1,4 +1,4 @@
-import { LeafletTileLayerFacade as BaseTileLayer, type TileLayerOptions } from '../../../adapters/tileLayer';
+import { LeafletTileLayerFacade as BaseTileLayer, type TileLayerOptions } from '../../../internal/adapters/tileLayer';
 import { notImplemented } from '../../../leaflet/util';
 
 export class TileLayer extends BaseTileLayer {}
