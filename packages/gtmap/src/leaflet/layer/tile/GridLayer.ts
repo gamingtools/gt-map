@@ -1,4 +1,4 @@
-import { LeafletGridLayerFacade as BaseGridLayer, type GridLayerOptions } from '../../../api/grid';
+import { LeafletGridLayerFacade as BaseGridLayer, type GridLayerOptions } from '../../../adapters/grid';
 
 export class GridLayer extends BaseGridLayer {}
 

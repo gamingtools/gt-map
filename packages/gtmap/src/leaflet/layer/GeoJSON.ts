@@ -1,5 +1,5 @@
 import { notImplemented } from '../util';
-import Layer from '../../api/layer';
+import Layer from '../../adapters/layer';
 
 export class GeoJSON extends Layer {
 	constructor(_data?: any, _options?: any) {

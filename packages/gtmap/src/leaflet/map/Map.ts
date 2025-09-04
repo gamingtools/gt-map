@@ -1,4 +1,4 @@
-import BaseMap, { type LeafletMapOptions } from '../../api/map';
+import BaseMap, { type LeafletMapOptions } from '../../adapters/map';
 
 // Re-export Leaflet-compatible options type
 export type { LeafletMapOptions };

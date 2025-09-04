@@ -9,7 +9,7 @@ export default GT;
 
 // Re-export public types from latest facade for compatibility
 export type { LeafletMapOptions } from '../leaflet/map/Map';
-export type { TileLayerOptions } from '../api/tileLayer';
-export type { IconOptions, LeafletIcon, MarkerOptions } from '../api/marker';
-export type { LeafletLatLng } from '../api/util';
-export type { GridLayerOptions } from '../api/grid';
+export type { TileLayerOptions } from '../adapters/tileLayer';
+export type { IconOptions, LeafletIcon, MarkerOptions } from '../adapters/marker';
+export type { LeafletLatLng } from '../adapters/util';
+export type { GridLayerOptions } from '../adapters/grid';

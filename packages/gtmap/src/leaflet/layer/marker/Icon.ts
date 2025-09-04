@@ -1,4 +1,4 @@
-import { createIcon, type IconOptions, type LeafletIcon } from '../../../api/marker';
+import { createIcon, type IconOptions, type LeafletIcon } from '../../../adapters/marker';
 
 export class Icon implements LeafletIcon {
 	public __type: string;

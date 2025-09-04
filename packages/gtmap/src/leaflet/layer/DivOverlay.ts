@@ -1,4 +1,4 @@
-import Layer from '../../api/layer';
+import Layer from '../../adapters/layer';
 import { notImplemented } from '../util';
 
 export class DivOverlay extends Layer {
