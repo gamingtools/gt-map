@@ -1,5 +1,6 @@
 import Impl from '../mapgl';
 import type { EventBus } from '../events/stream';
+
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
 
 type FitBoundsPadding = number | [number, number];
