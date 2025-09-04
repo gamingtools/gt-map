@@ -51,7 +51,7 @@ export default class MapRenderer {
 		if (opts?.zoomVelocityTick) opts.zoomVelocityTick();
 		if (opts?.panVelocityTick) opts.panVelocityTick();
 		if (ctx.useScreenCache && ctx.screenCache) (ctx.screenCache as any).draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.loc!, ctx.prog!, ctx.quad!, ctx.canvas);
-		const coverage = (ctx.raster as any).coverage(ctx.tileCache as any, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom);
+		const coverage = (ctx.raster as any).coverage(ctx.tileCache as any, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, (ctx as any).sourceMaxZoom);
 		const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
 		if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
 			for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
@@ -63,7 +63,7 @@ export default class MapRenderer {
 				};
 				const snapL = (v: number) => Math.round(v * scaleL * ctx.dpr) / (scaleL * ctx.dpr);
 				tlL = { x: snapL(tlL.x), y: snapL(tlL.y) };
-				const covL = (ctx.raster as any).coverage(ctx.tileCache as any, lvl, tlL, scaleL, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom);
+				const covL = (ctx.raster as any).coverage(ctx.tileCache as any, lvl, tlL, scaleL, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, (ctx as any).sourceMaxZoom);
 				// Backfill lower levels at full raster opacity
 				gl.uniform1f((ctx.loc as any).u_alpha, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
 				(ctx.raster as any).drawTilesForLevel(ctx.loc! as any, ctx.tileCache as any, ctx.enqueueTile, {
