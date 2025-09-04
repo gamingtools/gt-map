@@ -5,4 +5,6 @@
   "trailingComma": "all",
   "arrowParens": "always",
   "useTabs": true
+  ,
+  "tabWidth": 4
 }
