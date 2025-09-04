@@ -996,7 +996,6 @@ export default class GTMap implements MapImpl {
 		const levelH = Math.ceil(this.mapSize.height / Math.pow(2, imageMaxZ - zInt));
 		const NX = Math.ceil(levelW / TS);
 		const NY = Math.ceil(levelH / TS);
-		if ((globalThis as any).DEBUG) { try { console.debug('[prefetch]', { z: zInt, startX, startY, endX, endY, NX, NY }); } catch {} }
         for (let ty = startY; ty <= endY; ty++) {
 			if (ty < 0 || ty >= NY) continue;
 			for (let tx = startX; tx <= endX; tx++) {

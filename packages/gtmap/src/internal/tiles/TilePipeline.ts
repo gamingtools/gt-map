@@ -42,8 +42,7 @@ export default class TilePipeline {
 		const cx = Math.floor(centerLevel.x / TS);
 		const cy = Math.floor(centerLevel.y / TS);
 		const R = 2; // 5x5 ring around center
-		if ((globalThis as any).DEBUG) { try { console.debug('[baseline.prefetch]', { z, cx, cy, R }); } catch {} }
-    for (let dy = -R; dy <= R; dy++) {
+		for (let dy = -R; dy <= R; dy++) {
 			for (let dx = -R; dx <= R; dx++) {
 				const tx = cx + dx;
 				const ty = cy + dy;
