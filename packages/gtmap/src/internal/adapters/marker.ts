@@ -1,5 +1,6 @@
 import type Impl from '../mapgl';
 import * as Coords from '../coords';
+import { DEBUG } from '../../debug';
 
 import { toLngLat, toLeafletLatLng, type LeafletLatLng } from './util';
 import Layer from './layer';
@@ -240,12 +241,16 @@ function handlePointerMove(map: Impl, e: MapPointerEvent) {
 }
 
 function handlePointerDown(map: Impl, e: MapPointerEvent) {
-	const over = hitTest(map, e.x, e.y);
+	const over = hitTest(map, e.x, e.y, true);
+	if (DEBUG) {
+		try { console.debug('[marker.pointerdown]', { x: e.x, y: e.y, over: over ? summarizeMarker(over) : null }); } catch {}
+	}
 	if (over) over.__fire('mousedown', buildMouseEvent(over, 'mousedown', e));
 }
 function handlePointerUp(map: Impl, e: MapPointerEvent) {
-	const over = hitTest(map, e.x, e.y);
+	const over = hitTest(map, e.x, e.y, true);
 	if (over) {
+		if (DEBUG) { try { console.debug('[marker.pointerup]', { x: e.x, y: e.y, over: summarizeMarker(over) }); } catch {} }
 		over.__fire('mouseup', buildMouseEvent(over, 'mouseup', e));
 		over.__fire('click', buildMouseEvent(over, 'click', e));
 		// dblclick detection
@@ -256,6 +261,7 @@ function handlePointerUp(map: Impl, e: MapPointerEvent) {
 			const dx = e.x - last.x;
 			const dy = e.y - last.y;
 			if (dx * dx + dy * dy <= 36) {
+				if (DEBUG) { try { console.debug('[marker.dblclick]', { last, now, dx, dy }); } catch {} }
 				over.__fire('dblclick', buildMouseEvent(over, 'dblclick', e));
 			}
 		}
@@ -264,7 +270,8 @@ function handlePointerUp(map: Impl, e: MapPointerEvent) {
 }
 
 function handleContextMenu(map: Impl, e: MapPointerEvent) {
-	const over = hitTest(map, e.x, e.y);
+	const over = hitTest(map, e.x, e.y, true);
+	if (DEBUG) { try { console.debug('[marker.contextmenu]', { x: e.x, y: e.y, over: over ? summarizeMarker(over) : null }); } catch {} }
 	if (over) over.__fire('contextmenu', buildMouseEvent(over, 'contextmenu', e));
 }
 
@@ -291,7 +298,15 @@ function rebuildIndex(map: Impl) {
 	gridByMap.set(map, { cell, grid });
 }
 
-function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | null {
+function summarizeMarker(m: LeafletMarkerFacade) {
+	try {
+		return { type: m.__getType(), lng: m.__getLngLat().lng, lat: m.__getLngLat().lat, size: m.__getSize() };
+	} catch {
+		return { type: 'unknown' } as any;
+	}
+}
+
+function hitTest(map: Impl, xCSS: number, yCSS: number, log?: boolean): LeafletMarkerFacade | null {
 	const idx = gridByMap.get(map);
 	const rect = (map as any).container.getBoundingClientRect();
 	const widthCSS = rect.width;
@@ -306,6 +321,9 @@ function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | n
 		const pw = Coords.cssToWorld({ x: xCSS, y: yCSS }, z, center as any, { x: widthCSS, y: heightCSS }, imageMaxZ as number);
 		const cx = Math.floor(pw.x / cell);
 		const cy = Math.floor(pw.y / cell);
+		if (DEBUG && log) {
+			try { console.debug('[marker.hitTest.index]', { xCSS, yCSS, z, imageMaxZ, center, viewport: { widthCSS, heightCSS }, world: pw, gridCell: { cx, cy } }); } catch {}
+		}
 		for (let dy = -1; dy <= 1; dy++) {
 			for (let dx = -1; dx <= 1; dx++) {
 				const key = `${cx + dx},${cy + dy}`;
@@ -318,6 +336,7 @@ function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | n
 		const set = getSet(map);
 		candidates = Array.from(set);
 	}
+	if (DEBUG && log) { try { console.debug('[marker.hitTest.candidates]', { count: candidates.length }); } catch {} }
 	let hit: LeafletMarkerFacade | null = null;
 	for (const m of candidates) {
 		const p = m.__getLngLat();
@@ -326,7 +345,20 @@ function hitTest(map: Impl, xCSS: number, yCSS: number): LeafletMarkerFacade | n
 		const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, center as any, { x: widthCSS, y: heightCSS }, imageMaxZ as number);
 		const left = css.x - w / 2;
 		const top = css.y - h / 2;
-		if (xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h) hit = m;
+		const contains = xCSS >= left && xCSS <= left + w && yCSS >= top && yCSS <= top + h;
+		if (DEBUG && log) {
+			try {
+				console.debug('[marker.hitTest.test]', {
+					marker: { type: m.__getType(), lng: p.lng, lat: p.lat, w, h },
+					css,
+					rect: { left, top, w, h },
+					pointer: { xCSS, yCSS },
+					contains,
+				});
+			} catch {}
+		}
+		if (contains) hit = m;
 	}
+	if (DEBUG && log) { try { console.debug('[marker.hitTest.result]', { hit: hit ? summarizeMarker(hit) : null }); } catch {} }
 	return hit;
 }

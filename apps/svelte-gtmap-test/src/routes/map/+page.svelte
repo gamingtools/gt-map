@@ -195,7 +195,13 @@
 				[8192, 8192]
 			]
 		}).addTo(map!);
-		map.__impl.setMarkerHitboxesVisible(true);
+		L.marker([4096, 4096], {
+			icon: L.icon({
+				iconUrl: typedIconDefs.sandstorm.iconPath,
+				iconRetinaUrl: typedIconDefs.sandstorm.x2IconPath,
+				iconSize: [typedIconDefs.sandstorm.width, typedIconDefs.sandstorm.height]
+			})
+		}).addTo(map);
 		gridLayer = L.grid();
 
 		// Resize handling (debounced): wait until user stops resizing
