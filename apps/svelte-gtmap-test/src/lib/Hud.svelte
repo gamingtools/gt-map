@@ -87,8 +87,16 @@
 	$effect(() => {
 		map?.setGridVisible(gridEnabled);
 	});
-	$effect(() => { try { setMarkersEnabled?.(markersEnabled); } catch {} });
-	$effect(() => { try { setVectorsEnabled?.(vectorsEnabled); } catch {} });
+	$effect(() => {
+		try {
+			setMarkersEnabled?.(markersEnabled);
+		} catch {}
+	});
+	$effect(() => {
+		try {
+			setVectorsEnabled?.(vectorsEnabled);
+		} catch {}
+	});
 
 	function recenter() {
 		if (!map || !home) return;
@@ -99,18 +107,22 @@
 		markersLocal = n;
 		try {
 			if (markersDebounce != null) {
-				try { clearTimeout(markersDebounce); } catch {}
+				try {
+					clearTimeout(markersDebounce);
+				} catch {}
 			}
 			markersDebounce = setTimeout(() => {
 				markersDebounce = null;
-				try { setMarkerCount(n); } catch {}
+				try {
+					setMarkerCount(n);
+				} catch {}
 			}, 200) as unknown as number;
 		} catch {}
 	}
 </script>
 
 <div
-	class="pointer-events-none absolute top-2 left-2 z-10 rounded-md border border-gray-200/60 bg-white/80 px-3 py-2 text-xs text-gray-800 shadow backdrop-blur select-none"
+	class="pointer-events-none absolute left-2 top-2 z-10 select-none rounded-md border border-gray-200/60 bg-white/80 px-3 py-2 text-xs text-gray-800 shadow backdrop-blur"
 >
 	<!-- Status (non-interactive) -->
 	<div class="pointer-events-none grid grid-cols-1 gap-x-6 gap-y-1">
@@ -137,7 +149,7 @@
 	</div>
 	<div class="my-2 h-px bg-gray-200"></div>
 	<!-- Controls (interactive only on elements) -->
-	<div class="pointer-events-none space-y-2 select-auto">
+	<div class="pointer-events-none select-auto space-y-2">
 		<button
 			class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1 text-gray-800 hover:bg-white"
 			onclick={recenter}>Recenter</button
@@ -157,16 +169,16 @@
 				<span class="w-10 text-right tabular-nums">{wheelSpeed.toFixed(2)}</span>
 			</div>
 		</div>
-		<label class="flex items-center gap-2">
-			<input class="pointer-events-auto" type="checkbox" bind:checked={gridEnabled} />
+		<label class="pointer-events-auto flex items-center gap-2">
+			<input type="checkbox" bind:checked={gridEnabled} />
 			<span>Show Grid</span>
 		</label>
-		<label class="flex items-center gap-2">
-			<input class="pointer-events-auto" type="checkbox" bind:checked={markersEnabled} />
+		<label class="pointer-events-auto flex items-center gap-2">
+			<input type="checkbox" bind:checked={markersEnabled} />
 			<span>Show Markers</span>
 		</label>
-		<label class="flex items-center gap-2">
-			<input class="pointer-events-auto" type="checkbox" bind:checked={vectorsEnabled} />
+		<label class="pointer-events-auto flex items-center gap-2">
+			<input type="checkbox" bind:checked={vectorsEnabled} />
 			<span>Show Vectors</span>
 		</label>
 		<div>

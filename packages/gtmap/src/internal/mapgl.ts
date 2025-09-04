@@ -1052,15 +1052,18 @@ export default class GTMap implements MapImpl {
 
 	private _ensureOverlaySizes() {
 		const rect = this.container.getBoundingClientRect();
-		const w = Math.max(1, rect.width | 0);
-		const h = Math.max(1, rect.height | 0);
-		if (this.gridCanvas && (this.gridCanvas.width !== w || this.gridCanvas.height !== h)) {
-			this.gridCanvas.width = w;
-			this.gridCanvas.height = h;
+		const wCSS = Math.max(1, rect.width | 0);
+		const hCSS = Math.max(1, rect.height | 0);
+		const dpr = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
+		const wPx = Math.max(1, Math.round(wCSS * dpr));
+		const hPx = Math.max(1, Math.round(hCSS * dpr));
+		if (this.gridCanvas && (this.gridCanvas.width !== wPx || this.gridCanvas.height !== hPx)) {
+			this.gridCanvas.width = wPx;
+			this.gridCanvas.height = hPx;
 		}
-		if (this.vectorCanvas && (this.vectorCanvas.width !== w || this.vectorCanvas.height !== h)) {
-			this.vectorCanvas.width = w;
-			this.vectorCanvas.height = h;
+		if (this.vectorCanvas && (this.vectorCanvas.width !== wPx || this.vectorCanvas.height !== hPx)) {
+			this.vectorCanvas.width = wPx;
+			this.vectorCanvas.height = hPx;
 		}
 	}
 
@@ -1069,6 +1072,8 @@ export default class GTMap implements MapImpl {
 		this._ensureOverlaySizes();
 		const ctx = this._vectorCtx!;
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		ctx.save();
+		try { ctx.scale(this._dpr || 1, this._dpr || 1); } catch {}
 		if (!this._vectors.length) return;
 		const z = this.zoom;
 		const rect = this.container.getBoundingClientRect();
@@ -1115,6 +1120,7 @@ export default class GTMap implements MapImpl {
 				finishFill();
 			}
 		}
+		ctx.restore();
 	}
 
 }
