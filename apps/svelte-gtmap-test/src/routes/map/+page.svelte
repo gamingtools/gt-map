@@ -138,7 +138,8 @@ import { L, type LeafletMapFacade } from '@gtmap';
 			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
 			minZoom: 0,
 			maxZoom: 5,
-			wrapX: false
+			noWrap: true,
+			bounds: [[0, 0], [8192, 8192]] as [[number, number], [number, number]]
 		};
 		// Full image bounds (pixel CRS): 0..8192 for 8k base (256 * 2^5)
 		const BOUNDS: [[number, number], [number, number]] = [
@@ -160,7 +161,8 @@ import { L, type LeafletMapFacade } from '@gtmap';
 			maxZoom: HAGGA.maxZoom,
 			tileSize: 256,
 			tms: false,
-			wrapX: false
+			noWrap: true,
+			bounds: HAGGA.bounds
 		}).addTo(map!);
 
 		gridLayer = L.grid();
