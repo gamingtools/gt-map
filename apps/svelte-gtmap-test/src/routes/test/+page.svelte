@@ -1,50 +1,47 @@
 <script lang="ts">
-	type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
-
 	import { onMount, onDestroy } from 'svelte';
-	import { L, type LeafletMapFacade } from '@gtmap';
-	import Hud from '$lib/Hud.svelte';
-	import ZoomControl from '$lib/ZoomControl.svelte';
-	import AttributionControl from '$lib/AttributionControl.svelte';
+	import { GTMap } from '@gtmap';
+	import type { IconDef } from '@gtmap';
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
 
 	let container: HTMLDivElement | null = null;
-	let map: LeafletMapFacade;
+	let map: GTMap;
 
-	const HOME = { lng: 4096, lat: 4096 };
+	const HOME = { x: 4096, y: 4096 };
 
 	onMount(() => {
 		if (!container) return;
 
-		map = L.map(container, {
+		// Create map with new GTMap API
+		map = new GTMap(container, {
 			center: HOME,
 			zoom: 2,
 			minZoom: 0,
 			maxZoom: 10,
-			fpsCap: 60
+			fpsCap: 60,
+			prefetch: { enabled: true, baselineLevel: 2, ring: 0 }
 		});
-		map.setPrefetchOptions({ enabled: true, baselineLevel: 2, ring: 0 });
-		L.tileLayer('https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp', {
-			minZoom: 0,
-			maxZoom: 5,
+
+		// Set tile source
+		map.setTileSource({
+			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
+			sourceMinZoom: 0,
+			sourceMaxZoom: 5,
 			tileSize: 256,
-			tms: false,
-			noWrap: true,
-			bounds: [
-				[0, 0],
-				[8192, 8192]
-			]
-		}).addTo(map!);
-		const m = L.marker([4096, 4096], {
-			icon: L.icon({
-				iconUrl: typedIconDefs.sandstorm.iconPath,
-				iconRetinaUrl: typedIconDefs.sandstorm.x2IconPath,
-				iconSize: [typedIconDefs.sandstorm.width, typedIconDefs.sandstorm.height]
-			})
-		}).addTo(map);
-		m.on('click', (ev: any) => {
-			console.log('marker click', ev);
+			wrapX: false,
+			mapSize: { width: 8192, height: 8192 }
+		});
+
+		// Add icon and marker
+		const iconHandle = map.addIcon(typedIconDefs.sandstorm);
+		map.addMarker(HOME.x, HOME.y, { icon: iconHandle });
+
+		// Listen to events
+		const unsubClick = map.events.on('pointerdown').each((event) => {
+			if (event.world && Math.abs(event.world.x - HOME.x) < 50 && Math.abs(event.world.y - HOME.y) < 50) {
+				console.log('marker area clicked', event);
+			}
 		});
 
 		// Resize handling (debounced): wait until user stops resizing
@@ -69,7 +66,8 @@
 
 		// Teardown on navigation/unmount per Svelte docs
 		return () => {
-			map?.remove?.();
+			unsubClick();
+			map?.destroy?.();
 			if (ro) {
 				try {
 					ro.disconnect();

@@ -1,3 +1,15 @@
+import type { 
+	VectorStyle as VectorStyleAPI, 
+	IconDefInternal, 
+	MarkerInternal, 
+	VectorPrimitiveInternal,
+	InertiaOptions,
+	PrefetchOptions,
+	MaxBoundsPx,
+	UpscaleFilterMode,
+	ActiveOptions
+} from '../api/types';
+
 import type { LngLat } from './mapgl';
 import type { ProgramLocs } from './render/screenCache';
 import type { RasterRenderer } from './layers/raster';
@@ -130,39 +142,23 @@ export interface MapImpl {
 	setZoom(z: number): void;
 	setTileSource(opts: { url?: string; tileSize?: number; sourceMinZoom?: number; sourceMaxZoom?: number; mapSize?: { width: number; height: number }; wrapX?: boolean; clearCache?: boolean }): void;
 	setRasterOpacity(v: number): void;
-	setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number; ring?: number }): void;
+	setPrefetchOptions(opts: PrefetchOptions): void;
 	setGridVisible(on: boolean): void;
-	setInertiaOptions(opts: { inertia?: boolean; inertiaDeceleration?: number; inertiaMaxSpeed?: number; easeLinearity?: number }): void;
+	setInertiaOptions(opts: InertiaOptions): void;
 	setFpsCap(v: number): void;
 	setWrapX(on: boolean): void;
-	setMaxBoundsPx(bounds: { minX: number; minY: number; maxX: number; maxY: number } | null): void;
+	setMaxBoundsPx(bounds: MaxBoundsPx | null): void;
 	setMaxBoundsViscosity(v: number): void;
-	setIconDefs(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>): Promise<void>;
-	setMarkers(markers: Array<{ lng: number; lat: number; type: string; size?: number }>): void;
-	setVectors?(vectors: Array<
-		| { type: 'polyline'; points: { lng: number; lat: number }[]; style?: VectorStyle }
-		| { type: 'polygon'; points: { lng: number; lat: number }[]; style?: VectorStyle }
-		| { type: 'circle'; center: { lng: number; lat: number }; radius: number; style?: VectorStyle }
-	>): void;
-	setUpscaleFilter?(mode: 'auto' | 'linear' | 'bicubic'): void;
+	setIconDefs(defs: Record<string, IconDefInternal>): Promise<void>;
+	setMarkers(markers: MarkerInternal[]): void;
+	setVectors?(vectors: VectorPrimitiveInternal[]): void;
+	setUpscaleFilter?(mode: UpscaleFilterMode): void;
 	setWheelSpeed?(v: number): void;
 	resize?(): void;
 	setMarkerHitboxesVisible?(on: boolean): void;
+	setActive?(on: boolean, opts?: ActiveOptions): void;
 	destroy(): void;
 }
 
-// Intentionally left as any for now to avoid exposing private internals
-
-export type VectorStyle = {
-	color?: string;
-	weight?: number;
-	opacity?: number;
-	fill?: boolean;
-	fillColor?: string;
-	fillOpacity?: number;
-};
-
-export type VectorPrimitive =
-	| { type: 'polyline'; points: { lng: number; lat: number }[]; style?: VectorStyle }
-	| { type: 'polygon'; points: { lng: number; lat: number }[]; style?: VectorStyle }
-	| { type: 'circle'; center: { lng: number; lat: number }; radius: number; style?: VectorStyle };
+export type VectorStyle = VectorStyleAPI;
+export type VectorPrimitive = VectorPrimitiveInternal;

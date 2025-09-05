@@ -1,8 +1,17 @@
+import type { GLContext, ShaderLocations } from '../../api/types';
+
 import { createProgramFromSources } from './program';
 import { createUnitQuad } from './quad';
 
 export default class Graphics {
-	private map: any;
+	private map: {
+		canvas: HTMLCanvasElement;
+		gl: GLContext;
+		_screenTexFormat: number;
+		_prog: WebGLProgram;
+		_loc: ShaderLocations;
+		_quad: WebGLBuffer;
+	};
 	constructor(map: any) {
 		this.map = map;
 	}
@@ -22,7 +31,7 @@ export default class Graphics {
 		const gl2 = canvas.getContext('webgl2', {
 			alpha: false,
 			antialias: false,
-		}) as any as WebGL2RenderingContext | null;
+		}) as WebGL2RenderingContext | null;
 		let gl: WebGLRenderingContext | WebGL2RenderingContext | null = gl2;
 		if (!gl) {
 			// Fallback to WebGL1 if WebGL2 is unavailable
@@ -32,13 +41,13 @@ export default class Graphics {
 			}) as WebGLRenderingContext | null;
 		}
 		if (!gl) throw new Error('WebGL not supported');
-		this.map.gl = gl as any;
+		this.map.gl = gl;
 		// Match app's dark theme to avoid white flashes between tile draws
 		gl.clearColor(0.1, 0.1, 0.1, 1);
 		gl.disable(gl.DEPTH_TEST);
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		this.map._screenTexFormat = Graphics.detectScreenFormat(gl as any);
+		this.map._screenTexFormat = Graphics.detectScreenFormat(gl as WebGLRenderingContext);
 	}
 
 	initPrograms() {
@@ -91,7 +100,7 @@ export default class Graphics {
       }
     `;
 		const prog = createProgramFromSources(gl, vsSrc, fsSrc);
-		const loc = {
+		const loc: ShaderLocations = {
 			a_pos: gl.getAttribLocation(prog, 'a_pos'),
 			u_translate: gl.getUniformLocation(prog, 'u_translate'),
 			u_size: gl.getUniformLocation(prog, 'u_size'),
@@ -102,7 +111,7 @@ export default class Graphics {
 			u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
 			u_texel: gl.getUniformLocation(prog, 'u_texel'),
 			u_filterMode: gl.getUniformLocation(prog, 'u_filterMode'),
-		} as any;
+		};
 		const quad = createUnitQuad(gl);
 		this.map._prog = prog;
 		this.map._loc = loc;

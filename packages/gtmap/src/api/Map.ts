@@ -1,49 +1,37 @@
 import Impl from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
+import type { EventBus } from '../internal/events/stream';
 
-export type Point = { x: number; y: number };
+// Re-export types from centralized types file
+export type {
+  Point,
+  TileSourceOptions,
+  MapOptions,
+  Marker,
+  IconDef,
+  IconHandle,
+  VectorStyle,
+  Polyline,
+  Polygon,
+  Circle,
+  Vector,
+  ActiveOptions
+} from './types';
 
-export type TileSourceOptions = {
-  url?: string;
-  tileSize?: number;
-  sourceMinZoom?: number;
-  sourceMaxZoom?: number;
-  mapSize?: { width: number; height: number };
-  wrapX?: boolean;
-  clearCache?: boolean;
-};
-
-export type MapOptions = {
-  tileUrl?: string;
-  tileSize?: number;
-  mapSize?: { width: number; height: number };
-  minZoom?: number;
-  maxZoom?: number;
-  wrapX?: boolean;
-  center?: Point;
-  zoom?: number;
-  prefetch?: { enabled?: boolean; baselineLevel?: number; ring?: number };
-  screenCache?: boolean;
-  fpsCap?: number;
-};
-
-export type Marker = { x: number; y: number; type?: string; size?: number };
-export type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
-export type IconHandle = { id: string };
-
-export type VectorStyle = {
-  color?: string;
-  weight?: number;
-  opacity?: number;
-  fill?: boolean;
-  fillColor?: string;
-  fillOpacity?: number;
-};
-
-export type Polyline = { type: 'polyline'; points: Point[]; style?: VectorStyle };
-export type Polygon = { type: 'polygon'; points: Point[]; style?: VectorStyle };
-export type Circle = { type: 'circle'; center: Point; radius: number; style?: VectorStyle };
-export type Vector = Polyline | Polygon | Circle;
+import type {
+  Point,
+  TileSourceOptions,
+  MapOptions,
+  Marker,
+  IconDef,
+  IconHandle,
+  Circle,
+  Vector,
+  ActiveOptions,
+  IconDefInternal,
+  MarkerInternal,
+  VectorPrimitiveInternal
+} from './types';
 
 export class GTMap {
   private _impl: MapImpl;
@@ -68,7 +56,7 @@ export class GTMap {
       screenCache: options.screenCache,
       fpsCap: options.fpsCap,
     };
-    this._impl = new Impl(container as HTMLDivElement, implOpts) as unknown as MapImpl;
+    this._impl = new Impl(container as HTMLDivElement, implOpts) as MapImpl;
     this._ensureDefaultIcon();
   }
 
@@ -89,26 +77,32 @@ export class GTMap {
 
   // Tile source
   setTileSource(opts: TileSourceOptions): this {
-    const o: any = { ...opts };
+    const o: TileSourceOptions = { ...opts };
     if (opts.mapSize) o.mapSize = { width: opts.mapSize.width, height: opts.mapSize.height };
     this._impl.setTileSource(o);
     return this;
   }
 
   // Grid + filtering
-  setGridVisible(on: boolean): this { (this._impl as any).setGridVisible?.(on); return this; }
-  setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this { (this._impl as any).setUpscaleFilter?.(mode); return this; }
+  setGridVisible(on: boolean): this { this._impl.setGridVisible?.(on); return this; }
+  setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this { this._impl.setUpscaleFilter?.(mode); return this; }
 
   // Lifecycle
-  setActive(on: boolean, opts?: { releaseGL?: boolean }): this { (this._impl as any).setActive?.(on, opts); return this; }
-  destroy(): void { (this._impl as any).destroy?.(); }
+  setActive(on: boolean, opts?: ActiveOptions): this { this._impl.setActive?.(on, opts); return this; }
+  destroy(): void { this._impl.destroy?.(); }
 
   // Add content (batched internally)
   addIcon(def: IconDef, id?: string): IconHandle {
     const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
     this._icons.set(iconId, def);
     // Push to impl immediately
-    this._impl.setIconDefs(Object.fromEntries([[iconId, def]]));
+    const iconDefInternal: IconDefInternal = {
+      iconPath: def.iconPath,
+      x2IconPath: def.x2IconPath,
+      width: def.width,
+      height: def.height
+    };
+    this._impl.setIconDefs(Object.fromEntries([[iconId, iconDefInternal]]));
     return { id: iconId };
   }
   addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number }): { x: number; y: number; type?: string; size?: number } {
@@ -126,12 +120,14 @@ export class GTMap {
   }
   addVectors(vectors: Vector[]): this {
     if (vectors && vectors.length) this._vectors.push(...vectors);
-    this._impl.setVectors?.(this._vectors.map(v => {
+    const internalVectors: VectorPrimitiveInternal[] = this._vectors.map(v => {
       if (v.type === 'polyline' || v.type === 'polygon') {
         return { type: v.type, points: v.points.map(p => ({ lng: p.x, lat: p.y })), style: v.style };
       }
-      return { type: 'circle', center: { lng: (v as Circle).center.x, lat: (v as Circle).center.y }, radius: (v as Circle).radius, style: (v as Circle).style };
-    }));
+      const circle = v as Circle;
+      return { type: 'circle', center: { lng: circle.center.x, lat: circle.center.y }, radius: circle.radius, style: circle.style };
+    });
+    this._impl.setVectors?.(internalVectors);
     return this;
   }
 
@@ -158,7 +154,7 @@ export class GTMap {
   invalidateSize(): this { this._impl.resize?.(); return this; }
 
   // Events proxy
-  get events() { return (this._impl as any).events; }
+  get events(): EventBus { return this._impl.events; }
 
   // Ensure a default icon is available so markers are visible without explicit icon defs
   private _ensureDefaultIcon() {
@@ -181,7 +177,8 @@ export class GTMap {
         ctx.stroke();
       }
       const dataUrl = cnv.toDataURL('image/png');
-      (this._impl as any).setIconDefs?.({ default: { iconPath: dataUrl, width: size, height: size } });
+      const defaultIcon: IconDefInternal = { iconPath: dataUrl, width: size, height: size };
+      this._impl.setIconDefs?.({ default: defaultIcon });
       this._defaultIconReady = true;
     } catch {}
   }
@@ -195,7 +192,13 @@ export class GTMap {
       if (!this._markersDirty) return;
       this._markersDirty = false;
       // Commit full marker list in one go
-      this._impl.setMarkers(this._markers.map(mm => ({ lng: mm.x, lat: mm.y, type: mm.type ?? 'default', size: mm.size })));
+      const internalMarkers: MarkerInternal[] = this._markers.map(mm => ({ 
+        lng: mm.x, 
+        lat: mm.y, 
+        type: mm.type ?? 'default', 
+        size: mm.size 
+      }));
+      this._impl.setMarkers(internalMarkers);
     };
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
     else setTimeout(flush, 0);

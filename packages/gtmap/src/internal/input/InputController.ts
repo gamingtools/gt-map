@@ -31,9 +31,9 @@ export default class InputController {
 	private pinchCooldownUntil = 0;
 	private static normalizeWheel(e: WheelEvent, canvasHeight: number): number {
 		const lineHeight = 16;
-		if ((e as any).deltaMode === 1) return (e as any).deltaY;
-		if ((e as any).deltaMode === 2) return ((e as any).deltaY * canvasHeight) / lineHeight;
-		return (e as any).deltaY / lineHeight;
+		if (e.deltaMode === 1) return e.deltaY;
+		if (e.deltaMode === 2) return (e.deltaY * canvasHeight) / lineHeight;
+		return e.deltaY / lineHeight;
 	}
 
 	constructor(deps: InputDeps) {
@@ -56,7 +56,7 @@ export default class InputController {
 			this._times = [];
 			deps.cancelPanAnim();
 			try {
-				canvas.setPointerCapture((e as any).pointerId);
+				canvas.setPointerCapture(e.pointerId);
 			} catch {}
 			const rect = deps.getContainer().getBoundingClientRect();
 			const px = e.clientX - rect.left;
@@ -183,7 +183,7 @@ export default class InputController {
 			const rect = deps.getContainer().getBoundingClientRect();
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
-			const ctrl = !!(e as any).ctrlKey;
+			const ctrl = !!e.ctrlKey;
 			const step = deps.getWheelStep(ctrl);
 			let dz = -lines * step;
 			dz = Math.max(-2.0, Math.min(2.0, dz));
@@ -340,20 +340,20 @@ export default class InputController {
 		canvas.addEventListener('pointerdown', onDown);
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerup', onUp);
-		canvas.addEventListener('wheel', onWheel, { passive: false } as any);
-		canvas.addEventListener('touchstart', onTouchStart as any, { passive: false } as any);
-		canvas.addEventListener('touchmove', onTouchMove as any, { passive: false } as any);
-		canvas.addEventListener('touchend', onTouchEnd as any);
+		canvas.addEventListener('wheel', onWheel, { passive: false });
+		canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+		canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+		canvas.addEventListener('touchend', onTouchEnd);
 		window.addEventListener('resize', onResize);
 
 		this.cleanup = () => {
 			canvas.removeEventListener('pointerdown', onDown);
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerup', onUp);
-			canvas.removeEventListener('wheel', onWheel as any);
-			canvas.removeEventListener('touchstart', onTouchStart as any);
-			canvas.removeEventListener('touchmove', onTouchMove as any);
-			canvas.removeEventListener('touchend', onTouchEnd as any);
+			canvas.removeEventListener('wheel', onWheel);
+			canvas.removeEventListener('touchstart', onTouchStart);
+			canvas.removeEventListener('touchmove', onTouchMove);
+			canvas.removeEventListener('touchend', onTouchEnd);
 			window.removeEventListener('resize', onResize);
 		};
 		return this.cleanup;

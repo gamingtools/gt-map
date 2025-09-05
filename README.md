@@ -1,6 +1,6 @@
-WebGL Map (Leaflet-like Minimal)
+WebGL Map (Minimal)
 
-This is a minimal, dependency-free WebGL map that renders raster tiles (e.g., OpenStreetMap) with smooth pan and continuous zoom, similar to Leaflet’s core interactions.
+This is a minimal, dependency-free WebGL map that renders raster tiles (e.g., OpenStreetMap) with smooth pan and continuous zoom.
 
 Features
 
@@ -19,16 +19,16 @@ Run locally
 
 Files
 
-- `apps/svelte-gtmap-test/src/routes/map/+page.svelte`: Minimal usage with `L` facade in Svelte.
-- `packages/gtmap/src/mapgl.ts`: GTMap class (GL setup, input, tiles, rendering).
+- `apps/svelte-gtmap-test/src/routes/map/+page.svelte`: Minimal usage in Svelte.
+- `packages/gtmap/src/api/Map.ts`: `GTMap` class (GL setup, input, tiles, rendering).
 - Pixel CRS only: coordinates are image pixels (x=lng, y=lat) at native resolution. No Web Mercator.
 
 Public API
 
-- Preferred: Leaflet‑compatible facade `L` via `import { L } from '@gtmap'`.
-- Compatibility: `default` export exposes `GT.L` which mirrors `L` (legacy alias).
-- Use factories like `L.map`, `L.tileLayer`, `L.marker`, `L.icon`.
-- Internal implementations (`GTMap`, renderers, pipelines) are private; use the facades.
+- Use the `GTMap` class via `import { GTMap } from '@gtmap'`.
+- Create an instance with a container element and options, then call methods like `setTileSource`, `setView`, `setCenter`, `setZoom`.
+- Add content with `addIcon`, `addMarker`/`addMarkers`, and `addVectors`.
+- Events are exposed via `map.events` (typed `EventBus`).
 
 Demo app
 
@@ -65,7 +65,7 @@ Hagga Basin (survival_1)
 
 Customization
 
-- Center/zoom: Set in `apps/svelte-gtmap-test/src/routes/map/+page.svelte` when creating the map via `GT.L`.
+- Center/zoom: Set in `apps/svelte-gtmap-test/src/routes/map/+page.svelte` when creating the map via `GTMap`.
 - Zoom bounds: `minZoom`/`maxZoom` options.
 - Tile URL: Pass a different `{z}/{x}/{y}` template to `tileUrl`.
 

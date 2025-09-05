@@ -1,10 +1,11 @@
 import type { ProgramLocs } from '../render/screenCache';
+import type { ShaderLocations } from '../../api/types';
 // per-level tile size provided via params
 import { tileKey as tileKeyOf, wrapX as wrapXTile } from '../tiles/source';
 import * as Coords from '../coords';
 
 type TileCacheLike = {
-	get(key: string): { status: 'ready' | 'loading' | 'error'; tex?: WebGLTexture } | undefined;
+	get(key: string): { status: 'ready' | 'loading' | 'error'; tex?: WebGLTexture; width?: number; height?: number } | undefined;
 	has(key: string): boolean;
 };
 
@@ -34,7 +35,7 @@ export class RasterRenderer {
 		},
 	) {
 		const gl = this.gl;
-		const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom, filterMode } = params as any;
+		const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom, filterMode } = params;
 		const TS = tileSize;
 		const startX = Math.floor(tlWorld.x / TS);
 		const startY = Math.floor(tlWorld.y / TS);
@@ -94,8 +95,8 @@ export class RasterRenderer {
 					gl.uniform2f(loc.u_translate!, leftPx, topPx);
 					gl.uniform2f(loc.u_size!, wPx, hPx);
 					// Provide texel size and upscale hint to the shader for improved filtering
-					const texW = Math.max(1, (rec as any).width || TS);
-					const texH = Math.max(1, (rec as any).height || TS);
+					const texW = Math.max(1, rec.width || TS);
+					const texH = Math.max(1, rec.height || TS);
 					const upscaleX = wPx / dpr / texW;
 					const upscaleY = hPx / dpr / texH;
 					let modeInt = 0; // linear
@@ -106,8 +107,9 @@ export class RasterRenderer {
 					} else {
 						modeInt = 0;
 					}
-					if ((loc as any).u_texel) gl.uniform2f((loc as any).u_texel, 1.0 / texW, 1.0 / texH);
-					if ((loc as any).u_filterMode) gl.uniform1i((loc as any).u_filterMode, modeInt);
+					const shaderLoc = loc as unknown as ShaderLocations;
+					if (shaderLoc.u_texel) gl.uniform2f(shaderLoc.u_texel, 1.0 / texW, 1.0 / texH);
+					if (shaderLoc.u_filterMode) gl.uniform1i(shaderLoc.u_filterMode, modeInt);
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 				}
 			}
@@ -136,7 +138,7 @@ export class RasterRenderer {
 		let ready = 0;
 		let tilesX = Infinity;
 		let tilesY = Infinity;
-		const imageSize = mapSize as any;
+		const imageSize = mapSize;
 		const imgMax = (typeof sourceMaxZoom === 'number' ? sourceMaxZoom : zMax) as number | undefined;
 		if (imageSize && typeof imgMax === 'number') {
 			const s = Coords.sFor(imgMax, zLevel);
