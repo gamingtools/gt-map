@@ -62,7 +62,8 @@ export default class InputController {
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
 			const view = deps.getView();
-			const widthCSS = rect.width, heightCSS = rect.height;
+			const widthCSS = rect.width,
+				heightCSS = rect.height;
 			const zImg = deps.getImageMaxZoom();
 			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
 			deps.emit('pointerdown', {
@@ -150,7 +151,8 @@ export default class InputController {
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
 			const view = deps.getView();
-			const widthCSS = rect.width, heightCSS = rect.height;
+			const widthCSS = rect.width,
+				heightCSS = rect.height;
 			const zImg = deps.getImageMaxZoom();
 			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
 			deps.emit('pointerup', {

@@ -1,13 +1,13 @@
-import type { 
-	VectorStyle as VectorStyleAPI, 
-	IconDefInternal, 
-	MarkerInternal, 
+import type {
+	VectorStyle as VectorStyleAPI,
+	IconDefInternal,
+	MarkerInternal,
 	VectorPrimitiveInternal,
 	InertiaOptions,
 	PrefetchOptions,
 	MaxBoundsPx,
 	UpscaleFilterMode,
-	ActiveOptions
+	ActiveOptions,
 } from '../api/types';
 
 import type { LngLat } from './mapgl';

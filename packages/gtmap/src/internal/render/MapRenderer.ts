@@ -47,32 +47,32 @@ export default class MapRenderer {
 		gl.uniform2f(loc.u_uv1!, 1.0, 1.0);
 		if (opts?.zoomVelocityTick) opts.zoomVelocityTick();
 		if (opts?.panVelocityTick) opts.panVelocityTick();
-			if (ctx.useScreenCache && ctx.screenCache) {
-				// Clip cached frame to the finite map extent to avoid overlay ghosts outside tiles
-				const imgMax = ctx.sourceMaxZoom || ctx.maxZoom;
-				const sLvl = Coords.sFor(imgMax, baseZ);
-				const levelW = ctx.mapSize.width / sLvl;
-				const levelH = ctx.mapSize.height / sLvl;
-				const mapLeftCSS = -tlWorld.x * scale;
-				const mapTopCSS = -tlWorld.y * scale;
-				const mapRightCSS = (levelW - tlWorld.x) * scale;
-				const mapBottomCSS = (levelH - tlWorld.y) * scale;
-				const cutLeft = Math.max(0, mapLeftCSS);
-				const cutTop = Math.max(0, mapTopCSS);
-				const cutRight = Math.min(widthCSS, mapRightCSS);
-				const cutBottom = Math.min(heightCSS, mapBottomCSS);
-				if (cutRight > cutLeft && cutBottom > cutTop) {
-					const scX = Math.max(0, Math.round(cutLeft * ctx.dpr));
-					const scY = Math.max(0, Math.round((heightCSS - cutBottom) * ctx.dpr));
-					const scW = Math.max(0, Math.round((cutRight - cutLeft) * ctx.dpr));
-					const scH = Math.max(0, Math.round((cutBottom - cutTop) * ctx.dpr));
-					const prevScissor = gl.isEnabled ? gl.isEnabled(gl.SCISSOR_TEST) : false;
-					gl.enable(gl.SCISSOR_TEST);
-					gl.scissor(scX, scY, scW, scH);
-					ctx.screenCache.draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.loc!, ctx.prog!, ctx.quad!, ctx.canvas);
-					if (!prevScissor) gl.disable(gl.SCISSOR_TEST);
-				}
+		if (ctx.useScreenCache && ctx.screenCache) {
+			// Clip cached frame to the finite map extent to avoid overlay ghosts outside tiles
+			const imgMax = ctx.sourceMaxZoom || ctx.maxZoom;
+			const sLvl = Coords.sFor(imgMax, baseZ);
+			const levelW = ctx.mapSize.width / sLvl;
+			const levelH = ctx.mapSize.height / sLvl;
+			const mapLeftCSS = -tlWorld.x * scale;
+			const mapTopCSS = -tlWorld.y * scale;
+			const mapRightCSS = (levelW - tlWorld.x) * scale;
+			const mapBottomCSS = (levelH - tlWorld.y) * scale;
+			const cutLeft = Math.max(0, mapLeftCSS);
+			const cutTop = Math.max(0, mapTopCSS);
+			const cutRight = Math.min(widthCSS, mapRightCSS);
+			const cutBottom = Math.min(heightCSS, mapBottomCSS);
+			if (cutRight > cutLeft && cutBottom > cutTop) {
+				const scX = Math.max(0, Math.round(cutLeft * ctx.dpr));
+				const scY = Math.max(0, Math.round((heightCSS - cutBottom) * ctx.dpr));
+				const scW = Math.max(0, Math.round((cutRight - cutLeft) * ctx.dpr));
+				const scH = Math.max(0, Math.round((cutBottom - cutTop) * ctx.dpr));
+				const prevScissor = gl.isEnabled ? gl.isEnabled(gl.SCISSOR_TEST) : false;
+				gl.enable(gl.SCISSOR_TEST);
+				gl.scissor(scX, scY, scW, scH);
+				ctx.screenCache.draw({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.loc!, ctx.prog!, ctx.quad!, ctx.canvas);
+				if (!prevScissor) gl.disable(gl.SCISSOR_TEST);
 			}
+		}
 		const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
 		const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
 		if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
@@ -146,8 +146,8 @@ export default class MapRenderer {
 			gl.uniform1f(loc.u_alpha!, 1.0);
 		}
 
-			// Draw icon markers after all tile layers so they are not faded by blended tiles
-			if (ctx.icons) {
+		// Draw icon markers after all tile layers so they are not faded by blended tiles
+		if (ctx.icons) {
 			// Ensure alpha is 1 for icons
 			gl.uniform1f(loc.u_alpha!, 1.0);
 			// Icons use native texture filtering
@@ -166,9 +166,9 @@ export default class MapRenderer {
 				project: (x: number, y: number, z: number) => ctx.project(x, y, z),
 				wrapX: ctx.wrapX,
 			});
-			}
-			// Update screen cache after full draw so it matches the frame
-			if (ctx.useScreenCache && ctx.screenCache) ctx.screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.canvas);
+		}
+		// Update screen cache after full draw so it matches the frame
+		if (ctx.useScreenCache && ctx.screenCache) ctx.screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.canvas);
 		if (opts?.cancelUnwanted) opts.cancelUnwanted();
 	}
 	dispose() {}

@@ -141,10 +141,10 @@ export default class GTMap implements MapImpl {
 	private inertiaDeceleration = 3400; // px/s^2
 	private inertiaMaxSpeed = 2000; // px/s (cap to prevent excessive throw)
 	private easeLinearity = 0.2;
-	private _panAnim: null | { 
-		start: number; 
-		dur: number; 
-		from: { x: number; y: number }; 
+	private _panAnim: null | {
+		start: number;
+		dur: number;
+		from: { x: number; y: number };
 		offsetWorld: { x: number; y: number };
 		velocity?: { x: number; y: number };
 		lastTime?: number;
@@ -506,7 +506,12 @@ export default class GTMap implements MapImpl {
 	}
 	// recenter helper removed from public surface; use setCenter/setView via facade
 	destroy() {
-		if (this._frameLoop) { try { this._frameLoop.stop(); } catch {} this._frameLoop = null; }
+		if (this._frameLoop) {
+			try {
+				this._frameLoop.stop();
+			} catch {}
+			this._frameLoop = null;
+		}
 		if (this._raf != null) {
 			cancelAnimationFrame(this._raf);
 			this._raf = null;
@@ -849,7 +854,9 @@ export default class GTMap implements MapImpl {
 			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize);
 		}
 		// Draw vector overlay (if any)
-		try { this._drawVectors(); } catch {}
+		try {
+			this._drawVectors();
+		} catch {}
 	}
 
 	// Prefetch a 1-tile border beyond current viewport at the given level
@@ -918,11 +925,11 @@ export default class GTMap implements MapImpl {
 		const a = this._panAnim;
 		const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 		const t = Math.min(1, (now - a.start) / (a.dur * 1000));
-		
+
 		// Use smoother easeOutExpo for more natural deceleration
 		// This creates a more gradual, less jerky slowdown
 		const p = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-		
+
 		const { zInt, scale } = Coords.zParts(this.zoom);
 		const rect = this.container.getBoundingClientRect();
 		const widthCSS = rect.width;
@@ -1041,7 +1048,7 @@ export default class GTMap implements MapImpl {
 		const counts = Coords.tileCounts(this.mapSize.width, this.mapSize.height, TS, imageMaxZ, zInt);
 		const NX = counts.NX;
 		const NY = counts.NY;
-        for (let ty = startY; ty <= endY; ty++) {
+		for (let ty = startY; ty <= endY; ty++) {
 			if (ty < 0 || ty >= NY) continue;
 			for (let tx = startX; tx <= endX; tx++) {
 				let tileX = tx;
@@ -1110,58 +1117,60 @@ export default class GTMap implements MapImpl {
 		}
 	}
 
-		private _drawVectors() {
+	private _drawVectors() {
 		if (!this._vectorCtx) this._initVectorCanvas();
 		this._ensureOverlaySizes();
 		const ctx = this._vectorCtx!;
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 		ctx.save();
-		try { ctx.scale(this._dpr || 1, this._dpr || 1); } catch {}
+		try {
+			ctx.scale(this._dpr || 1, this._dpr || 1);
+		} catch {}
 		if (this._vectors.length) {
 			const z = this.zoom;
 			const rect = this.container.getBoundingClientRect();
 			const viewport = { x: rect.width, y: rect.height };
 			const imageMaxZ = (this as any)._sourceMaxZoom || this.maxZoom;
 			for (const prim of this._vectors) {
-			const style: any = prim.style || {};
-			ctx.lineWidth = Math.max(1, style.weight ?? 2);
-			ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
-			ctx.globalAlpha = style.opacity ?? 1;
-			const begin = () => ctx.beginPath();
-			const finishStroke = () => ctx.stroke();
-			const finishFill = () => {
-				if (style.fill) {
-					ctx.globalAlpha = style.fillOpacity ?? 0.25;
-					ctx.fillStyle = style.fillColor || style.color || 'rgba(0,0,0,0.25)';
-					ctx.fill();
-					ctx.globalAlpha = style.opacity ?? 1;
+				const style: any = prim.style || {};
+				ctx.lineWidth = Math.max(1, style.weight ?? 2);
+				ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
+				ctx.globalAlpha = style.opacity ?? 1;
+				const begin = () => ctx.beginPath();
+				const finishStroke = () => ctx.stroke();
+				const finishFill = () => {
+					if (style.fill) {
+						ctx.globalAlpha = style.fillOpacity ?? 0.25;
+						ctx.fillStyle = style.fillColor || style.color || 'rgba(0,0,0,0.25)';
+						ctx.fill();
+						ctx.globalAlpha = style.opacity ?? 1;
+					}
+				};
+				if (prim.type === 'polyline' || prim.type === 'polygon') {
+					const pts = prim.points as Array<{ lng: number; lat: number }>;
+					if (!pts.length) continue;
+					begin();
+					for (let i = 0; i < pts.length; i++) {
+						const p = pts[i];
+						const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
+						if (i === 0) ctx.moveTo(css.x, css.y);
+						else ctx.lineTo(css.x, css.y);
+					}
+					if (prim.type === 'polygon') ctx.closePath();
+					finishStroke();
+					finishFill();
+				} else if (prim.type === 'circle') {
+					const c = prim.center as { lng: number; lat: number };
+					const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
+					// Radius: specified in native px; convert to CSS using current zInt/scale
+					const { zInt, scale } = Coords.zParts(z);
+					const s = Coords.sFor(imageMaxZ as number, zInt);
+					const rCss = (prim.radius / s) * scale;
+					begin();
+					ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
+					finishStroke();
+					finishFill();
 				}
-			};
-			if (prim.type === 'polyline' || prim.type === 'polygon') {
-				const pts = prim.points as Array<{ lng: number; lat: number }>;
-				if (!pts.length) continue;
-				begin();
-				for (let i = 0; i < pts.length; i++) {
-					const p = pts[i];
-					const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-					if (i === 0) ctx.moveTo(css.x, css.y);
-					else ctx.lineTo(css.x, css.y);
-				}
-				if (prim.type === 'polygon') ctx.closePath();
-				finishStroke();
-				finishFill();
-			} else if (prim.type === 'circle') {
-				const c = prim.center as { lng: number; lat: number };
-				const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-				// Radius: specified in native px; convert to CSS using current zInt/scale
-				const { zInt, scale } = Coords.zParts(z);
-				const s = Coords.sFor(imageMaxZ as number, zInt);
-				const rCss = (prim.radius / s) * scale;
-				begin();
-				ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
-				finishStroke();
-				finishFill();
-			}
 			}
 		}
 		ctx.restore();
@@ -1169,7 +1178,9 @@ export default class GTMap implements MapImpl {
 		// Draw marker hitboxes (debug aid)
 		if (this._showMarkerHitboxes && this._icons) {
 			ctx.save();
-			try { ctx.scale(this._dpr || 1, this._dpr || 1); } catch {}
+			try {
+				ctx.scale(this._dpr || 1, this._dpr || 1);
+			} catch {}
 			const rect = this.container.getBoundingClientRect();
 			const viewport = { x: rect.width, y: rect.height };
 			const imageMaxZ = (this as any)._sourceMaxZoom || this.maxZoom;
@@ -1189,10 +1200,11 @@ export default class GTMap implements MapImpl {
 				ctx.rect(Math.round(left) + 0.5, Math.round(top) + 0.5, Math.round(it.w), Math.round(it.h));
 				ctx.fill();
 				ctx.stroke();
-				try { ctx.fillText(it.type, Math.round(left) + 2, Math.round(top) + 2); } catch {}
+				try {
+					ctx.fillText(it.type, Math.round(left) + 2, Math.round(top) + 2);
+				} catch {}
 			}
 			ctx.restore();
 		}
 	}
-
 }

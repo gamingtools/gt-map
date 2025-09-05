@@ -43,7 +43,7 @@ export class TileLoader {
 			this.abortControllers.delete(key);
 		}
 		// Also remove from queue if queued
-		this.decodeQueue = this.decodeQueue.filter(t => t.key !== key);
+		this.decodeQueue = this.decodeQueue.filter((t) => t.key !== key);
 	}
 
 	cancelAll() {
@@ -60,14 +60,14 @@ export class TileLoader {
 		while (this.activeDecodes < this.maxConcurrentDecodes && this.decodeQueue.length > 0) {
 			// Sort queue by priority (higher priority first)
 			this.decodeQueue.sort((a, b) => b.priority - a.priority);
-			
+
 			// Take the highest priority tile
 			const tile = this.decodeQueue.shift();
 			if (!tile) continue;
-			
+
 			// Check if already aborted
 			if (tile.abortController.signal.aborted) continue;
-			
+
 			// Start the actual decode
 			this.activeDecodes++;
 			this.performDecode(tile);
@@ -76,18 +76,18 @@ export class TileLoader {
 
 	start({ key, url, priority = 1 }: { key: string; url: string; priority?: number }) {
 		const deps = this.deps;
-		
+
 		// Cancel any existing request for this key
 		this.cancel(key);
-		
+
 		// Create new abort controller
 		const abortController = new AbortController();
 		this.abortControllers.set(key, abortController);
-		
+
 		deps.addPending(key);
 		deps.incInflight();
 		deps.setLoading(key);
-		
+
 		// Queue the tile for processing
 		this.decodeQueue.push({ key, url, priority, abortController });
 		this.processQueue();
@@ -96,7 +96,7 @@ export class TileLoader {
 	private performDecode(tile: QueuedTile) {
 		const { key, url, abortController } = tile;
 		const deps = this.deps;
-		
+
 		const onFinally = () => {
 			try {
 				/* noop */
@@ -109,14 +109,14 @@ export class TileLoader {
 				this.processQueue();
 			}
 		};
-		
+
 		if (deps.getUseImageBitmap()) {
-			fetch(url, { 
-				mode: 'cors', 
+			fetch(url, {
+				mode: 'cors',
 				credentials: 'omit',
 				signal: abortController.signal,
 				// @ts-ignore - priority is not in TS types yet but works in Chrome/Edge
-				priority: tile.priority > 1 ? 'high' : 'low'
+				priority: tile.priority > 1 ? 'high' : 'low',
 			} as any)
 				.then((r: any) => {
 					if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -166,11 +166,11 @@ export class TileLoader {
 				});
 			return;
 		}
-		
+
 		const img: any = new Image();
 		img.crossOrigin = 'anonymous';
 		img.decoding = 'async';
-		
+
 		// Handle abort for image loading
 		const onAbort = () => {
 			img.src = '';
@@ -178,14 +178,14 @@ export class TileLoader {
 			img.onerror = null;
 			onFinally();
 		};
-		
+
 		// Listen for abort signal
 		if (abortController.signal.aborted) {
 			onAbort();
 			return;
 		}
 		abortController.signal.addEventListener('abort', onAbort);
-		
+
 		img.onload = () => {
 			abortController.signal.removeEventListener('abort', onAbort);
 			try {

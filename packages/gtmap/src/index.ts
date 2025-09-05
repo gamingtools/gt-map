@@ -27,7 +27,7 @@ export type {
 	UpscaleFilterMode,
 	isPolyline,
 	isPolygon,
-	isCircle
+	isCircle,
 } from './api/types';
 
 // Export event system types

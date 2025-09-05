@@ -133,14 +133,14 @@ export interface FrameEventData {
 
 // Event map for type-safe event handling
 export interface EventMap {
-	'move': MoveEventData;
-	'moveend': MoveEventData;
-	'zoom': ZoomEventData;
-	'zoomend': ZoomEventData;
-	'pointerdown': PointerEventData;
-	'pointermove': PointerEventData;
-	'pointerup': PointerEventData;
-	'frame': FrameEventData;
+	move: MoveEventData;
+	moveend: MoveEventData;
+	zoom: ZoomEventData;
+	zoomend: ZoomEventData;
+	pointerdown: PointerEventData;
+	pointermove: PointerEventData;
+	pointerup: PointerEventData;
+	frame: FrameEventData;
 }
 
 // Performance stats
@@ -191,10 +191,7 @@ export function tileKey(z: number, x: number, y: number): TileKey {
 }
 
 export function tileURL(template: string, z: number, x: number, y: number): TileURL {
-	return template
-		.replace('{z}', String(z))
-		.replace('{x}', String(x))
-		.replace('{y}', String(y)) as TileURL;
+	return template.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y)) as TileURL;
 }
 
 export function iconID(id: string): IconID {

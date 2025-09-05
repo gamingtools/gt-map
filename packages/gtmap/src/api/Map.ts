@@ -3,204 +3,451 @@ import type { MapImpl } from '../internal/types';
 import type { EventBus } from '../internal/events/stream';
 
 // Re-export types from centralized types file
-export type {
-  Point,
-  TileSourceOptions,
-  MapOptions,
-  Marker,
-  IconDef,
-  IconHandle,
-  VectorStyle,
-  Polyline,
-  Polygon,
-  Circle,
-  Vector,
-  ActiveOptions
-} from './types';
+export type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector, ActiveOptions } from './types';
 
-import type {
-  Point,
-  TileSourceOptions,
-  MapOptions,
-  Marker,
-  IconDef,
-  IconHandle,
-  Circle,
-  Vector,
-  ActiveOptions,
-  IconDefInternal,
-  MarkerInternal,
-  VectorPrimitiveInternal
-} from './types';
+import type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, Circle, Vector, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal } from './types';
 
+/**
+ * GTMap - A high-performance WebGL map renderer with pixel-based coordinate system.
+ *
+ * @example
+ * ```typescript
+ * const map = new GTMap(document.getElementById('map'), {
+ *   tileUrl: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+ *   center: { x: 4096, y: 4096 },
+ *   zoom: 3,
+ *   maxZoom: 5
+ * });
+ * ```
+ */
 export class GTMap {
-  private _impl: MapImpl;
-  private _markers: Marker[] = [];
-  private _vectors: Vector[] = [];
-  private _defaultIconReady = false;
-  private _icons: Map<string, IconDef> = new Map<string, IconDef>();
-  private _markersDirty = false;
-  private _markersFlushScheduled = false;
+	private _impl: MapImpl;
+	private _markers: Marker[] = [];
+	private _vectors: Vector[] = [];
+	private _defaultIconReady = false;
+	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
+	private _markersDirty = false;
+	private _markersFlushScheduled = false;
 
-  constructor(container: HTMLElement, options: MapOptions = {}) {
-    const implOpts: any = {
-      tileUrl: options.tileUrl,
-      tileSize: options.tileSize,
-      minZoom: options.minZoom,
-      maxZoom: options.maxZoom,
-      mapSize: options.mapSize,
-      wrapX: options.wrapX,
-      center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
-      zoom: options.zoom,
-      prefetch: options.prefetch,
-      screenCache: options.screenCache,
-      fpsCap: options.fpsCap,
-    };
-    this._impl = new Impl(container as HTMLDivElement, implOpts) as MapImpl;
-    this._ensureDefaultIcon();
-  }
+	/**
+	 * Creates a new GTMap instance.
+	 *
+	 * @param container - The HTML element to render the map into
+	 * @param options - Configuration options for the map
+	 * @param options.tileUrl - URL template for tile loading (use {z}, {x}, {y} placeholders)
+	 * @param options.tileSize - Size of tiles in pixels (default: 256)
+	 * @param options.minZoom - Minimum zoom level (default: 0)
+	 * @param options.maxZoom - Maximum zoom level (default: 19)
+	 * @param options.mapSize - Total map dimensions in pixels at native resolution
+	 * @param options.wrapX - Enable horizontal wrapping for infinite pan (default: false)
+	 * @param options.center - Initial center position in pixel coordinates
+	 * @param options.zoom - Initial zoom level
+	 * @param options.prefetch - Tile prefetching configuration
+	 * @param options.screenCache - Enable screen-space caching for better performance (default: true)
+	 * @param options.fpsCap - Maximum frames per second (default: 60)
+	 */
+	constructor(container: HTMLElement, options: MapOptions = {}) {
+		const implOpts: any = {
+			tileUrl: options.tileUrl,
+			tileSize: options.tileSize,
+			minZoom: options.minZoom,
+			maxZoom: options.maxZoom,
+			mapSize: options.mapSize,
+			wrapX: options.wrapX,
+			center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
+			zoom: options.zoom,
+			prefetch: options.prefetch,
+			screenCache: options.screenCache,
+			fpsCap: options.fpsCap,
+		};
+		this._impl = new Impl(container as HTMLDivElement, implOpts) as MapImpl;
+		this._ensureDefaultIcon();
+	}
 
-  // View controls
-  setCenter(p: Point): this {
-    this._impl.setCenter(p.x, p.y);
-    return this;
-  }
-  setZoom(z: number): this {
-    this._impl.setZoom(z);
-    return this;
-  }
-  setView(view: { center: Point; zoom: number }): this {
-    this._impl.setCenter(view.center.x, view.center.y);
-    this._impl.setZoom(view.zoom);
-    return this;
-  }
+	// View controls
+	/**
+	 * Sets the map center position.
+	 *
+	 * @param p - The new center position in pixel coordinates
+	 * @returns This map instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * map.setCenter({ x: 2048, y: 2048 });
+	 * ```
+	 */
+	setCenter(p: Point): this {
+		this._impl.setCenter(p.x, p.y);
+		return this;
+	}
+	/**
+	 * Sets the map zoom level.
+	 *
+	 * @param z - The zoom level (will be clamped to minZoom/maxZoom)
+	 * @returns This map instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * map.setZoom(4.5);
+	 * ```
+	 */
+	setZoom(z: number): this {
+		this._impl.setZoom(z);
+		return this;
+	}
+	/**
+	 * Sets both center and zoom in a single call.
+	 *
+	 * @param view - Object containing center and zoom
+	 * @param view.center - The new center position in pixel coordinates
+	 * @param view.zoom - The zoom level
+	 * @returns This map instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * map.setView({ center: { x: 1024, y: 1024 }, zoom: 3 });
+	 * ```
+	 */
+	setView(view: { center: Point; zoom: number }): this {
+		this._impl.setCenter(view.center.x, view.center.y);
+		this._impl.setZoom(view.zoom);
+		return this;
+	}
 
-  // Tile source
-  setTileSource(opts: TileSourceOptions): this {
-    const o: TileSourceOptions = { ...opts };
-    if (opts.mapSize) o.mapSize = { width: opts.mapSize.width, height: opts.mapSize.height };
-    this._impl.setTileSource(o);
-    return this;
-  }
+	// Tile source
+	/**
+	 * Configures the tile source for the map.
+	 *
+	 * @param opts - Tile source configuration
+	 * @param opts.url - URL template with {z}, {x}, {y} placeholders
+	 * @param opts.tileSize - Size of tiles in pixels
+	 * @param opts.sourceMaxZoom - Maximum zoom level available from tile source
+	 * @param opts.mapSize - Total map dimensions at native resolution
+	 * @param opts.wrapX - Enable horizontal wrapping
+	 * @param opts.clearCache - Clear existing tile cache
+	 * @returns This map instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * map.setTileSource({
+	 *   url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
+	 *   sourceMaxZoom: 5,
+	 *   clearCache: true
+	 * });
+	 * ```
+	 */
+	setTileSource(opts: TileSourceOptions): this {
+		const o: TileSourceOptions = { ...opts };
+		if (opts.mapSize) o.mapSize = { width: opts.mapSize.width, height: opts.mapSize.height };
+		this._impl.setTileSource(o);
+		return this;
+	}
 
-  // Grid + filtering
-  setGridVisible(on: boolean): this { this._impl.setGridVisible?.(on); return this; }
-  setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this { this._impl.setUpscaleFilter?.(mode); return this; }
+	// Grid + filtering
+	/**
+	 * Shows or hides the tile grid overlay.
+	 *
+	 * @param on - True to show grid, false to hide
+	 * @returns This map instance for method chaining
+	 */
+	setGridVisible(on: boolean): this {
+		this._impl.setGridVisible?.(on);
+		return this;
+	}
+	/**
+	 * Sets the upscale filtering mode for low-resolution tiles.
+	 *
+	 * @param mode - Filtering mode: 'auto', 'linear', or 'bicubic'
+	 * @returns This map instance for method chaining
+	 */
+	setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
+		this._impl.setUpscaleFilter?.(mode);
+		return this;
+	}
 
-  // Lifecycle
-  setActive(on: boolean, opts?: ActiveOptions): this { this._impl.setActive?.(on, opts); return this; }
-  destroy(): void { this._impl.destroy?.(); }
+	// Lifecycle
+	/**
+	 * Suspends or resumes the map rendering.
+	 *
+	 * @param on - True to activate, false to suspend
+	 * @param opts - Optional settings
+	 * @param opts.releaseGL - Release WebGL context when suspending (frees GPU memory)
+	 * @returns This map instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * // Suspend map when hidden
+	 * map.setActive(false, { releaseGL: true });
+	 * // Resume when visible again
+	 * map.setActive(true);
+	 * ```
+	 */
+	setActive(on: boolean, opts?: ActiveOptions): this {
+		this._impl.setActive?.(on, opts);
+		return this;
+	}
+	/**
+	 * Destroys the map instance and releases all resources.
+	 * Call this before removing the map from the DOM.
+	 */
+	destroy(): void {
+		this._impl.destroy?.();
+	}
 
-  // Add content (batched internally)
-  addIcon(def: IconDef, id?: string): IconHandle {
-    const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
-    this._icons.set(iconId, def);
-    // Push to impl immediately
-    const iconDefInternal: IconDefInternal = {
-      iconPath: def.iconPath,
-      x2IconPath: def.x2IconPath,
-      width: def.width,
-      height: def.height
-    };
-    this._impl.setIconDefs(Object.fromEntries([[iconId, iconDefInternal]]));
-    return { id: iconId };
-  }
-  addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number }): { x: number; y: number; type?: string; size?: number } {
-    const m: Marker = { x, y, type: opts?.icon?.id ?? 'default', size: opts?.size };
-    this._markers.push(m);
-    this._markMarkersDirtyAndSchedule();
-    return m;
-  }
-  addMarkers(markers: Marker[]): this {
-    if (markers && markers.length) {
-      this._markers.push(...markers.map(m => ({ x: m.x, y: m.y, type: m.type ?? 'default', size: m.size })));
-      this._markMarkersDirtyAndSchedule();
-    }
-    return this;
-  }
-  addVectors(vectors: Vector[]): this {
-    if (vectors && vectors.length) this._vectors.push(...vectors);
-    const internalVectors: VectorPrimitiveInternal[] = this._vectors.map(v => {
-      if (v.type === 'polyline' || v.type === 'polygon') {
-        return { type: v.type, points: v.points.map(p => ({ lng: p.x, lat: p.y })), style: v.style };
-      }
-      const circle = v as Circle;
-      return { type: 'circle', center: { lng: circle.center.x, lat: circle.center.y }, radius: circle.radius, style: circle.style };
-    });
-    this._impl.setVectors?.(internalVectors);
-    return this;
-  }
+	// Add content (batched internally)
+	/**
+	 * Registers an icon definition for use with markers.
+	 *
+	 * @param def - Icon definition with image path and dimensions
+	 * @param id - Optional identifier for the icon (auto-generated if not provided)
+	 * @returns IconHandle to use when adding markers
+	 *
+	 * @example
+	 * ```typescript
+	 * const icon = map.addIcon({
+	 *   iconPath: '/images/marker.png',
+	 *   width: 24,
+	 *   height: 24
+	 * });
+	 * map.addMarker(100, 200, { icon });
+	 * ```
+	 */
+	addIcon(def: IconDef, id?: string): IconHandle {
+		const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
+		this._icons.set(iconId, def);
+		// Push to impl immediately
+		const iconDefInternal: IconDefInternal = {
+			iconPath: def.iconPath,
+			x2IconPath: def.x2IconPath,
+			width: def.width,
+			height: def.height,
+		};
+		this._impl.setIconDefs(Object.fromEntries([[iconId, iconDefInternal]]));
+		return { id: iconId };
+	}
+	/**
+	 * Adds a single marker to the map.
+	 *
+	 * @param x - X coordinate in pixel space
+	 * @param y - Y coordinate in pixel space
+	 * @param opts - Optional marker settings
+	 * @param opts.icon - Icon handle from addIcon() (uses default if not provided)
+	 * @param opts.size - Scale factor for the icon
+	 * @returns The created marker object
+	 *
+	 * @example
+	 * ```typescript
+	 * map.addMarker(512, 768);
+	 * map.addMarker(1024, 1024, { icon: myIcon, size: 1.5 });
+	 * ```
+	 */
+	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number }): { x: number; y: number; type?: string; size?: number } {
+		const m: Marker = { x, y, type: opts?.icon?.id ?? 'default', size: opts?.size };
+		this._markers.push(m);
+		this._markMarkersDirtyAndSchedule();
+		return m;
+	}
+	/**
+	 * Adds multiple markers to the map in a batch.
+	 *
+	 * @param markers - Array of marker objects
+	 * @returns This map instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * map.addMarkers([
+	 *   { x: 100, y: 200, type: 'default' },
+	 *   { x: 300, y: 400, type: 'custom', size: 1.2 }
+	 * ]);
+	 * ```
+	 */
+	addMarkers(markers: Marker[]): this {
+		if (markers && markers.length) {
+			this._markers.push(...markers.map((m) => ({ x: m.x, y: m.y, type: m.type ?? 'default', size: m.size })));
+			this._markMarkersDirtyAndSchedule();
+		}
+		return this;
+	}
+	/**
+	 * Adds vector shapes (polylines, polygons, circles) to the map.
+	 *
+	 * @param vectors - Array of vector shape definitions
+	 * @returns This map instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * map.addVectors([
+	 *   {
+	 *     type: 'polyline',
+	 *     points: [{x: 0, y: 0}, {x: 100, y: 100}],
+	 *     style: { color: '#ff0000', weight: 2 }
+	 *   },
+	 *   {
+	 *     type: 'circle',
+	 *     center: {x: 500, y: 500},
+	 *     radius: 50,
+	 *     style: { color: '#0000ff', fill: true }
+	 *   }
+	 * ]);
+	 * ```
+	 */
+	addVectors(vectors: Vector[]): this {
+		if (vectors && vectors.length) this._vectors.push(...vectors);
+		const internalVectors: VectorPrimitiveInternal[] = this._vectors.map((v) => {
+			if (v.type === 'polyline' || v.type === 'polygon') {
+				return { type: v.type, points: v.points.map((p) => ({ lng: p.x, lat: p.y })), style: v.style };
+			}
+			const circle = v as Circle;
+			return { type: 'circle', center: { lng: circle.center.x, lat: circle.center.y }, radius: circle.radius, style: circle.style };
+		});
+		this._impl.setVectors?.(internalVectors);
+		return this;
+	}
 
-  clearMarkers(): this {
-    this._markers = [];
-    this._markMarkersDirtyAndSchedule();
-    return this;
-  }
-  clearVectors(): this {
-    this._vectors = [];
-    this._impl.setVectors?.([]);
-    return this;
-  }
+	/**
+	 * Removes all markers from the map.
+	 *
+	 * @returns This map instance for method chaining
+	 */
+	clearMarkers(): this {
+		this._markers = [];
+		this._markMarkersDirtyAndSchedule();
+		return this;
+	}
+	/**
+	 * Removes all vector shapes from the map.
+	 *
+	 * @returns This map instance for method chaining
+	 */
+	clearVectors(): this {
+		this._vectors = [];
+		this._impl.setVectors?.([]);
+		return this;
+	}
 
-  // Compatibility getters used by HUD
-  getCenter(): Point {
-    const c = this._impl.center as { lng: number; lat: number };
-    return { x: c.lng, y: c.lat };
-  }
-  getZoom(): number { return this._impl.zoom; }
-  get pointerAbs(): { x: number; y: number } | null { return this._impl.pointerAbs ?? null; }
-  setWheelSpeed(v: number): this { this._impl.setWheelSpeed?.(v); return this; }
-  setFpsCap(v: number): this { this._impl.setFpsCap(v); return this; }
-  invalidateSize(): this { this._impl.resize?.(); return this; }
+	// Compatibility getters used by HUD
+	/**
+	 * Gets the current center position of the map.
+	 *
+	 * @returns The center position in pixel coordinates
+	 */
+	getCenter(): Point {
+		const c = this._impl.center as { lng: number; lat: number };
+		return { x: c.lng, y: c.lat };
+	}
+	/**
+	 * Gets the current zoom level.
+	 *
+	 * @returns The current zoom level
+	 */
+	getZoom(): number {
+		return this._impl.zoom;
+	}
+	/**
+	 * Gets the current pointer position in world coordinates.
+	 *
+	 * @returns The pointer position or null if pointer is outside map
+	 */
+	get pointerAbs(): { x: number; y: number } | null {
+		return this._impl.pointerAbs ?? null;
+	}
+	/**
+	 * Sets the mouse wheel zoom speed.
+	 *
+	 * @param v - Speed multiplier (0.01 to 2.0)
+	 * @returns This map instance for method chaining
+	 */
+	setWheelSpeed(v: number): this {
+		this._impl.setWheelSpeed?.(v);
+		return this;
+	}
+	/**
+	 * Sets the maximum frames per second.
+	 *
+	 * @param v - FPS limit (15 to 240)
+	 * @returns This map instance for method chaining
+	 */
+	setFpsCap(v: number): this {
+		this._impl.setFpsCap(v);
+		return this;
+	}
+	/**
+	 * Updates the map size after container resize.
+	 * Call this if the container size changes.
+	 *
+	 * @returns This map instance for method chaining
+	 */
+	invalidateSize(): this {
+		this._impl.resize?.();
+		return this;
+	}
 
-  // Events proxy
-  get events(): EventBus { return this._impl.events; }
+	// Events proxy
+	/**
+	 * Gets the event bus for subscribing to map events.
+	 *
+	 * @returns EventBus instance for event subscriptions
+	 *
+	 * @example
+	 * ```typescript
+	 * map.events.on('move', (e) => {
+	 *   console.log('Map moved:', e.view.center, e.view.zoom);
+	 * });
+	 *
+	 * map.events.on('pointerdown', (e) => {
+	 *   console.log('Click at:', e.world);
+	 * });
+	 * ```
+	 */
+	get events(): EventBus {
+		return this._impl.events;
+	}
 
-  // Ensure a default icon is available so markers are visible without explicit icon defs
-  private _ensureDefaultIcon() {
-    if (this._defaultIconReady) return;
-    try {
-      const size = 16;
-      const r = 7;
-      const cnv = document.createElement('canvas');
-      cnv.width = size;
-      cnv.height = size;
-      const ctx = cnv.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, size, size);
-        ctx.fillStyle = '#2563eb'; // blue
-        ctx.beginPath();
-        ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-      const dataUrl = cnv.toDataURL('image/png');
-      const defaultIcon: IconDefInternal = { iconPath: dataUrl, width: size, height: size };
-      this._impl.setIconDefs?.({ default: defaultIcon });
-      this._defaultIconReady = true;
-    } catch {}
-  }
+	// Ensure a default icon is available so markers are visible without explicit icon defs
+	private _ensureDefaultIcon() {
+		if (this._defaultIconReady) return;
+		try {
+			const size = 16;
+			const r = 7;
+			const cnv = document.createElement('canvas');
+			cnv.width = size;
+			cnv.height = size;
+			const ctx = cnv.getContext('2d');
+			if (ctx) {
+				ctx.clearRect(0, 0, size, size);
+				ctx.fillStyle = '#2563eb'; // blue
+				ctx.beginPath();
+				ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+				ctx.lineWidth = 1;
+				ctx.stroke();
+			}
+			const dataUrl = cnv.toDataURL('image/png');
+			const defaultIcon: IconDefInternal = { iconPath: dataUrl, width: size, height: size };
+			this._impl.setIconDefs?.({ default: defaultIcon });
+			this._defaultIconReady = true;
+		} catch {}
+	}
 
-  private _markMarkersDirtyAndSchedule() {
-    this._markersDirty = true;
-    if (this._markersFlushScheduled) return;
-    this._markersFlushScheduled = true;
-    const flush = () => {
-      this._markersFlushScheduled = false;
-      if (!this._markersDirty) return;
-      this._markersDirty = false;
-      // Commit full marker list in one go
-      const internalMarkers: MarkerInternal[] = this._markers.map(mm => ({ 
-        lng: mm.x, 
-        lat: mm.y, 
-        type: mm.type ?? 'default', 
-        size: mm.size 
-      }));
-      this._impl.setMarkers(internalMarkers);
-    };
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
-    else setTimeout(flush, 0);
-  }
+	private _markMarkersDirtyAndSchedule() {
+		this._markersDirty = true;
+		if (this._markersFlushScheduled) return;
+		this._markersFlushScheduled = true;
+		const flush = () => {
+			this._markersFlushScheduled = false;
+			if (!this._markersDirty) return;
+			this._markersDirty = false;
+			// Commit full marker list in one go
+			const internalMarkers: MarkerInternal[] = this._markers.map((mm) => ({
+				lng: mm.x,
+				lat: mm.y,
+				type: mm.type ?? 'default',
+				size: mm.size,
+			}));
+			this._impl.setMarkers(internalMarkers);
+		};
+		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
+		else setTimeout(flush, 0);
+	}
 }

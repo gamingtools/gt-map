@@ -56,7 +56,7 @@ export class RasterRenderer {
 			tilesY = Math.ceil(levelH / TS);
 		}
 
-					for (let ty = startY; ty <= endY; ty++) {
+		for (let ty = startY; ty <= endY; ty++) {
 			if (!Number.isFinite(tilesY)) {
 				if (ty < 0 || ty >= 1 << zLevel) continue;
 			} else {
@@ -147,7 +147,7 @@ export class RasterRenderer {
 			tilesX = Math.ceil(levelW / TS);
 			tilesY = Math.ceil(levelH / TS);
 		}
-				for (let ty = startY; ty <= endY; ty++) {
+		for (let ty = startY; ty <= endY; ty++) {
 			if (!Number.isFinite(tilesY)) {
 				if (ty < 0 || ty >= 1 << zLevel) continue;
 			} else {
