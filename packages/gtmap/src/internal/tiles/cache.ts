@@ -12,10 +12,29 @@ export class TileCache {
 	private gl: WebGLRenderingContext;
 	private maxTiles: number;
 	private map = new Map<string, TileRecord>();
+	private texturePool: WebGLTexture[] = [];
+	private readonly poolSize = 20;
 
 	constructor(gl: WebGLRenderingContext, maxTiles: number) {
 		this.gl = gl;
 		this.maxTiles = Math.max(0, maxTiles | 0);
+	}
+
+	acquireTexture(): WebGLTexture | null {
+		if (this.texturePool.length > 0) {
+			return this.texturePool.pop()!;
+		}
+		return this.gl.createTexture();
+	}
+
+	private releaseTexture(tex: WebGLTexture) {
+		if (this.texturePool.length < this.poolSize) {
+			this.texturePool.push(tex);
+		} else {
+			try {
+				this.gl.deleteTexture(tex);
+			} catch {}
+		}
 	}
 
 	size() {
@@ -54,9 +73,7 @@ export class TileCache {
 	delete(key: string) {
 		const rec = this.map.get(key);
 		if (rec?.tex) {
-			try {
-				this.gl.deleteTexture(rec.tex);
-			} catch {}
+			this.releaseTexture(rec.tex);
 		}
 		this.map.delete(key);
 	}
@@ -64,12 +81,22 @@ export class TileCache {
 	clear() {
 		for (const [k, rec] of this.map) {
 			if (rec.tex) {
-				try {
-					this.gl.deleteTexture(rec.tex);
-				} catch {}
+				this.releaseTexture(rec.tex);
 			}
 			this.map.delete(k);
 		}
+	}
+
+	destroy() {
+		// Clear the cache first
+		this.clear();
+		// Then actually delete all pooled textures
+		for (const tex of this.texturePool) {
+			try {
+				this.gl.deleteTexture(tex);
+			} catch {}
+		}
+		this.texturePool = [];
 	}
 
 	evictIfNeeded() {

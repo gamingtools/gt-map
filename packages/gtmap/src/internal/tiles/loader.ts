@@ -11,30 +11,62 @@ export interface TileLoaderDeps {
 	requestRender(): void;
 	getUseImageBitmap(): boolean;
 	setUseImageBitmap(v: boolean): void;
+	acquireTexture(): WebGLTexture | null;
 }
 
 export class TileLoader {
 	private deps: TileLoaderDeps;
+	private abortControllers = new Map<string, AbortController>();
 
 	constructor(deps: TileLoaderDeps) {
 		this.deps = deps;
 	}
 
+	cancel(key: string) {
+		const controller = this.abortControllers.get(key);
+		if (controller) {
+			controller.abort();
+			this.abortControllers.delete(key);
+		}
+	}
+
+	cancelAll() {
+		for (const controller of this.abortControllers.values()) {
+			controller.abort();
+		}
+		this.abortControllers.clear();
+	}
+
 	start({ key, url }: { key: string; url: string }) {
 		const deps = this.deps;
+		
+		// Cancel any existing request for this key
+		this.cancel(key);
+		
+		// Create new abort controller
+		const abortController = new AbortController();
+		this.abortControllers.set(key, abortController);
+		
 		deps.addPending(key);
 		deps.incInflight();
 		deps.setLoading(key);
+		
 		const onFinally = () => {
 			try {
 				/* noop */
 			} finally {
+				this.abortControllers.delete(key);
 				deps.removePending(key);
 				deps.decInflight();
 			}
 		};
+		
 		if (deps.getUseImageBitmap()) {
-			fetch(url, { mode: 'cors', credentials: 'omit' } as any)
+			fetch(url, { 
+				mode: 'cors', 
+				credentials: 'omit',
+				signal: abortController.signal 
+			} as any)
 				.then((r: any) => {
 					if (!r.ok) throw new Error(`HTTP ${r.status}`);
 					return r.blob();
@@ -48,7 +80,7 @@ export class TileLoader {
 				.then((bmp: any) => {
 					try {
 						const gl: WebGLRenderingContext = deps.getGL();
-						const tex = gl.createTexture();
+						const tex = deps.acquireTexture();
 						if (!tex) {
 							deps.setError(key);
 							return;
@@ -71,19 +103,42 @@ export class TileLoader {
 						onFinally();
 					}
 				})
-				.catch(() => {
-					deps.setUseImageBitmap(false);
-					this.start({ key, url });
+				.catch((err) => {
+					if (err.name === 'AbortError') {
+						// Request was cancelled, clean up silently
+						onFinally();
+					} else {
+						deps.setUseImageBitmap(false);
+						this.start({ key, url });
+					}
 				});
 			return;
 		}
+		
 		const img: any = new Image();
 		img.crossOrigin = 'anonymous';
 		img.decoding = 'async';
+		
+		// Handle abort for image loading
+		const onAbort = () => {
+			img.src = '';
+			img.onload = null;
+			img.onerror = null;
+			onFinally();
+		};
+		
+		// Listen for abort signal
+		if (abortController.signal.aborted) {
+			onAbort();
+			return;
+		}
+		abortController.signal.addEventListener('abort', onAbort);
+		
 		img.onload = () => {
+			abortController.signal.removeEventListener('abort', onAbort);
 			try {
 				const gl: WebGLRenderingContext = deps.getGL();
-				const tex = gl.createTexture();
+				const tex = deps.acquireTexture();
 				if (!tex) {
 					deps.setError(key);
 					return;
@@ -104,6 +159,7 @@ export class TileLoader {
 			}
 		};
 		img.onerror = () => {
+			abortController.signal.removeEventListener('abort', onAbort);
 			deps.setError(key);
 			onFinally();
 		};

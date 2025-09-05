@@ -343,6 +343,7 @@ export default class GTMap implements MapImpl {
 			setUseImageBitmap: (v: boolean) => {
 				this.useImageBitmap = v;
 			},
+			acquireTexture: () => this._tileCache.acquireTexture(),
 		};
 		this._tiles = new TilePipeline(this._tileDeps);
 		this._loader = new TileLoader(this._loaderDeps);
@@ -514,7 +515,7 @@ export default class GTMap implements MapImpl {
 		try {
 			(this as any)._gfx?.dispose?.();
 		} catch {}
-		this._clearCache();
+		this._destroyCache();
 		const gl = this.gl;
 		this._screenCache?.dispose();
 		if (this._quad) {
@@ -593,6 +594,8 @@ export default class GTMap implements MapImpl {
 		this._needsRender = true;
 	}
 	private _clearCache() {
+		// Cancel all pending loads
+		this._loader.cancelAll();
 		// Delete GPU textures in tile cache and reset queues
 		this._tileCache.clear();
 		this._wantedKeys.clear();
@@ -605,6 +608,17 @@ export default class GTMap implements MapImpl {
 	public clearCache() {
 		this._clearCache();
 		this._needsRender = true;
+	}
+	private _destroyCache() {
+		// Cancel all pending loads
+		this._loader.cancelAll();
+		// Fully destroy cache including texture pool
+		this._tileCache.destroy();
+		this._wantedKeys.clear();
+		this._pinnedKeys.clear();
+		this._pendingKeys.clear();
+		this._tiles.clear();
+		this._inflightLoads = 0;
 	}
 	public setWheelSpeed(speed: number) {
 		if (Number.isFinite(speed)) {
@@ -1030,7 +1044,8 @@ export default class GTMap implements MapImpl {
 		}
 	}
 	private _cancelUnwantedLoads() {
-		// Only prune queued tasks that are no longer wanted; keep inflight loads to avoid churn
+		// For now, only cancel the queue, not inflight requests
+		// TODO: Implement proper wanted tile tracking during render
 		this._tiles.cancelUnwanted(this._wantedKeys);
 		this._wantedKeys.clear();
 		this._tiles.process();
@@ -1117,7 +1132,7 @@ export default class GTMap implements MapImpl {
 				begin();
 				for (let i = 0; i < pts.length; i++) {
 					const p = pts[i];
-					const css = (Coords as any).worldToCSS({ x: p.lng, y: p.lat }, z, this.center as any, viewport, imageMaxZ as number);
+					const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
 					if (i === 0) ctx.moveTo(css.x, css.y);
 					else ctx.lineTo(css.x, css.y);
 				}
@@ -1126,7 +1141,7 @@ export default class GTMap implements MapImpl {
 				finishFill();
 			} else if (prim.type === 'circle') {
 				const c = prim.center as { lng: number; lat: number };
-				const css = (Coords as any).worldToCSS({ x: c.lng, y: c.lat }, z, this.center as any, viewport, imageMaxZ as number);
+				const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
 				// Radius: specified in native px; convert to CSS using current zInt/scale
 				const { zInt, scale } = Coords.zParts(z);
 				const s = Coords.sFor(imageMaxZ as number, zInt);
@@ -1154,7 +1169,7 @@ export default class GTMap implements MapImpl {
 			ctx.font = '10px system-ui, sans-serif';
 			ctx.textBaseline = 'top';
 			for (const it of info) {
-				const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, this.center as any, viewport, imageMaxZ as number);
+				const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
 				const left = css.x - it.w / 2;
 				const top = css.y - it.h / 2;
 				// Skip if completely outside viewport
