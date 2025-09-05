@@ -73,9 +73,7 @@ export default class InputController {
 				view: deps.getView(),
 				originalEvent: e,
 			});
-			if (e.pointerType === 'mouse') {
-				deps.emit('mousedown', { x: px, y: py, world: { x: wNat.x, y: wNat.y }, view: deps.getView(), originalEvent: (e as unknown) as MouseEvent });
-			}
+			// mouse events are derived in mapgl for enrichment
 		};
 
 		const onMove = (e: PointerEvent) => {
@@ -107,9 +105,7 @@ export default class InputController {
 						originalEvent: e,
 					});
 				} catch {}
-				if (e.pointerType === 'mouse') {
-					deps.emit('mousemove', { x: px, y: py, world: { x: wNat.x, y: wNat.y }, view: deps.getView(), originalEvent: (e as unknown) as MouseEvent });
-				}
+				// mousemove derived in mapgl
 			} else {
 				if (inside) {
 					deps.updatePointerAbs(wNat.x, wNat.y);
@@ -123,9 +119,7 @@ export default class InputController {
 							originalEvent: e,
 						});
 					} catch {}
-					if (e.pointerType === 'mouse') {
-						deps.emit('mousemove', { x: px, y: py, world: { x: wNat.x, y: wNat.y }, view: deps.getView(), originalEvent: (e as unknown) as MouseEvent });
-					}
+					// mousemove derived in mapgl
 				} else if (this.over) {
 					deps.updatePointerAbs(null, null);
 					this.over = false;
@@ -171,23 +165,7 @@ export default class InputController {
 				view: deps.getView(),
 				originalEvent: e,
 			});
-			if (e.pointerType === 'mouse') {
-				deps.emit('mouseup', { x: px, y: py, world: { x: wNat.x, y: wNat.y }, view: deps.getView(), originalEvent: (e as unknown) as MouseEvent });
-				// Simple click discrimination: small move, short time
-				try {
-					const tol = 8;
-					const prev = this._positions[0];
-					const firstT = this._times[0];
-					if (prev && firstT) {
-						const dx = (e.clientX - rect.left) - prev.x;
-						const dy = (e.clientY - rect.top) - prev.y;
-						const dt = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()) - firstT;
-						if (Math.hypot(dx, dy) <= tol && dt < 400) {
-							deps.emit('click', { x: px, y: py, world: { x: wNat.x, y: wNat.y }, view: deps.getView(), originalEvent: (e as unknown) as MouseEvent });
-						}
-					}
-				} catch {}
-			}
+			// mouseup/click derived in mapgl
 			if (DEBUG) console.debug('[inertia] pointerup');
 			this.inertiaActive = false;
 			this._maybeStartInertia();
@@ -225,29 +203,10 @@ export default class InputController {
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
 			deps.startEase(1.0, px, py, deps.getAnchorMode());
-			// Emit mouse dblclick
-			try {
-				const view = deps.getView();
-				const widthCSS = rect.width, heightCSS = rect.height;
-				const zImg = deps.getImageMaxZoom();
-				const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
-				deps.emit('dblclick', { x: px, y: py, world: { x: wNat.x, y: wNat.y }, view, originalEvent: e });
-			} catch {}
+			// mouse dblclick derived in mapgl
 		};
 
-		const onContextMenu = (e: MouseEvent) => {
-			try {
-				e.preventDefault();
-				const rect = deps.getContainer().getBoundingClientRect();
-				const px = e.clientX - rect.left;
-				const py = e.clientY - rect.top;
-				const view = deps.getView();
-				const widthCSS = rect.width, heightCSS = rect.height;
-				const zImg = deps.getImageMaxZoom();
-				const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
-				deps.emit('contextmenu', { x: px, y: py, world: { x: wNat.x, y: wNat.y }, view, originalEvent: e });
-			} catch {}
-		};
+		const onContextMenu = (_e: MouseEvent) => { /* derived in mapgl */ };
 
 		const onKeyDown = (e: KeyboardEvent) => {
 			const key = e.key;

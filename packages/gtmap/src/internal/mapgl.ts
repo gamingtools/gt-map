@@ -928,27 +928,52 @@ export default class GTMap implements MapImpl, GraphicsHost {
             });
 
             // Enrich mouse events with markers when hover is enabled
-            const enrichMouse = (name: keyof import('../api/types').EventMap, e: any) => {
-                if (!e || e.x == null || e.y == null) return;
+            const emitMouseOnce = (name: keyof import('../api/types').EventMap, e: any) => {
+                if (!e || e.x == null || e.y == null) { this._events.emit(name, e); return; }
                 const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
                 const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
                 const idle = !moving && now - this._lastInteractAt >= this._hitTestDebounceMs;
-                if (!idle) return;
-                try {
-                    const hits = this._computeMarkerHits(e.x, e.y);
-                    if (hits.length) {
-                        const mapped = hits.map(h => ({ marker: { id: h.id, index: h.idx, world: { x: h.world.x, y: h.world.y }, size: h.size, rotation: h.rotation, data: this._markerData.get(h.id) }, icon: h.icon }));
-                        // Re-emit same event with markers attached
-                        this._events.emit(name, { ...e, markers: mapped } as any);
+                let payload = e;
+                if (idle) {
+                    if (name === 'mousemove') {
+                        const last = (this as any)._lastMouseEnrichAt || 0;
+                        if (now - last >= 16) (this as any)._lastMouseEnrichAt = now; else idle && (payload = e);
                     }
-                } catch {}
+                    try {
+                        const hits = this._computeMarkerHits(e.x, e.y);
+                        if (hits.length) {
+                            const mapped = hits.map(h => ({ marker: { id: h.id, index: h.idx, world: { x: h.world.x, y: h.world.y }, size: h.size, rotation: h.rotation, data: this._markerData.get(h.id) }, icon: h.icon }));
+                            payload = { ...e, markers: mapped } as any;
+                        }
+                    } catch {}
+                }
+                this._events.emit(name, payload);
             };
-            this.events.on('mousedown').each((e: any) => enrichMouse('mousedown', e));
-            this.events.on('mousemove').each((e: any) => enrichMouse('mousemove', e));
-            this.events.on('mouseup').each((e: any) => enrichMouse('mouseup', e));
-            this.events.on('click').each((e: any) => enrichMouse('click', e));
-            this.events.on('dblclick').each((e: any) => enrichMouse('dblclick', e));
-            this.events.on('contextmenu').each((e: any) => enrichMouse('contextmenu', e));
+            // Derive mouse events from pointer events to avoid duplicate emissions
+            this.events.on('pointerdown').each((e: any) => {
+                if ((e.originalEvent?.pointerType || '') === 'mouse') {
+                    emitMouseOnce('mousedown', e);
+                }
+            });
+            this.events.on('pointermove').each((e: any) => {
+                if ((e.originalEvent?.pointerType || '') === 'mouse') {
+                    emitMouseOnce('mousemove', e);
+                }
+            });
+            this.events.on('pointerup').each((e: any) => {
+                if ((e.originalEvent?.pointerType || '') === 'mouse') {
+                    emitMouseOnce('mouseup', e);
+                }
+            });
+            // Click and dblclick/contextmenu derived here if needed
+            this.events.on('pointerup').each((e: any) => {
+                if ((e.originalEvent?.pointerType || '') !== 'mouse') return;
+                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+                const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+                const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
+                if (!isClick) return;
+                emitMouseOnce('click', e);
+            });
         } catch {}
 	}
 
