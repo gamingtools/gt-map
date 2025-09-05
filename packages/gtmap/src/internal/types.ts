@@ -139,6 +139,14 @@ export interface MapImpl {
 	setMaxBoundsViscosity(v: number): void;
 	setIconDefs(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>): Promise<void>;
 	setMarkers(markers: Array<{ lng: number; lat: number; type: string; size?: number }>): void;
+	setVectors?(vectors: Array<
+		| { type: 'polyline'; points: { lng: number; lat: number }[]; style?: VectorStyle }
+		| { type: 'polygon'; points: { lng: number; lat: number }[]; style?: VectorStyle }
+		| { type: 'circle'; center: { lng: number; lat: number }; radius: number; style?: VectorStyle }
+	>): void;
+	setUpscaleFilter?(mode: 'auto' | 'linear' | 'bicubic'): void;
+	setWheelSpeed?(v: number): void;
+	resize?(): void;
 	setMarkerHitboxesVisible?(on: boolean): void;
 	destroy(): void;
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Single status widget: subscribes to map events and shows key values
-	import type { LeafletMapFacade } from '@gtmap';
+    import type { GTMap } from '@gtmap';
 
 	const {
 		map,
@@ -12,7 +12,7 @@
 		setMarkersEnabled,
 		setVectorsEnabled
 	} = $props<{
-		map: LeafletMapFacade;
+        map: GTMap;
 		fpsCap?: number;
 		wheelSpeed?: number;
 		home: { lng: number; lat: number };
@@ -98,10 +98,10 @@
 		} catch {}
 	});
 
-	function recenter() {
-		if (!map || !home) return;
-		map.setView([home.lat, home.lng], map.getZoom());
-	}
+    function recenter() {
+        if (!map || !home) return;
+        map.setView({ center: { x: home.lng, y: home.lat }, zoom: map.getZoom() });
+    }
 	function onMarkersChange() {
 		const n = Math.max(0, Math.min(999_999, Math.floor(markersLocal)));
 		markersLocal = n;

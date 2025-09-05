@@ -555,6 +555,7 @@ export default class GTMap implements MapImpl {
 	// Public controls
 	private _initCanvas() {
 		const canvas = document.createElement('canvas');
+		canvas.classList.add('gtmap-canvas');
 		Object.assign(canvas.style, {
 			display: 'block',
 			position: 'absolute',
@@ -569,6 +570,7 @@ export default class GTMap implements MapImpl {
 	}
 	private _initGridCanvas() {
 		const c = document.createElement('canvas');
+		c.classList.add('gtmap-grid-canvas');
 		this.gridCanvas = c;
 		c.style.display = 'block';
 		c.style.position = 'absolute';
@@ -1036,6 +1038,7 @@ export default class GTMap implements MapImpl {
 
 	private _initVectorCanvas() {
 		const c = document.createElement('canvas');
+		c.classList.add('gtmap-vector-canvas');
 		this.vectorCanvas = c;
 		c.style.display = 'block';
 		c.style.position = 'absolute';
@@ -1073,6 +1076,11 @@ export default class GTMap implements MapImpl {
 		if (this.vectorCanvas && (this.vectorCanvas.width !== wPx || this.vectorCanvas.height !== hPx)) {
 			this.vectorCanvas.width = wPx;
 			this.vectorCanvas.height = hPx;
+		}
+		// Ensure CSS size matches container for proper layout/positioning
+		if (this.vectorCanvas) {
+			this.vectorCanvas.style.width = wCSS + 'px';
+			this.vectorCanvas.style.height = hCSS + 'px';
 		}
 	}
 

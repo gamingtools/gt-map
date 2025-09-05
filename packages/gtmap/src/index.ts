@@ -13,3 +13,7 @@ export type { EventBus, EventStream } from './internal/events/stream';
 // Compatibility type aliases (prefer using types from leaflet exports)
 export type { LeafletMapFacade } from './leaflet/map/Map';
 export type { LeafletGridLayerFacade } from './leaflet/layer/tile/GridLayer';
+
+// New simplified API (pixel CRS)
+export * as api from './api';
+export { GTMap } from './api/Map';

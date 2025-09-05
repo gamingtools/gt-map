@@ -1,20 +1,14 @@
 <script lang="ts">
-	type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
-
 	import { onMount, onDestroy } from 'svelte';
-	import { L, type LeafletMapFacade } from '@gtmap';
-	import Hud from '$lib/Hud.svelte';
-	import ZoomControl from '$lib/ZoomControl.svelte';
-	import AttributionControl from '$lib/AttributionControl.svelte';
+	import { GTMap } from '@gtmap';
+	// Sample icons for demonstrating custom icon registration
+	type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
+	import Hud from '$lib/Hud.svelte';
 
 	let container: HTMLDivElement | null = null;
-	let map: LeafletMapFacade;
-	let gridLayer: any | null = null;
-	let leafletMarkers: Array<any> = [];
-	let markerGroup: any | null = null;
-	let vectorLayers: Array<any> = [];
+	let map: GTMap;
 
 	const HOME = { lng: 4096, lat: 4096 };
 
@@ -30,47 +24,19 @@
 		return Math.random() * (max - min) + min;
 	}
 
+	let iconHandle: { id: string } | null = null;
+
 	function applyMarkerCount(n: number): void {
 		if (!map) return;
 		const count = clampMarkerCount(n);
 		markerCount = count;
-		const keys = Object.keys(typedIconDefs);
-		if (keys.length === 0) {
-			clearLeafletMarkers();
-			return;
-		}
 		clearLeafletMarkers();
-		// Create an empty group and add it first so per-batch addLayer goes to map
-		markerGroup = L.layerGroup();
-		markerGroup.addTo(map);
-		const iconCache: Record<string, any> = {};
-		const CREATE_BATCH = 10000;
-		let i = 0;
-		const step = () => {
-			const end = Math.min(count, i + CREATE_BATCH);
-			for (; i < end; i++) {
-				const key = keys[(Math.random() * keys.length) | 0];
-				const def = typedIconDefs[key];
-				const icon =
-					iconCache[key] ||
-					(iconCache[key] = L.icon({
-						iconUrl: def.iconPath,
-						iconRetinaUrl: def.x2IconPath,
-						iconSize: [def.width, def.height]
-					}));
-				const m = L.marker([rand(0, 8192), rand(0, 8192)], { icon });
-				m.on('click', (ev: any) => {
-					console.log('marker click', ev);
-				});
 
-				markerGroup.addLayer(m);
-				leafletMarkers.push(m);
-			}
-			if (i < count) {
-				requestAnimationFrame(step);
-			}
-		};
-		step();
+		for (let i = 0; i < markerCount; i++) {
+			const x = rand(0, 8192);
+			const y = rand(0, 8192);
+			map.addMarker(x, y, iconHandle ? { icon: iconHandle } : undefined);
+		}
 	}
 
 	function setMarkerCount(n: number): void {
@@ -79,86 +45,63 @@
 
 	function clearLeafletMarkers(): void {
 		try {
-			if (markerGroup) {
-				try {
-					markerGroup.remove?.();
-				} catch {}
-				markerGroup = null;
-			}
-			if (leafletMarkers && leafletMarkers.length) {
-				for (const m of leafletMarkers) {
-					try {
-						m.remove?.();
-					} catch {}
-				}
-			}
+			map?.clearMarkers?.();
 		} finally {
-			leafletMarkers = [];
+			/* no-op */
 		}
 	}
 
 	function addVectors(): void {
 		if (!map) return;
 		try {
-			const vLine = L.polyline(
-				[
-					[1000, 1000],
-					[2000, 1400],
-					[3000, 1200]
-				],
-				{ color: '#1e90ff', weight: 2, opacity: 0.9 }
-			).addTo(map);
-			const vPoly = L.polygon(
-				[
-					[2600, 2600],
-					[3000, 3000],
-					[2600, 3200],
-					[2300, 3000]
-				],
+			map.addVectors([
 				{
-					color: '#10b981',
-					weight: 2,
-					opacity: 0.9,
-					fill: true,
-					fillColor: '#10b981',
-					fillOpacity: 0.25
-				}
-			).addTo(map);
-			const vRect = L.rectangle(
-				[
-					[1200, 3800],
-					[1800, 4400]
-				],
+					type: 'polyline',
+					points: [
+						{ x: 1000, y: 1000 },
+						{ x: 2000, y: 1400 },
+						{ x: 3000, y: 1200 }
+					],
+					style: { color: '#1e90ff', weight: 2, opacity: 0.9 }
+				},
 				{
-					color: '#ef4444',
-					weight: 2,
-					opacity: 0.9,
-					fill: true,
-					fillColor: '#ef4444',
-					fillOpacity: 0.2
+					type: 'polygon',
+					points: [
+						{ x: 2600, y: 2600 },
+						{ x: 3000, y: 3000 },
+						{ x: 2600, y: 3200 },
+						{ x: 2300, y: 3000 }
+					],
+					style: {
+						color: '#10b981',
+						weight: 2,
+						opacity: 0.9,
+						fill: true,
+						fillColor: '#10b981',
+						fillOpacity: 0.25
+					}
+				},
+				{
+					type: 'circle',
+					center: { x: 4096, y: 4096 },
+					radius: 200,
+					style: {
+						color: '#f59e0b',
+						weight: 2,
+						opacity: 0.9,
+						fill: true,
+						fillColor: '#f59e0b',
+						fillOpacity: 0.2
+					}
 				}
-			).addTo(map);
-			const vCircle = L.circle([4096, 4096], {
-				color: '#f59e0b',
-				weight: 2,
-				opacity: 0.9,
-				fill: true,
-				fillColor: '#f59e0b',
-				fillOpacity: 0.2,
-				radius: 200
-			}).addTo(map);
-			vectorLayers.push(vLine, vPoly, vRect, vCircle);
+			]);
 		} catch {}
 	}
 
 	function clearVectors(): void {
-		if (!vectorLayers.length) return;
-		for (const v of vectorLayers) {
-			try {
-				v?.remove?.();
-			} catch {}
-		}
-		vectorLayers = [];
+		try {
+			map?.clearVectors?.();
+		} catch {}
 	}
 
 	function setMarkersEnabled(on: boolean): void {
@@ -174,33 +117,34 @@
 	onMount(() => {
 		if (!container) return;
 
-		map = L.map(container, {
-			center: HOME,
+		map = new GTMap(container, {
+			center: { x: HOME.lng, y: HOME.lat },
 			zoom: 2,
 			minZoom: 0,
 			maxZoom: 10,
 			fpsCap: 60
 		});
-		map.setPrefetchOptions({ enabled: true, baselineLevel: 2, ring: 0 });
-		L.tileLayer('https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp', {
-			minZoom: 0,
-			maxZoom: 5,
+		map.setTileSource({
+			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
 			tileSize: 256,
-			tms: false,
-			noWrap: true,
-			bounds: [
-				[0, 0],
-				[8192, 8192]
-			]
-		}).addTo(map!);
-		L.marker([4096, 4096], {
-			icon: L.icon({
-				iconUrl: typedIconDefs.sandstorm.iconPath,
-				iconRetinaUrl: typedIconDefs.sandstorm.x2IconPath,
-				iconSize: [typedIconDefs.sandstorm.width, typedIconDefs.sandstorm.height]
-			})
-		}).addTo(map);
-		gridLayer = L.grid();
+			sourceMaxZoom: 5,
+			mapSize: { width: 8192, height: 8192 },
+			wrapX: false,
+			clearCache: true
+		});
+
+		// Register a custom icon to demonstrate addIcon/addMarker
+		try {
+			const def = typedIconDefs?.sandstorm || Object.values(typedIconDefs)[0];
+			if (def) {
+				iconHandle = map.addIcon({
+					iconPath: def.iconPath,
+					x2IconPath: def.x2IconPath,
+					width: def.width,
+					height: def.height
+				});
+			}
+		} catch {}
 
 		// Resize handling (debounced): wait until user stops resizing
 		let resizeTimer: any = null;
@@ -230,7 +174,7 @@
 
 		// Teardown on navigation/unmount per Svelte docs
 		return () => {
-			map?.remove?.();
+			map?.destroy?.();
 			if (ro) {
 				try {
 					ro.disconnect();
@@ -260,14 +204,7 @@
 		{setMarkersEnabled}
 		{setVectorsEnabled}
 	/>
-	{#if map}
-		<ZoomControl {map} position="top-right" step={1} />
-		<AttributionControl
-			{map}
-			position="bottom-right"
-			text="Hagga Basin tiles © respective owners (game map)"
-		/>
-	{/if}
+	<!-- Controls removed for simplified API -->
 </div>
 
 <style>

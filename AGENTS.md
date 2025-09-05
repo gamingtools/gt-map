@@ -1,5 +1,10 @@
 # Repository Guidelines
 
+## Hard Rule (Must-Not-Break)
+
+- STOP USING `any`/`unknown` when a concrete type can be used. This codebase is TypeScript-first for type safety and IntelliSense. Always prefer precise types over `any`/`unknown`, add minimal local interfaces when necessary, and propagate useful types through public APIs.
+
+
 ## Project Structure & Module Organization
 
 - `index.html`: App shell and HUD elements.
