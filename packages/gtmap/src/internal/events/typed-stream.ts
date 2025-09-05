@@ -1,8 +1,8 @@
 // Type-safe event bus with generic event map
 import { EventStream, type Listener, type Unsubscribe } from './stream';
 
-export class TypedEventBus<EventMap extends Record<string, any> = Record<string, any>> {
-	private listeners = new Map<keyof EventMap, Set<Listener<any>>>();
+export class TypedEventBus<EventMap extends Record<string, unknown> = Record<string, unknown>> {
+	private listeners = new Map<keyof EventMap, Set<Listener<unknown>>>();
 
 	on<K extends keyof EventMap>(name: K): EventStream<EventMap[K]> {
 		return new EventStream<EventMap[K]>((next) => {
@@ -11,9 +11,9 @@ export class TypedEventBus<EventMap extends Record<string, any> = Record<string,
 				set = new Set();
 				this.listeners.set(name, set);
 			}
-			set.add(next as Listener<any>);
+			set.add(next as unknown as Listener<unknown>);
 			return () => {
-				set!.delete(next as Listener<any>);
+				set!.delete(next as unknown as Listener<unknown>);
 			};
 		});
 	}

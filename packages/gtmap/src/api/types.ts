@@ -161,6 +161,7 @@ export interface BaseEvent {
 
 // Event map for type-safe event handling
 export interface EventMap {
+    [k: string]: unknown;
     move: MoveEventData;
     moveend: MoveEventData;
     zoom: ZoomEventData;
@@ -309,4 +310,5 @@ export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number)
 
 // Typed EventBus surface exposed publicly
 import type { TypedEventBus as _TypedEventBus } from '../internal/events/typed-stream';
+/** @internal */
 export type EventBus = _TypedEventBus<EventMap>;

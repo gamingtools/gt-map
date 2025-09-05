@@ -1,10 +1,17 @@
 import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
 
-import type { EventBus, Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, Circle, Vector, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, IconScaleFunction, MarkerEventData } from './types';
+import type { Point, TileSourceOptions, MapOptions, IconDef, IconHandle, Circle, Vector as VectorLegacy, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, IconScaleFunction, EventMap as MapEventMap } from './types';
+import type { PublicEvents } from './events/public';
+import { Layer } from '../entities/Layer';
+import { Marker } from '../entities/Marker';
+import { Vector, type VectorGeometry as VectorGeom } from '../entities/Vector';
 
 // Re-export types from centralized types file
-export type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector, ActiveOptions } from './types';
+export type { Point, TileSourceOptions, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector as VectorLegacy, ActiveOptions } from './types';
+export { Marker } from '../entities/Marker';
+export { Vector } from '../entities/Vector';
+export { Layer } from '../entities/Layer';
 
 /**
  * GTMap - A high-performance WebGL map renderer with pixel-based coordinate system.
@@ -20,13 +27,23 @@ export type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle,
  * ```
  */
 export class GTMap {
-	private _impl: MapImpl;
-	private _markers: Marker[] = [];
-	private _vectors: Vector[] = [];
-	private _defaultIconReady = false;
-	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
-	private _markersDirty = false;
-	private _markersFlushScheduled = false;
+    private _impl: MapImpl;
+    /**
+     * Marker layer for this map. Use to add/remove markers and subscribe to layer events.
+     *
+     * @example
+     * const m = map.addMarker(100, 200);
+     * map.markers.events.on('entityadd').each(({ entity }) => console.log('added', entity.id));
+     */
+    readonly markers: Layer<Marker>;
+    /**
+     * Vector layer for this map. Use to add/remove vectors and subscribe to layer events.
+     */
+    readonly vectors: Layer<Vector>;
+    private _defaultIconReady = false;
+    private _icons: Map<string, IconDef> = new Map<string, IconDef>();
+    private _markersDirty = false;
+    private _markersFlushScheduled = false;
 
 	/**
 	 * Creates a new GTMap instance.
@@ -45,8 +62,8 @@ export class GTMap {
 	 * @param options.screenCache - Enable screen-space caching for better performance (default: true)
 	 * @param options.fpsCap - Maximum frames per second (default: 60)
 	 */
-	constructor(container: HTMLElement, options: MapOptions = {}) {
-		const implOpts: Partial<ImplMapOptions> = {
+    constructor(container: HTMLElement, options: MapOptions = {}) {
+        const implOpts: Partial<ImplMapOptions> = {
 			tileUrl: options.tileUrl,
 			tileSize: options.tileSize,
 			minZoom: options.minZoom,
@@ -59,9 +76,32 @@ export class GTMap {
 			screenCache: options.screenCache,
 			fpsCap: options.fpsCap,
 		};
-		this._impl = new Impl(container as HTMLDivElement, implOpts);
-		this._ensureDefaultIcon();
-	}
+        this._impl = new Impl(container as HTMLDivElement, implOpts);
+        this._ensureDefaultIcon();
+
+        // Layers
+        const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
+        const onVectorsChanged = () => this._flushVectors();
+        this.markers = new Layer<Marker>({ id: 'markers', onChange: onMarkersChanged });
+        this.vectors = new Layer<Vector>({ id: 'vectors', onChange: onVectorsChanged });
+
+        // Wire internal marker events to per-marker entity events
+        this._impl.events.on('markerenter').each((e) => {
+            const id = e?.marker?.id;
+            const mk = id ? this.markers.get(id) : undefined;
+            if (mk) mk.emitFromMap('enter', { x: e.screen.x, y: e.screen.y, marker: mk.toData() });
+        });
+        this._impl.events.on('markerleave').each((e) => {
+            const id = e?.marker?.id;
+            const mk = id ? this.markers.get(id) : undefined;
+            if (mk) mk.emitFromMap('leave', { x: e.screen.x, y: e.screen.y, marker: mk.toData() });
+        });
+        this._impl.events.on('markerclick').each((e) => {
+            const id = e?.marker?.id;
+            const mk = id ? this.markers.get(id) : undefined;
+            if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData() });
+        });
+    }
 
 	// View controls
 	/**
@@ -244,9 +284,9 @@ export class GTMap {
 	 * map.addMarker(100, 200, { icon });
 	 * ```
 	 */
-	addIcon(def: IconDef, id?: string): IconHandle {
-		const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
-		this._icons.set(iconId, def);
+    addIcon(def: IconDef, id?: string): IconHandle {
+        const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
+        this._icons.set(iconId, def);
 		// Push to impl immediately
 		const iconDefInternal: IconDefInternal = {
 			iconPath: def.iconPath,
@@ -259,62 +299,27 @@ export class GTMap {
 		this._impl.setIconDefs(Object.fromEntries([[iconId, iconDefInternal]]));
 		return { id: iconId };
 	}
-	/**
-	 * Adds a single marker to the map.
-	 *
-	 * @param x - X coordinate in pixel space
-	 * @param y - Y coordinate in pixel space
-	 * @param opts - Optional marker settings
-	 * @param opts.icon - Icon handle from addIcon() (uses default if not provided)
-	 * @param opts.size - Scale factor for the icon
-	 * @returns The created marker object
-	 *
-	 * @example
-	 * ```typescript
-	 * map.addMarker(512, 768);
-	 * map.addMarker(1024, 1024, { icon: myIcon, size: 1.5 });
-	 * ```
-	 */
-	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: any | null }): (Marker & { id: string }) & { events: { on: (name: 'click' | 'enter' | 'leave') => { each: (handler: (e: MarkerEventData) => void) => () => void } } } {
-		const id = `m_${Math.random().toString(36).slice(2, 10)}`;
-		const m: Marker = { id, x, y, type: opts?.icon?.id ?? 'default', size: opts?.size, rotation: opts?.rotation, data: opts?.data };
-		this._markers.push(m);
-		this._markMarkersDirtyAndSchedule();
-		const make = (evt: 'click' | 'enter' | 'leave') => {
-			const mapBus = this.events;
-			const name = evt === 'click' ? 'markerclick' : evt === 'enter' ? 'markerenter' : 'markerleave';
-			return {
-				each: (handler: (e: MarkerEventData) => void) =>
-					(mapBus.on as any)(name).each((e: MarkerEventData) => {
-						if (e?.marker?.id === id) handler(e);
-					}),
-			};
-		};
-		return { ...(m as any), id, events: { on: (name: 'click' | 'enter' | 'leave') => make(name) } } as any;
-	}
-	/**
-	 * Adds multiple markers to the map in a batch.
-	 *
-	 * @param markers - Array of marker objects
-	 * @returns This map instance for method chaining
-	 *
-	 * @example
-	 * ```typescript
-	 * map.addMarkers([
-	 *   { x: 100, y: 200, type: 'default' },
-	 *   { x: 300, y: 400, type: 'custom', size: 1.2 }
-	 * ]);
-	 * ```
-	 */
-	addMarkers(markers: Marker[]): this {
-		if (markers && markers.length) {
-			this._markers.push(
-				...markers.map((m) => ({ id: m.id ?? `m_${Math.random().toString(36).slice(2, 10)}`, x: m.x, y: m.y, type: m.type ?? 'default', size: m.size, rotation: m.rotation, data: (m as any).data }))
-			);
-			this._markMarkersDirtyAndSchedule();
-		}
-		return this;
-	}
+    /**
+     * Create and add a marker to the `markers` layer.
+     *
+     * @param x - X pixel coordinate
+     * @param y - Y pixel coordinate
+     * @param opts.icon - Icon from `addIcon` (defaults to built-in circle)
+     * @param opts.size - Scale multiplier
+     * @param opts.rotation - Degrees clockwise
+     * @param opts.data - Arbitrary user data attached to the marker
+     * @returns The created `Marker`
+     *
+     * @example
+     * const m = map.addMarker(1024, 1024, { size: 1.25 });
+     * m.events.on('click').each(({ x, y }) => console.log('marker click', x, y));
+     */
+    addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: unknown }): Marker {
+        const mk = new Marker(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
+        this.markers.add(mk);
+        return mk;
+    }
+    // addMarkers removed in favor of per-entity API
 	/**
 	 * Adds vector shapes (polylines, polygons, circles) to the map.
 	 *
@@ -338,39 +343,56 @@ export class GTMap {
 	 * ]);
 	 * ```
 	 */
-	addVectors(vectors: Vector[]): this {
-		if (vectors && vectors.length) this._vectors.push(...vectors);
-		const internalVectors: VectorPrimitiveInternal[] = this._vectors.map((v) => {
-			if (v.type === 'polyline' || v.type === 'polygon') {
-				return { type: v.type, points: v.points.map((p) => ({ lng: p.x, lat: p.y })), style: v.style };
-			}
-			const circle = v as Circle;
-			return { type: 'circle', center: { lng: circle.center.x, lat: circle.center.y }, radius: circle.radius, style: circle.style };
-		});
-		this._impl.setVectors?.(internalVectors);
-		return this;
-	}
+    /**
+     * Add legacy vector primitives in a single batch (temporary helper).
+     * Prefer `addVector(geometry)` for the entity-based API.
+     */
+    addVectors(_vectors: VectorLegacy[]): this {
+        // Legacy pass-through remains for now
+        const internalVectors: VectorPrimitiveInternal[] = _vectors.map((v) => {
+            if (v.type === 'polyline' || v.type === 'polygon') {
+                return { type: v.type, points: v.points.map((p) => ({ lng: p.x, lat: p.y })), style: v.style };
+            }
+            const circle = v as Circle;
+            return { type: 'circle', center: { lng: circle.center.x, lat: circle.center.y }, radius: circle.radius, style: circle.style };
+        });
+        this._impl.setVectors?.(internalVectors);
+        return this;
+    }
+
+    /**
+     * Create and add a `Vector` entity to the `vectors` layer.
+     *
+     * @param geometry - Vector geometry (polyline, polygon, circle)
+     * @returns The created `Vector`
+     */
+    addVector(geometry: VectorGeom): Vector {
+        const v = new Vector(geometry, {}, () => this._flushVectors());
+        this.vectors.add(v);
+        return v;
+    }
 
 	/**
 	 * Removes all markers from the map.
 	 *
 	 * @returns This map instance for method chaining
 	 */
-	clearMarkers(): this {
-		this._markers = [];
-		this._markMarkersDirtyAndSchedule();
-		return this;
-	}
+    /** Remove all markers from the map. */
+    clearMarkers(): this {
+        this.markers.clear();
+        return this;
+    }
 	/**
 	 * Removes all vector shapes from the map.
 	 *
 	 * @returns This map instance for method chaining
 	 */
-	clearVectors(): this {
-		this._vectors = [];
-		this._impl.setVectors?.([]);
-		return this;
-	}
+    /** Remove all vectors from the map. */
+    clearVectors(): this {
+        this.vectors.clear();
+        this._impl.setVectors?.([]);
+        return this;
+    }
 
 	// Compatibility getters used by HUD
 	/**
@@ -446,25 +468,19 @@ export class GTMap {
 	}
 
 	// Events proxy
-	/**
-	 * Gets the event bus for subscribing to map events.
-	 *
-	 * @returns EventBus instance for event subscriptions
-	 *
-	 * @example
-	 * ```typescript
-	 * map.events.on('move', (e) => {
-	 *   console.log('Map moved:', e.view.center, e.view.zoom);
-	 * });
-	 *
-	 * map.events.on('pointerdown', (e) => {
-	 *   console.log('Click at:', e.world);
-	 * });
-	 * ```
-	 */
-	get events(): EventBus {
-		return this._impl.events;
-	}
+    /**
+     * Read-only map events surface (`on/once`).
+     *
+     * @example
+     * map.events.on('move').each(({ view }) => console.log(view.center, view.zoom));
+     * await map.events.once('zoomend');
+     */
+    get events(): PublicEvents<MapEventMap> {
+        return {
+            on: (name) => this._impl.events.on(name),
+            once: (name) => this._impl.events.when(name),
+        };
+    }
 
 	// Ensure a default icon is available so markers are visible without explicit icon defs
 	private _ensureDefaultIcon() {
@@ -493,33 +509,43 @@ export class GTMap {
 		} catch {}
 	}
 
-	private _markMarkersDirtyAndSchedule() {
-		this._markersDirty = true;
-		if (this._markersFlushScheduled) return;
-		this._markersFlushScheduled = true;
-		const flush = () => {
-			this._markersFlushScheduled = false;
-			if (!this._markersDirty) return;
-			this._markersDirty = false;
-			// Commit full marker list in one go
-			// Ensure ids assigned on facade markers
-			for (const mm of this._markers) if (!mm.id) (mm as any).id = `m_${Math.random().toString(36).slice(2, 10)}`;
-			const internalMarkers: MarkerInternal[] = this._markers.map((mm) => ({
-				lng: mm.x,
-				lat: mm.y,
-				type: mm.type ?? 'default',
-				size: mm.size,
-				rotation: mm.rotation,
-				id: mm.id as string,
-			}));
-			this._impl.setMarkers(internalMarkers);
-			try {
-				const payloads: Record<string, any | null | undefined> = {};
-				for (const mk of this._markers) if (mk.id) payloads[mk.id] = (mk as any).data;
-				(this._impl as any).setMarkerData?.(payloads);
-			} catch {}
-		};
-		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
-		else setTimeout(flush, 0);
-	}
+    private _markMarkersDirtyAndSchedule() {
+        this._markersDirty = true;
+        if (this._markersFlushScheduled) return;
+        this._markersFlushScheduled = true;
+        const flush = () => {
+            this._markersFlushScheduled = false;
+            if (!this._markersDirty) return;
+            this._markersDirty = false;
+            const list = this.markers.getAll();
+            const internalMarkers: MarkerInternal[] = list.map((m) => ({
+                lng: m.x,
+                lat: m.y,
+                type: m.iconType ?? 'default',
+                size: m.size,
+                rotation: m.rotation,
+                id: m.id,
+            }));
+            this._impl.setMarkers(internalMarkers);
+            try {
+                const payloads: Record<string, unknown | null | undefined> = {};
+                for (const mk of list) payloads[mk.id] = mk.data;
+                this._impl.setMarkerData?.(payloads);
+            } catch {}
+        };
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
+        else setTimeout(flush, 0);
+    }
+
+    private _flushVectors() {
+        const list = this.vectors.getAll();
+        const internalVectors: VectorPrimitiveInternal[] = list.map((v) => {
+            const g = v.geometry;
+            if (g.type === 'polyline' || g.type === 'polygon') {
+                return { type: g.type, points: g.points.map((p) => ({ lng: p.x, lat: p.y })) };
+            }
+            return { type: 'circle', center: { lng: g.center.x, lat: g.center.y }, radius: g.radius };
+        });
+        this._impl.setVectors?.(internalVectors);
+    }
 }
