@@ -12,6 +12,8 @@ export class IconRenderer {
     private texAnchor = new Map<string, { ax: number; ay: number }>();
     private iconMeta = new Map<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number }>();
     private maskAlpha = new Map<string, { data: Uint8Array; w: number; h: number }>();
+    private pendingMasks: Array<{ key: string; src: ImageBitmap | HTMLImageElement; w: number; h: number }> = [];
+    private maskBuildStarted = false;
 	private markers: Marker[] = [];
 	// Texture atlas
 	// Atlas bookkeeping kept local in load; we do not need fields on the class.
@@ -79,9 +81,13 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
             if (src2x) {
                 imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
                 this.hasRetina.set(key, true);
+                this.pendingMasks.push({ key, src: src2x, w: d.width, h: d.height });
             } else {
                 const src1x = await this.loadImageSource(d.iconPath);
-                if (src1x) imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+                if (src1x) {
+                    imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+                    this.pendingMasks.push({ key, src: src1x, w: d.width, h: d.height });
+                }
                 this.hasRetina.set(key, false);
             }
         });
@@ -108,16 +114,26 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
             }
         }
 
-        // Defer building alpha masks to idle time so initial render is not blocked
-        const buildAllMasks = () => {
-            try {
-                for (const it of imgs2x) this.buildMaskSafe(it.key, it.src, it.w, it.h);
-                for (const it of imgs1x) if (!this.maskAlpha.has(it.key)) this.buildMaskSafe(it.key, it.src, it.w, it.h);
-            } catch {}
+        // Do not start mask build here; allow map to trigger after first frame
+    }
+
+    startMaskBuild() {
+        if (this.maskBuildStarted) return;
+        this.maskBuildStarted = true;
+        const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: (deadline?: any) => any) => any);
+        const process = () => {
+            let budget = 3; // build a few per slice
+            while (budget-- > 0 && this.pendingMasks.length) {
+                const it = this.pendingMasks.shift()!;
+                if (!this.maskAlpha.has(it.key)) this.buildMaskSafe(it.key, it.src, it.w, it.h);
+            }
+            if (this.pendingMasks.length) {
+                if (typeof ric === 'function') ric(process);
+                else setTimeout(process, 0);
+            }
         };
-        const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: Function) => any);
-        if (typeof ric === 'function') ric(() => buildAllMasks());
-        else setTimeout(buildAllMasks, 0);
+        if (typeof ric === 'function') ric(process);
+        else setTimeout(process, 0);
     }
 
 	setMarkers(markers: Array<Marker | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {

@@ -937,6 +937,18 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	}
 	private _render() {
 		this._renderer.render();
+		// Kick off deferred icon mask build after first render
+		try {
+			if (!(this as any)._maskBuildRequested) {
+				(this as any)._maskBuildRequested = true;
+				const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: () => any) => any);
+				const start = () => {
+					try { (this._icons as any)?.startMaskBuild?.(); } catch {}
+				};
+				if (typeof ric === 'function') ric(start);
+				else setTimeout(start, 0);
+			}
+		} catch {}
 		// Emit a frame event for HUD/diagnostics
 		try {
 			const t = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
