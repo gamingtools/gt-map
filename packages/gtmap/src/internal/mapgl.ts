@@ -1221,6 +1221,27 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			const left = css.x - it.anchor.ax;
 			const top = css.y - it.anchor.ay;
 			if (px >= left && px <= left + it.w && py >= top && py <= top + it.h) {
+				// Optional alpha-mask sampling for pixel-accurate hits
+				const mask = (this._icons as any).getMaskInfo?.(it.type) as { data: Uint8Array; w: number; h: number } | null;
+				if (mask) {
+					// Map pointer to icon local coords (account for rotation around anchor)
+					const ax = it.anchor.ax;
+					const ay = it.anchor.ay;
+					const lx = px - left;
+					const ly = py - top;
+					const cx = lx - ax;
+					const cy = ly - ay;
+					const theta = ((it.rotation || 0) * Math.PI) / 180;
+					const c = Math.cos(-theta), s = Math.sin(-theta);
+					const rx = cx * c - cy * s + ax;
+					const ry = cx * s + cy * c + ay;
+					if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
+					const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
+					const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
+					const alpha = mask.data[my * mask.w + mx] | 0;
+					const THRESH = 32; // ~12.5%
+					if (alpha < THRESH) continue; // treat as transparent: no hit
+				}
 				return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { w: it.w, h: it.h }, rotation: it.rotation, icon: it.icon };
 			}
 		}

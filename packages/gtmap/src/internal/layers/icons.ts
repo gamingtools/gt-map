@@ -11,6 +11,7 @@ export class IconRenderer {
 	private texSize = new Map<string, { w: number; h: number }>();
     private texAnchor = new Map<string, { ax: number; ay: number }>();
     private iconMeta = new Map<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number }>();
+    private maskAlpha = new Map<string, { data: Uint8Array; w: number; h: number }>();
 	private markers: Marker[] = [];
 	// Texture atlas
 	// Atlas bookkeeping kept local in load; we do not need fields on the class.
@@ -62,7 +63,7 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 		this.gl = gl;
 	}
 
-	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
+    async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
 		const entries = Object.entries(defs);
 		// Load both 1x and 2x images for each icon
 		const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
@@ -74,24 +75,32 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
             this.iconMeta.set(key, { iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height, anchorX: d.anchorX ?? d.width / 2, anchorY: d.anchorY ?? d.height / 2 });
 			
 			// Load 2x version if available, otherwise load 1x
-			if (d.x2IconPath) {
-				const src2x = await this.loadImageSource(d.x2IconPath);
-				if (src2x) {
-					imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
-					this.hasRetina.set(key, true);
-				} else {
-					// Fallback to 1x if 2x fails to load
-					const src1x = await this.loadImageSource(d.iconPath);
-					if (src1x) imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
-					this.hasRetina.set(key, false);
-				}
-			} else {
-				// Only 1x version available
-				const src1x = await this.loadImageSource(d.iconPath);
-				if (src1x) imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
-				this.hasRetina.set(key, false);
-			}
-		}
+            if (d.x2IconPath) {
+                const src2x = await this.loadImageSource(d.x2IconPath);
+                if (src2x) {
+                    imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
+                    this.hasRetina.set(key, true);
+                    // Build alpha mask by scaling 2x into 1x dimensions
+                    this.buildMaskSafe(key, src2x, d.width, d.height);
+                } else {
+                    // Fallback to 1x if 2x fails to load
+                    const src1x = await this.loadImageSource(d.iconPath);
+                    if (src1x) {
+                        imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+                        this.buildMaskSafe(key, src1x, d.width, d.height);
+                    }
+                    this.hasRetina.set(key, false);
+                }
+            } else {
+                // Only 1x version available
+                const src1x = await this.loadImageSource(d.iconPath);
+                if (src1x) {
+                    imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+                    this.buildMaskSafe(key, src1x, d.width, d.height);
+                }
+                this.hasRetina.set(key, false);
+            }
+        }
 		// Create 1x atlas
 		if (imgs1x.length > 0) {
 			const atlas1x = this.createAtlas(imgs1x);
@@ -223,8 +232,35 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 			result.set(img.key, { tex, uv: { u0, v0, u1, v1 } });
 		}
 		
-		return result;
-	}
+        return result;
+    }
+
+    private buildMaskSafe(key: string, src: ImageBitmap | HTMLImageElement, w: number, h: number) {
+        try {
+            const cnv = document.createElement('canvas');
+            cnv.width = Math.max(1, w | 0);
+            cnv.height = Math.max(1, h | 0);
+            const ctx = cnv.getContext('2d');
+            if (!ctx) return;
+            ctx.clearRect(0, 0, cnv.width, cnv.height);
+            const sw = 'width' in src ? (src as ImageBitmap).width : (src as HTMLImageElement).naturalWidth;
+            const sh = 'height' in src ? (src as ImageBitmap).height : (src as HTMLImageElement).naturalHeight;
+            try {
+                ctx.drawImage(src as CanvasImageSource, 0, 0, sw, sh, 0, 0, w, h);
+            } catch {}
+            const img = ctx.getImageData(0, 0, w, h);
+            const a = img.data;
+            const data = new Uint8Array(w * h);
+            for (let i = 0, j = 0; i < a.length; i += 4, j++) data[j] = a[i + 3];
+            this.maskAlpha.set(key, { data, w, h });
+        } catch {
+            // Likely CORS taint; skip mask for this icon
+        }
+    }
+
+    getMaskInfo(type: string): { data: Uint8Array; w: number; h: number } | null {
+        return this.maskAlpha.get(type) || null;
+    }
 
 	private async loadImageSource(url: string): Promise<ImageBitmap | HTMLImageElement | null> {
 		// Try fetch + createImageBitmap, fallback to Image element
