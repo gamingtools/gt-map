@@ -16,7 +16,8 @@
     "lint:fix": "eslint packages --fix",
     "format": "prettier -w \"packages/**/*\"",
     "format:check": "prettier -c \"packages/**/*\"",
-    "fetch:svelte-docs": "node scripts/fetch-svelte-llm-docs.mjs"
+    "fetch:svelte-docs": "node scripts/fetch-svelte-llm-docs.mjs",
+    "docs:api": "typedoc --options typedoc.json"
   },
   "dependencies": {
     
@@ -33,6 +34,7 @@
     "prettier": "^3.6.2",
     "typescript-eslint": "^8.41.0",
     "typescript": "^5.9.2",
-    "vite": "^7.1.4"
+    "vite": "^7.1.4",
+    "typedoc": "^0.28.0"
   }
 }
