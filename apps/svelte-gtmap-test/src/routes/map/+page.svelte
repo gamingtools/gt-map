@@ -172,6 +172,20 @@
 		applyMarkerCount(markerCount);
 		addVectors();
 
+		// Test icon scaling examples
+		// Example 1: Scale with zoom (like real world objects)
+		// map.setIconScaleFunction((zoom, minZoom, maxZoom) => Math.pow(2, zoom - 3));
+
+		// Example 2: Fixed size (default behavior)
+		// map.setIconScaleFunction(() => 1);
+
+		// Example 3: Step-based scaling
+		// map.setIconScaleFunction((zoom) => {
+		// 	if (zoom < 2) return 0.5;
+		// 	if (zoom < 4) return 1;
+		// 	return 1.5;
+		// });
+
 		map.events.on('pointerup').each((e) => console.log('up', e));
 
 		// Teardown on navigation/unmount per Svelte docs

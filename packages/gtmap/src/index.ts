@@ -16,6 +16,7 @@ export type {
 	Circle,
 	Vector,
 	ActiveOptions,
+	IconScaleFunction,
 } from './api/types';
 
 // Export type guard functions (not types)

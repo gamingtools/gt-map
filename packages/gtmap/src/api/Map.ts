@@ -5,7 +5,7 @@ import type { EventBus } from '../internal/events/stream';
 // Re-export types from centralized types file
 export type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector, ActiveOptions } from './types';
 
-import type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, Circle, Vector, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal } from './types';
+import type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, Circle, Vector, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, IconScaleFunction } from './types';
 
 /**
  * GTMap - A high-performance WebGL map renderer with pixel-based coordinate system.
@@ -162,6 +162,39 @@ export class GTMap {
 	 */
 	setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 		this._impl.setUpscaleFilter?.(mode);
+		return this;
+	}
+
+	/**
+	 * Sets a custom function to control icon scaling based on zoom level.
+	 *
+	 * @param fn - Function that returns a scale multiplier (1.0 = original size)
+	 * @returns This map instance for method chaining
+	 *
+	 * @example
+	 * ```typescript
+	 * // Icons scale with zoom (like real-world objects)
+	 * map.setIconScaleFunction((zoom) => Math.pow(2, zoom - 3));
+	 * 
+	 * // Icons stay fixed size on screen (default behavior)
+	 * map.setIconScaleFunction(() => 1);
+	 * 
+	 * // Step-based scaling
+	 * map.setIconScaleFunction((zoom) => {
+	 *   if (zoom < 2) return 0.5;
+	 *   if (zoom < 4) return 1;
+	 *   return 1.5;
+	 * });
+	 * 
+	 * // Scale proportionally within zoom range
+	 * map.setIconScaleFunction((zoom, minZoom, maxZoom) => {
+	 *   const t = (zoom - minZoom) / (maxZoom - minZoom);
+	 *   return 0.5 + t * 1.5; // Scale from 0.5x to 2x
+	 * });
+	 * ```
+	 */
+	setIconScaleFunction(fn: IconScaleFunction | null): this {
+		this._impl.setIconScaleFunction?.(fn);
 		return this;
 	}
 

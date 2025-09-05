@@ -68,5 +68,1286 @@
 		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/personalmarkerx2.webp",
 		"width": 40,
 		"height": 40
+	},
+	"contract": {
+		"id": "contract",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/contract.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/contractx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"progression": {
+		"id": "progression",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/progression.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/progressionx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"unknown": {
+		"id": "unknown",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/unknown.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/unknownx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"brittlebush": {
+		"id": "brittlebush",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/brittlebush.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/brittlebushx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"primrosefield": {
+		"id": "primrosefield",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/primrosefield.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/primrosefieldx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"salvageablevehicle": {
+		"id": "salvageablevehicle",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvageablevehicle.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvageablevehiclex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"salvagemedium": {
+		"id": "salvagemedium",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvagemedium.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvagemediumx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"salvagebig": {
+		"id": "salvagebig",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvagebig.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvagebigx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"rhyoliteore": {
+		"id": "rhyoliteore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/rhyoliteore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/rhyoliteorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"rhyolitepickup": {
+		"id": "rhyolitepickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/rhyolitepickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/rhyolitepickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"graniteore": {
+		"id": "graniteore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/graniteore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/graniteorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"granitepickup": {
+		"id": "granitepickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/granitepickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/granitepickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"basaltore": {
+		"id": "basaltore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/basaltore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/basaltorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"basaltpickup": {
+		"id": "basaltpickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/basaltpickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/basaltpickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"azuriteore": {
+		"id": "azuriteore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/azuriteore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/azuriteorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"azuritepickup": {
+		"id": "azuritepickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/azuritepickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/azuritepickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"magnetiteore": {
+		"id": "magnetiteore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/magnetiteore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/magnetiteorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"magnetitepickup": {
+		"id": "magnetitepickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/magnetitepickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/magnetitepickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"bauxiteore": {
+		"id": "bauxiteore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/bauxiteore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/bauxiteorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"bauxitepickup": {
+		"id": "bauxitepickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/bauxitepickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/bauxitepickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"dolomiterock": {
+		"id": "dolomiterock",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/dolomiterock.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/dolomiterockx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"dolomitepickup": {
+		"id": "dolomitepickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/dolomitepickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/dolomitepickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"jasmiumore": {
+		"id": "jasmiumore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/jasmiumore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/jasmiumorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"jasmiumpickup": {
+		"id": "jasmiumpickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/jasmiumpickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/jasmiumpickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"erythriteore": {
+		"id": "erythriteore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/erythriteore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/erythriteorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"erythritepickup": {
+		"id": "erythritepickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/erythritepickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/erythritepickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"fuelcellwreckage": {
+		"id": "fuelcellwreckage",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/fuelcellwreckage.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/fuelcellwreckagex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"fuelcellpart": {
+		"id": "fuelcellpart",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/fuelcellpart.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/fuelcellpartx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"scrapmetalwreckage": {
+		"id": "scrapmetalwreckage",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/scrapmetalwreckage.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/scrapmetalwreckagex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"scrapmetalpart": {
+		"id": "scrapmetalpart",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/scrapmetalpart.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/scrapmetalpartx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"scrapelectronicswreckage": {
+		"id": "scrapelectronicswreckage",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/scrapelectronicswreckage.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/scrapelectronicswreckagex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"scrapelectronicspart": {
+		"id": "scrapelectronicspart",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/scrapelectronicspart.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/scrapelectronicspartx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"suspensortechwreckage": {
+		"id": "suspensortechwreckage",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/suspensortechwreckage.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/suspensortechwreckagex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"salvagesteel": {
+		"id": "salvagesteel",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvagesteel.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvagesteelx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"salvageduraluminumwreckage": {
+		"id": "salvageduraluminumwreckage",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvageduraluminumwreckage.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salvageduraluminumwreckagex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"plantfiber": {
+		"id": "plantfiber",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/plantfiber.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/plantfiberx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"plantflower": {
+		"id": "plantflower",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/plantflower.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/plantflowerx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"plantfield": {
+		"id": "plantfield",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/plantfield.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/plantfieldx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"spicefields": {
+		"id": "spicefields",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicefields.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicefieldsx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"floursand": {
+		"id": "floursand",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/floursand.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/floursandx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"hightechdebris": {
+		"id": "hightechdebris",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/hightechdebris.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/hightechdebrisx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"vehiclebike": {
+		"id": "vehiclebike",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehiclebike.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehiclebikex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"vehiclebuggy": {
+		"id": "vehiclebuggy",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehiclebuggy.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehiclebuggyx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"vehicleharvester": {
+		"id": "vehicleharvester",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehicleharvester.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehicleharvesterx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"vehicleornilight": {
+		"id": "vehicleornilight",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehicleornilight.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehicleornilightx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"vehicletank": {
+		"id": "vehicletank",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehicletank.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehicletankx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"vehicleornitransport": {
+		"id": "vehicleornitransport",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehicleornitransport.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehicleornitransportx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"defaultrespawnbeacon": {
+		"id": "defaultrespawnbeacon",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/defaultrespawnbeacon.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/defaultrespawnbeaconx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"respawnbeacon": {
+		"id": "respawnbeacon",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/respawnbeacon.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/respawnbeaconx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"cave": {
+		"id": "cave",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/cave.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/cavex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"shipwreck": {
+		"id": "shipwreck",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/shipwreck.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/shipwreckx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"tradingpost": {
+		"id": "tradingpost",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/tradingpost.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/tradingpostx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"sandwormbreach": {
+		"id": "sandwormbreach",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/sandwormbreach.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/sandwormbreachx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"socialplayerleader": {
+		"id": "socialplayerleader",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/socialplayerleader.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/socialplayerleaderx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"socialplayer": {
+		"id": "socialplayer",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/socialplayer.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/socialplayerx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"enemyoutpost": {
+		"id": "enemyoutpost",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/enemyoutpost.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/enemyoutpostx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"enemycamp": {
+		"id": "enemycamp",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/enemycamp.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/enemycampx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"discoverable": {
+		"id": "discoverable",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/discoverable.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/discoverablex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"explorationpoint": {
+		"id": "explorationpoint",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/explorationpoint.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/explorationpointx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"sietch": {
+		"id": "sietch",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/sietch.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/sietchx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"seismicprobe": {
+		"id": "seismicprobe",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/seismicprobe.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/seismicprobex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"deployable": {
+		"id": "deployable",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/deployable.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/deployablex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"atreidesfortress": {
+		"id": "atreidesfortress",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/atreidesfortress.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/atreidesfortressx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"harkonnenfortress": {
+		"id": "harkonnenfortress",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/harkonnenfortress.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/harkonnenfortressx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"landmark": {
+		"id": "landmark",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/landmark.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/landmarkx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"hazard_fire": {
+		"id": "hazard_fire",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/hazard_fire.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/hazard_firex2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"hazard_poison": {
+		"id": "hazard_poison",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/hazard_poison.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/hazard_poisonx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"thumper": {
+		"id": "thumper",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/thumper.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/thumperx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"defeatlocation": {
+		"id": "defeatlocation",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/defeatlocation.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/defeatlocationx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"vendor": {
+		"id": "vendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"survivalvendor": {
+		"id": "survivalvendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/survivalvendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/survivalvendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"spicevendor": {
+		"id": "spicevendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicevendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicevendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"vehiclevendor": {
+		"id": "vehiclevendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehiclevendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/vehiclevendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"resourcevendor": {
+		"id": "resourcevendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/resourcevendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/resourcevendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"weaponsvendor": {
+		"id": "weaponsvendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/weaponsvendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/weaponsvendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"structurevendor": {
+		"id": "structurevendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/structurevendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/structurevendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"landsraadvendor": {
+		"id": "landsraadvendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/landsraadvendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/landsraadvendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"barkeepvendor": {
+		"id": "barkeepvendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/barkeepvendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/barkeepvendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"atreidesvendor": {
+		"id": "atreidesvendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/atreidesvendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/atreidesvendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"harkonnenvendor": {
+		"id": "harkonnenvendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/harkonnenvendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/harkonnenvendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"choamexchange": {
+		"id": "choamexchange",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/choamexchange.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/choamexchangex2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"imperialconsulate": {
+		"id": "imperialconsulate",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/imperialconsulate.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/imperialconsulatex2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"salusanbull": {
+		"id": "salusanbull",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salusanbull.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/salusanbullx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"hannivars": {
+		"id": "hannivars",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/hannivars.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/hannivarsx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"taxiservice": {
+		"id": "taxiservice",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/taxiservice.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/taxiservicex2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"bank": {
+		"id": "bank",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/bank.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/bankx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"levelexit": {
+		"id": "levelexit",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/levelexit.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/levelexitx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"spirekeep": {
+		"id": "spirekeep",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spirekeep.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spirekeepx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"residencycourtyard": {
+		"id": "residencycourtyard",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/residencycourtyard.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/residencycourtyardx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"thewarrens": {
+		"id": "thewarrens",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/thewarrens.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/thewarrensx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"centralplaza": {
+		"id": "centralplaza",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/centralplaza.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/centralplazax2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"duncansdojo": {
+		"id": "duncansdojo",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/duncansdojo.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/duncansdojox2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"beastsbend": {
+		"id": "beastsbend",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/beastsbend.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/beastsbendx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"newcourtway": {
+		"id": "newcourtway",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/newcourtway.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/newcourtwayx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"thebaronseye": {
+		"id": "thebaronseye",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/thebaronseye.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/thebaronseyex2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"neocarthagoutskirts": {
+		"id": "neocarthagoutskirts",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/neocarthagoutskirts.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/neocarthagoutskirtsx2.webp",
+		"width": 60,
+		"height": 60
+	},
+	"taxcollector": {
+		"id": "taxcollector",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/taxcollector.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/taxcollectorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"trainerswordmaster": {
+		"id": "trainerswordmaster",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainerswordmaster.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainerswordmasterx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"lootcontainer": {
+		"id": "lootcontainer",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/lootcontainer.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/lootcontainerx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"trainertrooper": {
+		"id": "trainertrooper",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainertrooper.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainertrooperx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"trainermentat": {
+		"id": "trainermentat",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainermentat.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainermentatx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"trainerbenegesserit": {
+		"id": "trainerbenegesserit",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainerbenegesserit.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainerbenegesseritx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"trainerplanetologist": {
+		"id": "trainerplanetologist",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainerplanetologist.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/trainerplanetologistx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"contractor": {
+		"id": "contractor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/contractor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/contractorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"debug": {
+		"id": "debug",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/debug.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/debugx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"spicefieldlarge": {
+		"id": "spicefieldlarge",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicefieldlarge.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicefieldlargex2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"intel": {
+		"id": "intel",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/intel.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/intelx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"spicefieldmedium": {
+		"id": "spicefieldmedium",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicefieldmedium.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicefieldmediumx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"spicefieldsmall": {
+		"id": "spicefieldsmall",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicefieldsmall.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/spicefieldsmallx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"dunemap": {
+		"id": "dunemap",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/dunemap.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/dunemapx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"checkpoint": {
+		"id": "checkpoint",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/checkpoint.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/checkpointx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"respawnvehicle": {
+		"id": "respawnvehicle",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/respawnvehicle.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/respawnvehiclex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"contractscannable": {
+		"id": "contractscannable",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/contractscannable.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/contractscannablex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"lore": {
+		"id": "lore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/lore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/lorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"enemylaboroutpost": {
+		"id": "enemylaboroutpost",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/enemylaboroutpost.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/enemylaboroutpostx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"explorationpointofinterest": {
+		"id": "explorationpointofinterest",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/explorationpointofinterest.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/explorationpointofinterestx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"stravidiumore": {
+		"id": "stravidiumore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/stravidiumore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/stravidiumorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"stravidiumpickup": {
+		"id": "stravidiumpickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/stravidiumpickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/stravidiumpickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"titaniumore": {
+		"id": "titaniumore",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/titaniumore.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/titaniumorex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"titaniumpickup": {
+		"id": "titaniumpickup",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/titaniumpickup.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/titaniumpickupx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"atreidesquartermaster": {
+		"id": "atreidesquartermaster",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/atreidesquartermaster.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/atreidesquartermasterx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"atreideslandsraadvendor": {
+		"id": "atreideslandsraadvendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/atreideslandsraadvendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/atreideslandsraadvendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"harkonnenquartermaster": {
+		"id": "harkonnenquartermaster",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/harkonnenquartermaster.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/harkonnenquartermasterx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"harkonnenlandsraadvendor": {
+		"id": "harkonnenlandsraadvendor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/harkonnenlandsraadvendor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/harkonnenlandsraadvendorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"generic": {
+		"id": "generic",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/generic.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/genericx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"enemy": {
+		"id": "enemy",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/enemy.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/enemyx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"homebaserespawn": {
+		"id": "homebaserespawn",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/homebaserespawn.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/homebaserespawnx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"controlpoint": {
+		"id": "controlpoint",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpoint.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousealexin": {
+		"id": "controlpointhousealexin",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousealexin.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousealexinx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhouseargosaz": {
+		"id": "controlpointhouseargosaz",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseargosaz.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseargosazx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousedyvetz": {
+		"id": "controlpointhousedyvetz",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousedyvetz.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousedyvetzx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhouseecaz": {
+		"id": "controlpointhouseecaz",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseecaz.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseecazx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousehagal": {
+		"id": "controlpointhousehagal",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousehagal.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousehagalx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousehurata": {
+		"id": "controlpointhousehurata",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousehurata.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousehuratax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhouseimota": {
+		"id": "controlpointhouseimota",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseimota.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseimotax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousekenola": {
+		"id": "controlpointhousekenola",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousekenola.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousekenolax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhouselindaren": {
+		"id": "controlpointhouselindaren",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouselindaren.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouselindarenx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousemaros": {
+		"id": "controlpointhousemaros",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousemaros.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousemarosx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousemikarrol": {
+		"id": "controlpointhousemikarrol",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousemikarrol.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousemikarrolx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousemoritani": {
+		"id": "controlpointhousemoritani",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousemoritani.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousemoritanix2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousemutelli": {
+		"id": "controlpointhousemutelli",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousemutelli.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousemutellix2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousenovebruns": {
+		"id": "controlpointhousenovebruns",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousenovebruns.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousenovebrunsx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhouseordos": {
+		"id": "controlpointhouseordos",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseordos.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseordosx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhouserichese": {
+		"id": "controlpointhouserichese",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouserichese.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouserichesex2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousesor": {
+		"id": "controlpointhousesor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousesor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousesorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousespinette": {
+		"id": "controlpointhousespinette",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousespinette.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousespinettex2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousetaligari": {
+		"id": "controlpointhousetaligari",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousetaligari.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousetaligarix2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousethorvald": {
+		"id": "controlpointhousethorvald",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousethorvald.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousethorvaldx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousetseida": {
+		"id": "controlpointhousetseida",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousetseida.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousetseidax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousevarota": {
+		"id": "controlpointhousevarota",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousevarota.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousevarotax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousevernius": {
+		"id": "controlpointhousevernius",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousevernius.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhouseverniusx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousewallach": {
+		"id": "controlpointhousewallach",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousewallach.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousewallachx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousewayku": {
+		"id": "controlpointhousewayku",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousewayku.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousewaykux2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"controlpointhousewydras": {
+		"id": "controlpointhousewydras",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousewydras.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/controlpointhousewydrasx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativealexin": {
+		"id": "houserepresentativealexin",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativealexin.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativealexinx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativeargosaz": {
+		"id": "houserepresentativeargosaz",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativeargosaz.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativeargosazx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativedyvetz": {
+		"id": "houserepresentativedyvetz",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativedyvetz.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativedyvetzx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativeecaz": {
+		"id": "houserepresentativeecaz",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativeecaz.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativeecazx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativehagal": {
+		"id": "houserepresentativehagal",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativehagal.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativehagalx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativehurata": {
+		"id": "houserepresentativehurata",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativehurata.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativehuratax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativeimota": {
+		"id": "houserepresentativeimota",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativeimota.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativeimotax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativekenola": {
+		"id": "houserepresentativekenola",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativekenola.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativekenolax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativelindaren": {
+		"id": "houserepresentativelindaren",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativelindaren.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativelindarenx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativemaros": {
+		"id": "houserepresentativemaros",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativemaros.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativemarosx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativemikarrol": {
+		"id": "houserepresentativemikarrol",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativemikarrol.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativemikarrolx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativemoritani": {
+		"id": "houserepresentativemoritani",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativemoritani.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativemoritanix2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativemutelli": {
+		"id": "houserepresentativemutelli",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativemutelli.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativemutellix2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativenovebruns": {
+		"id": "houserepresentativenovebruns",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativenovebruns.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativenovebrunsx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativerichese": {
+		"id": "houserepresentativerichese",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativerichese.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativerichesex2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativesor": {
+		"id": "houserepresentativesor",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativesor.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativesorx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativespinette": {
+		"id": "houserepresentativespinette",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativespinette.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativespinettex2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativetaligari": {
+		"id": "houserepresentativetaligari",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativetaligari.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativetaligarix2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativethorvald": {
+		"id": "houserepresentativethorvald",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativethorvald.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativethorvaldx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativetseida": {
+		"id": "houserepresentativetseida",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativetseida.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativetseidax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativevarota": {
+		"id": "houserepresentativevarota",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativevarota.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativevarotax2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativevernius": {
+		"id": "houserepresentativevernius",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativevernius.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativeverniusx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativewallach": {
+		"id": "houserepresentativewallach",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativewallach.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativewallachx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativewayku": {
+		"id": "houserepresentativewayku",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativewayku.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativewaykux2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"houserepresentativewydras": {
+		"id": "houserepresentativewydras",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativewydras.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/houserepresentativewydrasx2.webp",
+		"width": 50,
+		"height": 50
+	},
+	"buriedtreasure": {
+		"id": "buriedtreasure",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/buriedtreasure.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/buriedtreasurex2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"saguaroseed": {
+		"id": "saguaroseed",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/saguaroseed.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/saguaroseedx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"checkpointentryspawn": {
+		"id": "checkpointentryspawn",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/checkpointentryspawn.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/checkpointentryspawnx2.webp",
+		"width": 40,
+		"height": 40
+	},
+	"checkpointsafe": {
+		"id": "checkpointsafe",
+		"iconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/checkpointsafe.webp",
+		"x2IconPath": "https://gtcdn.info/dune/1.1.20.0/images/map-icons/checkpointsafex2.webp",
+		"width": 40,
+		"height": 40
 	}
 }

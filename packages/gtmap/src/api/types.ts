@@ -250,3 +250,7 @@ export interface MaxBoundsPx {
 
 // Filter modes
 export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
+
+// Icon scaling function
+// Returns a scale multiplier where 1.0 = original size
+export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number) => number;

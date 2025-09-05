@@ -8,6 +8,7 @@ import type {
 	MaxBoundsPx,
 	UpscaleFilterMode,
 	ActiveOptions,
+	IconScaleFunction,
 } from '../api/types';
 
 import type { LngLat } from './mapgl';
@@ -79,6 +80,8 @@ export interface RenderCtx {
 	rasterOpacity: number;
 	// Raster rendering options
 	upscaleFilter?: 'auto' | 'linear' | 'bicubic';
+	// Icon scaling
+	iconScaleFunction?: IconScaleFunction | null;
 	// Projection helpers
 	project(x: number, y: number, z: number): { x: number; y: number };
 	enqueueTile(z: number, x: number, y: number, priority?: number): void;
@@ -157,6 +160,7 @@ export interface MapImpl {
 	resize?(): void;
 	setMarkerHitboxesVisible?(on: boolean): void;
 	setActive?(on: boolean, opts?: ActiveOptions): void;
+	setIconScaleFunction?(fn: IconScaleFunction | null): void;
 	destroy(): void;
 }
 

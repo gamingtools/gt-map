@@ -6,11 +6,14 @@ export type Marker = { lng: number; lat: number; type: string; size?: number };
 export class IconRenderer {
 	private gl: WebGLRenderingContext;
 	private textures = new Map<string, WebGLTexture>();
+	private textures2x = new Map<string, WebGLTexture>();  // Retina textures
 	private texSize = new Map<string, { w: number; h: number }>();
 	private markers: Marker[] = [];
 	// Texture atlas
 	// Atlas bookkeeping kept local in load; we do not need fields on the class.
 	private uvRect = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();
+	private uvRect2x = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();  // Retina UV rects
+	private hasRetina = new Map<string, boolean>();  // Track which icons have retina versions
 	// Instancing support
 	private instExt: any | null = null;
 	private instProg: WebGLProgram | null = null;
@@ -27,6 +30,7 @@ export class IconRenderer {
 		u_alpha: WebGLUniformLocation | null;
 		u_uv0: WebGLUniformLocation | null;
 		u_uv1: WebGLUniformLocation | null;
+		u_iconScale: WebGLUniformLocation | null;
 	} | null = null;
 	private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number; capacityBytes: number }>();
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
@@ -48,76 +52,52 @@ export class IconRenderer {
 	}
 
 	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>) {
-		const useX2 = typeof devicePixelRatio !== 'undefined' && devicePixelRatio >= 1.75;
 		const entries = Object.entries(defs);
-		// Load all images first for atlas packing
-		const imgs: Array<{ key: string; w: number; h: number; src: any }> = [];
+		// Load both 1x and 2x images for each icon
+		const imgs1x: Array<{ key: string; w: number; h: number; src: any }> = [];
+		const imgs2x: Array<{ key: string; w: number; h: number; src: any }> = [];
+		
 		for (const [key, d] of entries) {
 			this.texSize.set(key, { w: d.width, h: d.height });
-			const url = useX2 && d.x2IconPath ? d.x2IconPath : d.iconPath;
-			const src = await this.loadImageSource(url);
-			if (src) imgs.push({ key, w: d.width, h: d.height, src });
-		}
-		// Pack into a single atlas (simple shelf pack)
-		const MAX_W = 2048;
-		let x = 0,
-			y = 0,
-			rowH = 0,
-			atlasW = 0,
-			atlasH = 0;
-		// Sort by height descending for better packing
-		imgs.sort((a, b) => b.h - a.h);
-		const pos: Record<string, { x: number; y: number; w: number; h: number }> = {} as any;
-		for (const img of imgs) {
-			if (img.w > MAX_W) {
-				continue;
+			
+			// Load 2x version if available, otherwise load 1x
+			if (d.x2IconPath) {
+				const src2x = await this.loadImageSource(d.x2IconPath);
+				if (src2x) {
+					imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
+					this.hasRetina.set(key, true);
+				} else {
+					// Fallback to 1x if 2x fails to load
+					const src1x = await this.loadImageSource(d.iconPath);
+					if (src1x) imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+					this.hasRetina.set(key, false);
+				}
+			} else {
+				// Only 1x version available
+				const src1x = await this.loadImageSource(d.iconPath);
+				if (src1x) imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+				this.hasRetina.set(key, false);
 			}
-			if (x + img.w > MAX_W) {
-				x = 0;
-				y += rowH;
-				rowH = 0;
+		}
+		// Create 1x atlas
+		if (imgs1x.length > 0) {
+			const atlas1x = this.createAtlas(imgs1x);
+			if (atlas1x) {
+				for (const [key, data] of atlas1x) {
+					this.textures.set(key, data.tex);
+					this.uvRect.set(key, data.uv);
+				}
 			}
-			pos[img.key] = { x, y, w: img.w, h: img.h };
-			x += img.w;
-			rowH = Math.max(rowH, img.h);
-			atlasW = Math.max(atlasW, x);
-			atlasH = Math.max(atlasH, y + rowH);
 		}
-		// Create canvas and draw
-		const canvas = document.createElement('canvas');
-		canvas.width = atlasW || 1;
-		canvas.height = atlasH || 1;
-		const ctx2d = canvas.getContext('2d')!;
-		ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-		for (const img of imgs) {
-			const p = pos[img.key];
-			if (!p) continue;
-			try {
-				ctx2d.drawImage(img.src, 0, 0, (img.src as any).width, (img.src as any).height, p.x, p.y, p.w, p.h);
-			} catch {}
-		}
-		// Upload atlas texture
-		const gl = this.gl;
-		const tex = gl.createTexture();
-		if (tex) {
-			gl.bindTexture(gl.TEXTURE_2D, tex);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-			gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas as any);
-			// Fill uv rects and assign same atlas texture for each key
-			for (const img of imgs) {
-				const p = pos[img.key];
-				if (!p) continue;
-				const u0 = p.x / atlasW,
-					v0 = p.y / atlasH,
-					u1 = (p.x + p.w) / atlasW,
-					v1 = (p.y + p.h) / atlasH;
-				this.uvRect.set(img.key, { u0, v0, u1, v1 });
-				this.textures.set(img.key, tex);
+		
+		// Create 2x atlas
+		if (imgs2x.length > 0) {
+			const atlas2x = this.createAtlas(imgs2x);
+			if (atlas2x) {
+				for (const [key, data] of atlas2x) {
+					this.textures2x.set(key, data.tex);
+					this.uvRect2x.set(key, data.uv);
+				}
 			}
 		}
 	}
@@ -148,6 +128,73 @@ export class IconRenderer {
 			const version = (prev?.version || 0) + 1;
 			this.typeData.set(type, { data, version });
 		}
+	}
+
+	private createAtlas(imgs: Array<{ key: string; w: number; h: number; src: any }>): Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }> | null {
+		const MAX_W = 2048;
+		let x = 0, y = 0, rowH = 0, atlasW = 0, atlasH = 0;
+		
+		// Sort by height descending for better packing
+		imgs.sort((a, b) => b.h - a.h);
+		const pos: Record<string, { x: number; y: number; w: number; h: number }> = {} as any;
+		
+		for (const img of imgs) {
+			if (img.w > MAX_W) continue;
+			if (x + img.w > MAX_W) {
+				x = 0;
+				y += rowH;
+				rowH = 0;
+			}
+			pos[img.key] = { x, y, w: img.w, h: img.h };
+			x += img.w;
+			rowH = Math.max(rowH, img.h);
+			atlasW = Math.max(atlasW, x);
+			atlasH = Math.max(atlasH, y + rowH);
+		}
+		
+		// Create canvas and draw
+		const canvas = document.createElement('canvas');
+		canvas.width = atlasW || 1;
+		canvas.height = atlasH || 1;
+		const ctx2d = canvas.getContext('2d')!;
+		ctx2d.clearRect(0, 0, canvas.width, canvas.height);
+		
+		for (const img of imgs) {
+			const p = pos[img.key];
+			if (!p) continue;
+			try {
+				ctx2d.drawImage(img.src, 0, 0, (img.src as any).width, (img.src as any).height, p.x, p.y, p.w, p.h);
+			} catch {}
+		}
+		
+		// Upload atlas texture
+		const gl = this.gl;
+		const tex = gl.createTexture();
+		if (!tex) return null;
+		
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas as any);
+		
+		// Create result map
+		const result = new Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }>();
+		
+		for (const img of imgs) {
+			const p = pos[img.key];
+			if (!p) continue;
+			const u0 = p.x / atlasW;
+			const v0 = p.y / atlasH;
+			const u1 = (p.x + p.w) / atlasW;
+			const v1 = (p.y + p.h) / atlasH;
+			result.set(img.key, { tex, uv: { u0, v0, u1, v1 } });
+		}
+		
+		return result;
 	}
 
 	private async loadImageSource(url: string): Promise<any | null> {
@@ -186,9 +233,12 @@ export class IconRenderer {
 		tileSize: number;
 		zoom: number;
 		center: { lng: number; lat: number };
+		minZoom?: number;
+		maxZoom?: number;
 		container: HTMLElement;
 		project: (x: number, y: number, z: number) => { x: number; y: number };
 		wrapX: boolean;
+		iconScaleFunction?: ((zoom: number, minZoom: number, maxZoom: number) => number) | null;
 	}) {
 		if (this.markers.length === 0) return;
 		const gl = ctx.gl;
@@ -200,6 +250,11 @@ export class IconRenderer {
 		let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
 		const snap = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
 		tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
+		
+		// Calculate scale factor from icon scale function
+		const iconScale = ctx.iconScaleFunction 
+			? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19)
+			: 1.0;
 		// Compute map scissor in device pixels to clip icons outside the finite image
 		// Icons themselves are not clipped here; screen cache draw is clipped to map extent in renderer.
 
@@ -219,6 +274,7 @@ export class IconRenderer {
 			gl.uniform1f(this.instLoc!.u_scale!, effScale);
 			gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
 			gl.uniform1f(this.instLoc!.u_invS!, invS);
+			gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
 
 			// For each type
 			const isGL2 = (gl as any).drawArraysInstanced !== undefined;
@@ -227,8 +283,13 @@ export class IconRenderer {
 				seen.add(m.type);
 			}
 			for (const type of Array.from(seen)) {
-				const tex = this.textures.get(type);
+				const sz = this.texSize.get(type) || { w: 32, h: 32 };
+				// Use retina if available, otherwise fallback to regular
+				const useRetina = this.hasRetina.get(type);
+				
+				const tex = useRetina && this.textures2x.has(type) ? this.textures2x.get(type) : this.textures.get(type);
 				const td = this.typeData.get(type);
+				
 				if (!tex || !td) continue;
 				let rec = this.instBuffers.get(type);
 				const byteLen = td.data.byteLength;
@@ -271,8 +332,8 @@ export class IconRenderer {
 				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_size, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_size, 1);
 				gl.bindTexture(gl.TEXTURE_2D, tex);
-				// Set UVs based on atlas packing (or full if missing)
-				const uv = this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
+				// Set UVs based on atlas packing (use retina UVs if using retina texture)
+				const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : (this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 });
 				gl.uniform2f(this.instLoc!.u_uv0!, uv.u0, uv.v0);
 				gl.uniform2f(this.instLoc!.u_uv1!, uv.u1, uv.v1);
 				if (isGL2) (gl as any).drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, rec.count);
@@ -298,29 +359,40 @@ export class IconRenderer {
 		}
 
 		for (const [type, list] of groups) {
-			const tex = this.textures.get(type);
 			const sz = this.texSize.get(type);
-			if (!tex || !sz) continue;
+			if (!sz) continue;
+			
+			// Use retina if available, otherwise fallback to regular
+			const useRetina = this.hasRetina.get(type);
+			
+			const tex = useRetina && this.textures2x.has(type) ? this.textures2x.get(type) : this.textures.get(type);
+			if (!tex) continue;
+			
 			gl.bindTexture(gl.TEXTURE_2D, tex);
-			const uv = this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
+			const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : (this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 });
 			gl.uniform2f(ctx.loc.u_uv0!, uv.u0, uv.v0);
 			gl.uniform2f(ctx.loc.u_uv1!, uv.u1, uv.v1);
 			for (const m of list) {
 				const p = ctx.project(m.lng, m.lat, baseZ);
-				let xCSS = (p.x - tlWorld.x) * effScale;
-				let yCSS = (p.y - tlWorld.y) * effScale;
-				const w = m.size || sz.w;
-				const h = m.size || sz.h;
-				// Center the icon on (xCSS, yCSS)
-				xCSS = xCSS - w / 2;
-				yCSS = yCSS - h / 2;
-				// Frustum cull
-				if (xCSS + w < 0 || yCSS + h < 0 || xCSS > widthCSS || yCSS > heightCSS) continue;
-				// Avoid rounding before multiplying by dpr to prevent subpixel jitter
-				const tx = Math.round(xCSS * ctx.dpr);
-				const ty = Math.round(yCSS * ctx.dpr);
-				const tw = Math.max(1, Math.round(w * ctx.dpr));
-				const th = Math.max(1, Math.round(h * ctx.dpr));
+				const xCSS = (p.x - tlWorld.x) * effScale;
+				const yCSS = (p.y - tlWorld.y) * effScale;
+				const w = (m.size || sz.w) * iconScale;
+				const h = (m.size || sz.h) * iconScale;
+				
+				// Frustum cull before adjusting for centering
+				if (xCSS + w/2 < 0 || yCSS + h/2 < 0 || xCSS - w/2 > widthCSS || yCSS - h/2 > heightCSS) continue;
+				
+				// Calculate pixel position with centering
+				// Round the center position first to ensure stable positioning
+				const centerX = Math.round(xCSS * ctx.dpr);
+				const centerY = Math.round(yCSS * ctx.dpr);
+				const halfW = Math.round(w * ctx.dpr / 2);
+				const halfH = Math.round(h * ctx.dpr / 2);
+				
+				const tx = centerX - halfW;
+				const ty = centerY - halfH;
+				const tw = halfW * 2;  // Use doubled half-width to maintain consistency
+				const th = halfH * 2;
 				gl.uniform2f(ctx.loc.u_translate, tx, ty);
 				gl.uniform2f(ctx.loc.u_size, tw, th);
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -348,11 +420,12 @@ export class IconRenderer {
         uniform float u_scale;
         uniform float u_dpr;
         uniform float u_invS;
+        uniform float u_iconScale;
         varying vec2 v_uv;
         void main(){
           vec2 world = a_i_native * u_invS;
           vec2 css = (world - u_tlWorld) * u_scale;
-          vec2 sizePx = a_i_size;
+          vec2 sizePx = a_i_size * u_iconScale;
           vec2 pixelPos = (css - 0.5 * sizePx) * u_dpr + a_pos * (sizePx * u_dpr);
           vec2 clip = (pixelPos / u_resolution) * 2.0 - 1.0;
           clip.y *= -1.0;
@@ -388,6 +461,7 @@ export class IconRenderer {
 				u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
 				u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
 				u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
+				u_iconScale: gl.getUniformLocation(prog, 'u_iconScale'),
 			};
 		}
 		return !!this.instProg;

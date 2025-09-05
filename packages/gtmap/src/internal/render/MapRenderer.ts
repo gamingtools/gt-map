@@ -162,9 +162,12 @@ export default class MapRenderer {
 				tileSize: ctx.tileSize,
 				zoom: ctx.zoom,
 				center: ctx.center,
+				minZoom: ctx.minZoom,
+				maxZoom: ctx.maxZoom,
 				container: ctx.container,
 				project: (x: number, y: number, z: number) => ctx.project(x, y, z),
 				wrapX: ctx.wrapX,
+				iconScaleFunction: ctx.iconScaleFunction,
 			});
 		}
 		// Update screen cache after full draw so it matches the frame

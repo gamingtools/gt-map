@@ -123,6 +123,7 @@ export default class GTMap implements MapImpl {
 	private _renderer!: MapRenderer;
 	private _rasterOpacity = 1.0;
 	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'auto';
+	private _iconScaleFunction: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
 	private _zoomCtrl!: ZoomController;
 	private _gfx!: Graphics;
 	private _state!: ViewState;
@@ -179,6 +180,7 @@ export default class GTMap implements MapImpl {
 			raster: this._raster,
 			rasterOpacity: this._rasterOpacity,
 			upscaleFilter: this._upscaleFilter,
+			iconScaleFunction: this._iconScaleFunction,
 			icons: this._icons,
 			tileCache: this._tileCache,
 			tileSize: this.tileSize,
@@ -1092,6 +1094,15 @@ export default class GTMap implements MapImpl {
 
 	public setMarkerHitboxesVisible(on: boolean) {
 		this._showMarkerHitboxes = !!on;
+		this._needsRender = true;
+	}
+
+	public setIconScaleFunction(fn: ((zoom: number, minZoom: number, maxZoom: number) => number) | null) {
+		this._iconScaleFunction = fn;
+		// Invalidate screen cache since icon sizes will change
+		try {
+			this._screenCache?.clear?.();
+		} catch {}
 		this._needsRender = true;
 	}
 
