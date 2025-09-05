@@ -141,7 +141,14 @@ export default class GTMap implements MapImpl {
 	private inertiaDeceleration = 3400; // px/s^2
 	private inertiaMaxSpeed = 2000; // px/s (cap to prevent excessive throw)
 	private easeLinearity = 0.2;
-	private _panAnim: null | { start: number; dur: number; from: { x: number; y: number }; offsetWorld: { x: number; y: number } } = null;
+	private _panAnim: null | { 
+		start: number; 
+		dur: number; 
+		from: { x: number; y: number }; 
+		offsetWorld: { x: number; y: number };
+		velocity?: { x: number; y: number };
+		lastTime?: number;
+	} = null;
 	private _view(): ViewState {
 		return {
 			center: this.center,
@@ -911,7 +918,11 @@ export default class GTMap implements MapImpl {
 		const a = this._panAnim;
 		const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 		const t = Math.min(1, (now - a.start) / (a.dur * 1000));
-		const p = 1 - Math.pow(1 - t, 3); // easeOutCubic
+		
+		// Use smoother easeOutExpo for more natural deceleration
+		// This creates a more gradual, less jerky slowdown
+		const p = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+		
 		const { zInt, scale } = Coords.zParts(this.zoom);
 		const rect = this.container.getBoundingClientRect();
 		const widthCSS = rect.width;
