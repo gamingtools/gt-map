@@ -1,6 +1,5 @@
-// Use Leaflet-compatible facade as the default API
-import GT from '@gtmap';
-const L = GT.L;
+import { GTMap } from '@gtmap';
+
 const container = document.getElementById('map') as HTMLDivElement;
 const hud = document.getElementById('hud') as HTMLDivElement;
 const attribution = document.getElementById('attribution') as HTMLDivElement;
@@ -10,26 +9,29 @@ const HAGGA = {
   minZoom: 0,
   maxZoom: 5,
   wrapX: false,
+  mapSize: { width: 8192, height: 8192 },
 };
 
-const HOME = { lng: 4096, lat: 4096 };
-const map = L.map(container, {
+const HOME = { x: 4096, y: 4096 };
+const map = new GTMap(container, {
   center: HOME,
   zoom: 2,
   minZoom: HAGGA.minZoom,
-  maxZoom: HAGGA.maxZoom,
+  maxZoom: 10,
   fpsCap: 60,
-} as any);
-L.tileLayer(HAGGA.url, {
-  minZoom: HAGGA.minZoom,
-  maxZoom: HAGGA.maxZoom,
+});
+map.setTileSource({
+  url: HAGGA.url,
   tileSize: 256,
-  tms: false,
-}).addTo(map as any);
+  sourceMaxZoom: HAGGA.maxZoom,
+  mapSize: HAGGA.mapSize,
+  wrapX: HAGGA.wrapX,
+  clearCache: true,
+});
 
 // HUD updates on actual render frames (engine emits 'frame')
 (() => {
-  const state: any = { prev: 0, fps: 0 };
+  const state: { prev: number; fps: number } = { prev: 0, fps: 0 };
   const renderHud = (opts?: { now?: number; fromFrame?: boolean }) => {
     const now = opts?.now ?? (performance.now ? performance.now() : Date.now());
     if (opts?.fromFrame) {
@@ -40,42 +42,35 @@ L.tileLayer(HAGGA.url, {
       const alpha = 0.2;
       state.fps = (1 - alpha) * state.fps + alpha * inst;
     }
-    const cArr = map.getCenter() as [number, number];
-    const c = { lng: cArr[1], lat: cArr[0] };
-    const p = map.pointerAbs as { x: number; y: number } | null;
+    const c = map.getCenter();
+    const p = map.pointerAbs;
     const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
-    const z = map.getZoom() as number;
-    hud.textContent = `lng ${c.lng.toFixed(5)}, lat ${c.lat.toFixed(5)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;
+    const z = map.getZoom();
+    hud.textContent = `x ${c.x.toFixed(2)}, y ${c.y.toFixed(2)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;
   };
-  map.events.on('frame').each((e: any) => renderHud({ now: e?.now, fromFrame: true }));
+  map.events.on('frame').each((e) => renderHud({ now: e?.now, fromFrame: true }));
   map.events.on('pointermove').each(() => renderHud({ fromFrame: false }));
 })();
 
 attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
 
-// Load sample icon definitions and place a few markers using L.marker
+// Load sample icon definitions and place a few markers using GTMap API
 (async () => {
   try {
     const url = new URL('./sample-data/MapIcons.json', import.meta.url);
-    const defs = await fetch(url).then((r) => r.json());
-    // Build Leaflet-style icon objects from the defs
-    const icons: Record<string, any> = {};
+    const defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }> = await fetch(url).then((r) => r.json());
+    const handles: string[] = [];
     Object.keys(defs).forEach((k) => {
-      const d = (defs as any)[k];
-      icons[k] = L.icon({
-        iconUrl: d.iconPath,
-        iconRetinaUrl: d.x2IconPath,
-        iconSize: [d.width, d.height],
-      });
+      const d = defs[k];
+      const h = map.addIcon({ iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height });
+      handles.push(h.id);
     });
-    // Optionally add markers via L.marker (no fixed markers at center)
-    // A moderate number of random markers using L.marker
-    const keys = Object.keys(icons);
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
     const COUNT = 500;
     for (let i = 0; i < COUNT; i++) {
-      const key = keys[(Math.random() * keys.length) | 0];
-      L.marker([rand(0, 8192), rand(0, 8192)], { icon: icons[key] }).addTo(map as any);
+      const iconId = handles[(Math.random() * handles.length) | 0];
+      const rotation = Math.random() < 0.3 ? Math.round(rand(0, 360)) : undefined;
+      map.addMarker(rand(0, 8192), rand(0, 8192), { icon: { id: iconId }, rotation });
     }
   } catch (err) {
     console.warn('Icon demo load failed:', err);
@@ -85,33 +80,37 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
 const centerBtn = document.createElement('button');
 centerBtn.textContent = 'Center Hagga Basin';
 centerBtn.title = 'Recenter the map to Hagga Basin';
-centerBtn.style.position = 'absolute';
-centerBtn.style.left = '8px';
-centerBtn.style.top = '40px';
-centerBtn.style.background = 'rgba(255,255,255,0.9)';
-centerBtn.style.color = '#222';
-centerBtn.style.border = '1px solid #bbb';
-centerBtn.style.borderRadius = '4px';
-centerBtn.style.padding = '6px 8px';
-centerBtn.style.font =
-  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
-centerBtn.style.cursor = 'pointer';
-centerBtn.style.zIndex = '11';
-centerBtn.addEventListener('click', () => map.setView([HOME.lat, HOME.lng], map.getZoom()));
+Object.assign(centerBtn.style, {
+  position: 'absolute',
+  left: '8px',
+  top: '40px',
+  background: 'rgba(255,255,255,0.9)',
+  color: '#222',
+  border: '1px solid #bbb',
+  borderRadius: '4px',
+  padding: '6px 8px',
+  font:
+    '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif',
+  cursor: 'pointer',
+  zIndex: '11',
+} as CSSStyleDeclaration);
+centerBtn.addEventListener('click', () => map.flyTo({ center: HOME, durationMs: 600 }));
 container.appendChild(centerBtn);
 
 // Zoom speed control
 const speedWrap = document.createElement('div');
-speedWrap.style.position = 'absolute';
-speedWrap.style.left = '8px';
-speedWrap.style.top = '80px';
-speedWrap.style.background = 'rgba(255,255,255,0.9)';
-speedWrap.style.border = '1px solid #bbb';
-speedWrap.style.borderRadius = '4px';
-speedWrap.style.padding = '6px 8px';
-speedWrap.style.font =
-  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
-speedWrap.style.zIndex = '11';
+Object.assign(speedWrap.style, {
+  position: 'absolute',
+  left: '8px',
+  top: '80px',
+  background: 'rgba(255,255,255,0.9)',
+  border: '1px solid #bbb',
+  borderRadius: '4px',
+  padding: '6px 8px',
+  font:
+    '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif',
+  zIndex: '11',
+} as CSSStyleDeclaration);
 const speedLabel = document.createElement('label');
 speedLabel.textContent = 'Zoom Speed';
 speedLabel.style.display = 'block';
@@ -141,18 +140,20 @@ speedWrap.appendChild(speedLabel);
 speedWrap.appendChild(speedRow);
 container.appendChild(speedWrap);
 
-// Grid toggle
+// Grid toggle (uses map.setGridVisible)
 const gridWrap = document.createElement('div');
-gridWrap.style.position = 'absolute';
-gridWrap.style.left = '8px';
-gridWrap.style.top = '130px';
-gridWrap.style.background = 'rgba(255,255,255,0.9)';
-gridWrap.style.border = '1px solid #bbb';
-gridWrap.style.borderRadius = '4px';
-gridWrap.style.padding = '6px 8px';
-gridWrap.style.font =
-  '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';
-gridWrap.style.zIndex = '11';
+Object.assign(gridWrap.style, {
+  position: 'absolute',
+  left: '8px',
+  top: '130px',
+  background: 'rgba(255,255,255,0.9)',
+  border: '1px solid #bbb',
+  borderRadius: '4px',
+  padding: '6px 8px',
+  font:
+    '12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif',
+  zIndex: '11',
+} as CSSStyleDeclaration);
 const gridLabel = document.createElement('label');
 gridLabel.textContent = 'Show Grid';
 gridLabel.style.display = 'inline-flex';
@@ -161,18 +162,18 @@ gridLabel.style.gap = '6px';
 const gridToggle = document.createElement('input');
 gridToggle.type = 'checkbox';
 gridToggle.checked = true;
-// Create a Leaflet-like grid layer and add/remove via checkbox
-const gridLayer = L.grid();
-gridLayer.addTo(map as any);
+map.setGridVisible(true);
 gridToggle.addEventListener('change', () => {
-  if (gridToggle.checked) gridLayer.addTo(map as any);
-  else gridLayer.remove();
+  map.setGridVisible(gridToggle.checked);
 });
 gridLabel.appendChild(gridToggle);
 gridWrap.appendChild(gridLabel);
 container.appendChild(gridWrap);
 
-// Anchor mode selector removed (no public API yet)
+// Marker events demo
+map.events.on('markerenter').each((e) => console.log('markerenter', e));
+map.events.on('markerleave').each((e) => console.log('markerleave', e));
+map.events.on('markerclick').each((e) => console.log('markerclick', e));
 
 // Invalidate map size when the container resizes
 try {
@@ -181,6 +182,5 @@ try {
   });
   ro.observe(container);
 } catch {
-  // Fallback to window resize
   window.addEventListener('resize', () => map.invalidateSize());
 }

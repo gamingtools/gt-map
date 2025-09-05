@@ -174,7 +174,7 @@
 
 		// Test icon scaling examples
 		// Example 1: Scale with zoom (like real world objects)
-		// map.setIconScaleFunction((zoom, minZoom, maxZoom) => Math.pow(2, zoom - 3));
+		map.setIconScaleFunction((zoom, minZoom, maxZoom) => Math.pow(2, zoom - 3));
 
 		// Example 2: Fixed size (default behavior)
 		// map.setIconScaleFunction(() => 1);
