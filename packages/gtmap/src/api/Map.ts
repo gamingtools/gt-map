@@ -1,7 +1,7 @@
 import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
 
-import type { EventBus, Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, Circle, Vector, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, IconScaleFunction } from './types';
+import type { EventBus, Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, Circle, Vector, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, IconScaleFunction, MarkerEventData } from './types';
 
 // Re-export types from centralized types file
 export type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector, ActiveOptions } from './types';
@@ -275,12 +275,22 @@ export class GTMap {
 	 * map.addMarker(1024, 1024, { icon: myIcon, size: 1.5 });
 	 * ```
 	 */
-	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: any | null }): Marker & { id: string } {
+	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: any | null }): (Marker & { id: string }) & { events: { on: (name: 'click' | 'enter' | 'leave') => { each: (handler: (e: MarkerEventData) => void) => () => void } } } {
 		const id = `m_${Math.random().toString(36).slice(2, 10)}`;
 		const m: Marker = { id, x, y, type: opts?.icon?.id ?? 'default', size: opts?.size, rotation: opts?.rotation, data: opts?.data };
 		this._markers.push(m);
 		this._markMarkersDirtyAndSchedule();
-		return { ...m, id };
+		const make = (evt: 'click' | 'enter' | 'leave') => {
+			const mapBus = this.events;
+			const name = evt === 'click' ? 'markerclick' : evt === 'enter' ? 'markerenter' : 'markerleave';
+			return {
+				each: (handler: (e: MarkerEventData) => void) =>
+					(mapBus.on as any)(name).each((e: MarkerEventData) => {
+						if (e?.marker?.id === id) handler(e);
+					}),
+			};
+		};
+		return { ...(m as any), id, events: { on: (name: 'click' | 'enter' | 'leave') => make(name) } } as any;
 	}
 	/**
 	 * Adds multiple markers to the map in a batch.

@@ -872,32 +872,34 @@ export default class GTMap implements MapImpl, GraphicsHost {
                 const hit = this._hitTestMarker(e.x, e.y, false);
 				if (hit) {
 					if (!this._lastHover || this._lastHover.idx !== hit.idx || this._lastHover.type !== hit.type) {
-						this._events.emit('markerenter', {
-							now,
-							view: this._viewPublic(),
-							screen: { x: e.x, y: e.y },
-							marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-							icon: {
-								id: hit.type,
-								iconPath: hit.icon.iconPath,
-								x2IconPath: hit.icon.x2IconPath,
-								width: hit.icon.width,
-								height: hit.icon.height,
-								anchorX: hit.icon.anchorX,
-								anchorY: hit.icon.anchorY,
-							},
-						});
+                        this._events.emit('markerenter', {
+                            now,
+                            view: this._viewPublic(),
+                            screen: { x: e.x, y: e.y },
+                            marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
+                            icon: {
+                                id: hit.type,
+                                iconPath: hit.icon.iconPath,
+                                x2IconPath: hit.icon.x2IconPath,
+                                width: hit.icon.width,
+                                height: hit.icon.height,
+                                anchorX: hit.icon.anchorX,
+                                anchorY: hit.icon.anchorY,
+                            },
+                            originalEvent: e.originalEvent as any,
+                        });
 						this._lastHover = { idx: hit.idx, type: hit.type };
 					}
 				} else if (this._lastHover) {
 					const prev = this._lastHover;
-					this._events.emit('markerleave', {
-						now,
-						view: this._viewPublic(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-						icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-					});
+                    this._events.emit('markerleave', {
+                        now,
+                        view: this._viewPublic(),
+                        screen: { x: e.x, y: e.y },
+                        marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+                        icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+                        originalEvent: e.originalEvent as any,
+                    });
 					this._lastHover = null;
 				}
             });
@@ -911,19 +913,20 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				const hit = this._hitTestMarker(e.x, e.y, true);
                 if (hit)
                     this._events.emit('markerclick', {
-						now,
-						view: this._viewPublic(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-						icon: {
-							id: hit.type,
-							iconPath: hit.icon.iconPath,
-							x2IconPath: hit.icon.x2IconPath,
-							width: hit.icon.width,
-							height: hit.icon.height,
-							anchorX: hit.icon.anchorX,
-							anchorY: hit.icon.anchorY,
-						},
+                        now,
+                        view: this._viewPublic(),
+                        screen: { x: e.x, y: e.y },
+                        marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
+                        icon: {
+                            id: hit.type,
+                            iconPath: hit.icon.iconPath,
+                            x2IconPath: hit.icon.x2IconPath,
+                            width: hit.icon.width,
+                            height: hit.icon.height,
+                            anchorX: hit.icon.anchorX,
+                            anchorY: hit.icon.anchorY,
+                        },
+                        originalEvent: e.originalEvent as any,
                 });
             });
 

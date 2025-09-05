@@ -274,6 +274,7 @@ export interface MarkerEventData {
     screen: { x: number; y: number };
     marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
     icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+    originalEvent?: PointerEvent | MouseEvent;
 }
 
 // Inertia options

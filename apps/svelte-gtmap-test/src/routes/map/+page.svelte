@@ -36,7 +36,14 @@
 			const x = rand(0, 8192);
 			const y = rand(0, 8192);
 			const iconHandle = iconHandles ? iconHandles[i % iconHandles.length] : null;
-			map.addMarker(x, y, iconHandle ? { icon: iconHandle, data: { id: i } } : undefined);
+			const marker = map.addMarker(
+				x,
+				y,
+				iconHandle ? { icon: iconHandle, data: { id: i } } : undefined
+			);
+			marker.events.on('click').each((e) => {
+				console.log('Marker clicked:', e);
+			});
 		}
 	}
 
