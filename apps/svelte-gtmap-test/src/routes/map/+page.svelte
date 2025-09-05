@@ -36,7 +36,7 @@
 			const x = rand(0, 8192);
 			const y = rand(0, 8192);
 			const iconHandle = iconHandles ? iconHandles[i % iconHandles.length] : null;
-			map.addMarker(x, y, iconHandle ? { icon: iconHandle } : undefined);
+			map.addMarker(x, y, iconHandle ? { icon: iconHandle, data: { id: i } } : undefined);
 		}
 	}
 
@@ -196,6 +196,7 @@
 		// map.events.on('markerenter').each((e) => console.log('markerenter', e));
 		// map.events.on('markerleave').each((e) => console.log('markerleave', e));
 		map.events.on('markerclick').each((e) => console.log('markerclick', e));
+		map.events.on('mousedown').each((e) => console.log('mousedown', e));
 
 		// Teardown on navigation/unmount per Svelte docs
 

@@ -117,11 +117,25 @@ export function isCircle(v: Vector): v is Circle {
 
 // Event data types
 export interface PointerEventData {
-	x: number;
-	y: number;
-	world: Point | null;
-	view: ViewState;
-	originalEvent: PointerEvent;
+    x: number;
+    y: number;
+    world: Point | null;
+    view: ViewState;
+    originalEvent: PointerEvent;
+}
+
+export interface MouseEventData {
+    x: number;
+    y: number;
+    world: Point | null;
+    view: ViewState;
+    originalEvent: MouseEvent;
+    markers?: MarkerHit[];
+}
+
+export interface MarkerHit {
+    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
+    icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
 
 export interface MoveEventData {
@@ -147,17 +161,23 @@ export interface BaseEvent {
 
 // Event map for type-safe event handling
 export interface EventMap {
-	move: MoveEventData;
-	moveend: MoveEventData;
-	zoom: ZoomEventData;
-	zoomend: ZoomEventData;
-	pointerdown: PointerEventData;
-	pointermove: PointerEventData;
-	pointerup: PointerEventData;
-	frame: FrameEventData;
-	markerenter: MarkerEventData;
-	markerleave: MarkerEventData;
-	markerclick: MarkerEventData;
+    move: MoveEventData;
+    moveend: MoveEventData;
+    zoom: ZoomEventData;
+    zoomend: ZoomEventData;
+    pointerdown: PointerEventData;
+    pointermove: PointerEventData;
+    pointerup: PointerEventData;
+    frame: FrameEventData;
+    markerenter: MarkerEventData;
+    markerleave: MarkerEventData;
+    markerclick: MarkerEventData;
+    mousedown: MouseEventData;
+    mousemove: MouseEventData;
+    mouseup: MouseEventData;
+    click: MouseEventData;
+    dblclick: MouseEventData;
+    contextmenu: MouseEventData;
 }
 
 // Performance stats
