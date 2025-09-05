@@ -64,43 +64,28 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 	}
 
     async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
-		const entries = Object.entries(defs);
-		// Load both 1x and 2x images for each icon
-		const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
-		const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
-		
-		for (const [key, d] of entries) {
+        const entries = Object.entries(defs);
+        // Load both 1x and 2x images for each icon (in parallel)
+        const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
+        const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
+
+        const loadTasks = entries.map(async ([key, d]) => {
             this.texSize.set(key, { w: d.width, h: d.height });
             this.texAnchor.set(key, { ax: d.anchorX ?? d.width / 2, ay: d.anchorY ?? d.height / 2 });
             this.iconMeta.set(key, { iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height, anchorX: d.anchorX ?? d.width / 2, anchorY: d.anchorY ?? d.height / 2 });
-			
-			// Load 2x version if available, otherwise load 1x
-            if (d.x2IconPath) {
-                const src2x = await this.loadImageSource(d.x2IconPath);
-                if (src2x) {
-                    imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
-                    this.hasRetina.set(key, true);
-                    // Build alpha mask by scaling 2x into 1x dimensions
-                    this.buildMaskSafe(key, src2x, d.width, d.height);
-                } else {
-                    // Fallback to 1x if 2x fails to load
-                    const src1x = await this.loadImageSource(d.iconPath);
-                    if (src1x) {
-                        imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
-                        this.buildMaskSafe(key, src1x, d.width, d.height);
-                    }
-                    this.hasRetina.set(key, false);
-                }
+
+            let src2x: ImageBitmap | HTMLImageElement | null = null;
+            if (d.x2IconPath) src2x = await this.loadImageSource(d.x2IconPath);
+            if (src2x) {
+                imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
+                this.hasRetina.set(key, true);
             } else {
-                // Only 1x version available
                 const src1x = await this.loadImageSource(d.iconPath);
-                if (src1x) {
-                    imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
-                    this.buildMaskSafe(key, src1x, d.width, d.height);
-                }
+                if (src1x) imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
                 this.hasRetina.set(key, false);
             }
-        }
+        });
+        await Promise.all(loadTasks);
 		// Create 1x atlas
 		if (imgs1x.length > 0) {
 			const atlas1x = this.createAtlas(imgs1x);
@@ -112,17 +97,28 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 			}
 		}
 		
-		// Create 2x atlas
-		if (imgs2x.length > 0) {
-			const atlas2x = this.createAtlas(imgs2x);
-			if (atlas2x) {
-				for (const [key, data] of atlas2x) {
-					this.textures2x.set(key, data.tex);
-					this.uvRect2x.set(key, data.uv);
-				}
-			}
-		}
-	}
+        // Create 2x atlas
+        if (imgs2x.length > 0) {
+            const atlas2x = this.createAtlas(imgs2x);
+            if (atlas2x) {
+                for (const [key, data] of atlas2x) {
+                    this.textures2x.set(key, data.tex);
+                    this.uvRect2x.set(key, data.uv);
+                }
+            }
+        }
+
+        // Defer building alpha masks to idle time so initial render is not blocked
+        const buildAllMasks = () => {
+            try {
+                for (const it of imgs2x) this.buildMaskSafe(it.key, it.src, it.w, it.h);
+                for (const it of imgs1x) if (!this.maskAlpha.has(it.key)) this.buildMaskSafe(it.key, it.src, it.w, it.h);
+            } catch {}
+        };
+        const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: Function) => any);
+        if (typeof ric === 'function') ric(() => buildAllMasks());
+        else setTimeout(buildAllMasks, 0);
+    }
 
 	setMarkers(markers: Array<Marker | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
 		// Normalize to internal Marker list with ids
