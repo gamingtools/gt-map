@@ -153,6 +153,7 @@ export interface MapImpl {
 	setMarkerHitboxesVisible?(on: boolean): void;
 	setActive?(on: boolean, opts?: ActiveOptions): void;
     setIconScaleFunction?(fn: IconScaleFunction | null): void;
+    setAutoResize?(on: boolean): void;
     // Optional: user payloads per marker id
     setMarkerData?(payloads: Record<string, any | null | undefined>): void;
     // Optional animated controls

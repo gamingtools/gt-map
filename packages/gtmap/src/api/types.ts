@@ -41,6 +41,11 @@ export interface MapOptions {
 	wrapX?: boolean;
 	center?: Point;
 	zoom?: number;
+	/**
+	 * Automatically resize the map when the container size or window DPR changes.
+	 * Enabled by default.
+	 */
+	autoResize?: boolean;
 	prefetch?: { enabled?: boolean; baselineLevel?: number; ring?: number };
 	screenCache?: boolean;
 	fpsCap?: number;

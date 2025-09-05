@@ -64,18 +64,19 @@ export class GTMap {
 	 */
     constructor(container: HTMLElement, options: MapOptions = {}) {
         const implOpts: Partial<ImplMapOptions> = {
-			tileUrl: options.tileUrl,
-			tileSize: options.tileSize,
-			minZoom: options.minZoom,
-			maxZoom: options.maxZoom,
-			mapSize: options.mapSize,
-			wrapX: options.wrapX,
-			center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
-			zoom: options.zoom,
-			prefetch: options.prefetch,
-			screenCache: options.screenCache,
-			fpsCap: options.fpsCap,
-		};
+            tileUrl: options.tileUrl,
+            tileSize: options.tileSize,
+            minZoom: options.minZoom,
+            maxZoom: options.maxZoom,
+            mapSize: options.mapSize,
+            wrapX: options.wrapX,
+            center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
+            zoom: options.zoom,
+            autoResize: options.autoResize,
+            prefetch: options.prefetch,
+            screenCache: options.screenCache,
+            fpsCap: options.fpsCap,
+        };
         this._impl = new Impl(container as HTMLDivElement, implOpts);
         this._ensureDefaultIcon();
 
@@ -436,10 +437,25 @@ export class GTMap {
 	 * @param v - FPS limit (15 to 240)
 	 * @returns This map instance for method chaining
 	 */
-	setFpsCap(v: number): this {
-		this._impl.setFpsCap(v);
-		return this;
-	}
+    setFpsCap(v: number): this {
+        this._impl.setFpsCap(v);
+        return this;
+    }
+
+    /**
+     * Enable or disable automatic resize handling.
+     * When enabled, a ResizeObserver watches the container and resizes
+     * the canvases (debounced via rAF). A window resize listener is
+     * also attached for DPR changes.
+     *
+     * @example
+     * map.setAutoResize(false); // manage size manually via invalidateSize()
+     * map.setAutoResize(true);  // re-enable automatic handling
+     */
+    setAutoResize(on: boolean): this {
+        this._impl.setAutoResize?.(on);
+        return this;
+    }
 	/**
 	 * Smoothly pan to a new center.
 	 */

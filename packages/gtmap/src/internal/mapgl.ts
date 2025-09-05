@@ -40,6 +40,8 @@ export type MapOptions = {
 	center?: LngLat;
 	zoom?: number;
 	zoomOutCenterBias?: number | boolean;
+	// Auto-resize when container or window DPR changes
+	autoResize?: boolean;
 	// Render pacing
 	fpsCap?: number; // cap rendering to this FPS (default 60)
 	// Recommended tunables
@@ -145,6 +147,12 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		velocity?: { x: number; y: number };
 		lastTime?: number;
 	} = null;
+
+	// Auto-resize
+	private _autoResize = true;
+	private _ro: ResizeObserver | null = null;
+	private _resizeScheduled = false;
+	private _onWindowResize = () => this._scheduleResize();
 
 	private _viewPublic(): PublicViewState {
 		return {
@@ -299,6 +307,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
+
+		// Auto-resize setup
+		this._autoResize = options.autoResize !== false;
+		if (this._autoResize) this._attachAutoResize();
 
 		// Initialize screen cache module (uses detected format)
 		this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
@@ -532,6 +544,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	}
 	// recenter helper removed from public surface; use setCenter/setView via facade
 	destroy() {
+		// Detach observers and listeners first
+		try { this._detachAutoResize(); } catch {}
 		if (this._frameLoop) {
 			try {
 				this._frameLoop.stop();
@@ -739,6 +753,43 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				this._needsRender = true;
 			}
 		}
+	}
+
+	private _scheduleResize() {
+		if (this._resizeScheduled) return;
+		this._resizeScheduled = true;
+		const run = () => {
+			this._resizeScheduled = false;
+			this.resize();
+		};
+		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+		else setTimeout(run, 16);
+	}
+
+	private _attachAutoResize() {
+		try {
+			if (typeof window !== 'undefined') window.addEventListener('resize', this._onWindowResize);
+			if (typeof ResizeObserver !== 'undefined') {
+				this._ro = new ResizeObserver(() => this._scheduleResize());
+				this._ro.observe(this.container);
+			}
+		} catch {}
+	}
+
+	private _detachAutoResize() {
+		try {
+			if (typeof window !== 'undefined') window.removeEventListener('resize', this._onWindowResize);
+			this._ro?.disconnect();
+		} catch {}
+		this._ro = null;
+	}
+
+	public setAutoResize(on: boolean) {
+		const v = !!on;
+		if (v === this._autoResize) return;
+		this._autoResize = v;
+		if (v) this._attachAutoResize();
+		else this._detachAutoResize();
 	}
 	// Toggle screen-space cache
 	public setScreenCacheEnabled(enabled: boolean) {
