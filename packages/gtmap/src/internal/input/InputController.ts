@@ -65,7 +65,7 @@ export default class InputController {
 			const widthCSS = rect.width,
 				heightCSS = rect.height;
 			const zImg = deps.getImageMaxZoom();
-			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
+			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
 			deps.emit('pointerdown', {
 				x: px,
 				y: py,
@@ -85,14 +85,14 @@ export default class InputController {
 				heightCSS = rect.height;
 			const zImg = deps.getImageMaxZoom();
 			const s0 = Coords.sFor(zImg, zInt);
-			const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
+			const centerWorld = { x: view.center.x / s0, y: view.center.y / s0 };
 			// record position for inertia
 			this._pushSample(e.clientX - rect.left, e.clientY - rect.top);
 			// update pointerAbs always while dragging; while idle, only when inside container
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
 			const inside = px >= 0 && py >= 0 && px <= widthCSS && py <= heightCSS;
-			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
+			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
 			if (this.dragging) {
 				deps.updatePointerAbs(wNat.x, wNat.y);
 				try {
@@ -154,7 +154,7 @@ export default class InputController {
 			const widthCSS = rect.width,
 				heightCSS = rect.height;
 			const zImg = deps.getImageMaxZoom();
-			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
+			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
 			deps.emit('pointerup', {
 				x: px,
 				y: py,
@@ -208,7 +208,7 @@ export default class InputController {
 				const dy = t1.clientY - t0.clientY;
 				// Record starting zoom and center (keep center fixed during pinch like Leaflet 'center')
 				const view = deps.getView();
-				const startCenter = { x: view.center.lng, y: view.center.lat };
+				const startCenter = { x: view.center.x, y: view.center.y };
 				const rect = deps.getContainer().getBoundingClientRect();
 				const midPx = (t0.clientX + t1.clientX) / 2 - rect.left;
 				const midPy = (t0.clientY + t1.clientY) / 2 - rect.top;
@@ -216,7 +216,7 @@ export default class InputController {
 				const widthCSS = rect.width,
 					heightCSS = rect.height;
 				const zImg = deps.getImageMaxZoom();
-				const pinchStartWorld = Coords.cssToWorld({ x: midPx, y: midPy }, view.zoom, { x: view.center.lng, y: view.center.lat }, { x: widthCSS, y: heightCSS }, zImg);
+				const pinchStartWorld = Coords.cssToWorld({ x: midPx, y: midPy }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
 				const pinchStartNative = { x: pinchStartWorld.x, y: pinchStartWorld.y };
 				this.touchState = {
 					mode: 'pinch',
@@ -270,7 +270,7 @@ export default class InputController {
 					heightCSS = rect.height;
 				const zImg = deps.getImageMaxZoom();
 				const s0 = Coords.sFor(zImg, zInt);
-				const centerWorld = { x: view.center.lng / s0, y: view.center.lat / s0 };
+				const centerWorld = { x: view.center.x / s0, y: view.center.y / s0 };
 				this._pushSample(t.clientX - rect.left, t.clientY - rect.top);
 				let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
 
@@ -305,7 +305,8 @@ export default class InputController {
 				const s2 = Math.pow(2, nextZoom - zInt2);
 				const zImg = deps.getImageMaxZoom();
 				const s2f = Math.pow(2, zImg - zInt2);
-				const pinchStartNative = touchState.pinchStartNative || { x: deps.getView().center.lng, y: deps.getView().center.lat };
+				const v = deps.getView();
+				const pinchStartNative = touchState.pinchStartNative || { x: v.center.x, y: v.center.y };
 				const pinchStartWorld2 = { x: pinchStartNative.x / s2f, y: pinchStartNative.y / s2f };
 				// Desired center in world coords at zInt2
 				let centerWorld2 = { x: pinchStartWorld2.x - deltaCSS.x / s2, y: pinchStartWorld2.y - deltaCSS.y / s2 };

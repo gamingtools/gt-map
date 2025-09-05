@@ -12,8 +12,7 @@ import * as Coords from './coords';
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
 import { TypedEventBus } from './events/typed-stream';
-import type { EventBus } from '../api/types';
-import type { EventMap } from '../api/types';
+import type { EventMap, ViewState as PublicViewState } from '../api/types';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
 import ZoomController from './core/ZoomController';
@@ -152,15 +151,17 @@ export default class GTMap implements MapImpl {
 		velocity?: { x: number; y: number };
 		lastTime?: number;
 	} = null;
-	private _view(): ViewState {
-		return {
-			center: this.center,
-			zoom: this.zoom,
-			minZoom: this.minZoom,
-			maxZoom: this.maxZoom,
-			wrapX: this.wrapX,
-		};
-	}
+
+
+		private _viewPublic(): PublicViewState {
+			return {
+				center: { x: this.center.lng, y: this.center.lat },
+				zoom: this.zoom,
+				minZoom: this.minZoom,
+				maxZoom: this.maxZoom,
+				wrapX: this.wrapX,
+			};
+		}
 	// Build the rendering context (internal)
 	public getRenderCtx(): RenderCtx {
 		return {
@@ -388,6 +389,7 @@ export default class GTMap implements MapImpl {
 				this._needsRender = true;
 			},
 			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+			getPublicView: () => this._viewPublic(),
 		});
 		// View state
 		this._state = {
@@ -782,7 +784,7 @@ export default class GTMap implements MapImpl {
 			getCanvas: () => this.canvas,
 			getMaxZoom: () => this.maxZoom,
 			getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
-			getView: () => this._view(),
+			getView: () => this._viewPublic(),
 			getTileSize: () => this.tileSize,
 			setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
 			setZoom: (z: number) => this.setZoom(z),
@@ -973,7 +975,7 @@ export default class GTMap implements MapImpl {
 		this._needsRender = true;
 		if (t >= 1) {
 			this._panAnim = null;
-			this._events.emit('moveend', { view: this._view() });
+			this._events.emit('moveend', { view: this._viewPublic() });
 		}
 	}
 

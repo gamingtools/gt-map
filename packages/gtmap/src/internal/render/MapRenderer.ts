@@ -97,6 +97,7 @@ export default class MapRenderer {
 					mapSize: ctx.mapSize,
 					zMax: ctx.maxZoom,
 					sourceMaxZoom: ctx.sourceMaxZoom,
+					wantTileKey: ctx.wantTileKey,
 				});
 				if (covL >= 0.995) break;
 			}
@@ -116,6 +117,7 @@ export default class MapRenderer {
 			zMax: ctx.maxZoom,
 			sourceMaxZoom: ctx.sourceMaxZoom,
 			filterMode: ctx.upscaleFilter || 'auto',
+			wantTileKey: ctx.wantTileKey,
 		});
 		if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
 		const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
@@ -142,6 +144,7 @@ export default class MapRenderer {
 				zMax: ctx.maxZoom,
 				sourceMaxZoom: ctx.sourceMaxZoom,
 				filterMode: ctx.upscaleFilter || 'auto',
+				wantTileKey: ctx.wantTileKey,
 			});
 			gl.uniform1f(loc.u_alpha!, 1.0);
 		}

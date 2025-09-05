@@ -19,6 +19,7 @@ import type { IconRenderer } from './layers/icons';
 import type { ScreenCache } from './render/screenCache';
 import type { TileCache } from './tiles/cache';
 import type { EventBus } from '../api/types';
+import type { ViewState as PublicViewState } from '../api/types';
 
 export type ViewState = {
 	center: LngLat;
@@ -98,7 +99,7 @@ export interface InputDeps {
 	getCanvas(): HTMLCanvasElement;
 	getMaxZoom(): number;
 	getImageMaxZoom(): number;
-	getView(): ViewState;
+	getView(): PublicViewState;
 	getTileSize(): number;
 	setCenter(lng: number, lat: number): void;
 	setZoom(zoom: number): void;
@@ -133,6 +134,7 @@ export interface ZoomDeps {
 	emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
 	requestRender(): void;
 	now(): number;
+	getPublicView(): PublicViewState;
 }
 
 export interface MapImpl {

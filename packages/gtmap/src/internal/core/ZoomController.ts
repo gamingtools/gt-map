@@ -83,7 +83,7 @@ export default class ZoomController {
 		this.applyAnchoredZoom(z, a.px, a.py, a.anchor);
 		if (t >= 1) {
 			this.zoomAnim = null;
-			this.deps.emit('zoomend', {});
+			this.deps.emit('zoomend', { view: this.deps.getPublicView() });
 		}
 		return true;
 	}

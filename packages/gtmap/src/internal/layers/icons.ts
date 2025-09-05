@@ -283,7 +283,6 @@ export class IconRenderer {
 				seen.add(m.type);
 			}
 			for (const type of Array.from(seen)) {
-				const sz = this.texSize.get(type) || { w: 32, h: 32 };
 				// Use retina if available, otherwise fallback to regular
 				const useRetina = this.hasRetina.get(type);
 				
