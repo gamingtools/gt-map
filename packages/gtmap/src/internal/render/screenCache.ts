@@ -1,3 +1,5 @@
+import type { ShaderLocations } from '../../api/types';
+
 // Screen cache module: keep a copy of the last frame in a texture
 // and draw it during small zoom/pan deltas to reduce flicker.
 
@@ -10,16 +12,9 @@ export type ScreenCacheState = {
 	dpr: number;
 };
 
-export type ProgramLocs = {
-	a_pos: number;
-	u_translate: WebGLUniformLocation | null;
-	u_size: WebGLUniformLocation | null;
-	u_resolution: WebGLUniformLocation | null;
-	u_tex: WebGLUniformLocation | null;
-	u_alpha: WebGLUniformLocation | null;
-	u_uv0: WebGLUniformLocation | null;
-	u_uv1: WebGLUniformLocation | null;
-};
+// Use the full shader location map from public types so all users share one shape.
+// Optional uniforms (e.g., u_texel, u_filterMode) are included and simply checked before use.
+export type ProgramLocs = ShaderLocations;
 
 export class ScreenCache {
 	private gl: WebGLRenderingContext;
@@ -27,7 +22,7 @@ export class ScreenCache {
 	private state: ScreenCacheState | null = null;
 	private internalFormat: 6408 | 6407;
 
-	constructor(gl: WebGLRenderingContext, internalFormat?: 6408 | 6407) {
+    constructor(gl: WebGLRenderingContext, internalFormat?: 6408 | 6407) {
 		this.gl = gl;
 		// Detect RGB vs RGBA based on context alpha if not provided.
 		if (internalFormat != null) {
@@ -35,7 +30,7 @@ export class ScreenCache {
 		} else {
 			let fmt: 6408 | 6407 = gl.RGBA as 6408;
 			try {
-				const attrs = (gl as any).getContextAttributes?.();
+				const attrs = gl.getContextAttributes?.();
 				fmt = attrs && attrs.alpha === false ? (gl.RGB as 6407) : (gl.RGBA as 6408);
 			} catch {}
 			this.internalFormat = fmt;
@@ -120,8 +115,8 @@ export class ScreenCache {
 		gl.bindTexture(gl.TEXTURE_2D, this.tex);
 		gl.uniform1i(loc.u_tex!, 0);
 		gl.uniform1f(loc.u_alpha!, 0.85);
-		if ((loc as any).u_filterMode) gl.uniform1i((loc as any).u_filterMode, 0);
-		if ((loc as any).u_texel) gl.uniform2f((loc as any).u_texel, 1.0, 1.0);
+		if (loc.u_filterMode) gl.uniform1i(loc.u_filterMode, 0);
+		if (loc.u_texel) gl.uniform2f(loc.u_texel, 1.0, 1.0);
 		gl.uniform2f(loc.u_uv0!, 0.0, 1.0);
 		gl.uniform2f(loc.u_uv1!, 1.0, 0.0);
 		gl.uniform2f(loc.u_translate!, dxPx, dyPx);

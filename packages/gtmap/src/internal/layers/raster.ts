@@ -1,5 +1,4 @@
 import type { ProgramLocs } from '../render/screenCache';
-import type { ShaderLocations } from '../../api/types';
 // per-level tile size provided via params
 import { tileKey as tileKeyOf, wrapX as wrapXTile } from '../tiles/source';
 import * as Coords from '../coords';
@@ -110,9 +109,8 @@ export class RasterRenderer {
 					} else {
 						modeInt = 0;
 					}
-					const shaderLoc = loc as unknown as ShaderLocations;
-					if (shaderLoc.u_texel) gl.uniform2f(shaderLoc.u_texel, 1.0 / texW, 1.0 / texH);
-					if (shaderLoc.u_filterMode) gl.uniform1i(shaderLoc.u_filterMode, modeInt);
+					if (loc.u_texel) gl.uniform2f(loc.u_texel, 1.0 / texW, 1.0 / texH);
+					if (loc.u_filterMode) gl.uniform1i(loc.u_filterMode, modeInt);
 					gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 				}
 			}

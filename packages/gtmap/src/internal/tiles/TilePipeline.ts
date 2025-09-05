@@ -63,7 +63,7 @@ export default class TilePipeline {
 			const c = this.deps.getCenter();
 			const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
 			const s0 = Coords.sFor(zMax, baseZ);
-			const centerWorld = { x: c.lng / s0, y: c.lat / s0 } as any;
+			const centerWorld = { x: c.lng / s0, y: c.lat / s0 };
 			const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());
 			if (!task) break;
 			this.deps.startImageLoad(task);

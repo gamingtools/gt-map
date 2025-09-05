@@ -174,7 +174,7 @@
 
 		// Test icon scaling examples
 		// Example 1: Scale with zoom (like real world objects)
-		map.setIconScaleFunction((zoom, minZoom, maxZoom) => Math.pow(2, zoom - 3));
+		// map.setIconScaleFunction((zoom, minZoom, maxZoom) => Math.pow(2, zoom - 3));
 
 		// Example 2: Fixed size (default behavior)
 		// map.setIconScaleFunction(() => 1);
@@ -186,9 +186,16 @@
 		// 	return 1.5;
 		// });
 
+		// Example 4: Linear scaling with max size
+		map.setIconScaleFunction((zoom, minZoom, maxZoom) => {
+			const maxScale = 1;
+			const scale = Math.pow(2, zoom - 3);
+			return Math.min(maxScale, Math.max(0.5, scale));
+		});
+
 		map.events.on('pointerup').each((e) => console.log('up', e));
-		map.events.on('markerenter').each((e) => console.log('markerenter', e));
-		map.events.on('markerleave').each((e) => console.log('markerleave', e));
+		// map.events.on('markerenter').each((e) => console.log('markerenter', e));
+		// map.events.on('markerleave').each((e) => console.log('markerleave', e));
 		map.events.on('markerclick').each((e) => console.log('markerclick', e));
 
 		// Teardown on navigation/unmount per Svelte docs

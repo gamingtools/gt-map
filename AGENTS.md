@@ -2,8 +2,7 @@
 
 ## Hard Rule (Must-Not-Break)
 
-- STOP USING `any`/`unknown` when a concrete type can be used. This codebase is TypeScript-first for type safety and IntelliSense. Always prefer precise types over `any`/`unknown`, add minimal local interfaces when necessary, and propagate useful types through public APIs.
-
+- STOP USING `any`/`unknown` when a concrete type can be used. This codebase is TypeScript-first for type safety and IntelliSense. Always prefer precise types over `any`/`unknown`, add minimal local interfaces when necessary, and propagate useful types through public APIs. Also don't use `as any` or `as unknown` unless it's absolutely necessary.
 
 ## Project Structure & Module Organization
 
@@ -53,9 +52,9 @@
 
 - Always use the downloaded Svelte/SvelteKit docs under `docs/svelte/` as the source of truth for Svelte features and syntax. If internal knowledge conflicts or is outdated, follow the downloaded docs.
 - Notable v5 changes to respect:
-  - Event attributes: use `onclick={...}` (no `on:` directive in runes mode).
-  - Reactivity via runes: `$state`, `$effect`, `$derived`, `$props`, etc.
-  - Legacy APIs/semantics may be disabled in runes mode; confirm behavior in the docs.
+    - Event attributes: use `onclick={...}` (no `on:` directive in runes mode).
+    - Reactivity via runes: `$state`, `$effect`, `$derived`, `$props`, etc.
+    - Legacy APIs/semantics may be disabled in runes mode; confirm behavior in the docs.
 - Before writing Svelte UI code, check the relevant file in `docs/svelte/` (e.g., `docs/svelte/svelte.dev/docs/svelte/llms.txt`).
 
 References
@@ -67,16 +66,16 @@ References
 
 - Do not paper over type issues with `as any`, `as unknown as ...`, or similar escape hatches. It defeats the purpose of TypeScript and hides real API mismatches.
 - When a type mismatch occurs, fix it at the source:
-  - Improve the facade/implementation types so callers don’t need casts (e.g., expose a typed `events: EventBus` on the map facade).
-  - Add precise types for event payloads and public methods instead of casting at the callsite.
-  - In Svelte files, declare component props with `$props<...>()` and ensure handlers/values are properly typed.
+    - Improve the facade/implementation types so callers don’t need casts (e.g., expose a typed `events: EventBus` on the map facade).
+    - Add precise types for event payloads and public methods instead of casting at the callsite.
+    - In Svelte files, declare component props with `$props<...>()` and ensure handlers/values are properly typed.
 - Avoid `// @ts-ignore`/`// eslint-disable` as a crutch. Prefer refinements, narrowing, and explicit interfaces.
 - When dealing with union or generic types, use type guards or narrowings rather than `any` or `unknown` detours.
 - If a type cannot be fixed immediately (e.g., third‑party), add a minimal, local type definition (interface or type alias) and reference it, instead of casting.
 
 Checklist before submitting:
+
 - [ ] No `as any` or `unknown` round‑trips in new/modified code
 - [ ] Public API surfaces (facades) export useful types so callers don’t need casts
 - [ ] Svelte components use typed props and Svelte v5 runes (see docs)
 - [ ] Event payloads are typed, and handlers receive typed arguments (no `e: any`)
-

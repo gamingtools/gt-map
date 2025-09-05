@@ -30,7 +30,7 @@ export function drawGrid(
 	tileSize: number,
 ): void {
 	if (!ctx || !canvas) return;
-	ctx.clearRect(0, 0, (canvas as any).width, (canvas as any).height);
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.save();
 	ctx.scale(dpr || 1, dpr || 1);
 	const spacingWorld = chooseGridSpacing(scale, tileSize);
@@ -57,7 +57,7 @@ export function drawGrid(
 			const ty = 2;
 			const m = ctx.measureText(label);
 			ctx.fillStyle = 'rgba(0,0,0,0.55)';
-			ctx.fillRect(tx - 2, ty - 1, (m as any).width + 4, 12);
+			ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12);
 			ctx.fillStyle = 'rgba(255,255,255,0.9)';
 			ctx.fillText(label, tx, ty);
 		}
@@ -79,7 +79,7 @@ export function drawGrid(
 			const ty = Math.round(yCSS) + 2;
 			const m = ctx.measureText(label);
 			ctx.fillStyle = 'rgba(0,0,0,0.55)';
-			ctx.fillRect(tx - 2, ty - 1, (m as any).width + 4, 12);
+			ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12);
 			ctx.fillStyle = 'rgba(255,255,255,0.9)';
 			ctx.fillText(label, tx, ty);
 		}

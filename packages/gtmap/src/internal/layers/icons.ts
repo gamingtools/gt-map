@@ -1,4 +1,5 @@
 import * as Coords from '../coords';
+import type { ANGLEInstancedArrays } from '../../api/types';
 
 export type IconDef = { id: string; url: string; width: number; height: number; anchorX?: number; anchorY?: number };
 export type Marker = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
@@ -17,7 +18,7 @@ export class IconRenderer {
 	private uvRect2x = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();  // Retina UV rects
 	private hasRetina = new Map<string, boolean>();  // Track which icons have retina versions
 	// Instancing support
-	private instExt: any | null = null;
+	private instExt: ANGLEInstancedArrays | null = null;
 	private instProg: WebGLProgram | null = null;
 	private instLoc: {
 		a_pos: number;
@@ -61,11 +62,11 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 		this.gl = gl;
 	}
 
-async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
+	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
 		const entries = Object.entries(defs);
 		// Load both 1x and 2x images for each icon
-		const imgs1x: Array<{ key: string; w: number; h: number; src: any }> = [];
-		const imgs2x: Array<{ key: string; w: number; h: number; src: any }> = [];
+		const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
+		const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
 		
 		for (const [key, d] of entries) {
             this.texSize.set(key, { w: d.width, h: d.height });
@@ -114,8 +115,15 @@ async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; wi
 		}
 	}
 
-	setMarkers(markers: Marker[]) {
-		this.markers = markers || [];
+	setMarkers(markers: Array<Marker | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
+		// Normalize to internal Marker list with ids
+		let idx = 0;
+		const norm: Marker[] = [];
+		for (const m of markers || []) {
+			if ((m as Marker).id) norm.push(m as Marker);
+			else norm.push({ id: `m${idx++}`, lng: (m as any).lng, lat: (m as any).lat, type: (m as any).type, size: (m as any).size, rotation: (m as any).rotation });
+		}
+		this.markers = norm;
 		// Prepare per-type instance data for instanced path
 		const byType = new Map<string, Marker[]>();
 		for (const m of this.markers) {
@@ -148,13 +156,13 @@ async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; wi
 		}
 	}
 
-	private createAtlas(imgs: Array<{ key: string; w: number; h: number; src: any }>): Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }> | null {
+	private createAtlas(imgs: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }>): Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }> | null {
 		const MAX_W = 2048;
 		let x = 0, y = 0, rowH = 0, atlasW = 0, atlasH = 0;
 		
 		// Sort by height descending for better packing
 		imgs.sort((a, b) => b.h - a.h);
-		const pos: Record<string, { x: number; y: number; w: number; h: number }> = {} as any;
+		const pos: Record<string, { x: number; y: number; w: number; h: number }> = {};
 		
 		for (const img of imgs) {
 			if (img.w > MAX_W) continue;
@@ -181,7 +189,10 @@ async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; wi
 			const p = pos[img.key];
 			if (!p) continue;
 			try {
-				ctx2d.drawImage(img.src, 0, 0, (img.src as any).width, (img.src as any).height, p.x, p.y, p.w, p.h);
+				const src = img.src as CanvasImageSource;
+				const sw = 'width' in img.src ? (img.src as ImageBitmap).width : (img.src as HTMLImageElement).naturalWidth;
+				const sh = 'height' in img.src ? (img.src as ImageBitmap).height : (img.src as HTMLImageElement).naturalHeight;
+				ctx2d.drawImage(src, 0, 0, sw, sh, p.x, p.y, p.w, p.h);
 			} catch {}
 		}
 		
@@ -197,7 +208,7 @@ async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; wi
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas as any);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
 		
 		// Create result map
 		const result = new Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }>();
@@ -215,27 +226,28 @@ async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; wi
 		return result;
 	}
 
-	private async loadImageSource(url: string): Promise<any | null> {
+	private async loadImageSource(url: string): Promise<ImageBitmap | HTMLImageElement | null> {
 		// Try fetch + createImageBitmap, fallback to Image element
 		if (typeof fetch === 'function' && typeof createImageBitmap === 'function') {
 			try {
-				const r = await fetch(url, { mode: 'cors', credentials: 'omit' } as any);
+				const r = await fetch(url, { mode: 'cors', credentials: 'omit' });
 				if (!r.ok) throw new Error(`HTTP ${r.status}`);
 				const blob = await r.blob();
-				const bmp = await createImageBitmap(blob, { premultiplyAlpha: 'none' as any, colorSpaceConversion: 'none' as any } as any);
-				return bmp as any;
+				const bmp = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+				return bmp;
 			} catch {}
 		}
 		try {
 			const img = new Image();
-			(img as any).crossOrigin = 'anonymous';
-			(img as any).decoding = 'async';
+			img.crossOrigin = 'anonymous';
+			// decoding is supported in modern browsers
+			(img as HTMLImageElement & { decoding?: 'async' | 'sync' | 'auto' }).decoding = 'async';
 			await new Promise<void>((resolve, reject) => {
 				img.onload = () => resolve();
 				img.onerror = () => reject(new Error('icon load failed'));
 				img.src = url;
 			});
-			return img as any;
+			return img;
 		} catch {
 			return null;
 		}
@@ -295,7 +307,7 @@ async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; wi
 			gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
 
 			// For each type
-			const isGL2 = (gl as any).drawArraysInstanced !== undefined;
+			const isGL2 = 'drawArraysInstanced' in (gl as WebGL2RenderingContext);
 			const seen = new Set<string>();
 			for (const m of this.markers) {
 				seen.add(m.type);
@@ -342,21 +354,21 @@ async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; wi
 				// Per-instance attributes
 				gl.enableVertexAttribArray(this.instLoc!.a_i_native);
 				gl.vertexAttribPointer(this.instLoc!.a_i_native, 2, gl.FLOAT, false, 28, 0);
-				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_native, 1);
+				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_native, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_native, 1);
 				gl.enableVertexAttribArray(this.instLoc!.a_i_size);
 				gl.vertexAttribPointer(this.instLoc!.a_i_size, 2, gl.FLOAT, false, 28, 8);
-				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_size, 1);
+				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_size, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_size, 1);
 				// anchor
 				gl.enableVertexAttribArray(this.instLoc!.a_i_anchor);
 				gl.vertexAttribPointer(this.instLoc!.a_i_anchor, 2, gl.FLOAT, false, 28, 16);
-				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_anchor, 1);
+				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_anchor, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_anchor, 1);
 				// angle
 				gl.enableVertexAttribArray(this.instLoc!.a_i_angle);
 				gl.vertexAttribPointer(this.instLoc!.a_i_angle, 1, gl.FLOAT, false, 28, 24);
-				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_angle, 1);
+				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_angle, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_angle, 1);
 				gl.bindTexture(gl.TEXTURE_2D, tex);
 				// Set UVs based on atlas packing (use retina UVs if using retina texture)
@@ -431,7 +443,7 @@ async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; wi
 	private ensureInstanced(gl: WebGLRenderingContext): boolean {
 		if (!this.instExt) {
 			try {
-				this.instExt = (gl as any).getExtension('ANGLE_instanced_arrays') || null;
+				this.instExt = (gl.getExtension('ANGLE_instanced_arrays') as ANGLEInstancedArrays | null) || null;
 			} catch {
 				this.instExt = null;
 			}

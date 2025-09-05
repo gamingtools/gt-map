@@ -1,5 +1,4 @@
 import type { RenderCtx } from '../types';
-import type { ShaderLocations } from '../../api/types';
 import * as Coords from '../coords';
 
 export default class MapRenderer {
@@ -37,7 +36,7 @@ export default class MapRenderer {
 		tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 		gl.useProgram(ctx.prog);
 		gl.bindBuffer(gl.ARRAY_BUFFER, ctx.quad);
-		const loc = ctx.loc as ShaderLocations;
+		const loc = ctx.loc;
 		gl.enableVertexAttribArray(loc.a_pos);
 		gl.vertexAttribPointer(loc.a_pos, 2, gl.FLOAT, false, 0, 0);
 		gl.uniform2f(loc.u_resolution!, ctx.canvas.width, ctx.canvas.height);

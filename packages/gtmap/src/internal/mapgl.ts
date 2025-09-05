@@ -1,6 +1,6 @@
 // Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
-import Graphics from './gl/Graphics';
+import Graphics, { type GraphicsHost } from './gl/Graphics';
 import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
 // import { TileQueue } from './tiles/queue';
@@ -12,7 +12,7 @@ import * as Coords from './coords';
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
 import { TypedEventBus } from './events/typed-stream';
-import type { EventMap, ViewState as PublicViewState } from '../api/types';
+import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext } from '../api/types';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
 import ZoomController from './core/ZoomController';
@@ -24,6 +24,7 @@ import type { ViewState } from './types';
 // prefetch/grid helpers moved inline
 import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 import { FrameLoop } from './core/FrameLoop';
+import { DEBUG } from '../debug';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -60,7 +61,7 @@ export type EaseOptions = {
 export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
 export type MarkerInput = { lng: number; lat: number; type: string; size?: number };
 
-export default class GTMap implements MapImpl {
+export default class GTMap implements MapImpl, GraphicsHost {
 	container: HTMLDivElement;
 	canvas!: HTMLCanvasElement;
 	gl!: WebGLRenderingContext;
@@ -80,18 +81,9 @@ export default class GTMap implements MapImpl {
 	private _input: InputController | null = null;
 	private _inputDeps!: InputDeps;
 	private _dpr = 1;
-	private _prog: WebGLProgram | null = null;
-	private _quad: WebGLBuffer | null = null;
-	private _loc: {
-		a_pos: number;
-		u_translate: WebGLUniformLocation | null;
-		u_size: WebGLUniformLocation | null;
-		u_resolution: WebGLUniformLocation | null;
-		u_tex: WebGLUniformLocation | null;
-		u_alpha: WebGLUniformLocation | null;
-		u_uv0: WebGLUniformLocation | null;
-		u_uv1: WebGLUniformLocation | null;
-	} | null = null;
+	public _prog: WebGLProgram | null = null;
+	public _quad: WebGLBuffer | null = null;
+	public _loc: ShaderLocations | null = null;
 	private _tileCache!: TileCache;
 	private _maxTiles = 384;
 	private _frame = 0;
@@ -117,7 +109,7 @@ export default class GTMap implements MapImpl {
 	private _stickyAnchorUntil = 0;
 	// Screen-space cache
 	private useScreenCache = true;
-	private _screenTexFormat: number | null = null;
+	public _screenTexFormat: number = 0;
 	private _screenCache: ScreenCache | null = null;
 	private _raster!: RasterRenderer;
 	private _icons!: IconRenderer;
@@ -167,7 +159,7 @@ export default class GTMap implements MapImpl {
 		return {
 			gl: this.gl,
 			prog: this._prog!,
-			loc: this._loc as any,
+			loc: this._loc!,
 			quad: this._quad!,
 			canvas: this.canvas,
 			dpr: this._dpr,
@@ -283,7 +275,7 @@ export default class GTMap implements MapImpl {
 			this.outCenterBias = v;
 		}
 		this._initCanvas();
-		this._gfx = new Graphics(this as any);
+		this._gfx = new Graphics(this);
 		this._gfx.init();
 		this._initPrograms();
 		// Apply recommended options
@@ -306,7 +298,7 @@ export default class GTMap implements MapImpl {
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
 
 		// Initialize screen cache module (uses detected format)
-		this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
+			this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
 		// Initialize tile cache (LRU)
 		this._tileCache = new TileCache(this.gl, this._maxTiles);
 		this._tileDeps = {
@@ -480,9 +472,9 @@ export default class GTMap implements MapImpl {
 	}
 	setMarkers(markers: MarkerInput[]) {
 		if (!this._icons) return;
-		this._icons.setMarkers(markers as any);
+		this._icons.setMarkers(markers);
 		try {
-			if ((globalThis as any).DEBUG) console.debug('[map.setMarkers]', { count: markers.length });
+			if (DEBUG) console.debug('[map.setMarkers]', { count: markers.length });
 		} catch {}
 		// Marker set changed; invalidate screen cache so removed markers don't linger
 		try {
@@ -623,7 +615,7 @@ export default class GTMap implements MapImpl {
 		c.style.right = '0';
 		c.style.bottom = '0';
 		c.style.zIndex = '5';
-		(c.style as any).pointerEvents = 'none';
+		c.style.pointerEvents = 'none';
 		this.container.appendChild(c);
 		this._gridCtx = c.getContext('2d');
 		c.style.display = this.showGrid ? 'block' : 'none';
@@ -722,7 +714,7 @@ export default class GTMap implements MapImpl {
 		this._gfx.initPrograms();
 	}
 	resize() {
-		const dpr = Math.max(1, Math.min((window as any).devicePixelRatio || 1, 3));
+		const dpr = Math.max(1, Math.min((globalThis.devicePixelRatio || 1), 3));
 		const rect = this.container.getBoundingClientRect();
 		this.canvas.style.width = rect.width + 'px';
 		this.canvas.style.height = rect.height + 'px';
@@ -752,7 +744,7 @@ export default class GTMap implements MapImpl {
 	}
 	// Runtime tunables
 	public setFpsCap(fps: number) {
-		const v = Math.max(15, Math.min(240, (fps as any) | 0));
+		const v = Math.max(15, Math.min(240, Math.trunc(fps)));
 		if (v !== this._targetFps) {
 			this._targetFps = v;
 			this._needsRender = true;
@@ -915,7 +907,7 @@ export default class GTMap implements MapImpl {
 				pending: this._pendingKeys?.size ?? undefined,
 				frame: this._frame,
 			};
-			(this as any)._events?.emit?.('frame', { now: t, stats });
+			this._events.emit('frame', { now: t, stats });
 		} catch {}
 		if (this.showGrid) {
 			const rect = this.container.getBoundingClientRect();
@@ -948,7 +940,7 @@ export default class GTMap implements MapImpl {
 	}
 
 	private _tileUrl(z: number, x: number, y: number) {
-		if (!this.tileUrl) return '' as any;
+		if (!this.tileUrl) return '';
 		return this.tileUrl.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y));
 	}
 
@@ -1075,8 +1067,8 @@ export default class GTMap implements MapImpl {
 					this._screenCache?.dispose();
 					this._screenCache = null;
 					this._tileCache?.clear();
-					const ext = (this.gl as any).getExtension?.('WEBGL_lose_context');
-					ext?.loseContext?.();
+					const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
+					ext?.loseContext();
 					this._glReleased = true;
 				} catch {}
 			}
@@ -1085,8 +1077,8 @@ export default class GTMap implements MapImpl {
 		// Resume
 		if (this._glReleased) {
 			try {
-				const ext = (this.gl as any)?.getExtension?.('WEBGL_lose_context');
-				ext?.restoreContext?.();
+				const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
+				ext?.restoreContext();
 			} catch {}
 			try {
 				this._gfx.init();
@@ -1095,7 +1087,7 @@ export default class GTMap implements MapImpl {
 				this._initPrograms();
 			} catch {}
 			try {
-				this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as any);
+				this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
 				this._tileCache = new TileCache(this.gl, this._maxTiles);
 			} catch {}
 			this._glReleased = false;
@@ -1162,7 +1154,7 @@ export default class GTMap implements MapImpl {
 		c.style.right = '0';
 		c.style.bottom = '0';
 		c.style.zIndex = '6';
-		(c.style as any).pointerEvents = 'none';
+		(c.style as CSSStyleDeclaration).pointerEvents = 'none';
 		this.container.appendChild(c);
 		this._vectorCtx = c.getContext('2d');
 	}

@@ -55,11 +55,11 @@ export class EventStream<T> {
 		return new EventStream<T>((next) =>
 			this.each((v) => {
 				lastVal = v;
-				if (timer != null) clearTimeout(timer as any);
-				timer = setTimeout(() => {
+				if (timer != null) clearTimeout(timer);
+				timer = window.setTimeout(() => {
 					timer = null;
 					if (lastVal !== undefined) next(lastVal as T);
-				}, ms) as any;
+				}, ms);
 			}),
 		);
 	}
@@ -135,13 +135,13 @@ export class EventStream<T> {
 				}),
 			return: () => {
 				off();
-				return Promise.resolve({ value: undefined as any, done: true });
+				return Promise.resolve({ value: undefined as T, done: true });
 			},
-			throw: (e?: any) => {
+			throw: (e?: unknown) => {
 				off();
 				return Promise.reject(e);
 			},
-		} as any;
+		};
 		return iter;
 	}
 

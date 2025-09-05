@@ -3,27 +3,29 @@ import type { GLContext, ShaderLocations } from '../../api/types';
 import { createProgramFromSources } from './program';
 import { createUnitQuad } from './quad';
 
-export default class Graphics {
-	private map: {
-		canvas: HTMLCanvasElement;
-		gl: GLContext;
-		_screenTexFormat: number;
-		_prog: WebGLProgram;
-		_loc: ShaderLocations;
-		_quad: WebGLBuffer;
-	};
-	constructor(map: any) {
-		this.map = map;
-	}
+export type GraphicsHost = {
+    canvas: HTMLCanvasElement;
+    gl: GLContext;
+    _screenTexFormat: number;
+    _prog: WebGLProgram | null;
+    _loc: ShaderLocations | null;
+    _quad: WebGLBuffer | null;
+};
 
-	private static detectScreenFormat(gl: WebGLRenderingContext): number {
-		try {
-			const attrs = (gl as any).getContextAttributes?.();
-			return attrs && attrs.alpha === false ? (gl.RGB as number) : (gl.RGBA as number);
-		} catch {
-			return gl.RGBA as number;
-		}
-	}
+export default class Graphics {
+    private map: GraphicsHost;
+    constructor(map: GraphicsHost) {
+        this.map = map;
+    }
+
+    private static detectScreenFormat(gl: WebGLRenderingContext): number {
+        try {
+            const attrs = gl.getContextAttributes?.();
+            return attrs && attrs.alpha === false ? (gl.RGB as number) : (gl.RGBA as number);
+        } catch {
+            return gl.RGBA as number;
+        }
+    }
 
 	init() {
 		const canvas: HTMLCanvasElement = this.map.canvas;
@@ -113,10 +115,10 @@ export default class Graphics {
 			u_filterMode: gl.getUniformLocation(prog, 'u_filterMode'),
 		};
 		const quad = createUnitQuad(gl);
-		this.map._prog = prog;
-		this.map._loc = loc;
-		this.map._quad = quad;
-	}
+        this.map._prog = prog;
+        this.map._loc = loc;
+        this.map._quad = quad;
+    }
 
 	dispose() {
 		const gl: WebGLRenderingContext = this.map.gl;

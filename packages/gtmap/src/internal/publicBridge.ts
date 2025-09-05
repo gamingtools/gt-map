@@ -11,14 +11,14 @@ export function registerPublic(impl: object, pub: object): void {
 	} catch {}
 }
 
-export function toPublic<T = any>(impl: object | null | undefined): T | null {
+export function toPublic<T>(impl: object | null | undefined): T | null {
 	if (!impl) return null;
-	return (implToPublic.get(impl) as T) || (impl as any as T) || null;
+	return (implToPublic.get(impl) as T) || (impl as T) || null;
 }
 
-export function toImpl<T = any>(pub: object | null | undefined): T | null {
+export function toImpl<T>(pub: object | null | undefined): T | null {
 	if (!pub) return null;
-	return (publicToImpl.get(pub) as T) || (pub as any as T) || null;
+	return (publicToImpl.get(pub) as T) || (pub as T) || null;
 }
 
 export function unregister(impl: object, pub?: object): void {

@@ -414,7 +414,7 @@ export class GTMap {
 	 * Smoothly pan to a new center.
 	 */
 	panTo(center: Point, durationMs = 500): this {
-		(this._impl.panTo as any)?.(center.x, center.y, durationMs);
+		this._impl.panTo?.(center.x, center.y, durationMs);
 		return this;
 	}
 	/**
@@ -423,7 +423,7 @@ export class GTMap {
 	flyTo(opts: { center?: Point; zoom?: number; durationMs?: number }): this {
 		const lng = opts.center?.x;
 		const lat = opts.center?.y;
-		(this._impl.flyTo as any)?.({ lng, lat, zoom: opts.zoom, durationMs: opts.durationMs });
+		this._impl.flyTo?.({ lng, lat, zoom: opts.zoom, durationMs: opts.durationMs });
 		return this;
 	}
 	/**
