@@ -59,9 +59,9 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 ## Code Style
 
 - TypeScript with strict mode
-- Tabs for indentation (width 4)
+- Indentation: 2 spaces
 - Single quotes, trailing commas, semicolons
-- Max line width: 200 characters
+- Max line width: ~200 characters
 - ESLint + Prettier for formatting
 
 ## Key Implementation Details
@@ -70,3 +70,4 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 - Leaflet compatibility layers have been removed - use GTMap API directly
 - Markers and vectors are batched via requestAnimationFrame for performance
 - GL context can be released when maps are hidden (`setActive(false, {releaseGL: true})`)
+ - In demo apps, `@gtmap` is a Vite alias pointing to `packages/gtmap/src`

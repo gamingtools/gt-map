@@ -6,9 +6,10 @@
 
 ## Project Structure & Module Organization
 
-- `index.html`: App shell and HUD elements.
-- `src/main.ts`: App bootstrap, UI controls, and HUD updates.
-- `packages/gtmap/src/mapgl.ts`: Core WebGL map (tiles, input, rendering, cache).
+- `apps/svelte-gtmap-test`: SvelteKit demo app (visit `/map`).
+- `apps/noframework-gtmap-test/index.html`: No‑framework demo (simple HTML + TS).
+- `packages/gtmap/src/api/Map.ts`: Public `GTMap` facade (typed API surface).
+- `packages/gtmap/src/internal/mapgl.ts`: Core WebGL implementation (tiles, input, rendering, cache).
 - Pixel CRS only: use image pixel coordinates (no geodetic CRS).
 - `package.json`: Scripts and dev deps (Vite, TypeScript, ESLint/Prettier).
 
@@ -46,7 +47,7 @@
 ## Agent-Specific Instructions
 
 - Do not introduce heavy frameworks or build steps; keep the project dependency‑light.
-- Preserve public API of `MapGL` unless a breaking change is justified and documented in the PR.
+- Preserve public API of `GTMap` unless a breaking change is justified and documented in the PR.
 
 ### IMPORTANT: Svelte (v5) Docs First
 

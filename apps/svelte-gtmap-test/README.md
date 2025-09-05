@@ -1,38 +1,22 @@
-# sv
+Svelte GTMap Demo
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+This is the SvelteKit demo app for the GTMap library. It showcases a minimal map at the `/map` route, including markers, vectors, HUD, and basic controls.
 
-## Creating a project
+Develop
 
-If you're seeing this, you've probably already done this step. Congrats!
+- From the repo root: `npm run dev`
+- Directly in this workspace: `npm -w gtmap-svelte-test run dev`
+- App URL: `http://localhost:5173/map`
 
-```sh
-# create a new project in the current directory
-npx sv create
+Build
 
-# create a new project in my-app
-npx sv create my-app
-```
+- From the repo root: `npm run build`
+- Directly in this workspace: `npm -w gtmap-svelte-test run build`
+- Preview: `npm -w gtmap-svelte-test run preview`
 
-## Developing
+Notes
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+- Uses Svelte v5 runes. Refer to docs in `docs/svelte/` for syntax (e.g., `onclick={...}` for events).
+- Imports `GTMap` via a Vite alias: `import { GTMap } from '@gtmap'`.
+- See `src/routes/map/+page.svelte` for the demo implementation.
+- E2E tests (optional locally): `npm -w gtmap-svelte-test run test`
