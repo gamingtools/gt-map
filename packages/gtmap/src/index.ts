@@ -22,6 +22,6 @@ export type {
 // Export type guard functions (not types)
 export { isPolyline, isPolygon, isCircle } from './api/types';
 
-// Export event system types
-export type { EventBus, EventStream } from './internal/events/stream';
+// Export event system types (typed EventBus for public API)
+export type { EventBus } from './api/types';
 export type { TypedEventBus } from './internal/events/typed-stream';

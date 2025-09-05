@@ -11,7 +11,9 @@ import * as Coords from './coords';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
-import { EventBus } from './events/stream';
+import { TypedEventBus } from './events/typed-stream';
+import type { EventBus } from '../api/types';
+import type { EventMap } from '../api/types';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
 import ZoomController from './core/ZoomController';
@@ -191,6 +193,9 @@ export default class GTMap implements MapImpl {
 				return Coords.worldToLevel({ x, y }, imageMaxZ, Math.floor(z));
 			},
 			enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
+			wantTileKey: (key: string) => {
+				this._wantedKeys.add(key);
+			},
 		};
 	}
 	// prefetchNeighbors moved below (inline implementation)
@@ -214,7 +219,7 @@ export default class GTMap implements MapImpl {
 		this._zoomVel *= k;
 		if (Math.abs(this._zoomVel) < 1e-3) this._zoomVel = 0;
 	}
-	private _events = new EventBus();
+	private _events: TypedEventBus<EventMap> = new TypedEventBus<EventMap>();
 	public readonly events = this._events; // experimental chainable events API
 	// Grid overlay
 	private showGrid = true;
@@ -378,7 +383,7 @@ export default class GTMap implements MapImpl {
 			getOutCenterBias: () => this.outCenterBias,
 			clampCenterWorld: (cw, zInt, s, w, h) =>
 				clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
-			emit: (name: string, payload: any) => this._events.emit(name, payload),
+				emit: (name: any, payload: any) => this._events.emit(name, payload),
 			requestRender: () => {
 				this._needsRender = true;
 			},
@@ -787,7 +792,7 @@ export default class GTMap implements MapImpl {
 				if (Number.isFinite(x as number) && Number.isFinite(y as number)) this.pointerAbs = { x: x as number, y: y as number };
 				else this.pointerAbs = null;
 			},
-			emit: (name: string, payload: any) => this._events.emit(name, payload),
+			emit: (name: any, payload: any) => this._events.emit(name, payload),
 			setLastInteractAt: (t: number) => {
 				this._lastInteractAt = t;
 			},
@@ -1059,14 +1064,18 @@ export default class GTMap implements MapImpl {
 					tileX = ((tx % n) + n) % n;
 				} else if (tx < 0 || tx >= NX) continue;
 				const key = `${zInt}/${tileX}/${ty}`;
+				// mark prefetch tiles as wanted to prevent pruning
+				this._wantedKeys.add(key);
 				if (!this._tileCache.has(key)) this._enqueueTile(zInt, tileX, ty, 1);
 			}
 		}
 	}
 	private _cancelUnwantedLoads() {
 		// For now, only cancel the queue, not inflight requests
-		// TODO: Implement proper wanted tile tracking during render
-		this._tiles.cancelUnwanted(this._wantedKeys);
+		// Include pinned keys so baseline prefetch isn't pruned
+		const wanted = new Set<string>(this._wantedKeys);
+		for (const key of this._pinnedKeys) wanted.add(key);
+		this._tiles.cancelUnwanted(wanted);
 		this._wantedKeys.clear();
 		this._tiles.process();
 	}

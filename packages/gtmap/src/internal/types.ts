@@ -12,12 +12,13 @@ import type {
 } from '../api/types';
 
 import type { LngLat } from './mapgl';
+import type { EventMap } from '../api/types';
 import type { ProgramLocs } from './render/screenCache';
 import type { RasterRenderer } from './layers/raster';
 import type { IconRenderer } from './layers/icons';
 import type { ScreenCache } from './render/screenCache';
 import type { TileCache } from './tiles/cache';
-import type { EventBus } from './events/stream';
+import type { EventBus } from '../api/types';
 
 export type ViewState = {
 	center: LngLat;
@@ -85,6 +86,8 @@ export interface RenderCtx {
 	// Projection helpers
 	project(x: number, y: number, z: number): { x: number; y: number };
 	enqueueTile(z: number, x: number, y: number, priority?: number): void;
+	// Mark a tile as wanted for this frame (used to avoid pruning from queue)
+	wantTileKey?(key: string): void;
 	// Vectors (optional 2D overlay for early implementation)
 	vectorCtx?: CanvasRenderingContext2D | null;
 	drawVectors?: () => void;
@@ -101,7 +104,7 @@ export interface InputDeps {
 	setZoom(zoom: number): void;
 	clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number, viscous?: boolean): { x: number; y: number };
 	updatePointerAbs(x: number | null, y: number | null): void;
-	emit(name: string, payload: any): void;
+	emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
 	setLastInteractAt(t: number): void;
 	getAnchorMode(): 'pointer' | 'center';
 	getWheelStep(ctrl: boolean): number;
@@ -127,7 +130,7 @@ export interface ZoomDeps {
 	getMap(): any;
 	getOutCenterBias(): number;
 	clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number): { x: number; y: number };
-	emit(name: string, payload: any): void;
+	emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
 	requestRender(): void;
 	now(): number;
 }

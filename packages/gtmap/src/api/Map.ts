@@ -1,6 +1,7 @@
 import Impl from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
-import type { EventBus } from '../internal/events/stream';
+import type { EventBus } from './types';
+import type { MapOptions as ImplMapOptions } from '../internal/mapgl';
 
 // Re-export types from centralized types file
 export type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector, ActiveOptions } from './types';
@@ -47,7 +48,7 @@ export class GTMap {
 	 * @param options.fpsCap - Maximum frames per second (default: 60)
 	 */
 	constructor(container: HTMLElement, options: MapOptions = {}) {
-		const implOpts: any = {
+		const implOpts: Partial<ImplMapOptions> = {
 			tileUrl: options.tileUrl,
 			tileSize: options.tileSize,
 			minZoom: options.minZoom,
@@ -60,7 +61,7 @@ export class GTMap {
 			screenCache: options.screenCache,
 			fpsCap: options.fpsCap,
 		};
-		this._impl = new Impl(container as HTMLDivElement, implOpts) as MapImpl;
+		this._impl = new Impl(container as HTMLDivElement, implOpts);
 		this._ensureDefaultIcon();
 	}
 

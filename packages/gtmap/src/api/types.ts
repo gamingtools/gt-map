@@ -128,7 +128,7 @@ export interface ZoomEventData {
 }
 
 export interface FrameEventData {
-	now: number;
+    now: number;
 }
 
 // Event map for type-safe event handling
@@ -254,3 +254,7 @@ export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
 // Icon scaling function
 // Returns a scale multiplier where 1.0 = original size
 export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number) => number;
+
+// Typed EventBus surface exposed publicly
+import type { TypedEventBus as _TypedEventBus } from '../internal/events/typed-stream';
+export type EventBus = _TypedEventBus<EventMap>;
