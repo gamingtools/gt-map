@@ -876,7 +876,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 							now,
 							view: this._viewPublic(),
 							screen: { x: e.x, y: e.y },
-							marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
+							marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
 							icon: {
 								id: hit.type,
 								iconPath: hit.icon.iconPath,
@@ -914,7 +914,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 						now,
 						view: this._viewPublic(),
 						screen: { x: e.x, y: e.y },
-						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
+						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
 						icon: {
 							id: hit.type,
 							iconPath: hit.icon.iconPath,
@@ -926,6 +926,12 @@ export default class GTMap implements MapImpl, GraphicsHost {
 						},
 					});
 			});
+		} catch {}
+	}
+
+	public setMarkerData(payloads: Record<string, any | null | undefined>) {
+		try {
+			for (const k of Object.keys(payloads)) this._markerData.set(k, payloads[k]);
 		} catch {}
 	}
 	// wheel normalization handled in input/handlers internally
@@ -1238,7 +1244,9 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private _lastHover: { type: string; idx: number } | null = null;
 	private _downAt: { x: number; y: number; t: number; tol: number } | null = null;
 	private _movedSinceDown = false;
-	private _hitTestMarker(px: number, py: number, requireAlpha = false) {
+	private _markerData = new Map<string, any | null | undefined>();
+    private _hitTestMarker(px: number, py: number, requireAlpha = false) {
+        void requireAlpha;
 		if (!this._icons) return null;
 		const rect = this.container.getBoundingClientRect();
 		const widthCSS = rect.width;

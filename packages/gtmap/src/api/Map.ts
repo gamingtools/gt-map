@@ -275,9 +275,9 @@ export class GTMap {
 	 * map.addMarker(1024, 1024, { icon: myIcon, size: 1.5 });
 	 * ```
 	 */
-	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number }): Marker & { id: string } {
+	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: any | null }): Marker & { id: string } {
 		const id = `m_${Math.random().toString(36).slice(2, 10)}`;
-		const m: Marker = { id, x, y, type: opts?.icon?.id ?? 'default', size: opts?.size, rotation: opts?.rotation };
+		const m: Marker = { id, x, y, type: opts?.icon?.id ?? 'default', size: opts?.size, rotation: opts?.rotation, data: opts?.data };
 		this._markers.push(m);
 		this._markMarkersDirtyAndSchedule();
 		return { ...m, id };
@@ -298,7 +298,9 @@ export class GTMap {
 	 */
 	addMarkers(markers: Marker[]): this {
 		if (markers && markers.length) {
-			this._markers.push(...markers.map((m) => ({ id: m.id ?? `m_${Math.random().toString(36).slice(2, 10)}`, x: m.x, y: m.y, type: m.type ?? 'default', size: m.size, rotation: m.rotation })));
+			this._markers.push(
+				...markers.map((m) => ({ id: m.id ?? `m_${Math.random().toString(36).slice(2, 10)}`, x: m.x, y: m.y, type: m.type ?? 'default', size: m.size, rotation: m.rotation, data: (m as any).data }))
+			);
 			this._markMarkersDirtyAndSchedule();
 		}
 		return this;
@@ -490,15 +492,22 @@ export class GTMap {
 			if (!this._markersDirty) return;
 			this._markersDirty = false;
 			// Commit full marker list in one go
+			// Ensure ids assigned on facade markers
+			for (const mm of this._markers) if (!mm.id) (mm as any).id = `m_${Math.random().toString(36).slice(2, 10)}`;
 			const internalMarkers: MarkerInternal[] = this._markers.map((mm) => ({
 				lng: mm.x,
 				lat: mm.y,
 				type: mm.type ?? 'default',
 				size: mm.size,
 				rotation: mm.rotation,
-				id: mm.id ?? `m_${Math.random().toString(36).slice(2, 10)}`,
+				id: mm.id as string,
 			}));
 			this._impl.setMarkers(internalMarkers);
+			try {
+				const payloads: Record<string, any | null | undefined> = {};
+				for (const mk of this._markers) if (mk.id) payloads[mk.id] = (mk as any).data;
+				(this._impl as any).setMarkerData?.(payloads);
+			} catch {}
 		};
 		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
 		else setTimeout(flush, 0);

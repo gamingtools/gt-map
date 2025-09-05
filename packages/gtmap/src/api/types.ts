@@ -48,12 +48,13 @@ export interface MapOptions {
 
 // Content types
 export interface Marker {
-	x: number;
-	y: number;
-	type?: string;
-	size?: number;
-	rotation?: number; // degrees clockwise (optional)
-	id?: string;
+    x: number;
+    y: number;
+    type?: string;
+    size?: number;
+    rotation?: number; // degrees clockwise (optional)
+    id?: string;
+    data?: any | null;
 }
 
 export interface IconDef {
@@ -229,12 +230,12 @@ export type VectorPrimitiveInternal =
 
 // Marker internal representation
 export interface MarkerInternal {
-	lng: number;
-	lat: number;
-	type: string;
-	size?: number;
-	rotation?: number;
-	id: string;
+    lng: number;
+    lat: number;
+    type: string;
+    size?: number;
+    rotation?: number;
+    id: string;
 }
 
 // Icon definition internal
@@ -248,11 +249,11 @@ export interface IconDefInternal {
 }
 
 export interface MarkerEventData {
-	now: number;
-	view: ViewState;
-	screen: { x: number; y: number };
-	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number };
-	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+    now: number;
+    view: ViewState;
+    screen: { x: number; y: number };
+    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
+    icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
 
 // Inertia options
