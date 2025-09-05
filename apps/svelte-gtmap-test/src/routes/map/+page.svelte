@@ -187,6 +187,9 @@
 		// });
 
 		map.events.on('pointerup').each((e) => console.log('up', e));
+		map.events.on('markerenter').each((e) => console.log('markerenter', e));
+		map.events.on('markerleave').each((e) => console.log('markerleave', e));
+		map.events.on('markerclick').each((e) => console.log('markerclick', e));
 
 		// Teardown on navigation/unmount per Svelte docs
 

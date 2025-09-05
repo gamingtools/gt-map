@@ -194,6 +194,42 @@ export default class InputController {
 			/* noop */
 		};
 
+		const onDblClick = (e: MouseEvent) => {
+			const rect = deps.getContainer().getBoundingClientRect();
+			const px = e.clientX - rect.left;
+			const py = e.clientY - rect.top;
+			deps.startEase(1.0, px, py, deps.getAnchorMode());
+		};
+
+		const onKeyDown = (e: KeyboardEvent) => {
+			const key = e.key;
+			if (key === '+' || key === '=') {
+				const rect = deps.getContainer().getBoundingClientRect();
+				deps.startEase(0.5, rect.width / 2, rect.height / 2, 'center');
+				e.preventDefault();
+				return;
+			}
+			if (key === '-' || key === '_') {
+				const rect = deps.getContainer().getBoundingClientRect();
+				deps.startEase(-0.5, rect.width / 2, rect.height / 2, 'center');
+				e.preventDefault();
+				return;
+			}
+			if (key === 'ArrowLeft') {
+				deps.startPanBy(100, 0, 0.2);
+				e.preventDefault();
+			} else if (key === 'ArrowRight') {
+				deps.startPanBy(-100, 0, 0.2);
+				e.preventDefault();
+			} else if (key === 'ArrowUp') {
+				deps.startPanBy(0, 100, 0.2);
+				e.preventDefault();
+			} else if (key === 'ArrowDown') {
+				deps.startPanBy(0, -100, 0.2);
+				e.preventDefault();
+			}
+		};
+
 		const onTouchStart = (e: TouchEvent) => {
 			this.lastTouchAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 			if (e.touches.length === 1) {
@@ -344,6 +380,8 @@ export default class InputController {
 		canvas.addEventListener('touchmove', onTouchMove, { passive: false });
 		canvas.addEventListener('touchend', onTouchEnd);
 		window.addEventListener('resize', onResize);
+		canvas.addEventListener('dblclick', onDblClick);
+		window.addEventListener('keydown', onKeyDown);
 
 		this.cleanup = () => {
 			canvas.removeEventListener('pointerdown', onDown);
@@ -354,6 +392,8 @@ export default class InputController {
 			canvas.removeEventListener('touchmove', onTouchMove);
 			canvas.removeEventListener('touchend', onTouchEnd);
 			window.removeEventListener('resize', onResize);
+			canvas.removeEventListener('dblclick', onDblClick);
+			window.removeEventListener('keydown', onKeyDown);
 		};
 		return this.cleanup;
 	}

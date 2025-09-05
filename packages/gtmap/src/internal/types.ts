@@ -166,6 +166,9 @@ export interface MapImpl {
 	setMarkerHitboxesVisible?(on: boolean): void;
 	setActive?(on: boolean, opts?: ActiveOptions): void;
 	setIconScaleFunction?(fn: IconScaleFunction | null): void;
+	// Optional animated controls
+	panTo?(lng: number, lat: number, durationMs?: number): void;
+	flyTo?(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number }): void;
 	destroy(): void;
 }
 

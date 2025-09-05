@@ -1,13 +1,15 @@
 import * as Coords from '../coords';
 
-export type IconDef = { id: string; url: string; width: number; height: number };
-export type Marker = { lng: number; lat: number; type: string; size?: number };
+export type IconDef = { id: string; url: string; width: number; height: number; anchorX?: number; anchorY?: number };
+export type Marker = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
 
 export class IconRenderer {
 	private gl: WebGLRenderingContext;
 	private textures = new Map<string, WebGLTexture>();
 	private textures2x = new Map<string, WebGLTexture>();  // Retina textures
 	private texSize = new Map<string, { w: number; h: number }>();
+    private texAnchor = new Map<string, { ax: number; ay: number }>();
+    private iconMeta = new Map<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number }>();
 	private markers: Marker[] = [];
 	// Texture atlas
 	// Atlas bookkeeping kept local in load; we do not need fields on the class.
@@ -21,6 +23,8 @@ export class IconRenderer {
 		a_pos: number;
 		a_i_native: number;
 		a_i_size: number;
+		a_i_anchor: number;
+		a_i_angle: number;
 		u_resolution: WebGLUniformLocation | null;
 		u_tlWorld: WebGLUniformLocation | null;
 		u_scale: WebGLUniformLocation | null;
@@ -36,29 +40,37 @@ export class IconRenderer {
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
 
 	// Expose resolved marker sizes for debug overlays (hitboxes)
-	getMarkerInfo(): Array<{ lng: number; lat: number; w: number; h: number; type: string }> {
-		const out: Array<{ lng: number; lat: number; w: number; h: number; type: string }> = [];
-		for (const m of this.markers) {
-			const sz = this.texSize.get(m.type) || { w: 32, h: 32 };
-			const w = m.size || sz.w;
-			const h = m.size || sz.h;
-			out.push({ lng: m.lng, lat: m.lat, w, h, type: m.type });
-		}
-		return out;
-	}
+getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: number; w: number; h: number; type: string; anchor: { ax: number; ay: number }; rotation?: number; icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number } }> {
+        const out: Array<{ id: string; index: number; lng: number; lat: number; w: number; h: number; type: string; anchor: { ax: number; ay: number }; rotation?: number; icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number } }> = [];
+        let idx = 0;
+        for (const m of this.markers) {
+            const sz = this.texSize.get(m.type) || { w: 32, h: 32 };
+            const w0 = m.size || sz.w;
+            const h0 = m.size || sz.h;
+            const w = w0 * scale;
+            const h = h0 * scale;
+            const a = this.texAnchor.get(m.type) || { ax: w0 / 2, ay: h0 / 2 };
+            const meta = this.iconMeta.get(m.type) || { iconPath: '', x2IconPath: undefined, width: sz.w, height: sz.h, anchorX: a.ax, anchorY: a.ay };
+            out.push({ id: m.id, index: idx, lng: m.lng, lat: m.lat, w, h, type: m.type, anchor: { ax: a.ax * scale, ay: a.ay * scale }, rotation: m.rotation, icon: meta });
+            idx++;
+        }
+        return out;
+    }
 
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
 	}
 
-	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>) {
+async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
 		const entries = Object.entries(defs);
 		// Load both 1x and 2x images for each icon
 		const imgs1x: Array<{ key: string; w: number; h: number; src: any }> = [];
 		const imgs2x: Array<{ key: string; w: number; h: number; src: any }> = [];
 		
 		for (const [key, d] of entries) {
-			this.texSize.set(key, { w: d.width, h: d.height });
+            this.texSize.set(key, { w: d.width, h: d.height });
+            this.texAnchor.set(key, { ax: d.anchorX ?? d.width / 2, ay: d.anchorY ?? d.height / 2 });
+            this.iconMeta.set(key, { iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height, anchorX: d.anchorX ?? d.width / 2, anchorY: d.anchorY ?? d.height / 2 });
 			
 			// Load 2x version if available, otherwise load 1x
 			if (d.x2IconPath) {
@@ -116,13 +128,19 @@ export class IconRenderer {
 		}
 		for (const [type, list] of byType) {
 			const sz = this.texSize.get(type) || { w: 32, h: 32 };
-			const data = new Float32Array(list.length * 4);
+			const anc = this.texAnchor.get(type) || { ax: sz.w / 2, ay: sz.h / 2 };
+			const data = new Float32Array(list.length * 7);
 			let j = 0;
 			for (const m of list) {
+				const w = m.size || sz.w;
+				const h = m.size || sz.h;
 				data[j++] = m.lng; // native x
 				data[j++] = m.lat; // native y
-				data[j++] = m.size || sz.w;
-				data[j++] = m.size || sz.h;
+				data[j++] = w;
+				data[j++] = h;
+				data[j++] = anc.ax;
+				data[j++] = anc.ay;
+				data[j++] = (m.rotation || 0) * (Math.PI / 180);
 			}
 			const prev = this.typeData.get(type);
 			const version = (prev?.version || 0) + 1;
@@ -298,7 +316,7 @@ export class IconRenderer {
 					gl.bindBuffer(gl.ARRAY_BUFFER, buf);
 					gl.bufferData(gl.ARRAY_BUFFER, capacityBytes, gl.DYNAMIC_DRAW);
 					gl.bufferSubData(gl.ARRAY_BUFFER, 0, td.data);
-					rec = { buf, count: td.data.length / 4, version: td.version, uploaded: td.version, capacityBytes };
+					rec = { buf, count: td.data.length / 7, version: td.version, uploaded: td.version, capacityBytes };
 					this.instBuffers.set(type, rec);
 				} else if (rec.uploaded !== td.version) {
 					gl.bindBuffer(gl.ARRAY_BUFFER, rec.buf);
@@ -323,13 +341,23 @@ export class IconRenderer {
 				}
 				// Per-instance attributes
 				gl.enableVertexAttribArray(this.instLoc!.a_i_native);
-				gl.vertexAttribPointer(this.instLoc!.a_i_native, 2, gl.FLOAT, false, 16, 0);
+				gl.vertexAttribPointer(this.instLoc!.a_i_native, 2, gl.FLOAT, false, 28, 0);
 				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_native, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_native, 1);
 				gl.enableVertexAttribArray(this.instLoc!.a_i_size);
-				gl.vertexAttribPointer(this.instLoc!.a_i_size, 2, gl.FLOAT, false, 16, 8);
+				gl.vertexAttribPointer(this.instLoc!.a_i_size, 2, gl.FLOAT, false, 28, 8);
 				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_size, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_size, 1);
+				// anchor
+				gl.enableVertexAttribArray(this.instLoc!.a_i_anchor);
+				gl.vertexAttribPointer(this.instLoc!.a_i_anchor, 2, gl.FLOAT, false, 28, 16);
+				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_anchor, 1);
+				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_anchor, 1);
+				// angle
+				gl.enableVertexAttribArray(this.instLoc!.a_i_angle);
+				gl.vertexAttribPointer(this.instLoc!.a_i_angle, 1, gl.FLOAT, false, 28, 24);
+				if (isGL2) (gl as any).vertexAttribDivisor(this.instLoc!.a_i_angle, 1);
+				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_angle, 1);
 				gl.bindTexture(gl.TEXTURE_2D, tex);
 				// Set UVs based on atlas packing (use retina UVs if using retina texture)
 				const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : (this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 });
@@ -414,6 +442,8 @@ export class IconRenderer {
         attribute vec2 a_pos;
         attribute vec2 a_i_native;
         attribute vec2 a_i_size;
+        attribute vec2 a_i_anchor;
+        attribute float a_i_angle;
         uniform vec2 u_resolution;
         uniform vec2 u_tlWorld;
         uniform float u_scale;
@@ -425,7 +455,12 @@ export class IconRenderer {
           vec2 world = a_i_native * u_invS;
           vec2 css = (world - u_tlWorld) * u_scale;
           vec2 sizePx = a_i_size * u_iconScale;
-          vec2 pixelPos = (css - 0.5 * sizePx) * u_dpr + a_pos * (sizePx * u_dpr);
+          vec2 anchorPx = a_i_anchor * u_iconScale;
+          vec2 v = a_pos * sizePx - anchorPx;
+          float ang = a_i_angle;
+          float s = sin(ang), c = cos(ang);
+          vec2 vr = vec2(v.x * c - v.y * s, v.x * s + v.y * c);
+          vec2 pixelPos = css * u_dpr + vr * u_dpr;
           vec2 clip = (pixelPos / u_resolution) * 2.0 - 1.0;
           clip.y *= -1.0;
           gl_Position = vec4(clip, 0.0, 1.0);
@@ -451,6 +486,8 @@ export class IconRenderer {
 				a_pos: gl.getAttribLocation(prog, 'a_pos'),
 				a_i_native: gl.getAttribLocation(prog, 'a_i_native'),
 				a_i_size: gl.getAttribLocation(prog, 'a_i_size'),
+				a_i_anchor: gl.getAttribLocation(prog, 'a_i_anchor'),
+				a_i_angle: gl.getAttribLocation(prog, 'a_i_angle'),
 				u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
 				u_tlWorld: gl.getUniformLocation(prog, 'u_tlWorld'),
 				u_scale: gl.getUniformLocation(prog, 'u_scale'),

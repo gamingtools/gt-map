@@ -48,10 +48,12 @@ export interface MapOptions {
 
 // Content types
 export interface Marker {
-	x: number;
-	y: number;
-	type?: string;
-	size?: number;
+    x: number;
+    y: number;
+    type?: string;
+    size?: number;
+    rotation?: number; // degrees clockwise (optional)
+    id?: string;
 }
 
 export interface IconDef {
@@ -59,6 +61,8 @@ export interface IconDef {
 	x2IconPath?: string;
 	width: number;
 	height: number;
+	anchorX?: number;
+	anchorY?: number;
 }
 
 export interface IconHandle {
@@ -132,6 +136,14 @@ export interface FrameEventData {
     stats?: RenderStats;
 }
 
+// Base event (shared fields for richer payloads)
+export interface BaseEvent {
+    now: number;
+    view: ViewState;
+    screen?: { x: number; y: number };
+    world?: Point | null;
+}
+
 // Event map for type-safe event handling
 export interface EventMap {
 	move: MoveEventData;
@@ -142,6 +154,9 @@ export interface EventMap {
 	pointermove: PointerEventData;
 	pointerup: PointerEventData;
 	frame: FrameEventData;
+	markerenter: MarkerEventData;
+	markerleave: MarkerEventData;
+	markerclick: MarkerEventData;
 }
 
 // Performance stats
@@ -218,6 +233,8 @@ export interface MarkerInternal {
 	lat: number;
 	type: string;
 	size?: number;
+	rotation?: number;
+    id: string;
 }
 
 // Icon definition internal
@@ -226,6 +243,16 @@ export interface IconDefInternal {
 	x2IconPath?: string;
 	width: number;
 	height: number;
+	anchorX?: number;
+	anchorY?: number;
+}
+
+export interface MarkerEventData {
+	now: number;
+	view: ViewState;
+	screen: { x: number; y: number };
+	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number };
+	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
 
 // Inertia options

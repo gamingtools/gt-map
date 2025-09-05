@@ -513,6 +513,28 @@ export default class GTMap implements MapImpl {
 			this._needsRender = true;
 		}
 	}
+
+	// Pan animation to a specific native center (x=lng,y=lat)
+	public panTo(lng: number, lat: number, durationMs = 500) {
+		const { zInt, scale } = Coords.zParts(this.zoom);
+		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+		const s0 = Coords.sFor(imageMaxZ, zInt);
+		const cw = { x: this.center.lng / s0, y: this.center.lat / s0 };
+		const target = { x: lng / s0, y: lat / s0 };
+		const dxPx = (cw.x - target.x) * scale;
+		const dyPx = (cw.y - target.y) * scale;
+		this._startPanBy(dxPx, dyPx, Math.max(0.05, durationMs / 1000));
+	}
+
+	public flyTo(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number }) {
+		const durMs = Math.max(0, (opts.durationMs ?? 600) | 0);
+		if (Number.isFinite(opts.lng as number) && Number.isFinite(opts.lat as number)) this.panTo(opts.lng as number, opts.lat as number, durMs);
+		if (Number.isFinite(opts.zoom as number)) {
+			const rect = this.container.getBoundingClientRect();
+			const dz = (opts.zoom as number) - this.zoom;
+			this._zoomCtrl.startEase(dz, rect.width / 2, rect.height / 2, 'center');
+		}
+	}
 	// recenter helper removed from public surface; use setCenter/setView via facade
 	destroy() {
 		if (this._frameLoop) {
@@ -816,6 +838,47 @@ export default class GTMap implements MapImpl {
 		};
 		this._input = new InputController(this._inputDeps);
 		this._input.attach();
+		// Wire marker hover/click based on pointer events
+		try {
+			this.events.on('pointermove').each((e: any) => {
+				if (!e || e.x == null || e.y == null) return;
+				const hit = this._hitTestMarker(e.x, e.y);
+				if (hit) {
+					if (!this._lastHover || this._lastHover.idx !== hit.idx || this._lastHover.type !== hit.type) {
+						this._events.emit('markerenter', {
+							now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+							view: this._viewPublic(),
+							screen: { x: e.x, y: e.y },
+							marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
+							icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
+						});
+						this._lastHover = { idx: hit.idx, type: hit.type };
+					}
+				} else if (this._lastHover) {
+					const prev = this._lastHover;
+					this._events.emit('markerleave', {
+						now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+						view: this._viewPublic(),
+						screen: { x: e.x, y: e.y },
+						marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+						icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+					});
+					this._lastHover = null;
+				}
+			});
+			this.events.on('pointerup').each((e: any) => {
+				if (!e || e.x == null || e.y == null) return;
+				const hit = this._hitTestMarker(e.x, e.y);
+				if (hit)
+					this._events.emit('markerclick', {
+						now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+						view: this._viewPublic(),
+						screen: { x: e.x, y: e.y },
+						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
+						icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
+					});
+			});
+		} catch {}
 	}
 	// wheel normalization handled in input/handlers internally
 	private _tick(now: number, allowRender: boolean) {
@@ -1107,6 +1170,28 @@ export default class GTMap implements MapImpl {
 	public setVectors(vectors: Array<{ type: string; [k: string]: any }>) {
 		this._vectors = vectors.slice();
 		this._needsRender = true;
+	}
+
+	// Simple hover/click hit testing on markers (AABB, ignores rotation)
+	private _lastHover: { type: string; idx: number } | null = null;
+	private _hitTestMarker(px: number, py: number) {
+		if (!this._icons) return null;
+		const rect = this.container.getBoundingClientRect();
+		const widthCSS = rect.width;
+		const heightCSS = rect.height;
+		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
+		const info = this._icons.getMarkerInfo(iconScale);
+		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+		for (let i = info.length - 1; i >= 0; i--) {
+			const it = info[i];
+			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+			const left = css.x - it.anchor.ax;
+			const top = css.y - it.anchor.ay;
+			if (px >= left && px <= left + it.w && py >= top && py <= top + it.h) {
+				return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { w: it.w, h: it.h }, rotation: it.rotation, icon: it.icon };
+			}
+		}
+		return null;
 	}
 
 	public setMarkerHitboxesVisible(on: boolean) {

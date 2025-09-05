@@ -255,6 +255,8 @@ export class GTMap {
 			x2IconPath: def.x2IconPath,
 			width: def.width,
 			height: def.height,
+			anchorX: def.anchorX,
+			anchorY: def.anchorY,
 		};
 		this._impl.setIconDefs(Object.fromEntries([[iconId, iconDefInternal]]));
 		return { id: iconId };
@@ -275,11 +277,12 @@ export class GTMap {
 	 * map.addMarker(1024, 1024, { icon: myIcon, size: 1.5 });
 	 * ```
 	 */
-	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number }): { x: number; y: number; type?: string; size?: number } {
-		const m: Marker = { x, y, type: opts?.icon?.id ?? 'default', size: opts?.size };
+	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number }): Marker & { id: string } {
+		const id = `m_${Math.random().toString(36).slice(2, 10)}`;
+		const m: Marker = { id, x, y, type: opts?.icon?.id ?? 'default', size: opts?.size, rotation: opts?.rotation };
 		this._markers.push(m);
 		this._markMarkersDirtyAndSchedule();
-		return m;
+		return { ...m, id };
 	}
 	/**
 	 * Adds multiple markers to the map in a batch.
@@ -297,7 +300,9 @@ export class GTMap {
 	 */
 	addMarkers(markers: Marker[]): this {
 		if (markers && markers.length) {
-			this._markers.push(...markers.map((m) => ({ x: m.x, y: m.y, type: m.type ?? 'default', size: m.size })));
+			this._markers.push(
+				...markers.map((m) => ({ id: m.id ?? `m_${Math.random().toString(36).slice(2, 10)}`, x: m.x, y: m.y, type: m.type ?? 'default', size: m.size, rotation: m.rotation }))
+			);
 			this._markMarkersDirtyAndSchedule();
 		}
 		return this;
@@ -406,6 +411,22 @@ export class GTMap {
 		return this;
 	}
 	/**
+	 * Smoothly pan to a new center.
+	 */
+	panTo(center: Point, durationMs = 500): this {
+		(this._impl.panTo as any)?.(center.x, center.y, durationMs);
+		return this;
+	}
+	/**
+	 * Smoothly change center and/or zoom.
+	 */
+	flyTo(opts: { center?: Point; zoom?: number; durationMs?: number }): this {
+		const lng = opts.center?.x;
+		const lat = opts.center?.y;
+		(this._impl.flyTo as any)?.({ lng, lat, zoom: opts.zoom, durationMs: opts.durationMs });
+		return this;
+	}
+	/**
 	 * Updates the map size after container resize.
 	 * Call this if the container size changes.
 	 *
@@ -478,6 +499,8 @@ export class GTMap {
 				lat: mm.y,
 				type: mm.type ?? 'default',
 				size: mm.size,
+				rotation: mm.rotation,
+				id: mm.id ?? `m_${Math.random().toString(36).slice(2, 10)}`,
 			}));
 			this._impl.setMarkers(internalMarkers);
 		};
