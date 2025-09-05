@@ -834,8 +834,22 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._input.attach();
 		// Wire marker hover/click based on pointer events
 		try {
+			// Click intention: record down and detect movement
+			this.events.on('pointerdown').each((e: any) => {
+				if (!e || e.x == null || e.y == null) return;
+				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+				const ptrType = (e.originalEvent?.pointerType || '').toString();
+				const tol = ptrType === 'touch' ? 18 : 8;
+				this._downAt = { x: e.x, y: e.y, t: now, tol };
+				this._movedSinceDown = false;
+			});
 			this.events.on('pointermove').each((e: any) => {
 				if (!e || e.x == null || e.y == null) return;
+				if (this._downAt) {
+					const dx = e.x - this._downAt.x;
+					const dy = e.y - this._downAt.y;
+					if (Math.hypot(dx, dy) > this._downAt.tol) this._movedSinceDown = true;
+				}
 				// Disable hover hit-testing during active pan/zoom and for a short debounce after
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
@@ -880,10 +894,15 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			});
 			this.events.on('pointerup').each((e: any) => {
 				if (!e || e.x == null || e.y == null) return;
+				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
+				this._downAt = null;
+				if (!isClick) return;
 				const hit = this._hitTestMarker(e.x, e.y);
 				if (hit)
 					this._events.emit('markerclick', {
-						now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+						now,
 						view: this._viewPublic(),
 						screen: { x: e.x, y: e.y },
 						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
@@ -1186,6 +1205,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 
 	// Simple hover/click hit testing on markers (AABB, ignores rotation)
 	private _lastHover: { type: string; idx: number } | null = null;
+	private _downAt: { x: number; y: number; t: number; tol: number } | null = null;
+	private _movedSinceDown = false;
 	private _hitTestMarker(px: number, py: number) {
 		if (!this._icons) return null;
 		const rect = this.container.getBoundingClientRect();
