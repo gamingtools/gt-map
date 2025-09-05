@@ -37,7 +37,7 @@ export class TileLoader {
 		this.abortControllers.clear();
 	}
 
-	start({ key, url }: { key: string; url: string }) {
+	start({ key, url, priority = 1 }: { key: string; url: string; priority?: number }) {
 		const deps = this.deps;
 		
 		// Cancel any existing request for this key
@@ -65,7 +65,9 @@ export class TileLoader {
 			fetch(url, { 
 				mode: 'cors', 
 				credentials: 'omit',
-				signal: abortController.signal 
+				signal: abortController.signal,
+				// @ts-ignore - priority is not in TS types yet but works in Chrome/Edge
+				priority: priority > 1 ? 'high' : 'low'
 			} as any)
 				.then((r: any) => {
 					if (!r.ok) throw new Error(`HTTP ${r.status}`);

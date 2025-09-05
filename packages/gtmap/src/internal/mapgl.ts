@@ -219,7 +219,7 @@ export default class GTMap implements MapImpl {
 	// Loading pacing/cancel
 	private interactionIdleMs = 160;
 	private _lastInteractAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-	private _maxInflightLoads = 8;
+	private _maxInflightLoads = 20; // Increased for HTTP/2-3 on Cloudflare
 	private _inflightLoads = 0;
 	private _pendingKeys = new Set<string>();
 	private _tiles!: TilePipeline;
@@ -313,7 +313,7 @@ export default class GTMap implements MapImpl {
 				const r = this.container.getBoundingClientRect();
 				return { width: Math.max(1, r.width), height: Math.max(1, r.height) };
 			},
-			startImageLoad: ({ key, url }: { key: string; url: string }) => this._loader.start({ key, url }),
+			startImageLoad: (task: { key: string; url: string; priority?: number }) => this._loader.start(task),
 			addPinned: (key: string) => {
 				this._pinnedKeys.add(key);
 				try {
