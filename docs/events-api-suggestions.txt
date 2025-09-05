@@ -1,0 +1,372 @@
+Streamlined Entity-Based Event Design
+
+  Here's a cleaner architecture where each entity type has its own typed event system:
+
+  Core Design Principles
+
+  1. Every entity gets .events.on() - Consistent API across all entity types
+  2. Type-safe event maps per entity - Each entity type has its own event types
+  3. Entity lifecycle tracking - Events automatically cleanup when entities are removed
+  4. Composable and extendable - Easy to add new entity types and events
+
+  Proposed Architecture
+
+  // packages/gtmap/src/api/events/types.ts
+
+  // Base event emitter that all entities will use
+  export interface EntityEvents<EventMap> {
+    on<K extends keyof EventMap>(event: K): EventStream<EventMap[K]>;
+    once<K extends keyof EventMap>(event: K): Promise<EventMap[K]>;
+    emit<K extends keyof EventMap>(event: K, data: EventMap[K]): void;
+  }
+
+  // Entity-specific event maps
+  export interface MarkerEventMap {
+    click: { x: number; y: number; marker: MarkerData };
+    enter: { x: number; y: number; marker: MarkerData };
+    leave: { x: number; y: number; marker: MarkerData };
+    drag: { x: number; y: number; dx: number; dy: number; marker: MarkerData };
+    remove: { marker: MarkerData };
+  }
+
+  export interface VectorEventMap {
+    click: { x: number; y: number; vector: VectorData };
+    hover: { x: number; y: number; vector: VectorData };
+    edit: { vector: VectorData; changes: any };
+    remove: { vector: VectorData };
+  }
+
+  export interface MapEventMap {
+    // View events
+    move: { center: Point; zoom: number };
+    zoom: { zoom: number; center: Point };
+
+    // Interaction events
+    click: { x: number; y: number; entities: EntityHit[] };
+    contextmenu: { x: number; y: number; entities: EntityHit[] };
+
+    // Layer events
+    layeradd: { layer: Layer };
+    layerremove: { layer: Layer };
+  }
+
+  export interface LayerEventMap {
+    add: { entity: Entity };
+    remove: { entity: Entity };
+    clear: {};
+    visibilitychange: { visible: boolean };
+  }
+
+  Entity Implementation
+
+  // packages/gtmap/src/api/entities/Marker.ts
+
+  export class Marker {
+    readonly id: string;
+    readonly events: EntityEvents<MarkerEventMap>;
+    private _events: TypedEventBus<MarkerEventMap>;
+    private _x: number;
+    private _y: number;
+    private _data?: any;
+
+    constructor(x: number, y: number, options?: MarkerOptions) {
+      this.id = generateId();
+      this._x = x;
+      this._y = y;
+      this._data = options?.data;
+      this._events = new TypedEventBus<MarkerEventMap>();
+
+      // Public read-only events interface
+      this.events = {
+        on: (event) => this._events.on(event),
+        once: (event) => this._events.when(event),
+        emit: (event, data) => this._events.emit(event, data)
+      };
+    }
+
+    moveTo(x: number, y: number) {
+      const dx = x - this._x;
+      const dy = y - this._y;
+      this._x = x;
+      this._y = y;
+      this._events.emit('drag', { x, y, dx, dy, marker: this.toData() });
+    }
+
+    remove() {
+      this._events.emit('remove', { marker: this.toData() });
+      // Cleanup all listeners
+      this._events.removeAll();
+    }
+
+    toData(): MarkerData {
+      return { id: this.id, x: this._x, y: this._y, data: this._data };
+    }
+  }
+
+  Vector Implementation
+
+  // packages/gtmap/src/api/entities/Vector.ts
+
+  export class Vector {
+    readonly id: string;
+    readonly type: 'polyline' | 'polygon' | 'circle';
+    readonly events: EntityEvents<VectorEventMap>;
+    private _events: TypedEventBus<VectorEventMap>;
+
+    constructor(type: VectorType, geometry: any, options?: VectorOptions) {
+      this.id = generateId();
+      this.type = type;
+      this._events = new TypedEventBus<VectorEventMap>();
+
+      this.events = {
+        on: (event) => this._events.on(event),
+        once: (event) => this._events.when(event),
+        emit: (event, data) => this._events.emit(event, data)
+      };
+    }
+
+    edit(changes: any) {
+      // Apply changes
+      this._events.emit('edit', { vector: this.toData(), changes });
+    }
+
+    remove() {
+      this._events.emit('remove', { vector: this.toData() });
+      this._events.removeAll();
+    }
+  }
+
+  Layer System
+
+  // packages/gtmap/src/api/layers/Layer.ts
+
+  export class Layer<T extends Entity> {
+    readonly id: string;
+    readonly events: EntityEvents<LayerEventMap>;
+    private _events: TypedEventBus<LayerEventMap>;
+    private _entities: Map<string, T> = new Map();
+    private _visible: boolean = true;
+
+    constructor(options?: LayerOptions) {
+      this.id = options?.id || generateId();
+      this._events = new TypedEventBus<LayerEventMap>();
+
+      this.events = {
+        on: (event) => this._events.on(event),
+        once: (event) => this._events.when(event),
+        emit: (event, data) => this._events.emit(event, data)
+      };
+    }
+
+    add(entity: T): T {
+      this._entities.set(entity.id, entity);
+      this._events.emit('add', { entity });
+      return entity;
+    }
+
+    remove(entityOrId: T | string): void {
+      const id = typeof entityOrId === 'string' ? entityOrId : entityOrId.id;
+      const entity = this._entities.get(id);
+      if (entity) {
+        this._entities.delete(id);
+        this._events.emit('remove', { entity });
+        entity.remove();
+      }
+    }
+
+    clear(): void {
+      for (const entity of this._entities.values()) {
+        entity.remove();
+      }
+      this._entities.clear();
+      this._events.emit('clear', {});
+    }
+
+    setVisible(visible: boolean): void {
+      if (this._visible !== visible) {
+        this._visible = visible;
+        this._events.emit('visibilitychange', { visible });
+      }
+    }
+  }
+
+  Updated Map API
+
+  // packages/gtmap/src/api/Map.ts
+
+  export class GTMap {
+    readonly events: EntityEvents<MapEventMap>;
+    readonly markers: Layer<Marker>;
+    readonly vectors: Layer<Vector>;
+    private _events: TypedEventBus<MapEventMap>;
+
+    constructor(container: HTMLElement, options?: MapOptions) {
+      // ... initialization ...
+
+      this._events = new TypedEventBus<MapEventMap>();
+      this.events = {
+        on: (event) => this._events.on(event),
+        once: (event) => this._events.when(event),
+        emit: (event, data) => this._events.emit(event, data)
+      };
+
+      // Initialize layers
+      this.markers = new Layer<Marker>({ id: 'markers' });
+      this.vectors = new Layer<Vector>({ id: 'vectors' });
+
+      // Wire up layer events to map events
+      this.markers.events.on('add').each(() => this.requestRedraw());
+      this.vectors.events.on('add').each(() => this.requestRedraw());
+    }
+
+    // Simplified API - returns the entity directly
+    addMarker(x: number, y: number, options?: MarkerOptions): Marker {
+      const marker = new Marker(x, y, options);
+      return this.markers.add(marker);
+    }
+
+    addVector(type: VectorType, geometry: any, options?: VectorOptions): Vector {
+      const vector = new Vector(type, geometry, options);
+      return this.vectors.add(vector);
+    }
+  }
+
+  Usage Examples
+
+● // Clean, consistent API across all entity types
+  const map = new GTMap(container);
+
+  // Marker events
+  const marker = map.addMarker(100, 200, { data: { name: 'POI' } });
+  marker.events.on('click').each(e => {
+    console.log(`Marker ${e.marker.id} clicked at ${e.x}, ${e.y}`);
+  });
+
+  marker.events.on('drag').each(e => {
+    console.log(`Moved by ${e.dx}, ${e.dy}`);
+  });
+
+  // Vector events
+  const circle = map.addVector('circle', { center: [150, 150], radius: 50 });
+  circle.events.on('hover').each(e => {
+    console.log(`Hovering over ${e.vector.id}`);
+  });
+
+  // Layer events
+  map.markers.events.on('add').each(e => {
+    console.log(`Marker added to layer: ${e.entity.id}`);
+  });
+
+  map.vectors.events.on('clear').each(() => {
+    console.log('All vectors cleared');
+  });
+
+  // Map-level events still available
+  map.events.on('click').each(e => {
+    if (e.entities.length > 0) {
+      console.log(`Clicked on ${e.entities.length} entities`);
+    }
+  });
+
+  // Batch operations on layers
+  map.markers.clear(); // Removes all markers
+  map.vectors.setVisible(false); // Hide all vectors
+
+  // Find and manipulate entities
+  const myMarker = map.markers.get('marker-id');
+  myMarker?.moveTo(300, 400);
+
+  // Chain event operations
+  marker.events
+    .on('click')
+    .throttle(100)
+    .each(e => updateUI(e));
+
+  Advanced Features
+
+  // Entity groups for complex selections
+  class EntityGroup<T extends Entity> {
+    readonly events: EntityEvents<GroupEventMap>;
+    private entities: Set<T> = new Set();
+
+    add(entity: T) {
+      this.entities.add(entity);
+      // Forward entity events to group
+      entity.events.on('click').each(e =>
+        this.events.emit('entityclick', { entity, event: e })
+      );
+    }
+  }
+
+  // Custom entity types
+  class Label extends Entity<LabelEventMap> {
+    events = this.createEvents<LabelEventMap>();
+
+    setText(text: string) {
+      this.text = text;
+      this.events.emit('textchange', { text });
+    }
+  }
+
+  // Event filtering at entity level
+  marker.events
+    .on('drag')
+    .filter(e => e.dx > 10 || e.dy > 10) // Only significant moves
+    .each(e => savePosition(e));
+
+● Migration Path
+
+  // Step 1: Add new entity-based API alongside existing
+  class GTMap {
+    // Old API (deprecated)
+    addMarker(x, y, opts): ComplexMarkerReturn { /* existing */ }
+
+    // New API
+    createMarker(x, y, opts): Marker { /* new */ }
+  }
+
+  // Step 2: Adapter for backward compatibility
+  function adaptOldMarker(marker: Marker): OldMarkerType {
+    return {
+      ...marker.toData(),
+      events: {
+        on: (name: 'click' | 'enter' | 'leave') => ({
+          each: (handler) => {
+            const eventName = name === 'click' ? 'click' :
+                             name === 'enter' ? 'enter' : 'leave';
+            return marker.events.on(eventName).each(handler);
+          }
+        })
+      }
+    };
+  }
+
+  // Step 3: Gradual migration
+  // Phase 1: Both APIs work
+  map.addMarker(x, y); // Old
+  map.createMarker(x, y); // New
+
+  // Phase 2: Deprecation warnings
+  map.addMarker(x, y); // Console: "addMarker is deprecated, use createMarker"
+
+  // Phase 3: Remove old API in major version
+
+  Benefits of This Design
+
+  1. Consistency: Every entity has .events.on() with the same pattern
+  2. Type Safety: Each entity type has its own strongly-typed event map
+  3. Discoverability: IDE autocomplete shows available events per entity type
+  4. Encapsulation: Events are scoped to their entities, not global
+  5. Lifecycle Management: Events cleanup automatically when entities are removed
+  6. Composability: Layers, groups, and custom entities all follow the same pattern
+  7. Performance: Events only fire for subscribed entities, not all entities
+  8. Extensibility: Easy to add new entity types and events without breaking existing code
+
+● This streamlined design provides a much cleaner and more consistent event system where:
+  - Every entity (marker, vector, layer, map) has the same .events.on() interface
+  - Each entity type has its own typed event map
+  - Events are scoped to entities rather than being global
+  - The system is easily extensible for new entity types
+  - Memory management is improved with automatic cleanup
+
+  The key improvement is moving from a mixed approach (global marker events + per-marker pseudo-events) to a unified entity-based model where events naturally belong to the objects that emit them.
