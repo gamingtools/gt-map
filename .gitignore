@@ -29,6 +29,9 @@ out/
 .vite/
 *.tsbuildinfo
 
+# Generated API docs (via TypeDoc)
+docs/api/
+
 # Env files
 .env
 .env.local
