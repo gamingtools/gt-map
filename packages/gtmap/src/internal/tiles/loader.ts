@@ -14,12 +14,26 @@ export interface TileLoaderDeps {
 	acquireTexture(): WebGLTexture | null;
 }
 
+interface QueuedTile {
+	key: string;
+	url: string;
+	priority: number;
+	abortController: AbortController;
+}
+
 export class TileLoader {
 	private deps: TileLoaderDeps;
 	private abortControllers = new Map<string, AbortController>();
+	private decodeQueue: QueuedTile[] = [];
+	private activeDecodes = 0;
+	private maxConcurrentDecodes: number;
 
 	constructor(deps: TileLoaderDeps) {
 		this.deps = deps;
+		// Scale concurrent decodes based on hardware cores
+		const cores = navigator.hardwareConcurrency || 2;
+		// Use half the cores for decoding, minimum 2, maximum 8
+		this.maxConcurrentDecodes = Math.max(2, Math.min(Math.floor(cores / 2), 8));
 	}
 
 	cancel(key: string) {
@@ -28,6 +42,8 @@ export class TileLoader {
 			controller.abort();
 			this.abortControllers.delete(key);
 		}
+		// Also remove from queue if queued
+		this.decodeQueue = this.decodeQueue.filter(t => t.key !== key);
 	}
 
 	cancelAll() {
@@ -35,6 +51,27 @@ export class TileLoader {
 			controller.abort();
 		}
 		this.abortControllers.clear();
+		this.decodeQueue = [];
+		this.activeDecodes = 0;
+	}
+
+	private processQueue() {
+		// Process tiles from queue while under decode limit
+		while (this.activeDecodes < this.maxConcurrentDecodes && this.decodeQueue.length > 0) {
+			// Sort queue by priority (higher priority first)
+			this.decodeQueue.sort((a, b) => b.priority - a.priority);
+			
+			// Take the highest priority tile
+			const tile = this.decodeQueue.shift();
+			if (!tile) continue;
+			
+			// Check if already aborted
+			if (tile.abortController.signal.aborted) continue;
+			
+			// Start the actual decode
+			this.activeDecodes++;
+			this.performDecode(tile);
+		}
 	}
 
 	start({ key, url, priority = 1 }: { key: string; url: string; priority?: number }) {
@@ -51,6 +88,15 @@ export class TileLoader {
 		deps.incInflight();
 		deps.setLoading(key);
 		
+		// Queue the tile for processing
+		this.decodeQueue.push({ key, url, priority, abortController });
+		this.processQueue();
+	}
+
+	private performDecode(tile: QueuedTile) {
+		const { key, url, abortController } = tile;
+		const deps = this.deps;
+		
 		const onFinally = () => {
 			try {
 				/* noop */
@@ -58,6 +104,9 @@ export class TileLoader {
 				this.abortControllers.delete(key);
 				deps.removePending(key);
 				deps.decInflight();
+				this.activeDecodes--;
+				// Process next items in queue
+				this.processQueue();
 			}
 		};
 		
@@ -67,7 +116,7 @@ export class TileLoader {
 				credentials: 'omit',
 				signal: abortController.signal,
 				// @ts-ignore - priority is not in TS types yet but works in Chrome/Edge
-				priority: priority > 1 ? 'high' : 'low'
+				priority: tile.priority > 1 ? 'high' : 'low'
 			} as any)
 				.then((r: any) => {
 					if (!r.ok) throw new Error(`HTTP ${r.status}`);
@@ -111,7 +160,8 @@ export class TileLoader {
 						onFinally();
 					} else {
 						deps.setUseImageBitmap(false);
-						this.start({ key, url });
+						onFinally();
+						this.start({ key, url, priority: tile.priority });
 					}
 				});
 			return;

@@ -24,7 +24,7 @@
 		return Math.random() * (max - min) + min;
 	}
 
-	let iconHandle: { id: string } | null = null;
+	let iconHandles: { id: string }[] | null = null;
 
 	function applyMarkerCount(n: number): void {
 		if (!map) return;
@@ -35,6 +35,7 @@
 		for (let i = 0; i < markerCount; i++) {
 			const x = rand(0, 8192);
 			const y = rand(0, 8192);
+			const iconHandle = iconHandles ? iconHandles[i % iconHandles.length] : null;
 			map.addMarker(x, y, iconHandle ? { icon: iconHandle } : undefined);
 		}
 	}
@@ -135,14 +136,17 @@
 
 		// Register a custom icon to demonstrate addIcon/addMarker
 		try {
-			const def = typedIconDefs?.sandstorm || Object.values(typedIconDefs)[0];
-			if (def) {
-				iconHandle = map.addIcon({
-					iconPath: def.iconPath,
-					x2IconPath: def.x2IconPath,
-					width: def.width,
-					height: def.height
-				});
+			for (const key in typedIconDefs) {
+				const def = typedIconDefs[key];
+				iconHandles = iconHandles || [];
+				iconHandles.push(
+					map.addIcon({
+						iconPath: def.iconPath,
+						x2IconPath: def.x2IconPath,
+						width: def.width,
+						height: def.height
+					})
+				);
 			}
 		} catch {}
 
