@@ -27,6 +27,7 @@ build/
 .next/
 out/
 .vite/
+*.tsbuildinfo
 
 # Env files
 .env
