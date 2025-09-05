@@ -69,7 +69,6 @@ export default class InputController {
 				x: px,
 				y: py,
 				world: { x: wNat.x, y: wNat.y },
-				latlng: { lat: wNat.y, lng: wNat.x },
 				view: deps.getView(),
 				originalEvent: e,
 			});
@@ -100,7 +99,6 @@ export default class InputController {
 						x: px,
 						y: py,
 						world: { x: wNat.x, y: wNat.y },
-						latlng: { lat: wNat.y, lng: wNat.x },
 						view: deps.getView(),
 						originalEvent: e,
 					});
@@ -114,7 +112,6 @@ export default class InputController {
 							x: px,
 							y: py,
 							world: { x: wNat.x, y: wNat.y },
-							latlng: { lat: wNat.y, lng: wNat.x },
 							view: deps.getView(),
 							originalEvent: e,
 						});
@@ -123,7 +120,7 @@ export default class InputController {
 					deps.updatePointerAbs(null, null);
 					this.over = false;
 					try {
-						deps.emit('pointermove', { x: -1, y: -1, world: null, latlng: null, view: deps.getView(), originalEvent: e });
+						deps.emit('pointermove', { x: -1, y: -1, world: null, view: deps.getView(), originalEvent: e });
 					} catch {}
 				}
 			}
@@ -160,7 +157,6 @@ export default class InputController {
 				x: px,
 				y: py,
 				world: { x: wNat.x, y: wNat.y },
-				latlng: { lat: wNat.y, lng: wNat.x },
 				view: deps.getView(),
 				originalEvent: e,
 			});
@@ -214,7 +210,7 @@ export default class InputController {
 				const rect = deps.getContainer().getBoundingClientRect();
 				const midPx = (t0.clientX + t1.clientX) / 2 - rect.left;
 				const midPy = (t0.clientY + t1.clientY) / 2 - rect.top;
-				// Compute the native-pixel latlng under the initial pinch midpoint
+				// Compute the native-pixel world coordinates under the initial pinch midpoint
 				const widthCSS = rect.width,
 					heightCSS = rect.height;
 				const zImg = deps.getImageMaxZoom();

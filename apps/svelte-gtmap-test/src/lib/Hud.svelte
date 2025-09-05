@@ -37,8 +37,8 @@
 
 	function refresh(fromFrame = false, now?: number) {
 		if (!map) return;
-		const cArr = map.getCenter();
-		center = { lng: cArr[1], lat: cArr[0] };
+		const c = map.getCenter();
+		center = { lng: c.x, lat: c.y };
 		zoom = map.getZoom();
 		mouse = map.pointerAbs
 			? { x: Math.round(map.pointerAbs.x), y: Math.round(map.pointerAbs.y) }

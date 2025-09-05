@@ -143,9 +143,9 @@ export class GTMap {
   }
 
   // Compatibility getters used by HUD
-  getCenter(): [number, number] {
+  getCenter(): Point {
     const c = this._impl.center as { lng: number; lat: number };
-    return [c.lat, c.lng];
+    return { x: c.lng, y: c.lat };
   }
   getZoom(): number { return this._impl.zoom; }
   get pointerAbs(): { x: number; y: number } | null { return this._impl.pointerAbs ?? null; }

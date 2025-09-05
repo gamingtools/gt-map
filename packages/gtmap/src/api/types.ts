@@ -3,7 +3,6 @@
 
 // Core geometric types
 export type Point = { x: number; y: number };
-export type LngLat = { lng: number; lat: number };
 
 // View and state types
 export interface ViewState {
@@ -116,7 +115,6 @@ export interface PointerEventData {
 	x: number;
 	y: number;
 	world: Point | null;
-	latlng: { lat: number; lng: number } | null;
 	view: ViewState;
 	originalEvent: PointerEvent;
 }
@@ -210,9 +208,9 @@ export interface ActiveOptions {
 
 // Internal vector primitive (with lng/lat)
 export type VectorPrimitiveInternal =
-	| { type: 'polyline'; points: LngLat[]; style?: VectorStyle }
-	| { type: 'polygon'; points: LngLat[]; style?: VectorStyle }
-	| { type: 'circle'; center: LngLat; radius: number; style?: VectorStyle };
+	| { type: 'polyline'; points: { lng: number; lat: number }[]; style?: VectorStyle }
+	| { type: 'polygon'; points: { lng: number; lat: number }[]; style?: VectorStyle }
+	| { type: 'circle'; center: { lng: number; lat: number }; radius: number; style?: VectorStyle };
 
 // Marker internal representation
 export interface MarkerInternal {
