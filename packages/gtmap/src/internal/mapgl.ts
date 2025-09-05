@@ -844,7 +844,13 @@ export default class GTMap implements MapImpl {
 		// Emit a frame event for HUD/diagnostics
 		try {
 			const t = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-			(this as any)._events?.emit?.('frame', { now: t });
+			const stats = {
+				cacheSize: this._tileCache?.size?.() ?? undefined,
+				inflight: this._inflightLoads ?? undefined,
+				pending: this._pendingKeys?.size ?? undefined,
+				frame: this._frame,
+			};
+			(this as any)._events?.emit?.('frame', { now: t, stats });
 		} catch {}
 		if (this.showGrid) {
 			const rect = this.container.getBoundingClientRect();

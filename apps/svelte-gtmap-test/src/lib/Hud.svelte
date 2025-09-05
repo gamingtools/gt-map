@@ -35,6 +35,12 @@
 	let markersLocal = $state<number>(markerCount ?? 0);
 	let markersDebounce: number | null = null;
 
+	// Perf stats from frame event
+	let cacheSize = $state<number | null>(null);
+	let inflight = $state<number | null>(null);
+	let pending = $state<number | null>(null);
+	let frame = $state<number | null>(null);
+
 	function refresh(fromFrame = false, now?: number) {
 		if (!map) return;
 		const c = map.getCenter();
@@ -59,8 +65,16 @@
 		const offFrame = (
 			map.events.on as (
 				event: string
-			) => { each: (callback: (e: { now: number }) => void) => () => void }
-		)('frame').each((e) => refresh(true, e.now));
+			) => { each: (callback: (e: { now: number; stats?: { cacheSize?: number; inflight?: number; pending?: number; frame?: number } }) => void) => () => void }
+		)('frame').each((e) => {
+			refresh(true, e.now);
+			try {
+				cacheSize = e.stats?.cacheSize ?? cacheSize;
+				inflight = e.stats?.inflight ?? inflight;
+				pending = e.stats?.pending ?? pending;
+				frame = e.stats?.frame ?? frame;
+			} catch {}
+		});
 		const offPointer = (
 			map.events.on as (
 				event: string
@@ -140,6 +154,16 @@
 			<span class="font-semibold text-gray-700">FPS:</span><span class="tabular-nums"
 				>{Math.round(fps)}</span
 			>
+		</div>
+		<div class="flex items-center gap-2">
+			<span class="font-semibold text-gray-700">Cache:</span>
+			<span class="tabular-nums">{cacheSize ?? '—'}</span>
+			<span class="font-semibold text-gray-700">Inflight:</span>
+			<span class="tabular-nums">{inflight ?? '—'}</span>
+			<span class="font-semibold text-gray-700">Pending:</span>
+			<span class="tabular-nums">{pending ?? '—'}</span>
+			<span class="font-semibold text-gray-700">Frame:</span>
+			<span class="tabular-nums">{frame ?? '—'}</span>
 		</div>
 		<div class="flex items-center gap-2">
 			<span class="font-semibold text-gray-700">Mouse:</span><span class="tabular-nums"

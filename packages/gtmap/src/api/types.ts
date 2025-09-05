@@ -129,6 +129,7 @@ export interface ZoomEventData {
 
 export interface FrameEventData {
     now: number;
+    stats?: RenderStats;
 }
 
 // Event map for type-safe event handling
@@ -145,11 +146,13 @@ export interface EventMap {
 
 // Performance stats
 export interface RenderStats {
-	fps: number;
-	tilesLoaded: number;
-	tilesVisible: number;
-	cacheSize: number;
-	frame: number;
+    fps?: number;
+    tilesLoaded?: number;
+    tilesVisible?: number;
+    cacheSize?: number;
+    inflight?: number;
+    pending?: number;
+    frame?: number;
 }
 
 // WebGL types
