@@ -15,20 +15,11 @@ export type {
 	Polygon,
 	Circle,
 	Vector,
-	ViewState,
-	TileBounds,
-	PointerEventData,
-	MoveEventData,
-	ZoomEventData,
-	FrameEventData,
-	EventMap,
-	RenderStats,
 	ActiveOptions,
-	UpscaleFilterMode,
-	isPolyline,
-	isPolygon,
-	isCircle,
 } from './api/types';
+
+// Export type guard functions (not types)
+export { isPolyline, isPolygon, isCircle } from './api/types';
 
 // Export event system types
 export type { EventBus, EventStream } from './internal/events/stream';
