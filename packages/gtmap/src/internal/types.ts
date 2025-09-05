@@ -1,25 +1,12 @@
-import type {
-	VectorStyle as VectorStyleAPI,
-	IconDefInternal,
-	MarkerInternal,
-	VectorPrimitiveInternal,
-	InertiaOptions,
-	PrefetchOptions,
-	MaxBoundsPx,
-	UpscaleFilterMode,
-	ActiveOptions,
-	IconScaleFunction,
-} from '../api/types';
-
+import type { EventBus, EventMap, ViewState as PublicViewState, VectorStyle as VectorStyleAPI, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, InertiaOptions, PrefetchOptions, MaxBoundsPx, UpscaleFilterMode, ActiveOptions, IconScaleFunction } from '../api/types';
+ 
 import type { LngLat } from './mapgl';
-import type { EventMap } from '../api/types';
 import type { ProgramLocs } from './render/screenCache';
 import type { RasterRenderer } from './layers/raster';
 import type { IconRenderer } from './layers/icons';
 import type { ScreenCache } from './render/screenCache';
 import type { TileCache } from './tiles/cache';
-import type { EventBus } from '../api/types';
-import type { ViewState as PublicViewState } from '../api/types';
+
 
 export type ViewState = {
 	center: LngLat;

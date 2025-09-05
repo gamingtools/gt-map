@@ -80,7 +80,9 @@ export class RasterRenderer {
 				if (typeof sourceMaxZoom === 'number' && zLevel > sourceMaxZoom) continue;
 				const key = tileKeyOf(zLevel, tileX, ty);
 				// mark tile as wanted this frame to protect it in queue pruning
-				try { params.wantTileKey?.(key); } catch {}
+				try {
+					params.wantTileKey?.(key);
+				} catch {}
 				const rec = tileCache.get(key);
 				if (!rec) enqueueTile(zLevel, tileX, ty, 0);
 				if (rec?.status === 'ready' && rec.tex) {

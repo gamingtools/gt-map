@@ -2,16 +2,16 @@ import type { RenderCtx } from '../types';
 import * as Coords from '../coords';
 
 export default class MapRenderer {
-    private getCtx: () => RenderCtx;
-    private hooks: {
+	private getCtx: () => RenderCtx;
+	private hooks: {
 		stepAnimation?: () => boolean;
 		zoomVelocityTick?: () => void;
 		panVelocityTick?: () => void;
 		prefetchNeighbors?: (z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) => void;
 		cancelUnwanted?: () => void;
 		clearWanted?: () => void;
-    };
-    private iconsUnlocked = false;
+	};
+	private iconsUnlocked = false;
 
 	constructor(getCtx: () => RenderCtx, hooks?: MapRenderer['hooks']) {
 		this.getCtx = getCtx;
@@ -73,8 +73,8 @@ export default class MapRenderer {
 				if (!prevScissor) gl.disable(gl.SCISSOR_TEST);
 			}
 		}
-        const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
-        if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
+		const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
+		if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
 		const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
 		if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
 			for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
@@ -150,9 +150,9 @@ export default class MapRenderer {
 			gl.uniform1f(loc.u_alpha!, 1.0);
 		}
 
-        // Draw icon markers after all tile layers so they are not faded by blended tiles.
-        // Optionally defer icons until initial tile coverage reaches a threshold to avoid icons painting before tiles.
-        if (ctx.icons && this.iconsUnlocked) {
+		// Draw icon markers after all tile layers so they are not faded by blended tiles.
+		// Optionally defer icons until initial tile coverage reaches a threshold to avoid icons painting before tiles.
+		if (ctx.icons && this.iconsUnlocked) {
 			// Ensure alpha is 1 for icons
 			gl.uniform1f(loc.u_alpha!, 1.0);
 			// Icons use native texture filtering

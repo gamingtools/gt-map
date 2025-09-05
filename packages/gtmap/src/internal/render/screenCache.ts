@@ -22,7 +22,7 @@ export class ScreenCache {
 	private state: ScreenCacheState | null = null;
 	private internalFormat: 6408 | 6407;
 
-    constructor(gl: WebGLRenderingContext, internalFormat?: 6408 | 6407) {
+	constructor(gl: WebGLRenderingContext, internalFormat?: 6408 | 6407) {
 		this.gl = gl;
 		// Detect RGB vs RGBA based on context alpha if not provided.
 		if (internalFormat != null) {

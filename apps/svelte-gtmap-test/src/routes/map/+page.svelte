@@ -186,7 +186,6 @@
 		// 	return 1.5;
 		// });
 
-		// Example 4: Linear scaling with max size
 		map.setIconScaleFunction((zoom, minZoom, maxZoom) => {
 			const maxScale = 1;
 			const scale = Math.pow(2, zoom - 3);

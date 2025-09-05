@@ -1,5 +1,8 @@
 // Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
+import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext } from '../api/types';
+import { DEBUG } from '../debug';
+
 import Graphics, { type GraphicsHost } from './gl/Graphics';
 import { ScreenCache } from './render/screenCache';
 import { TileCache } from './tiles/cache';
@@ -12,7 +15,6 @@ import * as Coords from './coords';
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
 import { TypedEventBus } from './events/typed-stream';
-import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext } from '../api/types';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
 import ZoomController from './core/ZoomController';
@@ -24,7 +26,7 @@ import type { ViewState } from './types';
 // prefetch/grid helpers moved inline
 import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 import { FrameLoop } from './core/FrameLoop';
-import { DEBUG } from '../debug';
+
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -144,16 +146,15 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		lastTime?: number;
 	} = null;
 
-
-		private _viewPublic(): PublicViewState {
-			return {
-				center: { x: this.center.lng, y: this.center.lat },
-				zoom: this.zoom,
-				minZoom: this.minZoom,
-				maxZoom: this.maxZoom,
-				wrapX: this.wrapX,
-			};
-		}
+	private _viewPublic(): PublicViewState {
+		return {
+			center: { x: this.center.lng, y: this.center.lat },
+			zoom: this.zoom,
+			minZoom: this.minZoom,
+			maxZoom: this.maxZoom,
+			wrapX: this.wrapX,
+		};
+	}
 	// Build the rendering context (internal)
 	public getRenderCtx(): RenderCtx {
 		return {
@@ -300,7 +301,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
 
 		// Initialize screen cache module (uses detected format)
-			this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
+		this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
 		// Initialize tile cache (LRU)
 		this._tileCache = new TileCache(this.gl, this._maxTiles);
 		this._tileDeps = {
@@ -378,7 +379,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			getOutCenterBias: () => this.outCenterBias,
 			clampCenterWorld: (cw, zInt, s, w, h) =>
 				clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
-				emit: (name: any, payload: any) => this._events.emit(name, payload),
+			emit: (name: any, payload: any) => this._events.emit(name, payload),
 			requestRender: () => {
 				this._needsRender = true;
 			},
@@ -716,7 +717,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._gfx.initPrograms();
 	}
 	resize() {
-		const dpr = Math.max(1, Math.min((globalThis.devicePixelRatio || 1), 3));
+		const dpr = Math.max(1, Math.min(globalThis.devicePixelRatio || 1, 3));
 		const rect = this.container.getBoundingClientRect();
 		this.canvas.style.width = rect.width + 'px';
 		this.canvas.style.height = rect.height + 'px';
@@ -868,7 +869,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 					}
 					return;
 				}
-				const hit = this._hitTestMarker(e.x, e.y);
+				const hit = this._hitTestMarker(e.x, e.y, false);
 				if (hit) {
 					if (!this._lastHover || this._lastHover.idx !== hit.idx || this._lastHover.type !== hit.type) {
 						this._events.emit('markerenter', {
@@ -876,7 +877,15 @@ export default class GTMap implements MapImpl, GraphicsHost {
 							view: this._viewPublic(),
 							screen: { x: e.x, y: e.y },
 							marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
-							icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
+							icon: {
+								id: hit.type,
+								iconPath: hit.icon.iconPath,
+								x2IconPath: hit.icon.x2IconPath,
+								width: hit.icon.width,
+								height: hit.icon.height,
+								anchorX: hit.icon.anchorX,
+								anchorY: hit.icon.anchorY,
+							},
 						});
 						this._lastHover = { idx: hit.idx, type: hit.type };
 					}
@@ -899,14 +908,22 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
 				this._downAt = null;
 				if (!isClick) return;
-				const hit = this._hitTestMarker(e.x, e.y);
+				const hit = this._hitTestMarker(e.x, e.y, true);
 				if (hit)
 					this._events.emit('markerclick', {
 						now,
 						view: this._viewPublic(),
 						screen: { x: e.x, y: e.y },
 						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
-						icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
+						icon: {
+							id: hit.type,
+							iconPath: hit.icon.iconPath,
+							x2IconPath: hit.icon.x2IconPath,
+							width: hit.icon.width,
+							height: hit.icon.height,
+							anchorX: hit.icon.anchorX,
+							anchorY: hit.icon.anchorY,
+						},
 					});
 			});
 		} catch {}
@@ -943,7 +960,9 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				(this as any)._maskBuildRequested = true;
 				const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: () => any) => any);
 				const start = () => {
-					try { (this._icons as any)?.startMaskBuild?.(); } catch {}
+					try {
+						(this._icons as any)?.startMaskBuild?.();
+					} catch {}
 				};
 				if (typeof ric === 'function') ric(start);
 				else setTimeout(start, 0);
@@ -1219,7 +1238,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private _lastHover: { type: string; idx: number } | null = null;
 	private _downAt: { x: number; y: number; t: number; tol: number } | null = null;
 	private _movedSinceDown = false;
-	private _hitTestMarker(px: number, py: number) {
+	private _hitTestMarker(px: number, py: number, requireAlpha = false) {
 		if (!this._icons) return null;
 		const rect = this.container.getBoundingClientRect();
 		const widthCSS = rect.width;
@@ -1244,7 +1263,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 					const cx = lx - ax;
 					const cy = ly - ay;
 					const theta = ((it.rotation || 0) * Math.PI) / 180;
-					const c = Math.cos(-theta), s = Math.sin(-theta);
+					const c = Math.cos(-theta),
+						s = Math.sin(-theta);
 					const rx = cx * c - cy * s + ax;
 					const ry = cx * s + cy * c + ay;
 					if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
@@ -1253,7 +1273,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 					const alpha = mask.data[my * mask.w + mx] | 0;
 					const THRESH = 32; // ~12.5%
 					if (alpha < THRESH) continue; // treat as transparent: no hit
-				}
+                }
 				return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { w: it.w, h: it.h }, rotation: it.rotation, icon: it.icon };
 			}
 		}

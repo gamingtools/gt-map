@@ -1,12 +1,10 @@
-import Impl from '../internal/mapgl';
+import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
-import type { EventBus } from './types';
-import type { MapOptions as ImplMapOptions } from '../internal/mapgl';
+
+import type { EventBus, Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, Circle, Vector, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, IconScaleFunction } from './types';
 
 // Re-export types from centralized types file
 export type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector, ActiveOptions } from './types';
-
-import type { Point, TileSourceOptions, MapOptions, Marker, IconDef, IconHandle, Circle, Vector, ActiveOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, IconScaleFunction } from './types';
 
 /**
  * GTMap - A high-performance WebGL map renderer with pixel-based coordinate system.
@@ -176,17 +174,17 @@ export class GTMap {
 	 * ```typescript
 	 * // Icons scale with zoom (like real-world objects)
 	 * map.setIconScaleFunction((zoom) => Math.pow(2, zoom - 3));
-	 * 
+	 *
 	 * // Icons stay fixed size on screen (default behavior)
 	 * map.setIconScaleFunction(() => 1);
-	 * 
+	 *
 	 * // Step-based scaling
 	 * map.setIconScaleFunction((zoom) => {
 	 *   if (zoom < 2) return 0.5;
 	 *   if (zoom < 4) return 1;
 	 *   return 1.5;
 	 * });
-	 * 
+	 *
 	 * // Scale proportionally within zoom range
 	 * map.setIconScaleFunction((zoom, minZoom, maxZoom) => {
 	 *   const t = (zoom - minZoom) / (maxZoom - minZoom);
@@ -300,9 +298,7 @@ export class GTMap {
 	 */
 	addMarkers(markers: Marker[]): this {
 		if (markers && markers.length) {
-			this._markers.push(
-				...markers.map((m) => ({ id: m.id ?? `m_${Math.random().toString(36).slice(2, 10)}`, x: m.x, y: m.y, type: m.type ?? 'default', size: m.size, rotation: m.rotation }))
-			);
+			this._markers.push(...markers.map((m) => ({ id: m.id ?? `m_${Math.random().toString(36).slice(2, 10)}`, x: m.x, y: m.y, type: m.type ?? 'default', size: m.size, rotation: m.rotation })));
 			this._markMarkersDirtyAndSchedule();
 		}
 		return this;

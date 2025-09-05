@@ -7,19 +7,19 @@ export type Marker = { id: string; lng: number; lat: number; type: string; size?
 export class IconRenderer {
 	private gl: WebGLRenderingContext;
 	private textures = new Map<string, WebGLTexture>();
-	private textures2x = new Map<string, WebGLTexture>();  // Retina textures
+	private textures2x = new Map<string, WebGLTexture>(); // Retina textures
 	private texSize = new Map<string, { w: number; h: number }>();
-    private texAnchor = new Map<string, { ax: number; ay: number }>();
-    private iconMeta = new Map<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number }>();
-    private maskAlpha = new Map<string, { data: Uint8Array; w: number; h: number }>();
-    private pendingMasks: Array<{ key: string; src: ImageBitmap | HTMLImageElement; w: number; h: number }> = [];
-    private maskBuildStarted = false;
+	private texAnchor = new Map<string, { ax: number; ay: number }>();
+	private iconMeta = new Map<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number }>();
+	private maskAlpha = new Map<string, { data: Uint8Array; w: number; h: number }>();
+	private pendingMasks: Array<{ key: string; src: ImageBitmap | HTMLImageElement; w: number; h: number }> = [];
+	private maskBuildStarted = false;
 	private markers: Marker[] = [];
 	// Texture atlas
 	// Atlas bookkeeping kept local in load; we do not need fields on the class.
 	private uvRect = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();
-	private uvRect2x = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();  // Retina UV rects
-	private hasRetina = new Map<string, boolean>();  // Track which icons have retina versions
+	private uvRect2x = new Map<string, { u0: number; v0: number; u1: number; v1: number }>(); // Retina UV rects
+	private hasRetina = new Map<string, boolean>(); // Track which icons have retina versions
 	// Instancing support
 	private instExt: ANGLEInstancedArrays | null = null;
 	private instProg: WebGLProgram | null = null;
@@ -44,54 +44,78 @@ export class IconRenderer {
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
 
 	// Expose resolved marker sizes for debug overlays (hitboxes)
-getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: number; w: number; h: number; type: string; anchor: { ax: number; ay: number }; rotation?: number; icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number } }> {
-        const out: Array<{ id: string; index: number; lng: number; lat: number; w: number; h: number; type: string; anchor: { ax: number; ay: number }; rotation?: number; icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number } }> = [];
-        let idx = 0;
-        for (const m of this.markers) {
-            const sz = this.texSize.get(m.type) || { w: 32, h: 32 };
-            const w0 = m.size || sz.w;
-            const h0 = m.size || sz.h;
-            const w = w0 * scale;
-            const h = h0 * scale;
-            const a = this.texAnchor.get(m.type) || { ax: w0 / 2, ay: h0 / 2 };
-            const meta = this.iconMeta.get(m.type) || { iconPath: '', x2IconPath: undefined, width: sz.w, height: sz.h, anchorX: a.ax, anchorY: a.ay };
-            out.push({ id: m.id, index: idx, lng: m.lng, lat: m.lat, w, h, type: m.type, anchor: { ax: a.ax * scale, ay: a.ay * scale }, rotation: m.rotation, icon: meta });
-            idx++;
-        }
-        return out;
-    }
+	getMarkerInfo(
+		scale = 1,
+	): Array<{
+		id: string;
+		index: number;
+		lng: number;
+		lat: number;
+		w: number;
+		h: number;
+		type: string;
+		anchor: { ax: number; ay: number };
+		rotation?: number;
+		icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+	}> {
+		const out: Array<{
+			id: string;
+			index: number;
+			lng: number;
+			lat: number;
+			w: number;
+			h: number;
+			type: string;
+			anchor: { ax: number; ay: number };
+			rotation?: number;
+			icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+		}> = [];
+		let idx = 0;
+		for (const m of this.markers) {
+			const sz = this.texSize.get(m.type) || { w: 32, h: 32 };
+			const w0 = m.size || sz.w;
+			const h0 = m.size || sz.h;
+			const w = w0 * scale;
+			const h = h0 * scale;
+			const a = this.texAnchor.get(m.type) || { ax: w0 / 2, ay: h0 / 2 };
+			const meta = this.iconMeta.get(m.type) || { iconPath: '', x2IconPath: undefined, width: sz.w, height: sz.h, anchorX: a.ax, anchorY: a.ay };
+			out.push({ id: m.id, index: idx, lng: m.lng, lat: m.lat, w, h, type: m.type, anchor: { ax: a.ax * scale, ay: a.ay * scale }, rotation: m.rotation, icon: meta });
+			idx++;
+		}
+		return out;
+	}
 
 	constructor(gl: WebGLRenderingContext) {
 		this.gl = gl;
 	}
 
-    async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
-        const entries = Object.entries(defs);
-        // Load both 1x and 2x images for each icon (in parallel)
-        const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
-        const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
+	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
+		const entries = Object.entries(defs);
+		// Load both 1x and 2x images for each icon (in parallel)
+		const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
+		const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
 
-        const loadTasks = entries.map(async ([key, d]) => {
-            this.texSize.set(key, { w: d.width, h: d.height });
-            this.texAnchor.set(key, { ax: d.anchorX ?? d.width / 2, ay: d.anchorY ?? d.height / 2 });
-            this.iconMeta.set(key, { iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height, anchorX: d.anchorX ?? d.width / 2, anchorY: d.anchorY ?? d.height / 2 });
+		const loadTasks = entries.map(async ([key, d]) => {
+			this.texSize.set(key, { w: d.width, h: d.height });
+			this.texAnchor.set(key, { ax: d.anchorX ?? d.width / 2, ay: d.anchorY ?? d.height / 2 });
+			this.iconMeta.set(key, { iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height, anchorX: d.anchorX ?? d.width / 2, anchorY: d.anchorY ?? d.height / 2 });
 
-            let src2x: ImageBitmap | HTMLImageElement | null = null;
-            if (d.x2IconPath) src2x = await this.loadImageSource(d.x2IconPath);
-            if (src2x) {
-                imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
-                this.hasRetina.set(key, true);
-                this.pendingMasks.push({ key, src: src2x, w: d.width, h: d.height });
-            } else {
-                const src1x = await this.loadImageSource(d.iconPath);
-                if (src1x) {
-                    imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
-                    this.pendingMasks.push({ key, src: src1x, w: d.width, h: d.height });
-                }
-                this.hasRetina.set(key, false);
-            }
-        });
-        await Promise.all(loadTasks);
+			let src2x: ImageBitmap | HTMLImageElement | null = null;
+			if (d.x2IconPath) src2x = await this.loadImageSource(d.x2IconPath);
+			if (src2x) {
+				imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
+				this.hasRetina.set(key, true);
+				this.pendingMasks.push({ key, src: src2x, w: d.width, h: d.height });
+			} else {
+				const src1x = await this.loadImageSource(d.iconPath);
+				if (src1x) {
+					imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+					this.pendingMasks.push({ key, src: src1x, w: d.width, h: d.height });
+				}
+				this.hasRetina.set(key, false);
+			}
+		});
+		await Promise.all(loadTasks);
 		// Create 1x atlas
 		if (imgs1x.length > 0) {
 			const atlas1x = this.createAtlas(imgs1x);
@@ -102,39 +126,39 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 				}
 			}
 		}
-		
-        // Create 2x atlas
-        if (imgs2x.length > 0) {
-            const atlas2x = this.createAtlas(imgs2x);
-            if (atlas2x) {
-                for (const [key, data] of atlas2x) {
-                    this.textures2x.set(key, data.tex);
-                    this.uvRect2x.set(key, data.uv);
-                }
-            }
-        }
 
-        // Do not start mask build here; allow map to trigger after first frame
-    }
+		// Create 2x atlas
+		if (imgs2x.length > 0) {
+			const atlas2x = this.createAtlas(imgs2x);
+			if (atlas2x) {
+				for (const [key, data] of atlas2x) {
+					this.textures2x.set(key, data.tex);
+					this.uvRect2x.set(key, data.uv);
+				}
+			}
+		}
 
-    startMaskBuild() {
-        if (this.maskBuildStarted) return;
-        this.maskBuildStarted = true;
-        const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: (deadline?: any) => any) => any);
-        const process = () => {
-            let budget = 3; // build a few per slice
-            while (budget-- > 0 && this.pendingMasks.length) {
-                const it = this.pendingMasks.shift()!;
-                if (!this.maskAlpha.has(it.key)) this.buildMaskSafe(it.key, it.src, it.w, it.h);
-            }
-            if (this.pendingMasks.length) {
-                if (typeof ric === 'function') ric(process);
-                else setTimeout(process, 0);
-            }
-        };
-        if (typeof ric === 'function') ric(process);
-        else setTimeout(process, 0);
-    }
+		// Do not start mask build here; allow map to trigger after first frame
+	}
+
+	startMaskBuild() {
+		if (this.maskBuildStarted) return;
+		this.maskBuildStarted = true;
+		const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: (deadline?: any) => any) => any);
+		const process = () => {
+			let budget = 3; // build a few per slice
+			while (budget-- > 0 && this.pendingMasks.length) {
+				const it = this.pendingMasks.shift()!;
+				if (!this.maskAlpha.has(it.key)) this.buildMaskSafe(it.key, it.src, it.w, it.h);
+			}
+			if (this.pendingMasks.length) {
+				if (typeof ric === 'function') ric(process);
+				else setTimeout(process, 0);
+			}
+		};
+		if (typeof ric === 'function') ric(process);
+		else setTimeout(process, 0);
+	}
 
 	setMarkers(markers: Array<Marker | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
 		// Normalize to internal Marker list with ids
@@ -177,14 +201,20 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 		}
 	}
 
-	private createAtlas(imgs: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }>): Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }> | null {
+	private createAtlas(
+		imgs: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }>,
+	): Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }> | null {
 		const MAX_W = 2048;
-		let x = 0, y = 0, rowH = 0, atlasW = 0, atlasH = 0;
-		
+		let x = 0,
+			y = 0,
+			rowH = 0,
+			atlasW = 0,
+			atlasH = 0;
+
 		// Sort by height descending for better packing
 		imgs.sort((a, b) => b.h - a.h);
 		const pos: Record<string, { x: number; y: number; w: number; h: number }> = {};
-		
+
 		for (const img of imgs) {
 			if (img.w > MAX_W) continue;
 			if (x + img.w > MAX_W) {
@@ -198,14 +228,14 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 			atlasW = Math.max(atlasW, x);
 			atlasH = Math.max(atlasH, y + rowH);
 		}
-		
+
 		// Create canvas and draw
 		const canvas = document.createElement('canvas');
 		canvas.width = atlasW || 1;
 		canvas.height = atlasH || 1;
 		const ctx2d = canvas.getContext('2d')!;
 		ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-		
+
 		for (const img of imgs) {
 			const p = pos[img.key];
 			if (!p) continue;
@@ -216,12 +246,12 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 				ctx2d.drawImage(src, 0, 0, sw, sh, p.x, p.y, p.w, p.h);
 			} catch {}
 		}
-		
+
 		// Upload atlas texture
 		const gl = this.gl;
 		const tex = gl.createTexture();
 		if (!tex) return null;
-		
+
 		gl.bindTexture(gl.TEXTURE_2D, tex);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -230,10 +260,10 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
-		
+
 		// Create result map
 		const result = new Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }>();
-		
+
 		for (const img of imgs) {
 			const p = pos[img.key];
 			if (!p) continue;
@@ -243,36 +273,36 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 			const v1 = (p.y + p.h) / atlasH;
 			result.set(img.key, { tex, uv: { u0, v0, u1, v1 } });
 		}
-		
-        return result;
-    }
 
-    private buildMaskSafe(key: string, src: ImageBitmap | HTMLImageElement, w: number, h: number) {
-        try {
-            const cnv = document.createElement('canvas');
-            cnv.width = Math.max(1, w | 0);
-            cnv.height = Math.max(1, h | 0);
-            const ctx = cnv.getContext('2d');
-            if (!ctx) return;
-            ctx.clearRect(0, 0, cnv.width, cnv.height);
-            const sw = 'width' in src ? (src as ImageBitmap).width : (src as HTMLImageElement).naturalWidth;
-            const sh = 'height' in src ? (src as ImageBitmap).height : (src as HTMLImageElement).naturalHeight;
-            try {
-                ctx.drawImage(src as CanvasImageSource, 0, 0, sw, sh, 0, 0, w, h);
-            } catch {}
-            const img = ctx.getImageData(0, 0, w, h);
-            const a = img.data;
-            const data = new Uint8Array(w * h);
-            for (let i = 0, j = 0; i < a.length; i += 4, j++) data[j] = a[i + 3];
-            this.maskAlpha.set(key, { data, w, h });
-        } catch {
-            // Likely CORS taint; skip mask for this icon
-        }
-    }
+		return result;
+	}
 
-    getMaskInfo(type: string): { data: Uint8Array; w: number; h: number } | null {
-        return this.maskAlpha.get(type) || null;
-    }
+	private buildMaskSafe(key: string, src: ImageBitmap | HTMLImageElement, w: number, h: number) {
+		try {
+			const cnv = document.createElement('canvas');
+			cnv.width = Math.max(1, w | 0);
+			cnv.height = Math.max(1, h | 0);
+			const ctx = cnv.getContext('2d');
+			if (!ctx) return;
+			ctx.clearRect(0, 0, cnv.width, cnv.height);
+			const sw = 'width' in src ? (src as ImageBitmap).width : (src as HTMLImageElement).naturalWidth;
+			const sh = 'height' in src ? (src as ImageBitmap).height : (src as HTMLImageElement).naturalHeight;
+			try {
+				ctx.drawImage(src as CanvasImageSource, 0, 0, sw, sh, 0, 0, w, h);
+			} catch {}
+			const img = ctx.getImageData(0, 0, w, h);
+			const rgba = img.data;
+			const data = new Uint8Array(w * h);
+			for (let i = 0, j = 0; i < rgba.length; i += 4, j++) data[j] = rgba[i + 3];
+			this.maskAlpha.set(key, { data, w, h });
+		} catch {
+			// Likely CORS taint; skip mask for this icon
+		}
+	}
+
+	getMaskInfo(type: string): { data: Uint8Array; w: number; h: number } | null {
+		return this.maskAlpha.get(type) || null;
+	}
 
 	private async loadImageSource(url: string): Promise<ImageBitmap | HTMLImageElement | null> {
 		// Try fetch + createImageBitmap, fallback to Image element
@@ -328,11 +358,9 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 		let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
 		const snap = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
 		tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
-		
+
 		// Calculate scale factor from icon scale function
-		const iconScale = ctx.iconScaleFunction 
-			? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19)
-			: 1.0;
+		const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
 		// Compute map scissor in device pixels to clip icons outside the finite image
 		// Icons themselves are not clipped here; screen cache draw is clipped to map extent in renderer.
 
@@ -363,10 +391,10 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 			for (const type of Array.from(seen)) {
 				// Use retina if available, otherwise fallback to regular
 				const useRetina = this.hasRetina.get(type);
-				
+
 				const tex = useRetina && this.textures2x.has(type) ? this.textures2x.get(type) : this.textures.get(type);
 				const td = this.typeData.get(type);
-				
+
 				if (!tex || !td) continue;
 				let rec = this.instBuffers.get(type);
 				const byteLen = td.data.byteLength;
@@ -420,7 +448,7 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_angle, 1);
 				gl.bindTexture(gl.TEXTURE_2D, tex);
 				// Set UVs based on atlas packing (use retina UVs if using retina texture)
-				const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : (this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 });
+				const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
 				gl.uniform2f(this.instLoc!.u_uv0!, uv.u0, uv.v0);
 				gl.uniform2f(this.instLoc!.u_uv1!, uv.u1, uv.v1);
 				if (isGL2) (gl as any).drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, rec.count);
@@ -448,15 +476,15 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 		for (const [type, list] of groups) {
 			const sz = this.texSize.get(type);
 			if (!sz) continue;
-			
+
 			// Use retina if available, otherwise fallback to regular
 			const useRetina = this.hasRetina.get(type);
-			
+
 			const tex = useRetina && this.textures2x.has(type) ? this.textures2x.get(type) : this.textures.get(type);
 			if (!tex) continue;
-			
+
 			gl.bindTexture(gl.TEXTURE_2D, tex);
-			const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : (this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 });
+			const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
 			gl.uniform2f(ctx.loc.u_uv0!, uv.u0, uv.v0);
 			gl.uniform2f(ctx.loc.u_uv1!, uv.u1, uv.v1);
 			for (const m of list) {
@@ -465,20 +493,20 @@ getMarkerInfo(scale = 1): Array<{ id: string; index: number; lng: number; lat: n
 				const yCSS = (p.y - tlWorld.y) * effScale;
 				const w = (m.size || sz.w) * iconScale;
 				const h = (m.size || sz.h) * iconScale;
-				
+
 				// Frustum cull before adjusting for centering
-				if (xCSS + w/2 < 0 || yCSS + h/2 < 0 || xCSS - w/2 > widthCSS || yCSS - h/2 > heightCSS) continue;
-				
+				if (xCSS + w / 2 < 0 || yCSS + h / 2 < 0 || xCSS - w / 2 > widthCSS || yCSS - h / 2 > heightCSS) continue;
+
 				// Calculate pixel position with centering
 				// Round the center position first to ensure stable positioning
 				const centerX = Math.round(xCSS * ctx.dpr);
 				const centerY = Math.round(yCSS * ctx.dpr);
-				const halfW = Math.round(w * ctx.dpr / 2);
-				const halfH = Math.round(h * ctx.dpr / 2);
-				
+				const halfW = Math.round((w * ctx.dpr) / 2);
+				const halfH = Math.round((h * ctx.dpr) / 2);
+
 				const tx = centerX - halfW;
 				const ty = centerY - halfH;
-				const tw = halfW * 2;  // Use doubled half-width to maintain consistency
+				const tw = halfW * 2; // Use doubled half-width to maintain consistency
 				const th = halfH * 2;
 				gl.uniform2f(ctx.loc.u_translate, tx, ty);
 				gl.uniform2f(ctx.loc.u_size, tw, th);

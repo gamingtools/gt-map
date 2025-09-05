@@ -48,12 +48,12 @@ export interface MapOptions {
 
 // Content types
 export interface Marker {
-    x: number;
-    y: number;
-    type?: string;
-    size?: number;
-    rotation?: number; // degrees clockwise (optional)
-    id?: string;
+	x: number;
+	y: number;
+	type?: string;
+	size?: number;
+	rotation?: number; // degrees clockwise (optional)
+	id?: string;
 }
 
 export interface IconDef {
@@ -132,16 +132,16 @@ export interface ZoomEventData {
 }
 
 export interface FrameEventData {
-    now: number;
-    stats?: RenderStats;
+	now: number;
+	stats?: RenderStats;
 }
 
 // Base event (shared fields for richer payloads)
 export interface BaseEvent {
-    now: number;
-    view: ViewState;
-    screen?: { x: number; y: number };
-    world?: Point | null;
+	now: number;
+	view: ViewState;
+	screen?: { x: number; y: number };
+	world?: Point | null;
 }
 
 // Event map for type-safe event handling
@@ -161,13 +161,13 @@ export interface EventMap {
 
 // Performance stats
 export interface RenderStats {
-    fps?: number;
-    tilesLoaded?: number;
-    tilesVisible?: number;
-    cacheSize?: number;
-    inflight?: number;
-    pending?: number;
-    frame?: number;
+	fps?: number;
+	tilesLoaded?: number;
+	tilesVisible?: number;
+	cacheSize?: number;
+	inflight?: number;
+	pending?: number;
+	frame?: number;
 }
 
 // WebGL types
@@ -234,7 +234,7 @@ export interface MarkerInternal {
 	type: string;
 	size?: number;
 	rotation?: number;
-    id: string;
+	id: string;
 }
 
 // Icon definition internal
