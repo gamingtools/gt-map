@@ -249,6 +249,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Loader checks this dynamically; no need to track read locally
 	useImageBitmap = typeof createImageBitmap === 'function';
 	// private _movedSinceDown = false; // deprecated; input handled by controller
+	// Hover hit-testing debounce to avoid churn during interactions
+	private _hitTestDebounceMs = 75;
 
 	constructor(container: HTMLDivElement, options: MapOptions = {}) {
 		this.container = container;
@@ -834,11 +836,29 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		try {
 			this.events.on('pointermove').each((e: any) => {
 				if (!e || e.x == null || e.y == null) return;
+				// Disable hover hit-testing during active pan/zoom and for a short debounce after
+				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+				const idle = !moving && now - this._lastInteractAt >= this._hitTestDebounceMs;
+				if (!idle) {
+					if (this._lastHover) {
+						const prev = this._lastHover;
+						this._events.emit('markerleave', {
+							now,
+							view: this._viewPublic(),
+							screen: { x: e.x, y: e.y },
+							marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+							icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+						});
+						this._lastHover = null;
+					}
+					return;
+				}
 				const hit = this._hitTestMarker(e.x, e.y);
 				if (hit) {
 					if (!this._lastHover || this._lastHover.idx !== hit.idx || this._lastHover.type !== hit.type) {
 						this._events.emit('markerenter', {
-							now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+							now,
 							view: this._viewPublic(),
 							screen: { x: e.x, y: e.y },
 							marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
@@ -849,7 +869,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				} else if (this._lastHover) {
 					const prev = this._lastHover;
 					this._events.emit('markerleave', {
-						now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+						now,
 						view: this._viewPublic(),
 						screen: { x: e.x, y: e.y },
 						marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
