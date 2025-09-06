@@ -44,9 +44,7 @@ export class IconRenderer {
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
 
 	// Expose resolved marker sizes for debug overlays (hitboxes)
-	getMarkerInfo(
-		scale = 1,
-	): Array<{
+	getMarkerInfo(scale = 1): Array<{
 		id: string;
 		index: number;
 		lng: number;

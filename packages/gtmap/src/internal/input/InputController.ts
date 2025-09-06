@@ -206,7 +206,9 @@ export default class InputController {
 			// mouse dblclick derived in mapgl
 		};
 
-		const onContextMenu = (_e: MouseEvent) => { /* derived in mapgl */ };
+		const onContextMenu = (_e: MouseEvent) => {
+			/* derived in mapgl */
+		};
 
 		const onKeyDown = (e: KeyboardEvent) => {
 			const key = e.key;

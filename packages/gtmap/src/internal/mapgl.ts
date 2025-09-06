@@ -27,7 +27,6 @@ import type { ViewState } from './types';
 import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 import { FrameLoop } from './core/FrameLoop';
 
-
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
 	tileUrl?: string;
@@ -172,7 +171,12 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		let bg = def;
 		if (typeof input === 'string') bg = toRGBA(input);
 		else if (input && typeof input.r === 'number' && typeof input.g === 'number' && typeof input.b === 'number') {
-			bg = { r: Math.max(0, Math.min(1, input.r / (input.r > 1 ? 255 : 1))), g: Math.max(0, Math.min(1, input.g / (input.g > 1 ? 255 : 1))), b: Math.max(0, Math.min(1, input.b / (input.b > 1 ? 255 : 1))), a: input.a != null ? Math.max(0, Math.min(1, input.a)) : 1 };
+			bg = {
+				r: Math.max(0, Math.min(1, input.r / (input.r > 1 ? 255 : 1))),
+				g: Math.max(0, Math.min(1, input.g / (input.g > 1 ? 255 : 1))),
+				b: Math.max(0, Math.min(1, input.b / (input.b > 1 ? 255 : 1))),
+				a: input.a != null ? Math.max(0, Math.min(1, input.a)) : 1,
+			};
 		}
 		this._bg = bg;
 		try {
@@ -310,7 +314,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	useImageBitmap = typeof createImageBitmap === 'function';
 	// private _movedSinceDown = false; // deprecated; input handled by controller
 	// Hover hit-testing debounce to avoid churn during interactions
-    private _hitTestDebounceMs = 75;
+	private _hitTestDebounceMs = 75;
 
 	constructor(container: HTMLDivElement, options: MapOptions = {}) {
 		this.container = container;
@@ -360,8 +364,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
 
-        // Auto-resize setup (attach after first frame to avoid startup jitter)
-        this._autoResize = options.autoResize !== false;
+		// Auto-resize setup (attach after first frame to avoid startup jitter)
+		this._autoResize = options.autoResize !== false;
 
 		// Initialize screen cache module (uses detected format)
 		this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
@@ -462,30 +466,30 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._initVectorCanvas();
 		this.resize();
 		this._initEvents();
-        this._frameLoop = new FrameLoop(
-            () => this._targetFps,
-            (now: number, allowRender: boolean) => this._tick(now, allowRender),
-        );
-        this._frameLoop.start();
-        // Fire load event after first frame has been scheduled
-        try {
-            const emitLoad = () => {
-                const rect2 = this.container.getBoundingClientRect();
-                const cssW2 = Math.max(1, Math.round(rect2.width));
-                const cssH2 = Math.max(1, Math.round(rect2.height));
-                const dpr2 = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
-                this._events.emit('load', { view: this._viewPublic(), size: { width: cssW2, height: cssH2, dpr: dpr2 } } as any);
-            };
-            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(emitLoad);
-            else setTimeout(emitLoad, 0);
-        } catch {}
-        // Attach auto-resize after first stable frame to avoid initial layout interference
-        if (this._autoResize) {
-            const attach = () => this._attachAutoResize();
-            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(attach));
-            else setTimeout(attach, 0);
-        }
-        // Delay baseline prefetch until a tile source is explicitly set
+		this._frameLoop = new FrameLoop(
+			() => this._targetFps,
+			(now: number, allowRender: boolean) => this._tick(now, allowRender),
+		);
+		this._frameLoop.start();
+		// Fire load event after first frame has been scheduled
+		try {
+			const emitLoad = () => {
+				const rect2 = this.container.getBoundingClientRect();
+				const cssW2 = Math.max(1, Math.round(rect2.width));
+				const cssH2 = Math.max(1, Math.round(rect2.height));
+				const dpr2 = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
+				this._events.emit('load', { view: this._viewPublic(), size: { width: cssW2, height: cssH2, dpr: dpr2 } } as any);
+			};
+			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(emitLoad);
+			else setTimeout(emitLoad, 0);
+		} catch {}
+		// Attach auto-resize after first stable frame to avoid initial layout interference
+		if (this._autoResize) {
+			const attach = () => this._attachAutoResize();
+			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(attach));
+			else setTimeout(attach, 0);
+		}
+		// Delay baseline prefetch until a tile source is explicitly set
 		// DI in place for input/tiles/render; no need for TS usage hacks
 	}
 
@@ -614,7 +618,9 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// recenter helper removed from public surface; use setCenter/setView via facade
 	destroy() {
 		// Detach observers and listeners first
-		try { this._detachAutoResize(); } catch {}
+		try {
+			this._detachAutoResize();
+		} catch {}
 		if (this._frameLoop) {
 			try {
 				this._frameLoop.stop();
@@ -675,27 +681,27 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	}
 
 	// Public controls
-    private _initCanvas() {
-        const canvas = document.createElement('canvas');
-        canvas.classList.add('gtmap-canvas');
-        Object.assign(canvas.style, {
-            display: 'block',
-            position: 'absolute',
-            left: '0',
-            top: '0',
-            right: '0',
-            bottom: '0',
-            zIndex: '0',
-        } as CSSStyleDeclaration);
-        // Ensure container behaves as a viewport without scrollbars during resize
-        try {
-            const cs = this.container.style as CSSStyleDeclaration;
-            if (!cs.position) cs.position = 'relative';
-            cs.overflow = 'hidden';
-        } catch {}
-        this.container.appendChild(canvas);
-        this.canvas = canvas;
-    }
+	private _initCanvas() {
+		const canvas = document.createElement('canvas');
+		canvas.classList.add('gtmap-canvas');
+		Object.assign(canvas.style, {
+			display: 'block',
+			position: 'absolute',
+			left: '0',
+			top: '0',
+			right: '0',
+			bottom: '0',
+			zIndex: '0',
+		} as CSSStyleDeclaration);
+		// Ensure container behaves as a viewport without scrollbars during resize
+		try {
+			const cs = this.container.style as CSSStyleDeclaration;
+			if (!cs.position) cs.position = 'relative';
+			cs.overflow = 'hidden';
+		} catch {}
+		this.container.appendChild(canvas);
+		this.canvas = canvas;
+	}
 	private _initGridCanvas() {
 		const c = document.createElement('canvas');
 		c.classList.add('gtmap-grid-canvas');
@@ -805,42 +811,42 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		// Delegate to Graphics to set up programs and buffers
 		this._gfx.initPrograms();
 	}
-    resize() {
-        const dpr = Math.max(1, Math.min(globalThis.devicePixelRatio || 1, 3));
-        const rect = this.container.getBoundingClientRect();
-        const cssW = Math.max(1, Math.round(rect.width));
-        const cssH = Math.max(1, Math.round(rect.height));
-        // Snap CSS size to integer pixels to avoid subpixel jitter
-        this.canvas.style.width = cssW + 'px';
-        this.canvas.style.height = cssH + 'px';
-        const w = Math.max(1, Math.floor(rect.width * dpr));
-        const h = Math.max(1, Math.floor(rect.height * dpr));
-        if (this.canvas.width !== w || this.canvas.height !== h) {
-            this.canvas.width = w;
-            this.canvas.height = h;
-            this._dpr = dpr;
-            this.gl.viewport(0, 0, w, h);
-            this._needsRender = true;
-        }
-        if (this.gridCanvas) {
-            this.gridCanvas.style.width = cssW + 'px';
-            this.gridCanvas.style.height = cssH + 'px';
-            if (this.gridCanvas.width !== w || this.gridCanvas.height !== h) {
-                this.gridCanvas.width = w;
-                this.gridCanvas.height = h;
-                this._needsRender = true;
-            }
-        }
-        if (this.vectorCanvas) {
-            this.vectorCanvas.style.width = cssW + 'px';
-            this.vectorCanvas.style.height = cssH + 'px';
-            if (this.vectorCanvas.width !== w || this.vectorCanvas.height !== h) {
-                this.vectorCanvas.width = w;
-                this.vectorCanvas.height = h;
-                this._needsRender = true;
-            }
-        }
-    }
+	resize() {
+		const dpr = Math.max(1, Math.min(globalThis.devicePixelRatio || 1, 3));
+		const rect = this.container.getBoundingClientRect();
+		const cssW = Math.max(1, Math.round(rect.width));
+		const cssH = Math.max(1, Math.round(rect.height));
+		// Snap CSS size to integer pixels to avoid subpixel jitter
+		this.canvas.style.width = cssW + 'px';
+		this.canvas.style.height = cssH + 'px';
+		const w = Math.max(1, Math.floor(rect.width * dpr));
+		const h = Math.max(1, Math.floor(rect.height * dpr));
+		if (this.canvas.width !== w || this.canvas.height !== h) {
+			this.canvas.width = w;
+			this.canvas.height = h;
+			this._dpr = dpr;
+			this.gl.viewport(0, 0, w, h);
+			this._needsRender = true;
+		}
+		if (this.gridCanvas) {
+			this.gridCanvas.style.width = cssW + 'px';
+			this.gridCanvas.style.height = cssH + 'px';
+			if (this.gridCanvas.width !== w || this.gridCanvas.height !== h) {
+				this.gridCanvas.width = w;
+				this.gridCanvas.height = h;
+				this._needsRender = true;
+			}
+		}
+		if (this.vectorCanvas) {
+			this.vectorCanvas.style.width = cssW + 'px';
+			this.vectorCanvas.style.height = cssH + 'px';
+			if (this.vectorCanvas.width !== w || this.vectorCanvas.height !== h) {
+				this.vectorCanvas.width = w;
+				this.vectorCanvas.height = h;
+				this._needsRender = true;
+			}
+		}
+	}
 
 	private _scheduleResizeTrailing() {
 		if (this._resizeTimer != null) {
@@ -984,24 +990,32 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			let longPressed = false;
 			let pressTarget: { id: string; idx: number } | null = null;
 			// Click intention: record down and detect movement
-            this.events.on('pointerdown').each((e: any) => {
-                if (!e || e.x == null || e.y == null) return;
+			this.events.on('pointerdown').each((e: any) => {
+				if (!e || e.x == null || e.y == null) return;
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 				const ptrType = (e.originalEvent?.pointerType || '').toString();
 				const tol = ptrType === 'touch' ? 18 : 8;
 				this._downAt = { x: e.x, y: e.y, t: now, tol };
 				this._movedSinceDown = false;
 				// Emit markerdown if hit
-                const hit = this._hitTestMarker(e.x, e.y, false);
-                if (hit) {
-                    this._emitMarker('down', {
-                        now,
-                        view: this._viewPublic(),
-                        screen: { x: e.x, y: e.y },
-                        marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-                        icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
-                        originalEvent: e.originalEvent as any,
-                    });
+				const hit = this._hitTestMarker(e.x, e.y, false);
+				if (hit) {
+					this._emitMarker('down', {
+						now,
+						view: this._viewPublic(),
+						screen: { x: e.x, y: e.y },
+						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
+						icon: {
+							id: hit.type,
+							iconPath: hit.icon.iconPath,
+							x2IconPath: hit.icon.x2IconPath,
+							width: hit.icon.width,
+							height: hit.icon.height,
+							anchorX: hit.icon.anchorX,
+							anchorY: hit.icon.anchorY,
+						},
+						originalEvent: e.originalEvent as any,
+					});
 					pressTarget = { id: hit.id, idx: hit.idx };
 					longPressed = false;
 					// Start long-press timer for touch
@@ -1012,24 +1026,39 @@ export default class GTMap implements MapImpl, GraphicsHost {
 							longPressed = true;
 							// Emit markerlongpress at current pointer
 							const lpHit = this._hitTestMarker(e.x, e.y, false);
-                        if (lpHit && pressTarget && lpHit.id === pressTarget.id) {
-                            this._emitMarker('longpress', {
-                                now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
-                                view: this._viewPublic(),
-                                screen: { x: e.x, y: e.y },
-                                marker: { id: lpHit.id, index: lpHit.idx, world: { x: lpHit.world.x, y: lpHit.world.y }, size: lpHit.size, rotation: lpHit.rotation, data: this._markerData.get(lpHit.id) },
-                                icon: { id: lpHit.type, iconPath: lpHit.icon.iconPath, x2IconPath: lpHit.icon.x2IconPath, width: lpHit.icon.width, height: lpHit.icon.height, anchorX: lpHit.icon.anchorX, anchorY: lpHit.icon.anchorY },
-                                originalEvent: e.originalEvent as any,
-                            });
-                        }
+							if (lpHit && pressTarget && lpHit.id === pressTarget.id) {
+								this._emitMarker('longpress', {
+									now: typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(),
+									view: this._viewPublic(),
+									screen: { x: e.x, y: e.y },
+									marker: {
+										id: lpHit.id,
+										index: lpHit.idx,
+										world: { x: lpHit.world.x, y: lpHit.world.y },
+										size: lpHit.size,
+										rotation: lpHit.rotation,
+										data: this._markerData.get(lpHit.id),
+									},
+									icon: {
+										id: lpHit.type,
+										iconPath: lpHit.icon.iconPath,
+										x2IconPath: lpHit.icon.x2IconPath,
+										width: lpHit.icon.width,
+										height: lpHit.icon.height,
+										anchorX: lpHit.icon.anchorX,
+										anchorY: lpHit.icon.anchorY,
+									},
+									originalEvent: e.originalEvent as any,
+								});
+							}
 						}, 500);
 					}
 				} else {
 					pressTarget = null;
 				}
-            });
-            this.events.on('pointermove').each((e: any) => {
-                if (!e || e.x == null || e.y == null) return;
+			});
+			this.events.on('pointermove').each((e: any) => {
+				if (!e || e.x == null || e.y == null) return;
 				if (this._downAt) {
 					const dx = e.x - this._downAt.x;
 					const dy = e.y - this._downAt.y;
@@ -1047,149 +1076,164 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				if (!idle) {
 					if (this._lastHover) {
 						const prev = this._lastHover;
-                    this._emitMarker('leave', {
-                        now,
-                        view: this._viewPublic(),
-                        screen: { x: e.x, y: e.y },
-                        marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-                        icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-                    });
+						this._emitMarker('leave', {
+							now,
+							view: this._viewPublic(),
+							screen: { x: e.x, y: e.y },
+							marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+							icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+						});
 						this._lastHover = null;
 					}
 					return;
 				}
-                const hit = this._hitTestMarker(e.x, e.y, false);
+				const hit = this._hitTestMarker(e.x, e.y, false);
 				if (hit) {
 					if (!this._lastHover || this._lastHover.idx !== hit.idx || this._lastHover.type !== hit.type) {
-                        this._emitMarker('enter', {
-                            now,
-                            view: this._viewPublic(),
-                            screen: { x: e.x, y: e.y },
-                            marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-                            icon: {
-                                id: hit.type,
-                                iconPath: hit.icon.iconPath,
-                                x2IconPath: hit.icon.x2IconPath,
-                                width: hit.icon.width,
-                                height: hit.icon.height,
-                                anchorX: hit.icon.anchorX,
-                                anchorY: hit.icon.anchorY,
-                            },
-                            originalEvent: e.originalEvent as any,
-                        });
+						this._emitMarker('enter', {
+							now,
+							view: this._viewPublic(),
+							screen: { x: e.x, y: e.y },
+							marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
+							icon: {
+								id: hit.type,
+								iconPath: hit.icon.iconPath,
+								x2IconPath: hit.icon.x2IconPath,
+								width: hit.icon.width,
+								height: hit.icon.height,
+								anchorX: hit.icon.anchorX,
+								anchorY: hit.icon.anchorY,
+							},
+							originalEvent: e.originalEvent as any,
+						});
 						this._lastHover = { idx: hit.idx, type: hit.type };
 					}
 				} else if (this._lastHover) {
 					const prev = this._lastHover;
-                    this._emitMarker('leave', {
-                        now,
-                        view: this._viewPublic(),
-                        screen: { x: e.x, y: e.y },
-                        marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-                        icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-                        originalEvent: e.originalEvent as any,
-                    });
+					this._emitMarker('leave', {
+						now,
+						view: this._viewPublic(),
+						screen: { x: e.x, y: e.y },
+						marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+						icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+						originalEvent: e.originalEvent as any,
+					});
 					this._lastHover = null;
 				}
-            });
-            this.events.on('pointerup').each((e: any) => {
-                if (!e || e.x == null || e.y == null) return;
+			});
+			this.events.on('pointerup').each((e: any) => {
+				if (!e || e.x == null || e.y == null) return;
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
 				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
 				this._downAt = null;
 				// Emit markerup if hit
-                const upHit = this._hitTestMarker(e.x, e.y, true);
-                if (upHit) {
-                    this._emitMarker('up', {
-                        now,
-                        view: this._viewPublic(),
-                        screen: { x: e.x, y: e.y },
-                        marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation, data: this._markerData.get(upHit.id) },
-                        icon: { id: upHit.type, iconPath: upHit.icon.iconPath, x2IconPath: upHit.icon.x2IconPath, width: upHit.icon.width, height: upHit.icon.height, anchorX: upHit.icon.anchorX, anchorY: upHit.icon.anchorY },
-                        originalEvent: e.originalEvent as any,
-                    });
-                }
+				const upHit = this._hitTestMarker(e.x, e.y, true);
+				if (upHit) {
+					this._emitMarker('up', {
+						now,
+						view: this._viewPublic(),
+						screen: { x: e.x, y: e.y },
+						marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation, data: this._markerData.get(upHit.id) },
+						icon: {
+							id: upHit.type,
+							iconPath: upHit.icon.iconPath,
+							x2IconPath: upHit.icon.x2IconPath,
+							width: upHit.icon.width,
+							height: upHit.icon.height,
+							anchorX: upHit.icon.anchorX,
+							anchorY: upHit.icon.anchorY,
+						},
+						originalEvent: e.originalEvent as any,
+					});
+				}
 				// Cancel any pending long-press
 				if (longPressTimer != null) {
 					clearTimeout(longPressTimer);
 					longPressTimer = null;
 				}
 				if (!isClick) return;
-                const hit = this._hitTestMarker(e.x, e.y, true);
-                if (hit)
-                    this._emitMarker('click', {
-                        now,
-                        view: this._viewPublic(),
-                        screen: { x: e.x, y: e.y },
-                        marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-                        icon: {
-                            id: hit.type,
-                            iconPath: hit.icon.iconPath,
-                            x2IconPath: hit.icon.x2IconPath,
-                            width: hit.icon.width,
-                            height: hit.icon.height,
-                            anchorX: hit.icon.anchorX,
-                            anchorY: hit.icon.anchorY,
-                        },
-                        originalEvent: e.originalEvent as any,
-                });
+				const hit = this._hitTestMarker(e.x, e.y, true);
+				if (hit)
+					this._emitMarker('click', {
+						now,
+						view: this._viewPublic(),
+						screen: { x: e.x, y: e.y },
+						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
+						icon: {
+							id: hit.type,
+							iconPath: hit.icon.iconPath,
+							x2IconPath: hit.icon.x2IconPath,
+							width: hit.icon.width,
+							height: hit.icon.height,
+							anchorX: hit.icon.anchorX,
+							anchorY: hit.icon.anchorY,
+						},
+						originalEvent: e.originalEvent as any,
+					});
 				// Reset press state
 				pressTarget = null;
 				if (longPressed) {
 					// suppress synthetic follow-up behaviors if needed
 					longPressed = false;
 				}
-            });
+			});
 
-            // Enrich mouse events with markers when hover is enabled
-            const emitMouseOnce = (name: keyof import('../api/types').EventMap, e: any) => {
-                if (!e || e.x == null || e.y == null) { this._events.emit(name, e); return; }
-                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-                const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
-                const idle = !moving && now - this._lastInteractAt >= this._hitTestDebounceMs;
-                let payload = e;
-                if (idle) {
-                    if (name === 'mousemove') {
-                        const last = (this as any)._lastMouseEnrichAt || 0;
-                        if (now - last >= 16) (this as any)._lastMouseEnrichAt = now; else idle && (payload = e);
-                    }
-                    try {
-                        const hits = this._computeMarkerHits(e.x, e.y);
-                        if (hits.length) {
-                            const mapped = hits.map(h => ({ marker: { id: h.id, index: h.idx, world: { x: h.world.x, y: h.world.y }, size: h.size, rotation: h.rotation, data: this._markerData.get(h.id) }, icon: h.icon }));
-                            payload = { ...e, markers: mapped } as any;
-                        }
-                    } catch {}
-                }
-                this._events.emit(name, payload);
-            };
-            // Derive mouse events from pointer events to avoid duplicate emissions
-            this.events.on('pointerdown').each((e: any) => {
-                if ((e.originalEvent?.pointerType || '') === 'mouse') {
-                    emitMouseOnce('mousedown', e);
-                }
-            });
-            this.events.on('pointermove').each((e: any) => {
-                if ((e.originalEvent?.pointerType || '') === 'mouse') {
-                    emitMouseOnce('mousemove', e);
-                }
-            });
-            this.events.on('pointerup').each((e: any) => {
-                if ((e.originalEvent?.pointerType || '') === 'mouse') {
-                    emitMouseOnce('mouseup', e);
-                }
-            });
-            // Click and dblclick/contextmenu derived here if needed
-            this.events.on('pointerup').each((e: any) => {
-                if ((e.originalEvent?.pointerType || '') !== 'mouse') return;
-                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-                const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
-                const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
-                if (!isClick) return;
-                emitMouseOnce('click', e);
-            });
-        } catch {}
+			// Enrich mouse events with markers when hover is enabled
+			const emitMouseOnce = (name: keyof import('../api/types').EventMap, e: any) => {
+				if (!e || e.x == null || e.y == null) {
+					this._events.emit(name, e);
+					return;
+				}
+				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+				const idle = !moving && now - this._lastInteractAt >= this._hitTestDebounceMs;
+				let payload = e;
+				if (idle) {
+					if (name === 'mousemove') {
+						const last = (this as any)._lastMouseEnrichAt || 0;
+						if (now - last >= 16) (this as any)._lastMouseEnrichAt = now;
+						else idle && (payload = e);
+					}
+					try {
+						const hits = this._computeMarkerHits(e.x, e.y);
+						if (hits.length) {
+							const mapped = hits.map((h) => ({
+								marker: { id: h.id, index: h.idx, world: { x: h.world.x, y: h.world.y }, size: h.size, rotation: h.rotation, data: this._markerData.get(h.id) },
+								icon: h.icon,
+							}));
+							payload = { ...e, markers: mapped } as any;
+						}
+					} catch {}
+				}
+				this._events.emit(name, payload);
+			};
+			// Derive mouse events from pointer events to avoid duplicate emissions
+			this.events.on('pointerdown').each((e: any) => {
+				if ((e.originalEvent?.pointerType || '') === 'mouse') {
+					emitMouseOnce('mousedown', e);
+				}
+			});
+			this.events.on('pointermove').each((e: any) => {
+				if ((e.originalEvent?.pointerType || '') === 'mouse') {
+					emitMouseOnce('mousemove', e);
+				}
+			});
+			this.events.on('pointerup').each((e: any) => {
+				if ((e.originalEvent?.pointerType || '') === 'mouse') {
+					emitMouseOnce('mouseup', e);
+				}
+			});
+			// Click and dblclick/contextmenu derived here if needed
+			this.events.on('pointerup').each((e: any) => {
+				if ((e.originalEvent?.pointerType || '') !== 'mouse') return;
+				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
+				if (!isClick) return;
+				emitMouseOnce('click', e);
+			});
+		} catch {}
 	}
 
 	public setMarkerData(payloads: Record<string, any | null | undefined>) {
@@ -1509,31 +1553,33 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private _downAt: { x: number; y: number; t: number; tol: number } | null = null;
 	private _movedSinceDown = false;
 	private _markerData = new Map<string, any | null | undefined>();
-    // Private marker event sinks (not exposed on public bus)
-    private _markerSinks: Record<'enter'|'leave'|'click'|'down'|'up'|'longpress', Set<(e: any)=>void>> = {
-        enter: new Set(),
-        leave: new Set(),
-        click: new Set(),
-        down: new Set(),
-        up: new Set(),
-        longpress: new Set(),
-    };
+	// Private marker event sinks (not exposed on public bus)
+	private _markerSinks: Record<'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', Set<(e: any) => void>> = {
+		enter: new Set(),
+		leave: new Set(),
+		click: new Set(),
+		down: new Set(),
+		up: new Set(),
+		longpress: new Set(),
+	};
 
-    public onMarkerEvent(name: 'enter'|'leave'|'click'|'down'|'up'|'longpress', handler: (e: any)=>void): () => void {
-        const set = this._markerSinks[name];
-        set.add(handler);
-        return () => set.delete(handler);
-    }
+	public onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: any) => void): () => void {
+		const set = this._markerSinks[name];
+		set.add(handler);
+		return () => set.delete(handler);
+	}
 
-    private _emitMarker(name: 'enter'|'leave'|'click'|'down'|'up'|'longpress', payload: any) {
-        const set = this._markerSinks[name];
-        if (!set || set.size === 0) return;
-        for (const fn of Array.from(set)) {
-            try { fn(payload); } catch {}
-        }
-    }
-    private _hitTestMarker(px: number, py: number, requireAlpha = false) {
-        void requireAlpha;
+	private _emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: any) {
+		const set = this._markerSinks[name];
+		if (!set || set.size === 0) return;
+		for (const fn of Array.from(set)) {
+			try {
+				fn(payload);
+			} catch {}
+		}
+	}
+	private _hitTestMarker(px: number, py: number, requireAlpha = false) {
+		void requireAlpha;
 		if (!this._icons) return null;
 		const rect = this.container.getBoundingClientRect();
 		const widthCSS = rect.width;
@@ -1541,7 +1587,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-        for (let i = info.length - 1; i >= 0; i--) {
+		for (let i = info.length - 1; i >= 0; i--) {
 			const it = info[i];
 			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
 			const left = css.x - it.anchor.ax;
@@ -1568,51 +1614,76 @@ export default class GTMap implements MapImpl, GraphicsHost {
 					const alpha = mask.data[my * mask.w + mx] | 0;
 					const THRESH = 32; // ~12.5%
 					if (alpha < THRESH) continue; // treat as transparent: no hit
-                }
+				}
 				return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { w: it.w, h: it.h }, rotation: it.rotation, icon: it.icon };
 			}
 		}
-        return null;
-    }
+		return null;
+	}
 
-    private _computeMarkerHits(px: number, py: number): Array<{ id: string; idx: number; world: { x: number; y: number }; size: { w: number; h: number }; rotation?: number; icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number } }> {
-        const out: Array<{ id: string; idx: number; world: { x: number; y: number }; size: { w: number; h: number }; rotation?: number; icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number } }> = [];
-        if (!this._icons) return out;
-        const rect = this.container.getBoundingClientRect();
-        const widthCSS = rect.width;
-        const heightCSS = rect.height;
-        const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
-        const info = this._icons.getMarkerInfo(iconScale);
-        const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-        for (let i = info.length - 1; i >= 0; i--) {
-            const it = info[i];
-            const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
-            const left = css.x - it.anchor.ax;
-            const top = css.y - it.anchor.ay;
-            if (px < left || px > left + it.w || py < top || py > top + it.h) continue;
-            const mask = (this._icons as any).getMaskInfo?.(it.type) as { data: Uint8Array; w: number; h: number } | null;
-            if (mask) {
-                const ax = it.anchor.ax;
-                const ay = it.anchor.ay;
-                const lx = px - left;
-                const ly = py - top;
-                const cx = lx - ax;
-                const cy = ly - ay;
-                const theta = ((it.rotation || 0) * Math.PI) / 180;
-                const c = Math.cos(-theta), s = Math.sin(-theta);
-                const rx = cx * c - cy * s + ax;
-                const ry = cx * s + cy * c + ay;
-                if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
-                const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
-                const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
-                const alpha = mask.data[my * mask.w + mx] | 0;
-                const THRESH = 32;
-                if (alpha < THRESH) continue;
-            }
-            out.push({ id: it.id, idx: it.index, world: { x: it.lng, y: it.lat }, size: { w: it.w, h: it.h }, rotation: it.rotation, icon: { id: it.type, iconPath: it.icon.iconPath, x2IconPath: it.icon.x2IconPath, width: it.icon.width, height: it.icon.height, anchorX: it.icon.anchorX, anchorY: it.icon.anchorY } });
-        }
-        return out;
-    }
+	private _computeMarkerHits(
+		px: number,
+		py: number,
+	): Array<{
+		id: string;
+		idx: number;
+		world: { x: number; y: number };
+		size: { w: number; h: number };
+		rotation?: number;
+		icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+	}> {
+		const out: Array<{
+			id: string;
+			idx: number;
+			world: { x: number; y: number };
+			size: { w: number; h: number };
+			rotation?: number;
+			icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+		}> = [];
+		if (!this._icons) return out;
+		const rect = this.container.getBoundingClientRect();
+		const widthCSS = rect.width;
+		const heightCSS = rect.height;
+		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
+		const info = this._icons.getMarkerInfo(iconScale);
+		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+		for (let i = info.length - 1; i >= 0; i--) {
+			const it = info[i];
+			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+			const left = css.x - it.anchor.ax;
+			const top = css.y - it.anchor.ay;
+			if (px < left || px > left + it.w || py < top || py > top + it.h) continue;
+			const mask = (this._icons as any).getMaskInfo?.(it.type) as { data: Uint8Array; w: number; h: number } | null;
+			if (mask) {
+				const ax = it.anchor.ax;
+				const ay = it.anchor.ay;
+				const lx = px - left;
+				const ly = py - top;
+				const cx = lx - ax;
+				const cy = ly - ay;
+				const theta = ((it.rotation || 0) * Math.PI) / 180;
+				const c = Math.cos(-theta),
+					s = Math.sin(-theta);
+				const rx = cx * c - cy * s + ax;
+				const ry = cx * s + cy * c + ay;
+				if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
+				const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
+				const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
+				const alpha = mask.data[my * mask.w + mx] | 0;
+				const THRESH = 32;
+				if (alpha < THRESH) continue;
+			}
+			out.push({
+				id: it.id,
+				idx: it.index,
+				world: { x: it.lng, y: it.lat },
+				size: { w: it.w, h: it.h },
+				rotation: it.rotation,
+				icon: { id: it.type, iconPath: it.icon.iconPath, x2IconPath: it.icon.x2IconPath, width: it.icon.width, height: it.icon.height, anchorX: it.icon.anchorX, anchorY: it.icon.anchorY },
+			});
+		}
+		return out;
+	}
 
 	public setMarkerHitboxesVisible(on: boolean) {
 		this._showMarkerHitboxes = !!on;
@@ -1628,22 +1699,22 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._needsRender = true;
 	}
 
-    private _ensureOverlaySizes() {
-        const rect = this.container.getBoundingClientRect();
-        const wCSS = Math.max(1, rect.width | 0);
-        const hCSS = Math.max(1, rect.height | 0);
-        const dpr = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
-        const wPx = Math.max(1, Math.round(wCSS * dpr));
-        const hPx = Math.max(1, Math.round(hCSS * dpr));
-        if (this.gridCanvas && (this.gridCanvas.width !== wPx || this.gridCanvas.height !== hPx)) {
-            this.gridCanvas.width = wPx;
-            this.gridCanvas.height = hPx;
-        }
-        if (this.vectorCanvas && (this.vectorCanvas.width !== wPx || this.vectorCanvas.height !== hPx)) {
-            this.vectorCanvas.width = wPx;
-            this.vectorCanvas.height = hPx;
-        }
-    }
+	private _ensureOverlaySizes() {
+		const rect = this.container.getBoundingClientRect();
+		const wCSS = Math.max(1, rect.width | 0);
+		const hCSS = Math.max(1, rect.height | 0);
+		const dpr = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
+		const wPx = Math.max(1, Math.round(wCSS * dpr));
+		const hPx = Math.max(1, Math.round(hCSS * dpr));
+		if (this.gridCanvas && (this.gridCanvas.width !== wPx || this.gridCanvas.height !== hPx)) {
+			this.gridCanvas.width = wPx;
+			this.gridCanvas.height = hPx;
+		}
+		if (this.vectorCanvas && (this.vectorCanvas.width !== wPx || this.vectorCanvas.height !== hPx)) {
+			this.vectorCanvas.width = wPx;
+			this.vectorCanvas.height = hPx;
+		}
+	}
 
 	private _drawVectors() {
 		if (!this._vectorCtx) this._initVectorCanvas();

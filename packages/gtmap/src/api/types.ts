@@ -47,10 +47,10 @@ export interface MapOptions {
 	 */
 	autoResize?: boolean;
 	/**
-     * Viewport background color: CSS hex (e.g., '#0a0a0a', '#00000080'), 'transparent',
-     * or RGBA components. If alpha < 1, the canvas is requested with alpha enabled.
-     * Default: 'transparent'.
-     */
+	 * Viewport background color: CSS hex (e.g., '#0a0a0a', '#00000080'), 'transparent',
+	 * or RGBA components. If alpha < 1, the canvas is requested with alpha enabled.
+	 * Default: 'transparent'.
+	 */
 	backgroundColor?: string | { r: number; g: number; b: number; a?: number };
 	prefetch?: { enabled?: boolean; baselineLevel?: number; ring?: number };
 	screenCache?: boolean;
@@ -59,13 +59,13 @@ export interface MapOptions {
 
 // Content types
 export interface Marker {
-    x: number;
-    y: number;
-    type?: string;
-    size?: number;
-    rotation?: number; // degrees clockwise (optional)
-    id?: string;
-    data?: any | null;
+	x: number;
+	y: number;
+	type?: string;
+	size?: number;
+	rotation?: number; // degrees clockwise (optional)
+	id?: string;
+	data?: any | null;
 }
 
 export interface IconDef {
@@ -128,25 +128,25 @@ export function isCircle(v: Vector): v is Circle {
 
 // Event data types
 export interface PointerEventData {
-    x: number;
-    y: number;
-    world: Point | null;
-    view: ViewState;
-    originalEvent: PointerEvent;
+	x: number;
+	y: number;
+	world: Point | null;
+	view: ViewState;
+	originalEvent: PointerEvent;
 }
 
 export interface MouseEventData {
-    x: number;
-    y: number;
-    world: Point | null;
-    view: ViewState;
-    originalEvent: MouseEvent;
-    markers?: MarkerHit[];
+	x: number;
+	y: number;
+	world: Point | null;
+	view: ViewState;
+	originalEvent: MouseEvent;
+	markers?: MarkerHit[];
 }
 
 export interface MarkerHit {
-    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
-    icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
+	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
 
 export interface MoveEventData {
@@ -158,19 +158,19 @@ export interface ZoomEventData {
 }
 
 export interface FrameEventData {
-    now: number;
-    stats?: RenderStats;
+	now: number;
+	stats?: RenderStats;
 }
 
 // Lifecycle event payloads
 export interface LoadEventData {
-    view: ViewState;
-    size: { width: number; height: number; dpr: number };
+	view: ViewState;
+	size: { width: number; height: number; dpr: number };
 }
 
 export interface ResizeEventData {
-    view: ViewState;
-    size: { width: number; height: number; dpr: number };
+	view: ViewState;
+	size: { width: number; height: number; dpr: number };
 }
 
 // Base event (shared fields for richer payloads)
@@ -183,29 +183,29 @@ export interface BaseEvent {
 
 // Event map for type-safe event handling
 export interface EventMap {
-    [k: string]: unknown;
-    load: LoadEventData;
-    resize: ResizeEventData;
-    move: MoveEventData;
-    moveend: MoveEventData;
-    zoom: ZoomEventData;
-    zoomend: ZoomEventData;
-    pointerdown: PointerEventData;
-    pointermove: PointerEventData;
-    pointerup: PointerEventData;
-    frame: FrameEventData;
-    markerenter: MarkerEventData;
-    markerleave: MarkerEventData;
-    markerclick: MarkerEventData;
-    markerdown: MarkerEventData;
-    markerup: MarkerEventData;
-    markerlongpress: MarkerEventData;
-    mousedown: MouseEventData;
-    mousemove: MouseEventData;
-    mouseup: MouseEventData;
-    click: MouseEventData;
-    dblclick: MouseEventData;
-    contextmenu: MouseEventData;
+	[k: string]: unknown;
+	load: LoadEventData;
+	resize: ResizeEventData;
+	move: MoveEventData;
+	moveend: MoveEventData;
+	zoom: ZoomEventData;
+	zoomend: ZoomEventData;
+	pointerdown: PointerEventData;
+	pointermove: PointerEventData;
+	pointerup: PointerEventData;
+	frame: FrameEventData;
+	markerenter: MarkerEventData;
+	markerleave: MarkerEventData;
+	markerclick: MarkerEventData;
+	markerdown: MarkerEventData;
+	markerup: MarkerEventData;
+	markerlongpress: MarkerEventData;
+	mousedown: MouseEventData;
+	mousemove: MouseEventData;
+	mouseup: MouseEventData;
+	click: MouseEventData;
+	dblclick: MouseEventData;
+	contextmenu: MouseEventData;
 }
 
 // Performance stats
@@ -278,12 +278,12 @@ export type VectorPrimitiveInternal =
 
 // Marker internal representation
 export interface MarkerInternal {
-    lng: number;
-    lat: number;
-    type: string;
-    size?: number;
-    rotation?: number;
-    id: string;
+	lng: number;
+	lat: number;
+	type: string;
+	size?: number;
+	rotation?: number;
+	id: string;
 }
 
 // Icon definition internal
@@ -297,12 +297,12 @@ export interface IconDefInternal {
 }
 
 export interface MarkerEventData {
-    now: number;
-    view: ViewState;
-    screen: { x: number; y: number };
-    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
-    icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
-    originalEvent?: PointerEvent | MouseEvent;
+	now: number;
+	view: ViewState;
+	screen: { x: number; y: number };
+	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
+	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+	originalEvent?: PointerEvent | MouseEvent;
 }
 
 // Inertia options
