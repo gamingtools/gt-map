@@ -9,5 +9,5 @@ export type { Point, TileSourceOptions, MapOptions, IconDef, IconHandle, VectorS
 // Export type guard functions (not types)
 export { isPolyline, isPolygon, isCircle } from './api/types';
 
-// Export event system types (typed EventBus for public API)
-export type { TypedEventBus } from './internal/events/typed-stream';
+// Export public event surface types
+export type { PublicEvents, EventSubscription } from './api/events/public';

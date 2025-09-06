@@ -1,5 +1,4 @@
 import type {
-	EventBus,
 	EventMap,
 	ViewState as PublicViewState,
 	VectorStyle as VectorStyleAPI,
@@ -14,6 +13,14 @@ import type {
 	IconScaleFunction,
 	MarkerEventData,
 } from '../api/types';
+// (no direct import of PublicEvents here to keep internals decoupled)
+
+// Minimal internal event bus used by the renderer.
+// It exposes `.on(event).each(handler)` and `.when(event)`.
+type InternalEventBus = {
+  on<K extends keyof EventMap & string>(event: K): { each(handler: (value: EventMap[K]) => void): () => void };
+  when<K extends keyof EventMap & string>(event: K): Promise<EventMap[K]>;
+};
 
 import type { LngLat } from './mapgl';
 import type { ProgramLocs } from './render/screenCache';
@@ -144,7 +151,7 @@ export interface MapImpl {
 	mapSize: { width: number; height: number };
 	center: LngLat;
 	zoom: number;
-	events: EventBus;
+	events: InternalEventBus;
 	pointerAbs: { x: number; y: number } | null;
 	// controls
 	setCenter(lng: number, lat: number): void;

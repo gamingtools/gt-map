@@ -1,6 +1,6 @@
 {
   "name": "@gaming.tools/gtmap",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "private": false,
   "license": "MIT",
   "author": "gaming.tools",
@@ -15,9 +15,11 @@
     }
   },
   "files": [
-    "dist/**",
+    "dist/index.js",
+    "dist/index.d.ts",
+    "dist/api/**",
+    "dist/entities/**",
     "README.md",
-    "assets/logo.png",
     "LICENSE"
   ],
   "publishConfig": {
@@ -25,12 +27,16 @@
     "registry": "https://registry.npmjs.org/"
   },
   "scripts": {
-    "build": "tsc -p ./tsconfig.json",
+    "clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\"",
+    "build": "npm run clean && npm run build:types && npm run build:js",
+    "build:types": "node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\" && tsc -p ./tsconfig.types.json",
+    "build:js": "esbuild src/index.ts --bundle --format=esm --platform=browser --minify --outfile=dist/index.js",
     "typecheck": "tsc -p ./tsconfig.json --noEmit",
-    "prepack": "npm run build",
+    "prepack": "npm run build && node -e \"const fs=require('fs'),p=require('path');try{fs.copyFileSync(p.resolve(__dirname,'..','..','LICENSE'), p.resolve(__dirname,'LICENSE'))}catch(e){}\"",
     "pack": "npm pack"
   },
   "devDependencies": {
     "esbuild": "^0.25.9"
-  }
+  },
+  "sideEffects": false
 }

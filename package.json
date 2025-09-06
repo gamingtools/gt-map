@@ -2,6 +2,9 @@
   "name": "webgl-map",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "author": "gaming.tools",
+  "homepage": "https://gaming.tools",
   "description": "Minimal WebGL tile map with Express server",
   "workspaces": [
     "packages/*",
@@ -10,14 +13,25 @@
   "scripts": {
     "start": "npm -w gtmap-svelte-test run dev",
     "dev": "npm -w gtmap-svelte-test run dev",
-    "build": "npm -w gtmap-svelte-test run build && npm -w gtmap run build",
+    "build": "npm -w gtmap-svelte-test run build && npm -w @gaming.tools/gtmap run build",
     "preview": "npm -w gtmap-svelte-test run preview",
+    "pkg:build": "npm -w @gaming.tools/gtmap run build",
+    "pkg:typecheck": "npm -w @gaming.tools/gtmap run typecheck",
+    "pkg:pack": "npm -w @gaming.tools/gtmap run pack",
     "lint": "eslint packages",
     "lint:fix": "eslint packages --fix",
     "format": "prettier -w \"packages/**/*\"",
     "format:check": "prettier -c \"packages/**/*\"",
     "fetch:svelte-docs": "node scripts/fetch-svelte-llm-docs.mjs",
-    "docs:api": "typedoc --options typedoc.json"
+    "docs:api": "typedoc --options typedoc.json",
+    "version:auto": "node scripts/version-auto.mjs --patch-only",
+    "version:auto:commit": "node scripts/version-auto.mjs --patch-only --commit",
+    "version:auto:detect": "node scripts/version-auto.mjs --detect",
+    "version:auto:detect:commit": "node scripts/version-auto.mjs --detect --commit",
+    "clean:packs": "node scripts/clean-packs.mjs",
+    "publish:gtmap": "npm publish -w @gaming.tools/gtmap --access public",
+    "release:gtmap": "npm run version:auto:commit && npm publish -w @gaming.tools/gtmap --access public",
+    "release:gtmap:full": "npm run version:auto:commit && npm run pkg:pack && npm publish -w @gaming.tools/gtmap --access public"
   },
   "dependencies": {
     

@@ -335,7 +335,4 @@ export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
 // Returns a scale multiplier where 1.0 = original size
 export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number) => number;
 
-// Typed EventBus surface exposed publicly
-import type { TypedEventBus as _TypedEventBus } from '../internal/events/typed-stream';
-/** @internal */
-export type EventBus = _TypedEventBus<EventMap>;
+// Public event surface: exported via api/events/public

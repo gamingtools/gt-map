@@ -51,5 +51,9 @@ tmp/
 .tmp/
 temp/
 
+# Local npm pack artifacts
+*.tgz
+
 .git_base_sha
 .git_head_sha
+/.npm-cache
