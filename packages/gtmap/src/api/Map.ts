@@ -125,6 +125,28 @@ export class GTMap {
             const mk = id ? this.markers.get(id) : undefined;
             if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
+        this._impl.events.on('markerdown').each((e) => {
+            const id = e?.marker?.id;
+            const mk = id ? this.markers.get(id) : undefined;
+            if (mk) mk.emitFromMap('pointerdown', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+        });
+        this._impl.events.on('markerup').each((e) => {
+            const id = e?.marker?.id;
+            const mk = id ? this.markers.get(id) : undefined;
+            if (mk) mk.emitFromMap('pointerup', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+        });
+        this._impl.events.on('markerlongpress').each((e) => {
+            const id = e?.marker?.id;
+            const mk = id ? this.markers.get(id) : undefined;
+            if (mk) mk.emitFromMap('longpress', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+        });
+        // Synthesize 'tap' alias from 'click' for touch input
+        this._impl.events.on('markerclick').each((e) => {
+            const id = e?.marker?.id;
+            const mk = id ? this.markers.get(id) : undefined;
+            const pm = toPointerMeta(e) as any;
+            if (mk && pm && pm.device === 'touch') mk.emitFromMap('tap', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: pm });
+        });
     }
 
 	// View controls

@@ -49,6 +49,10 @@ export interface PointerMeta {
 export interface MarkerEventMap {
   [k: string]: unknown;
   click: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+  tap: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+  longpress: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+  pointerdown: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+  pointerup: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
   pointerenter: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
   pointerleave: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
   positionchange: { x: number; y: number; dx: number; dy: number; marker: MarkerData };

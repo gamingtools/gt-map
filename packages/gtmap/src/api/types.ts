@@ -191,6 +191,9 @@ export interface EventMap {
     markerenter: MarkerEventData;
     markerleave: MarkerEventData;
     markerclick: MarkerEventData;
+    markerdown: MarkerEventData;
+    markerup: MarkerEventData;
+    markerlongpress: MarkerEventData;
     mousedown: MouseEventData;
     mousemove: MouseEventData;
     mouseup: MouseEventData;

@@ -75,7 +75,11 @@ Subscribe via `m.events.on(name).each(handler)`. Handlers are synchronous; unsub
 
 Event names and payloads
 
-- `click`: `{ x, y, marker, pointer? }`
+- `click`: `{ x, y, marker, pointer? }` (device-agnostic activate)
+- `tap`: `{ x, y, marker, pointer? }` (touch alias for click)
+- `longpress`: `{ x, y, marker, pointer? }` (touch hold, ~500ms)
+- `pointerdown`: `{ x, y, marker, pointer? }`
+- `pointerup`: `{ x, y, marker, pointer? }`
 - `pointerenter`: `{ x, y, marker, pointer? }`
 - `pointerleave`: `{ x, y, marker, pointer? }`
 - `positionchange`: `{ x, y, dx, dy, marker }`
@@ -113,6 +117,17 @@ m.events.on('click').each(({ x, y, marker, pointer }) => {
     // tap on touch
   } else if (pointer?.device === 'mouse') {
     // mouse click
+  }
+});
+
+// Touch actions
+m.events.on('tap').each(({ marker }) => openDetails(marker.id));
+m.events.on('longpress').each(({ marker }) => showContextMenu(marker.id));
+
+// Drag start/end tracking
+m.events.on('pointerdown').each(({ pointer }) => {
+  if (pointer?.device === 'mouse' && (pointer.buttons & 1)) {
+    // start drag selection
   }
 });
 

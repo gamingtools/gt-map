@@ -928,6 +928,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._input.attach();
 		// Wire marker hover/click based on pointer events
 		try {
+			// State for long-press gesture
+			let longPressTimer: number | null = null;
+			let longPressed = false;
+			let pressTarget: { id: string; idx: number } | null = null;
 			// Click intention: record down and detect movement
             this.events.on('pointerdown').each((e: any) => {
                 if (!e || e.x == null || e.y == null) return;
@@ -936,13 +940,54 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				const tol = ptrType === 'touch' ? 18 : 8;
 				this._downAt = { x: e.x, y: e.y, t: now, tol };
 				this._movedSinceDown = false;
-			});
+				// Emit markerdown if hit
+				const hit = this._hitTestMarker(e.x, e.y, false);
+				if (hit) {
+					this._events.emit('markerdown', {
+						now,
+						view: this._viewPublic(),
+						screen: { x: e.x, y: e.y },
+						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
+						icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
+						originalEvent: e.originalEvent as any,
+					});
+					pressTarget = { id: hit.id, idx: hit.idx };
+					longPressed = false;
+					// Start long-press timer for touch
+					if (ptrType === 'touch') {
+						if (longPressTimer != null) clearTimeout(longPressTimer);
+						longPressTimer = window.setTimeout(() => {
+							longPressTimer = null;
+							longPressed = true;
+							// Emit markerlongpress at current pointer
+							const lpHit = this._hitTestMarker(e.x, e.y, false);
+							if (lpHit && pressTarget && lpHit.id === pressTarget.id) {
+								this._events.emit('markerlongpress', {
+									now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+									view: this._viewPublic(),
+									screen: { x: e.x, y: e.y },
+									marker: { id: lpHit.id, index: lpHit.idx, world: { x: lpHit.world.x, y: lpHit.world.y }, size: lpHit.size, rotation: lpHit.rotation, data: this._markerData.get(lpHit.id) },
+									icon: { id: lpHit.type, iconPath: lpHit.icon.iconPath, x2IconPath: lpHit.icon.x2IconPath, width: lpHit.icon.width, height: lpHit.icon.height, anchorX: lpHit.icon.anchorX, anchorY: lpHit.icon.anchorY },
+									originalEvent: e.originalEvent as any,
+								});
+							}
+						}, 500);
+					}
+				} else {
+					pressTarget = null;
+				}
+            });
             this.events.on('pointermove').each((e: any) => {
                 if (!e || e.x == null || e.y == null) return;
 				if (this._downAt) {
 					const dx = e.x - this._downAt.x;
 					const dy = e.y - this._downAt.y;
 					if (Math.hypot(dx, dy) > this._downAt.tol) this._movedSinceDown = true;
+					// Cancel long-press if moved too far
+					if (this._movedSinceDown && longPressTimer != null) {
+						clearTimeout(longPressTimer);
+						longPressTimer = null;
+					}
 				}
 				// Disable hover hit-testing during active pan/zoom and for a short debounce after
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
@@ -1002,6 +1047,23 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
 				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
 				this._downAt = null;
+				// Emit markerup if hit
+				const upHit = this._hitTestMarker(e.x, e.y, true);
+				if (upHit) {
+					this._events.emit('markerup', {
+						now,
+						view: this._viewPublic(),
+						screen: { x: e.x, y: e.y },
+						marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation, data: this._markerData.get(upHit.id) },
+						icon: { id: upHit.type, iconPath: upHit.icon.iconPath, x2IconPath: upHit.icon.x2IconPath, width: upHit.icon.width, height: upHit.icon.height, anchorX: upHit.icon.anchorX, anchorY: upHit.icon.anchorY },
+						originalEvent: e.originalEvent as any,
+					});
+				}
+				// Cancel any pending long-press
+				if (longPressTimer != null) {
+					clearTimeout(longPressTimer);
+					longPressTimer = null;
+				}
 				if (!isClick) return;
 				const hit = this._hitTestMarker(e.x, e.y, true);
                 if (hit)
@@ -1021,6 +1083,12 @@ export default class GTMap implements MapImpl, GraphicsHost {
                         },
                         originalEvent: e.originalEvent as any,
                 });
+				// Reset press state
+				pressTarget = null;
+				if (longPressed) {
+					// suppress synthetic follow-up behaviors if needed
+					longPressed = false;
+				}
             });
 
             // Enrich mouse events with markers when hover is enabled
