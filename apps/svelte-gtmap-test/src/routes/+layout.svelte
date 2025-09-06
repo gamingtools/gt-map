@@ -8,7 +8,7 @@
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
-<header class="flex h-8 flex-row items-center gap-2 bg-neutral-950 px-1">
+<header class="flex h-8 flex-row items-center gap-2 bg-neutral-900 px-1">
 	<a href="/" class="font-semibold text-neutral-200 transition-colors hover:text-neutral-100"
 		>GTMap Svelte Demo</a
 	>

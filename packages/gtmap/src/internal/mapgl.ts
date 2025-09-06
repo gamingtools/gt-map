@@ -41,8 +41,9 @@ export type MapOptions = {
 	zoomOutCenterBias?: number | boolean;
 	// Auto-resize when container or window DPR changes
 	autoResize?: boolean;
-	// Viewport background color (CSS hex like '#000000' or 'transparent' or RGBA components)
-	backgroundColor?: string | { r: number; g: number; b: number; a?: number };
+    // Viewport background: either 'transparent' (default when omitted) or a solid color.
+    // Alpha on provided colors is ignored; use hex like '#0a0a0a' or RGB components.
+    backgroundColor?: string | { r: number; g: number; b: number; a?: number };
 	// Render pacing
 	fpsCap?: number; // cap rendering to this FPS (default 60)
 	// Recommended tunables
@@ -153,34 +154,38 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private _bg = { r: 0, g: 0, b: 0, a: 0 };
 
 	private _parseBackground(input?: string | { r: number; g: number; b: number; a?: number }) {
-		const def = { r: 0, g: 0, b: 0, a: 0 };
-		const toRGBA = (str: string) => {
+		// Policy: if omitted or 'transparent' => fully transparent; otherwise use solid color (alpha forced to 1)
+		const transparent = { r: 0, g: 0, b: 0, a: 0 };
+		const toSolid = (str: string) => {
 			const s = str.trim().toLowerCase();
-			if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+			if (s === 'transparent') return transparent;
 			const m = s.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i);
 			if (m) {
 				const hex = m[1];
 				const rr = parseInt(hex.slice(0, 2), 16) / 255;
 				const gg = parseInt(hex.slice(2, 4), 16) / 255;
 				const bb = parseInt(hex.slice(4, 6), 16) / 255;
-				const aa = m[2] ? parseInt(m[2], 16) / 255 : 1;
-				return { r: rr, g: gg, b: bb, a: aa };
+				return { r: rr, g: gg, b: bb, a: 1 };
 			}
-			return def;
+			return transparent;
 		};
-		let bg = def;
-		if (typeof input === 'string') bg = toRGBA(input);
+		let bg = transparent;
+		if (typeof input === 'string') bg = toSolid(input);
 		else if (input && typeof input.r === 'number' && typeof input.g === 'number' && typeof input.b === 'number') {
 			bg = {
 				r: Math.max(0, Math.min(1, input.r / (input.r > 1 ? 255 : 1))),
 				g: Math.max(0, Math.min(1, input.g / (input.g > 1 ? 255 : 1))),
 				b: Math.max(0, Math.min(1, input.b / (input.b > 1 ? 255 : 1))),
-				a: input.a != null ? Math.max(0, Math.min(1, input.a)) : 1,
+				a: 1,
 			};
 		}
 		this._bg = bg;
 		try {
-			this.canvas.style.backgroundColor = bg.a < 1 ? 'transparent' : `rgba(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)}, ${bg.a})`;
+			// For alpha < 1 (only 'transparent' case), keep the element background transparent so the page can show through
+			// and let the WebGL clear color's alpha drive compositing (alpha will be 0 in that case).
+			this.canvas.style.backgroundColor = bg.a < 1
+				? 'transparent'
+				: `rgb(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)})`;
 		} catch {}
 	}
 
@@ -343,7 +348,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._initCanvas();
 		this._gfx = new Graphics(this);
 		this._parseBackground(options.backgroundColor);
-		this._gfx.init(this._bg.a < 1.0, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
+		// Always request an alpha-enabled context so viewport transparency works even if toggled later
+		this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
 		this._initPrograms();
 		// Apply recommended options
 		if (Number.isFinite(options.maxTiles as number)) this._maxTiles = Math.max(0, (options.maxTiles as number) | 0);
@@ -1465,7 +1471,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				ext?.restoreContext();
 			} catch {}
 			try {
-				this._gfx.init(this._bg.a < 1.0, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
+				// Reinitialize with alpha enabled so background transparency is supported after resume
+				this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
 			} catch {}
 			try {
 				this._initPrograms();

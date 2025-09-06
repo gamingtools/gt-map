@@ -511,11 +511,10 @@ export class GTMap {
 		return this;
 	}
 
-	/**
-	 * Set the viewport background color.
-	 * Accepts CSS hex (e.g., '#0a0a0a', '#00000080'), 'transparent', or RGBA components.
-	 * Note: transparency requires the WebGL context to be created with alpha; set via MapOptions at construction.
-	 */
+    /**
+     * Set the viewport background.
+     * Policy: either 'transparent' (fully transparent) or a solid color; alpha on colors is ignored.
+     */
 	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
 		this._impl.setBackgroundColor?.(color as any);
 		return this;

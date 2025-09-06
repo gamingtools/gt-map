@@ -47,13 +47,13 @@ map.setFpsCap(60);
 // Control auto-resize behavior (enabled by default)
 map.setAutoResize(true);
 
-// Background color (default: transparent)
-// Prefer setting at construction for correct alpha handling
+// Background (binary policy): either 'transparent' or solid
+// Prefer setting at construction; alpha on colors is ignored
 const map2 = new GTMap(container, { backgroundColor: '#0a0a0a' });
 // Update at runtime as needed
-map.setBackgroundColor('transparent');            // fully transparent
-map.setBackgroundColor('#00000080');              // 50% black via hex with alpha
-map.setBackgroundColor({ r: 16, g: 16, b: 16 });  // opaque (a defaults to 1)
+map.setBackgroundColor('transparent');            // fully transparent viewport
+map.setBackgroundColor('#101010');                // solid
+map.setBackgroundColor({ r: 16, g: 16, b: 16 });  // solid
 ```
 
 ## Lifecycle

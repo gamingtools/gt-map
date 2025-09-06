@@ -132,7 +132,6 @@
 			maxZoom: 10,
 			fpsCap: 60,
 			autoResize: true,
-			backgroundColor: '#f1f1f1'
 		});
 		map.setTileSource({
 			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
@@ -215,7 +214,6 @@
 	.map {
 		position: relative;
 		/* Dark neutral to match app background */
-		background: #171717;
 		user-select: none;
 		-webkit-user-select: none;
 		touch-action: none;
