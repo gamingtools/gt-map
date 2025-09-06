@@ -44,11 +44,19 @@ map.setGridVisible(false);
 map.setUpscaleFilter('auto');
 map.setIconScaleFunction((zoom, min, max) => 1);
 map.setFpsCap(60);
+// Control auto-resize behavior (enabled by default)
+map.setAutoResize(true);
 ```
 
 ## Lifecycle
 
 ```ts
+// One-time load event (after first frame scheduled)
+map.events.on('load').each(({ size }) => console.log('loaded', size));
+
+// Debounced resize event with final size and DPR
+map.events.on('resize').each(({ size }) => console.log('resized', size));
+
 map.setActive(false, { releaseGL: true });
 map.setActive(true);
 // When done

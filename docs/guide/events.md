@@ -20,6 +20,23 @@ map.events.on('click').each((e) => {
 });
 ```
 
+### Lifecycle
+
+Two lifecycle events are available:
+
+- `load`: fired once after the first frame is scheduled (map is initialized)
+- `resize`: fired after a debounced resize completes (final size + DPR)
+
+```ts
+map.events.on('load').each(({ size, view }) => {
+  console.log('map ready', size.width, size.height, size.dpr, view);
+});
+
+map.events.on('resize').each(({ size }) => {
+  console.log('resized to', size.width, size.height, 'dpr', size.dpr);
+});
+```
+
 ## Marker events
 
 Each Marker has its own event map:
