@@ -17,6 +17,8 @@ export function chooseGridSpacing(scale: number, tileSize: number): number {
 
 import * as Coords from '../coords';
 
+export type GridPalette = { minor: string; major: string; labelBg: string; labelFg: string };
+
 export function drawGrid(
 	ctx: CanvasRenderingContext2D | null,
 	canvas: HTMLCanvasElement | null,
@@ -28,6 +30,7 @@ export function drawGrid(
 	dpr: number,
 	maxZoom: number,
 	tileSize: number,
+	palette?: GridPalette,
 ): void {
 	if (!ctx || !canvas) return;
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -45,7 +48,7 @@ export function drawGrid(
 		const xCSS = (wx - tlWorld.x) * scale;
 		const isMajor = Math.round(wx) % base === 0;
 		ctx.beginPath();
-		ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.2)';
+		ctx.strokeStyle = isMajor ? (palette?.major ?? 'rgba(0,0,0,0.45)') : (palette?.minor ?? 'rgba(0,0,0,0.2)');
 		ctx.lineWidth = isMajor ? 1.0 : 0.6;
 		ctx.moveTo(Math.round(xCSS) + 0.5, 0);
 		ctx.lineTo(Math.round(xCSS) + 0.5, heightCSS);
@@ -56,9 +59,9 @@ export function drawGrid(
 			const tx = Math.round(xCSS) + 2;
 			const ty = 2;
 			const m = ctx.measureText(label);
-			ctx.fillStyle = 'rgba(0,0,0,0.55)';
+			ctx.fillStyle = palette?.labelBg ?? 'rgba(0,0,0,0.55)';
 			ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12);
-			ctx.fillStyle = 'rgba(255,255,255,0.9)';
+			ctx.fillStyle = palette?.labelFg ?? 'rgba(255,255,255,0.9)';
 			ctx.fillText(label, tx, ty);
 		}
 	}
@@ -67,7 +70,7 @@ export function drawGrid(
 		const yCSS = (wy - tlWorld.y) * scale;
 		const isMajor = Math.round(wy) % base === 0;
 		ctx.beginPath();
-		ctx.strokeStyle = isMajor ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.2)';
+		ctx.strokeStyle = isMajor ? (palette?.major ?? 'rgba(0,0,0,0.45)') : (palette?.minor ?? 'rgba(0,0,0,0.2)');
 		ctx.lineWidth = isMajor ? 1.0 : 0.6;
 		ctx.moveTo(0, Math.round(yCSS) + 0.5);
 		ctx.lineTo(widthCSS, Math.round(yCSS) + 0.5);
@@ -78,9 +81,9 @@ export function drawGrid(
 			const tx = 2;
 			const ty = Math.round(yCSS) + 2;
 			const m = ctx.measureText(label);
-			ctx.fillStyle = 'rgba(0,0,0,0.55)';
+			ctx.fillStyle = palette?.labelBg ?? 'rgba(0,0,0,0.55)';
 			ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12);
-			ctx.fillStyle = 'rgba(255,255,255,0.9)';
+			ctx.fillStyle = palette?.labelFg ?? 'rgba(255,255,255,0.9)';
 			ctx.fillText(label, tx, ty);
 		}
 	}

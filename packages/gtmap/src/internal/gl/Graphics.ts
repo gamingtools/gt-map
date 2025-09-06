@@ -27,25 +27,25 @@ export default class Graphics {
 		}
 	}
 
-	init() {
+	init(alpha: boolean, clear: [number, number, number, number]) {
 		const canvas: HTMLCanvasElement = this.map.canvas;
 		// Prefer WebGL2 (no need for ANGLE_instanced_arrays)
 		const gl2 = canvas.getContext('webgl2', {
-			alpha: false,
+			alpha,
 			antialias: false,
 		}) as WebGL2RenderingContext | null;
 		let gl: WebGLRenderingContext | WebGL2RenderingContext | null = gl2;
 		if (!gl) {
 			// Fallback to WebGL1 if WebGL2 is unavailable
 			gl = canvas.getContext('webgl', {
-				alpha: false,
+				alpha,
 				antialias: false,
 			}) as WebGLRenderingContext | null;
 		}
 		if (!gl) throw new Error('WebGL not supported');
 		this.map.gl = gl;
-		// Match app's dark theme to avoid white flashes between tile draws
-		gl.clearColor(0.1, 0.1, 0.1, 1);
+		// Set requested clear color
+		gl.clearColor(clear[0], clear[1], clear[2], clear[3]);
 		gl.disable(gl.DEPTH_TEST);
 		gl.enable(gl.BLEND);
 		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);

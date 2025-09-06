@@ -73,6 +73,7 @@ export class GTMap {
             center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
             zoom: options.zoom,
             autoResize: options.autoResize,
+            backgroundColor: options.backgroundColor as any,
             prefetch: options.prefetch,
             screenCache: options.screenCache,
             fpsCap: options.fpsCap,
@@ -487,6 +488,15 @@ export class GTMap {
         return this;
     }
 
+    /**
+     * Set the viewport background color.
+     * Accepts CSS hex (e.g., '#0a0a0a', '#00000080'), 'transparent', or RGBA components.
+     * Note: transparency requires the WebGL context to be created with alpha; set via MapOptions at construction.
+     */
+    setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
+        this._impl.setBackgroundColor?.(color as any);
+        return this;
+    }
     /**
      * Enable or disable automatic resize handling.
      * When enabled, a ResizeObserver watches the container and resizes

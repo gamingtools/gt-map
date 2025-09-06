@@ -154,6 +154,7 @@ export interface MapImpl {
 	setActive?(on: boolean, opts?: ActiveOptions): void;
     setIconScaleFunction?(fn: IconScaleFunction | null): void;
     setAutoResize?(on: boolean): void;
+    setBackgroundColor?(color: string | { r: number; g: number; b: number; a?: number }): void;
     // Optional: user payloads per marker id
     setMarkerData?(payloads: Record<string, any | null | undefined>): void;
     // Internal marker event sink (facade wires to entity events)
