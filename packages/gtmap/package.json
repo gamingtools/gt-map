@@ -1,20 +1,36 @@
 {
-	"name": "gtmap",
-	"version": "0.1.0",
-	"private": true,
-	"type": "module",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
-	"scripts": {
-		"build": "tsc -p ./tsconfig.json"
-	},
-	"devDependencies": {
-		"esbuild": "^0.25.9"
-	}
+  "name": "@gaming.tools/gtmap",
+  "version": "0.2.0",
+  "private": false,
+  "license": "MIT",
+  "author": "gaming.tools",
+  "homepage": "https://gaming.tools",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**",
+    "README.md",
+    "assets/logo.png",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "tsc -p ./tsconfig.json",
+    "typecheck": "tsc -p ./tsconfig.json --noEmit",
+    "prepack": "npm run build",
+    "pack": "npm pack"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.9"
+  }
 }
