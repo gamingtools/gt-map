@@ -46,6 +46,14 @@ map.setIconScaleFunction((zoom, min, max) => 1);
 map.setFpsCap(60);
 // Control auto-resize behavior (enabled by default)
 map.setAutoResize(true);
+
+// Background color (default: transparent)
+// Prefer setting at construction for correct alpha handling
+const map2 = new GTMap(container, { backgroundColor: '#0a0a0a' });
+// Update at runtime as needed
+map.setBackgroundColor('transparent');            // fully transparent
+map.setBackgroundColor('#00000080');              // 50% black via hex with alpha
+map.setBackgroundColor({ r: 16, g: 16, b: 16 });  // opaque (a defaults to 1)
 ```
 
 ## Lifecycle

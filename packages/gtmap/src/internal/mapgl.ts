@@ -42,6 +42,8 @@ export type MapOptions = {
 	zoomOutCenterBias?: number | boolean;
 	// Auto-resize when container or window DPR changes
 	autoResize?: boolean;
+	// Viewport background color (CSS hex like '#000000' or 'transparent' or RGBA components)
+	backgroundColor?: string | { r: number; g: number; b: number; a?: number };
 	// Render pacing
 	fpsCap?: number; // cap rendering to this FPS (default 60)
 	// Recommended tunables
@@ -147,6 +149,54 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		velocity?: { x: number; y: number };
 		lastTime?: number;
 	} = null;
+
+	// Background color (normalized 0..1). Default: fully transparent.
+	private _bg = { r: 0, g: 0, b: 0, a: 0 };
+
+	private _parseBackground(input?: string | { r: number; g: number; b: number; a?: number }) {
+		const def = { r: 0, g: 0, b: 0, a: 0 };
+		const toRGBA = (str: string) => {
+			const s = str.trim().toLowerCase();
+			if (s === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+			const m = s.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i);
+			if (m) {
+				const hex = m[1];
+				const rr = parseInt(hex.slice(0, 2), 16) / 255;
+				const gg = parseInt(hex.slice(2, 4), 16) / 255;
+				const bb = parseInt(hex.slice(4, 6), 16) / 255;
+				const aa = m[2] ? parseInt(m[2], 16) / 255 : 1;
+				return { r: rr, g: gg, b: bb, a: aa };
+			}
+			return def;
+		};
+		let bg = def;
+		if (typeof input === 'string') bg = toRGBA(input);
+		else if (input && typeof input.r === 'number' && typeof input.g === 'number' && typeof input.b === 'number') {
+			bg = { r: Math.max(0, Math.min(1, input.r / (input.r > 1 ? 255 : 1))), g: Math.max(0, Math.min(1, input.g / (input.g > 1 ? 255 : 1))), b: Math.max(0, Math.min(1, input.b / (input.b > 1 ? 255 : 1))), a: input.a != null ? Math.max(0, Math.min(1, input.a)) : 1 };
+		}
+		this._bg = bg;
+		try {
+			this.canvas.style.backgroundColor = bg.a < 1 ? 'transparent' : `rgba(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)}, ${bg.a})`;
+		} catch {}
+	}
+
+	private _gridPalette() {
+		// Choose contrasting grid based on background luminance
+		const L = 0.2126 * this._bg.r + 0.7152 * this._bg.g + 0.0722 * this._bg.b;
+		const lightBg = L >= 0.5;
+		if (lightBg) {
+			return { minor: 'rgba(0,0,0,0.2)', major: 'rgba(0,0,0,0.45)', labelBg: 'rgba(0,0,0,0.55)', labelFg: 'rgba(255,255,255,0.9)' };
+		}
+		return { minor: 'rgba(255,255,255,0.25)', major: 'rgba(255,255,255,0.55)', labelBg: 'rgba(255,255,255,0.75)', labelFg: 'rgba(0,0,0,0.9)' };
+	}
+
+	public setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }) {
+		this._parseBackground(color);
+		try {
+			this.gl.clearColor(this._bg.r, this._bg.g, this._bg.b, this._bg.a);
+		} catch {}
+		this._needsRender = true;
+	}
 
 	// Auto-resize
 	private _autoResize = true;
@@ -288,7 +338,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		}
 		this._initCanvas();
 		this._gfx = new Graphics(this);
-		this._gfx.init();
+		this._parseBackground(options.backgroundColor);
+		this._gfx.init(this._bg.a < 1.0, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
 		this._initPrograms();
 		// Apply recommended options
 		if (Number.isFinite(options.maxTiles as number)) this._maxTiles = Math.max(0, (options.maxTiles as number) | 0);
@@ -1209,7 +1260,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			// Snap to device pixel grid to reduce shimmer during pan
 			const snap = (v: number) => Coords.snapLevelToDevice(v, scale, this._dpr);
 			tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
-			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize);
+			const pal = this._gridPalette();
+			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal);
 		}
 		// Draw vector overlay (if any)
 		try {
@@ -1369,7 +1421,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				ext?.restoreContext();
 			} catch {}
 			try {
-				this._gfx.init();
+				this._gfx.init(this._bg.a < 1.0, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
 			} catch {}
 			try {
 				this._initPrograms();

@@ -46,6 +46,12 @@ export interface MapOptions {
 	 * Enabled by default.
 	 */
 	autoResize?: boolean;
+	/**
+     * Viewport background color: CSS hex (e.g., '#0a0a0a', '#00000080'), 'transparent',
+     * or RGBA components. If alpha < 1, the canvas is requested with alpha enabled.
+     * Default: 'transparent'.
+     */
+	backgroundColor?: string | { r: number; g: number; b: number; a?: number };
 	prefetch?: { enabled?: boolean; baselineLevel?: number; ring?: number };
 	screenCache?: boolean;
 	fpsCap?: number;
