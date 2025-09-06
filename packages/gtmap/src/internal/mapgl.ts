@@ -941,16 +941,16 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				this._downAt = { x: e.x, y: e.y, t: now, tol };
 				this._movedSinceDown = false;
 				// Emit markerdown if hit
-				const hit = this._hitTestMarker(e.x, e.y, false);
-				if (hit) {
-					this._events.emit('markerdown', {
-						now,
-						view: this._viewPublic(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-						icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
-						originalEvent: e.originalEvent as any,
-					});
+                const hit = this._hitTestMarker(e.x, e.y, false);
+                if (hit) {
+                    this._emitMarker('down', {
+                        now,
+                        view: this._viewPublic(),
+                        screen: { x: e.x, y: e.y },
+                        marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
+                        icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
+                        originalEvent: e.originalEvent as any,
+                    });
 					pressTarget = { id: hit.id, idx: hit.idx };
 					longPressed = false;
 					// Start long-press timer for touch
@@ -961,16 +961,16 @@ export default class GTMap implements MapImpl, GraphicsHost {
 							longPressed = true;
 							// Emit markerlongpress at current pointer
 							const lpHit = this._hitTestMarker(e.x, e.y, false);
-							if (lpHit && pressTarget && lpHit.id === pressTarget.id) {
-								this._events.emit('markerlongpress', {
-									now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
-									view: this._viewPublic(),
-									screen: { x: e.x, y: e.y },
-									marker: { id: lpHit.id, index: lpHit.idx, world: { x: lpHit.world.x, y: lpHit.world.y }, size: lpHit.size, rotation: lpHit.rotation, data: this._markerData.get(lpHit.id) },
-									icon: { id: lpHit.type, iconPath: lpHit.icon.iconPath, x2IconPath: lpHit.icon.x2IconPath, width: lpHit.icon.width, height: lpHit.icon.height, anchorX: lpHit.icon.anchorX, anchorY: lpHit.icon.anchorY },
-									originalEvent: e.originalEvent as any,
-								});
-							}
+                        if (lpHit && pressTarget && lpHit.id === pressTarget.id) {
+                            this._emitMarker('longpress', {
+                                now: (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+                                view: this._viewPublic(),
+                                screen: { x: e.x, y: e.y },
+                                marker: { id: lpHit.id, index: lpHit.idx, world: { x: lpHit.world.x, y: lpHit.world.y }, size: lpHit.size, rotation: lpHit.rotation, data: this._markerData.get(lpHit.id) },
+                                icon: { id: lpHit.type, iconPath: lpHit.icon.iconPath, x2IconPath: lpHit.icon.x2IconPath, width: lpHit.icon.width, height: lpHit.icon.height, anchorX: lpHit.icon.anchorX, anchorY: lpHit.icon.anchorY },
+                                originalEvent: e.originalEvent as any,
+                            });
+                        }
 						}, 500);
 					}
 				} else {
@@ -996,13 +996,13 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				if (!idle) {
 					if (this._lastHover) {
 						const prev = this._lastHover;
-						this._events.emit('markerleave', {
-							now,
-							view: this._viewPublic(),
-							screen: { x: e.x, y: e.y },
-							marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-							icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-						});
+                    this._emitMarker('leave', {
+                        now,
+                        view: this._viewPublic(),
+                        screen: { x: e.x, y: e.y },
+                        marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+                        icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+                    });
 						this._lastHover = null;
 					}
 					return;
@@ -1010,7 +1010,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
                 const hit = this._hitTestMarker(e.x, e.y, false);
 				if (hit) {
 					if (!this._lastHover || this._lastHover.idx !== hit.idx || this._lastHover.type !== hit.type) {
-                        this._events.emit('markerenter', {
+                        this._emitMarker('enter', {
                             now,
                             view: this._viewPublic(),
                             screen: { x: e.x, y: e.y },
@@ -1030,7 +1030,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 					}
 				} else if (this._lastHover) {
 					const prev = this._lastHover;
-                    this._events.emit('markerleave', {
+                    this._emitMarker('leave', {
                         now,
                         view: this._viewPublic(),
                         screen: { x: e.x, y: e.y },
@@ -1048,26 +1048,26 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
 				this._downAt = null;
 				// Emit markerup if hit
-				const upHit = this._hitTestMarker(e.x, e.y, true);
-				if (upHit) {
-					this._events.emit('markerup', {
-						now,
-						view: this._viewPublic(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation, data: this._markerData.get(upHit.id) },
-						icon: { id: upHit.type, iconPath: upHit.icon.iconPath, x2IconPath: upHit.icon.x2IconPath, width: upHit.icon.width, height: upHit.icon.height, anchorX: upHit.icon.anchorX, anchorY: upHit.icon.anchorY },
-						originalEvent: e.originalEvent as any,
-					});
-				}
+                const upHit = this._hitTestMarker(e.x, e.y, true);
+                if (upHit) {
+                    this._emitMarker('up', {
+                        now,
+                        view: this._viewPublic(),
+                        screen: { x: e.x, y: e.y },
+                        marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation, data: this._markerData.get(upHit.id) },
+                        icon: { id: upHit.type, iconPath: upHit.icon.iconPath, x2IconPath: upHit.icon.x2IconPath, width: upHit.icon.width, height: upHit.icon.height, anchorX: upHit.icon.anchorX, anchorY: upHit.icon.anchorY },
+                        originalEvent: e.originalEvent as any,
+                    });
+                }
 				// Cancel any pending long-press
 				if (longPressTimer != null) {
 					clearTimeout(longPressTimer);
 					longPressTimer = null;
 				}
 				if (!isClick) return;
-				const hit = this._hitTestMarker(e.x, e.y, true);
+                const hit = this._hitTestMarker(e.x, e.y, true);
                 if (hit)
-                    this._events.emit('markerclick', {
+                    this._emitMarker('click', {
                         now,
                         view: this._viewPublic(),
                         screen: { x: e.x, y: e.y },
@@ -1457,6 +1457,29 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private _downAt: { x: number; y: number; t: number; tol: number } | null = null;
 	private _movedSinceDown = false;
 	private _markerData = new Map<string, any | null | undefined>();
+    // Private marker event sinks (not exposed on public bus)
+    private _markerSinks: Record<'enter'|'leave'|'click'|'down'|'up'|'longpress', Set<(e: any)=>void>> = {
+        enter: new Set(),
+        leave: new Set(),
+        click: new Set(),
+        down: new Set(),
+        up: new Set(),
+        longpress: new Set(),
+    };
+
+    public onMarkerEvent(name: 'enter'|'leave'|'click'|'down'|'up'|'longpress', handler: (e: any)=>void): () => void {
+        const set = this._markerSinks[name];
+        set.add(handler);
+        return () => set.delete(handler);
+    }
+
+    private _emitMarker(name: 'enter'|'leave'|'click'|'down'|'up'|'longpress', payload: any) {
+        const set = this._markerSinks[name];
+        if (!set || set.size === 0) return;
+        for (const fn of Array.from(set)) {
+            try { fn(payload); } catch {}
+        }
+    }
     private _hitTestMarker(px: number, py: number, requireAlpha = false) {
         void requireAlpha;
 		if (!this._icons) return null;

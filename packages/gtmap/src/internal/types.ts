@@ -1,4 +1,4 @@
-import type { EventBus, EventMap, ViewState as PublicViewState, VectorStyle as VectorStyleAPI, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, InertiaOptions, PrefetchOptions, MaxBoundsPx, UpscaleFilterMode, ActiveOptions, IconScaleFunction } from '../api/types';
+import type { EventBus, EventMap, ViewState as PublicViewState, VectorStyle as VectorStyleAPI, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, InertiaOptions, PrefetchOptions, MaxBoundsPx, UpscaleFilterMode, ActiveOptions, IconScaleFunction, MarkerEventData } from '../api/types';
  
 import type { LngLat } from './mapgl';
 import type { ProgramLocs } from './render/screenCache';
@@ -156,6 +156,11 @@ export interface MapImpl {
     setAutoResize?(on: boolean): void;
     // Optional: user payloads per marker id
     setMarkerData?(payloads: Record<string, any | null | undefined>): void;
+    // Internal marker event sink (facade wires to entity events)
+    onMarkerEvent?(
+        name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress',
+        handler: (e: MarkerEventData) => void
+    ): () => void;
     // Optional animated controls
     panTo?(lng: number, lat: number, durationMs?: number): void;
 	flyTo?(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number }): void;

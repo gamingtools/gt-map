@@ -110,38 +110,38 @@ export class GTMap {
             } catch { return undefined; }
         };
 
-        this._impl.events.on('markerenter').each((e) => {
+        if (this._impl.onMarkerEvent) this._impl.onMarkerEvent('enter', (e: any) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
             if (mk) mk.emitFromMap('pointerenter', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
-        this._impl.events.on('markerleave').each((e) => {
+        if (this._impl.onMarkerEvent) this._impl.onMarkerEvent('leave', (e: any) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
             if (mk) mk.emitFromMap('pointerleave', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
-        this._impl.events.on('markerclick').each((e) => {
+        if (this._impl.onMarkerEvent) this._impl.onMarkerEvent('click', (e: any) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
             if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
-        this._impl.events.on('markerdown').each((e) => {
+        if (this._impl.onMarkerEvent) this._impl.onMarkerEvent('down', (e: any) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
             if (mk) mk.emitFromMap('pointerdown', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
-        this._impl.events.on('markerup').each((e) => {
+        if (this._impl.onMarkerEvent) this._impl.onMarkerEvent('up', (e: any) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
             if (mk) mk.emitFromMap('pointerup', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
-        this._impl.events.on('markerlongpress').each((e) => {
+        if (this._impl.onMarkerEvent) this._impl.onMarkerEvent('longpress', (e: any) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
             if (mk) mk.emitFromMap('longpress', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
         // Synthesize 'tap' alias from 'click' for touch input
-        this._impl.events.on('markerclick').each((e) => {
+        if (this._impl.onMarkerEvent) this._impl.onMarkerEvent('click', (e: any) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
             const pm = toPointerMeta(e) as any;
