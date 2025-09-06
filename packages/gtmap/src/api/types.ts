@@ -152,8 +152,19 @@ export interface ZoomEventData {
 }
 
 export interface FrameEventData {
-	now: number;
-	stats?: RenderStats;
+    now: number;
+    stats?: RenderStats;
+}
+
+// Lifecycle event payloads
+export interface LoadEventData {
+    view: ViewState;
+    size: { width: number; height: number; dpr: number };
+}
+
+export interface ResizeEventData {
+    view: ViewState;
+    size: { width: number; height: number; dpr: number };
 }
 
 // Base event (shared fields for richer payloads)
@@ -167,6 +178,8 @@ export interface BaseEvent {
 // Event map for type-safe event handling
 export interface EventMap {
     [k: string]: unknown;
+    load: LoadEventData;
+    resize: ResizeEventData;
     move: MoveEventData;
     moveend: MoveEventData;
     zoom: ZoomEventData;

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { GTMap } from '@gtmap';
 	// Sample icons for demonstrating custom icon registration
 	type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
@@ -130,7 +130,8 @@
 			zoom: 2,
 			minZoom: 0,
 			maxZoom: 10,
-			fpsCap: 60
+			fpsCap: 60,
+			autoResize: true
 		});
 		map.setTileSource({
 			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
@@ -157,25 +158,6 @@
 			}
 		} catch {}
 
-		// Resize handling (debounced): wait until user stops resizing
-		let resizeTimer: any = null;
-		const scheduleInvalidate = () => {
-			if (resizeTimer) clearTimeout(resizeTimer);
-			resizeTimer = setTimeout(() => {
-				try {
-					map?.invalidateSize();
-				} catch {}
-			}, 160);
-		};
-		let ro: ResizeObserver | null = null;
-		let usedWindowResize = false;
-		try {
-			ro = new ResizeObserver(scheduleInvalidate);
-			ro.observe(container);
-		} catch {
-			window.addEventListener('resize', scheduleInvalidate);
-			usedWindowResize = true;
-		}
 		applyMarkerCount(markerCount);
 		addVectors();
 
@@ -210,20 +192,6 @@
 		// Teardown on navigation/unmount per Svelte docs
 		return () => {
 			map?.destroy?.();
-			if (ro) {
-				try {
-					ro.disconnect();
-				} catch {}
-				ro = null;
-			}
-			if (usedWindowResize) {
-				window.removeEventListener('resize', scheduleInvalidate);
-				usedWindowResize = false;
-			}
-			if (resizeTimer) {
-				clearTimeout(resizeTimer);
-				resizeTimer = null;
-			}
 		};
 	});
 </script>

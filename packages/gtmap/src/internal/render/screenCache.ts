@@ -19,6 +19,8 @@ export type ProgramLocs = ShaderLocations;
 export class ScreenCache {
 	private gl: WebGLRenderingContext;
 	private tex: WebGLTexture | null = null;
+	private texW = 0;
+	private texH = 0;
 	private state: ScreenCacheState | null = null;
 	private internalFormat: 6408 | 6407;
 
@@ -61,11 +63,16 @@ export class ScreenCache {
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			const fmt = this.internalFormat as number;
-			// Cast to number to satisfy TS' narrow WebGL enum overloads
-			gl.texImage2D(gl.TEXTURE_2D, 0, fmt as number, width, height, 0, fmt as number, gl.UNSIGNED_BYTE, null);
+			this.texW = 0; // force alloc below
 		} else {
 			gl.bindTexture(gl.TEXTURE_2D, this.tex);
+		}
+		// (Re)allocate if size changed to avoid copyTexSubImage overflow
+		if (this.texW !== width || this.texH !== height) {
+			const fmt = this.internalFormat as number;
+			gl.texImage2D(gl.TEXTURE_2D, 0, fmt as number, width, height, 0, fmt as number, gl.UNSIGNED_BYTE, null);
+			this.texW = width;
+			this.texH = height;
 		}
 	}
 

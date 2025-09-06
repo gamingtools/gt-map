@@ -151,8 +151,9 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Auto-resize
 	private _autoResize = true;
 	private _ro: ResizeObserver | null = null;
-	private _resizeScheduled = false;
-	private _onWindowResize = () => this._scheduleResize();
+	private _resizeTimer: number | null = null;
+	private _resizeDebounceMs = 150;
+	private _onWindowResize = () => this._scheduleResizeTrailing();
 
 	private _viewPublic(): PublicViewState {
 		return {
@@ -308,9 +309,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
 
-		// Auto-resize setup
-		this._autoResize = options.autoResize !== false;
-		if (this._autoResize) this._attachAutoResize();
+        // Auto-resize setup (attach after first frame to avoid startup jitter)
+        this._autoResize = options.autoResize !== false;
 
 		// Initialize screen cache module (uses detected format)
 		this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
@@ -411,12 +411,30 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._initVectorCanvas();
 		this.resize();
 		this._initEvents();
-		this._frameLoop = new FrameLoop(
-			() => this._targetFps,
-			(now: number, allowRender: boolean) => this._tick(now, allowRender),
-		);
-		this._frameLoop.start();
-		// Delay baseline prefetch until a tile source is explicitly set
+        this._frameLoop = new FrameLoop(
+            () => this._targetFps,
+            (now: number, allowRender: boolean) => this._tick(now, allowRender),
+        );
+        this._frameLoop.start();
+        // Fire load event after first frame has been scheduled
+        try {
+            const emitLoad = () => {
+                const rect2 = this.container.getBoundingClientRect();
+                const cssW2 = Math.max(1, Math.round(rect2.width));
+                const cssH2 = Math.max(1, Math.round(rect2.height));
+                const dpr2 = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
+                this._events.emit('load', { view: this._viewPublic(), size: { width: cssW2, height: cssH2, dpr: dpr2 } } as any);
+            };
+            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(emitLoad);
+            else setTimeout(emitLoad, 0);
+        } catch {}
+        // Attach auto-resize after first stable frame to avoid initial layout interference
+        if (this._autoResize) {
+            const attach = () => this._attachAutoResize();
+            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(attach));
+            else setTimeout(attach, 0);
+        }
+        // Delay baseline prefetch until a tile source is explicitly set
 		// DI in place for input/tiles/render; no need for TS usage hacks
 	}
 
@@ -606,21 +624,27 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	}
 
 	// Public controls
-	private _initCanvas() {
-		const canvas = document.createElement('canvas');
-		canvas.classList.add('gtmap-canvas');
-		Object.assign(canvas.style, {
-			display: 'block',
-			position: 'absolute',
-			left: '0',
-			top: '0',
-			right: '0',
-			bottom: '0',
-			zIndex: '0',
-		} as CSSStyleDeclaration);
-		this.container.appendChild(canvas);
-		this.canvas = canvas;
-	}
+    private _initCanvas() {
+        const canvas = document.createElement('canvas');
+        canvas.classList.add('gtmap-canvas');
+        Object.assign(canvas.style, {
+            display: 'block',
+            position: 'absolute',
+            left: '0',
+            top: '0',
+            right: '0',
+            bottom: '0',
+            zIndex: '0',
+        } as CSSStyleDeclaration);
+        // Ensure container behaves as a viewport without scrollbars during resize
+        try {
+            const cs = this.container.style as CSSStyleDeclaration;
+            if (!cs.position) cs.position = 'relative';
+            cs.overflow = 'hidden';
+        } catch {}
+        this.container.appendChild(canvas);
+        this.canvas = canvas;
+    }
 	private _initGridCanvas() {
 		const c = document.createElement('canvas');
 		c.classList.add('gtmap-grid-canvas');
@@ -730,47 +754,61 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		// Delegate to Graphics to set up programs and buffers
 		this._gfx.initPrograms();
 	}
-	resize() {
-		const dpr = Math.max(1, Math.min(globalThis.devicePixelRatio || 1, 3));
-		const rect = this.container.getBoundingClientRect();
-		this.canvas.style.width = rect.width + 'px';
-		this.canvas.style.height = rect.height + 'px';
-		const w = Math.max(1, Math.floor(rect.width * dpr));
-		const h = Math.max(1, Math.floor(rect.height * dpr));
-		if (this.canvas.width !== w || this.canvas.height !== h) {
-			this.canvas.width = w;
-			this.canvas.height = h;
-			this._dpr = dpr;
-			this.gl.viewport(0, 0, w, h);
-			this._needsRender = true;
-		}
-		if (this.gridCanvas) {
-			this.gridCanvas.style.width = rect.width + 'px';
-			this.gridCanvas.style.height = rect.height + 'px';
-			if (this.gridCanvas.width !== w || this.gridCanvas.height !== h) {
-				this.gridCanvas.width = w;
-				this.gridCanvas.height = h;
-				this._needsRender = true;
-			}
-		}
-	}
+    resize() {
+        const dpr = Math.max(1, Math.min(globalThis.devicePixelRatio || 1, 3));
+        const rect = this.container.getBoundingClientRect();
+        const cssW = Math.max(1, Math.round(rect.width));
+        const cssH = Math.max(1, Math.round(rect.height));
+        // Snap CSS size to integer pixels to avoid subpixel jitter
+        this.canvas.style.width = cssW + 'px';
+        this.canvas.style.height = cssH + 'px';
+        const w = Math.max(1, Math.floor(rect.width * dpr));
+        const h = Math.max(1, Math.floor(rect.height * dpr));
+        if (this.canvas.width !== w || this.canvas.height !== h) {
+            this.canvas.width = w;
+            this.canvas.height = h;
+            this._dpr = dpr;
+            this.gl.viewport(0, 0, w, h);
+            this._needsRender = true;
+        }
+        if (this.gridCanvas) {
+            this.gridCanvas.style.width = cssW + 'px';
+            this.gridCanvas.style.height = cssH + 'px';
+            if (this.gridCanvas.width !== w || this.gridCanvas.height !== h) {
+                this.gridCanvas.width = w;
+                this.gridCanvas.height = h;
+                this._needsRender = true;
+            }
+        }
+        if (this.vectorCanvas) {
+            this.vectorCanvas.style.width = cssW + 'px';
+            this.vectorCanvas.style.height = cssH + 'px';
+            if (this.vectorCanvas.width !== w || this.vectorCanvas.height !== h) {
+                this.vectorCanvas.width = w;
+                this.vectorCanvas.height = h;
+                this._needsRender = true;
+            }
+        }
+    }
 
-	private _scheduleResize() {
-		if (this._resizeScheduled) return;
-		this._resizeScheduled = true;
-		const run = () => {
-			this._resizeScheduled = false;
-			this.resize();
+	private _scheduleResizeTrailing() {
+		if (this._resizeTimer != null) {
+			clearTimeout(this._resizeTimer);
+		}
+		const fire = () => {
+			this._resizeTimer = null;
+			const run = () => this.resize();
+			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+			else run();
 		};
-		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
-		else setTimeout(run, 16);
+		this._resizeTimer = window.setTimeout(fire, this._resizeDebounceMs);
 	}
 
 	private _attachAutoResize() {
 		try {
 			if (typeof window !== 'undefined') window.addEventListener('resize', this._onWindowResize);
 			if (typeof ResizeObserver !== 'undefined') {
-				this._ro = new ResizeObserver(() => this._scheduleResize());
+				this._ro = new ResizeObserver(() => this._scheduleResizeTrailing());
 				this._ro.observe(this.container);
 			}
 		} catch {}
@@ -782,6 +820,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			this._ro?.disconnect();
 		} catch {}
 		this._ro = null;
+		if (this._resizeTimer != null) {
+			clearTimeout(this._resizeTimer);
+			this._resizeTimer = null;
+		}
 	}
 
 	public setAutoResize(on: boolean) {
@@ -1443,27 +1485,22 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._needsRender = true;
 	}
 
-	private _ensureOverlaySizes() {
-		const rect = this.container.getBoundingClientRect();
-		const wCSS = Math.max(1, rect.width | 0);
-		const hCSS = Math.max(1, rect.height | 0);
-		const dpr = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
-		const wPx = Math.max(1, Math.round(wCSS * dpr));
-		const hPx = Math.max(1, Math.round(hCSS * dpr));
-		if (this.gridCanvas && (this.gridCanvas.width !== wPx || this.gridCanvas.height !== hPx)) {
-			this.gridCanvas.width = wPx;
-			this.gridCanvas.height = hPx;
-		}
-		if (this.vectorCanvas && (this.vectorCanvas.width !== wPx || this.vectorCanvas.height !== hPx)) {
-			this.vectorCanvas.width = wPx;
-			this.vectorCanvas.height = hPx;
-		}
-		// Ensure CSS size matches container for proper layout/positioning
-		if (this.vectorCanvas) {
-			this.vectorCanvas.style.width = wCSS + 'px';
-			this.vectorCanvas.style.height = hCSS + 'px';
-		}
-	}
+    private _ensureOverlaySizes() {
+        const rect = this.container.getBoundingClientRect();
+        const wCSS = Math.max(1, rect.width | 0);
+        const hCSS = Math.max(1, rect.height | 0);
+        const dpr = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
+        const wPx = Math.max(1, Math.round(wCSS * dpr));
+        const hPx = Math.max(1, Math.round(hCSS * dpr));
+        if (this.gridCanvas && (this.gridCanvas.width !== wPx || this.gridCanvas.height !== hPx)) {
+            this.gridCanvas.width = wPx;
+            this.gridCanvas.height = hPx;
+        }
+        if (this.vectorCanvas && (this.vectorCanvas.width !== wPx || this.vectorCanvas.height !== hPx)) {
+            this.vectorCanvas.width = wPx;
+            this.vectorCanvas.height = hPx;
+        }
+    }
 
 	private _drawVectors() {
 		if (!this._vectorCtx) this._initVectorCanvas();
