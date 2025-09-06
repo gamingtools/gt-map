@@ -25,13 +25,32 @@ export interface VectorData {
   geometry: VectorGeometry;
 }
 
+// Pointer metadata for device-specific behavior
+export type InputDevice = 'mouse' | 'touch' | 'pen';
+
+export interface PointerModifiers { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean }
+
+export interface PointerMeta {
+  device: InputDevice;
+  isPrimary: boolean;
+  buttons: number;
+  pointerId: number;
+  pressure?: number;
+  width?: number;
+  height?: number;
+  tiltX?: number;
+  tiltY?: number;
+  twist?: number;
+  modifiers: PointerModifiers;
+}
+
 // Per-entity event maps
 /** Events emitted by a Marker instance. */
 export interface MarkerEventMap {
   [k: string]: unknown;
-  click: { x: number; y: number; marker: MarkerData };
-  enter: { x: number; y: number; marker: MarkerData };
-  leave: { x: number; y: number; marker: MarkerData };
+  click: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+  pointerenter: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+  pointerleave: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
   positionchange: { x: number; y: number; dx: number; dy: number; marker: MarkerData };
   remove: { marker: MarkerData };
 }

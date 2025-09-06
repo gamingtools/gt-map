@@ -87,20 +87,43 @@ export class GTMap {
         this.vectors = new Layer<Vector>({ id: 'vectors', onChange: onVectorsChanged });
 
         // Wire internal marker events to per-marker entity events
+        const toPointerMeta = (ev: any) => {
+            try {
+                const oe = ev?.originalEvent as PointerEvent | MouseEvent | undefined;
+                const device: 'mouse' | 'touch' | 'pen' = (oe && (oe as any).pointerType) ? String((oe as any).pointerType) as any : 'mouse';
+                const isPrimary = (oe as any)?.isPrimary ?? true;
+                const buttons = (oe as any)?.buttons ?? 0;
+                const pointerId = (oe as any)?.pointerId ?? 0;
+                const pressure = (oe as any)?.pressure;
+                const width = (oe as any)?.width;
+                const height = (oe as any)?.height;
+                const tiltX = (oe as any)?.tiltX;
+                const tiltY = (oe as any)?.tiltY;
+                const twist = (oe as any)?.twist;
+                const mods = {
+                    alt: !!(oe && (oe as any).altKey),
+                    ctrl: !!(oe && (oe as any).ctrlKey),
+                    meta: !!(oe && (oe as any).metaKey),
+                    shift: !!(oe && (oe as any).shiftKey),
+                };
+                return { device, isPrimary, buttons, pointerId, pressure, width, height, tiltX, tiltY, twist, modifiers: mods };
+            } catch { return undefined; }
+        };
+
         this._impl.events.on('markerenter').each((e) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
-            if (mk) mk.emitFromMap('enter', { x: e.screen.x, y: e.screen.y, marker: mk.toData() });
+            if (mk) mk.emitFromMap('pointerenter', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
         this._impl.events.on('markerleave').each((e) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
-            if (mk) mk.emitFromMap('leave', { x: e.screen.x, y: e.screen.y, marker: mk.toData() });
+            if (mk) mk.emitFromMap('pointerleave', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
         this._impl.events.on('markerclick').each((e) => {
             const id = e?.marker?.id;
             const mk = id ? this.markers.get(id) : undefined;
-            if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData() });
+            if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
         });
     }
 

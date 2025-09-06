@@ -75,11 +75,29 @@ Subscribe via `m.events.on(name).each(handler)`. Handlers are synchronous; unsub
 
 Event names and payloads
 
-- `click`: `{ x: number; y: number; marker: { id, x, y, data? } }`
-- `enter`: `{ x: number; y: number; marker: { id, x, y, data? } }`
-- `leave`: `{ x: number; y: number; marker: { id, x, y, data? } }`
-- `positionchange`: `{ x: number; y: number; dx: number; dy: number; marker: { id, x, y, data? } }`
-- `remove`: `{ marker: { id, x, y, data? } }`
+- `click`: `{ x, y, marker, pointer? }`
+- `pointerenter`: `{ x, y, marker, pointer? }`
+- `pointerleave`: `{ x, y, marker, pointer? }`
+- `positionchange`: `{ x, y, dx, dy, marker }`
+- `remove`: `{ marker }`
+
+`pointer` metadata (when available):
+
+```ts
+{
+  device: 'mouse' | 'touch' | 'pen',
+  isPrimary: boolean,
+  buttons: number,
+  pointerId: number,
+  pressure?: number,
+  width?: number,
+  height?: number,
+  tiltX?: number,
+  tiltY?: number,
+  twist?: number,
+  modifiers: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean }
+}
+```
 
 Coordinates
 
@@ -89,9 +107,13 @@ Coordinates
 Examples
 
 ```ts
-// Basic interactions
-m.events.on('click').each(({ x, y, marker }) => {
-  console.log('click at', x, y, 'on marker', marker.id);
+// Basic interactions with device distinction
+m.events.on('click').each(({ x, y, marker, pointer }) => {
+  if (pointer?.device === 'touch') {
+    // tap on touch
+  } else if (pointer?.device === 'mouse') {
+    // mouse click
+  }
 });
 
 m.events.on('positionchange').each(({ dx, dy }) => {
