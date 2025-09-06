@@ -1,9 +1,5 @@
 # GTMap
 
-<a href="https://gaming.tools"><img src="https://gtcdn.info/gt/logo.png" alt="GTMap" width="96" height="96" /></a>
-
-Project by <a href="https://gaming.tools">gaming.tools</a>
-
 High‑performance, pixel‑CRS WebGL map renderer with a small, typed API. Optimized for image/scan maps (no geodetic lat‑lng). Ships a thin facade (`GTMap`) over a fast WebGL core: tiles, input, rendering, and caches.
 
 Status: early 0.x — public API may evolve. No heavy runtime deps; pure TypeScript and Web APIs.
@@ -11,7 +7,7 @@ Status: early 0.x — public API may evolve. No heavy runtime deps; pure TypeScr
 ## Install
 
 ```bash
-npm install @gaming.tools/gtmap
+npm install "@gaming.tools/gtmap"
 ```
 
 ## Quick Start (no framework)
