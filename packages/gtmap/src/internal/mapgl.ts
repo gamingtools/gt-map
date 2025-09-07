@@ -496,6 +496,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
             emit: (name: any, payload: any) => this._events.emit(name, payload),
             now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
             getPublicView: () => this._viewPublic(),
+            getRotationDeg: () => this._viewRotationDeg || 0,
         });
 		// View state
 		this._state = {

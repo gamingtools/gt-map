@@ -167,6 +167,8 @@ export interface PanDeps {
     emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
     now(): number;
     getPublicView(): PublicViewState;
+    // Map bearing in degrees (clockwise); 0 means north-up
+    getRotationDeg?(): number;
 }
 
 export interface MapImpl {

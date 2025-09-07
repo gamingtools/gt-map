@@ -31,7 +31,13 @@ export default class PanController {
     const s0 = Coords.sFor(zImg, zInt);
     const center = this.deps.getCenter(); // map center in native pixels
     const fromWorld = { x: center.x / s0, y: center.y / s0 };
-    const offsetWorld = { x: dxPx / scale, y: dyPx / scale };
+    // If the map is rotated, interpret screen-space drag in world axes by inverse-rotating the drag vector
+    const rotDeg = typeof this.deps.getRotationDeg === 'function' ? (this.deps.getRotationDeg() || 0) : 0;
+    const rot = (rotDeg * Math.PI) / 180;
+    const c = Math.cos(-rot), s = Math.sin(-rot);
+    const dxWorldPx = dxPx * c - dyPx * s;
+    const dyWorldPx = dxPx * s + dyPx * c;
+    const offsetWorld = { x: dxWorldPx / scale, y: dyWorldPx / scale };
     this.anim = {
       start: this.deps.now(),
       dur: Math.max(0.05, durationSec),
@@ -85,4 +91,3 @@ export default class PanController {
     return true;
   }
 }
-
