@@ -60,9 +60,58 @@ export default class TilePipeline {
     // during interaction when ancestor coverage is available.
     const MAX_DEFERS_PER_PASS = 64;
 		let defers = 0;
-		while (this.deps.hasCapacity()) {
-			const now = this.deps.now();
-			const idle = now - this.deps.getLastInteractAt() > this.deps.getInteractionIdleMs();
+    const now = this.deps.now();
+    const idle = now - this.deps.getLastInteractAt() > this.deps.getInteractionIdleMs();
+
+    // Coverage-aware deferral during interaction: if ancestors cover most of the viewport,
+    // postpone starting new loads until idle; otherwise, allow essential loads.
+    let coverageGood = false;
+    if (!idle) {
+      const viewerZ = this.deps.getZoom();
+      const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
+      const baseZ = Math.min(Math.floor(viewerZ), zMax);
+      const tileSize = this.deps.getTileSize();
+      const c = this.deps.getCenter();
+      const s0 = Coords.sFor(zMax, baseZ);
+      const centerLevel = { x: c.lng / s0, y: c.lat / s0 };
+      const vp = this.deps.getViewportSizeCSS();
+      const scale = Coords.scaleAtLevel(viewerZ, baseZ);
+      let tl = Coords.tlLevelForWithScale(centerLevel, scale, { x: vp.width, y: vp.height });
+      // compute visible range in level pixels
+      const spanX = vp.width / scale;
+      const spanY = vp.height / scale;
+      const minTx = Math.floor(tl.x / tileSize);
+      const minTy = Math.floor(tl.y / tileSize);
+      const maxTx = Math.floor((tl.x + spanX) / tileSize);
+      const maxTy = Math.floor((tl.y + spanY) / tileSize);
+      let total = 0;
+      let covered = 0;
+      const maxAncestor = 3;
+      for (let ty = minTy; ty <= maxTy; ty++) {
+        for (let tx = minTx; tx <= maxTx; tx++) {
+          total++;
+          // If base tile present, covered
+          const key = `${baseZ}/${tx}/${ty}`;
+          if (this.deps.hasTile(key)) { covered++; continue; }
+          // Else check ancestors up to 3 levels
+          let cov = false;
+          for (let d = 1; d <= maxAncestor && baseZ - d >= 0; d++) {
+            const az = baseZ - d;
+            const ax = tx >> d;
+            const ay = ty >> d;
+            const akey = `${az}/${ax}/${ay}`;
+            if (this.deps.hasTile(akey)) { cov = true; break; }
+          }
+          if (cov) covered++;
+        }
+      }
+      const ratio = total > 0 ? covered / total : 0;
+      coverageGood = ratio >= 0.95;
+    }
+
+    if (!idle && coverageGood) return;
+
+    while (this.deps.hasCapacity()) {
             const baseZ = Math.floor(this.deps.getZoom());
             const c = this.deps.getCenter();
             const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
