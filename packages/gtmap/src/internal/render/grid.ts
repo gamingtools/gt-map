@@ -20,20 +20,22 @@ import * as Coords from '../coords';
 export type GridPalette = { minor: string; major: string; labelBg: string; labelFg: string };
 
 export function drawGrid(
-	ctx: CanvasRenderingContext2D | null,
-	canvas: HTMLCanvasElement | null,
-	zInt: number,
-	scale: number,
-	widthCSS: number,
-	heightCSS: number,
-	tlWorld: { x: number; y: number },
-	dpr: number,
-	maxZoom: number,
-	tileSize: number,
+    ctx: CanvasRenderingContext2D | null,
+    canvas: HTMLCanvasElement | null,
+    zInt: number,
+    scale: number,
+    widthCSS: number,
+    heightCSS: number,
+    tlWorld: { x: number; y: number },
+    dpr: number,
+    maxZoom: number,
+    tileSize: number,
     palette?: GridPalette,
     skipClearAndScale?: boolean,
+    drawLines: boolean = true,
+    drawLabels: boolean = true,
 ): void {
-		if (!ctx || !canvas) return;
+        if (!ctx || !canvas) return;
         if (!skipClearAndScale) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save();
@@ -49,48 +51,52 @@ export function drawGrid(
 	ctx.textBaseline = 'top';
 	ctx.textAlign = 'left';
 	let startWX = Math.floor(tlWorld.x / spacingWorld) * spacingWorld;
-	for (let wx = startWX; (wx - tlWorld.x) * scale <= widthCSS + spacingWorld * scale; wx += spacingWorld) {
-		const xCSS = (wx - tlWorld.x) * scale;
-		const isMajor = Math.round(wx) % base === 0;
-		ctx.beginPath();
-		ctx.strokeStyle = isMajor ? (palette?.major ?? 'rgba(0,0,0,0.45)') : (palette?.minor ?? 'rgba(0,0,0,0.2)');
-		ctx.lineWidth = isMajor ? 1.0 : 0.6;
-		ctx.moveTo(Math.round(xCSS) + 0.5, 0);
-		ctx.lineTo(Math.round(xCSS) + 0.5, heightCSS);
-		ctx.stroke();
-		if (isMajor) {
-			const xAbs = Math.round(wx * factorAbs);
-			const label = `x ${xAbs}`;
-			const tx = Math.round(xCSS) + 2;
-			const ty = 2;
-			const m = ctx.measureText(label);
-			ctx.fillStyle = palette?.labelBg ?? 'rgba(0,0,0,0.55)';
-			ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12);
-			ctx.fillStyle = palette?.labelFg ?? 'rgba(255,255,255,0.9)';
-			ctx.fillText(label, tx, ty);
-		}
-	}
+        for (let wx = startWX; (wx - tlWorld.x) * scale <= widthCSS + spacingWorld * scale; wx += spacingWorld) {
+            const xCSS = (wx - tlWorld.x) * scale;
+            const isMajor = Math.round(wx) % base === 0;
+            if (drawLines) {
+                ctx.beginPath();
+                ctx.strokeStyle = isMajor ? (palette?.major ?? 'rgba(0,0,0,0.45)') : (palette?.minor ?? 'rgba(0,0,0,0.2)');
+                ctx.lineWidth = isMajor ? 1.0 : 0.6;
+                ctx.moveTo(Math.round(xCSS) + 0.5, 0);
+                ctx.lineTo(Math.round(xCSS) + 0.5, heightCSS);
+                ctx.stroke();
+            }
+            if (isMajor && drawLabels) {
+                const xAbs = Math.round(wx * factorAbs);
+                const label = `x ${xAbs}`;
+                const tx = Math.round(xCSS) + 2;
+                const ty = 2;
+                const m = ctx.measureText(label);
+                ctx.fillStyle = palette?.labelBg ?? 'rgba(0,0,0,0.55)';
+                ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12);
+                ctx.fillStyle = palette?.labelFg ?? 'rgba(255,255,255,0.9)';
+                ctx.fillText(label, tx, ty);
+            }
+        }
 	let startWY = Math.floor(tlWorld.y / spacingWorld) * spacingWorld;
-	for (let wy = startWY; (wy - tlWorld.y) * scale <= heightCSS + spacingWorld * scale; wy += spacingWorld) {
-		const yCSS = (wy - tlWorld.y) * scale;
-		const isMajor = Math.round(wy) % base === 0;
-		ctx.beginPath();
-		ctx.strokeStyle = isMajor ? (palette?.major ?? 'rgba(0,0,0,0.45)') : (palette?.minor ?? 'rgba(0,0,0,0.2)');
-		ctx.lineWidth = isMajor ? 1.0 : 0.6;
-		ctx.moveTo(0, Math.round(yCSS) + 0.5);
-		ctx.lineTo(widthCSS, Math.round(yCSS) + 0.5);
-		ctx.stroke();
-		if (isMajor) {
-			const yAbs = Math.round(wy * factorAbs);
-			const label = `y ${yAbs}`;
-			const tx = 2;
-			const ty = Math.round(yCSS) + 2;
-			const m = ctx.measureText(label);
-			ctx.fillStyle = palette?.labelBg ?? 'rgba(0,0,0,0.55)';
-			ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12);
-			ctx.fillStyle = palette?.labelFg ?? 'rgba(255,255,255,0.9)';
-			ctx.fillText(label, tx, ty);
-		}
-	}
+        for (let wy = startWY; (wy - tlWorld.y) * scale <= heightCSS + spacingWorld * scale; wy += spacingWorld) {
+            const yCSS = (wy - tlWorld.y) * scale;
+            const isMajor = Math.round(wy) % base === 0;
+            if (drawLines) {
+                ctx.beginPath();
+                ctx.strokeStyle = isMajor ? (palette?.major ?? 'rgba(0,0,0,0.45)') : (palette?.minor ?? 'rgba(0,0,0,0.2)');
+                ctx.lineWidth = isMajor ? 1.0 : 0.6;
+                ctx.moveTo(0, Math.round(yCSS) + 0.5);
+                ctx.lineTo(widthCSS, Math.round(yCSS) + 0.5);
+                ctx.stroke();
+            }
+            if (isMajor && drawLabels) {
+                const yAbs = Math.round(wy * factorAbs);
+                const label = `y ${yAbs}`;
+                const tx = 2;
+                const ty = Math.round(yCSS) + 2;
+                const m = ctx.measureText(label);
+                ctx.fillStyle = palette?.labelBg ?? 'rgba(0,0,0,0.55)';
+                ctx.fillRect(tx - 2, ty - 1, m.width + 4, 12);
+                ctx.fillStyle = palette?.labelFg ?? 'rgba(255,255,255,0.9)';
+                ctx.fillText(label, tx, ty);
+            }
+        }
         ctx.restore();
 }

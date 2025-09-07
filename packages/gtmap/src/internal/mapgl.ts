@@ -1137,7 +1137,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                 const pal = this._gridPalette();
                 const g = this._gridCtx;
                 if (g) {
-                    // Pre-clear at identity to avoid transformed clearRect artifacts
+                    // Pre-clear at identity (device pixels)
                     g.save();
                     try {
                         g.setTransform(1, 0, 0, 1, 0, 0);
@@ -1145,13 +1145,15 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                     } catch {}
                     g.restore();
 
-                    // Apply rotation and clip to finite map extent
+                    // Apply transforms in CSS units: scale(dpr) first, then rotate around CSS center
                     g.save();
                     try {
+                        const dpr = this._dpr || 1;
+                        g.scale(dpr, dpr);
                         g.translate(widthCSS * 0.5, heightCSS * 0.5);
                         g.rotate(ang);
                         g.translate(-widthCSS * 0.5, -heightCSS * 0.5);
-                        // Clip to map bounds in CSS pixels
+                        // Clip to map bounds in CSS pixels for lines pass
                         const imgMax = imageMaxZ;
                         const sLvl = Coords.sFor(imgMax, baseZ);
                         const levelW = this.mapSize.width / sLvl;
@@ -1164,8 +1166,20 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                         g.rect(mapLeftCSS, mapTopCSS, mapRightCSS - mapLeftCSS, mapBottomCSS - mapTopCSS);
                         g.clip();
                     } catch {}
-                    // Draw grid without additional clear/scale (we are in CSS units here)
-                    drawGrid(g, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal, true);
+                    // Draw grid lines only under clip
+                    drawGrid(g, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal, true, true, false);
+                    try { g.restore(); } catch {}
+
+                    // Draw labels without clip so labels near edges remain visible
+                    g.save();
+                    try {
+                        const dpr = this._dpr || 1;
+                        g.scale(dpr, dpr);
+                        g.translate(widthCSS * 0.5, heightCSS * 0.5);
+                        g.rotate(ang);
+                        g.translate(-widthCSS * 0.5, -heightCSS * 0.5);
+                    } catch {}
+                    drawGrid(g, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal, true, false, true);
                     try { g.restore(); } catch {}
                 }
             }
