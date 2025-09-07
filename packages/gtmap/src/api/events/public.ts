@@ -59,14 +59,14 @@ import type { MarkerEventMap, VectorEventMap, LayerEventMap } from './maps';
 import type { EventMap as MapEventMap } from '../types';
 
 /** Marker events surface with typed names and payloads. */
-export interface MarkerEvents extends PublicEvents<MarkerEventMap> {
+export interface MarkerEvents<T = unknown> extends PublicEvents<MarkerEventMap<T>> {
   /**
    * Subscribe to a marker event.
    *
    * Supported names: 'click' | 'tap' | 'longpress' | 'pointerdown' | 'pointerup' | 'pointerenter' | 'pointerleave' | 'positionchange' | 'remove'
    */
-  on<K extends keyof MarkerEventMap & string>(event: K): EventSubscription<MarkerEventMap[K]>;
-  on<K extends keyof MarkerEventMap & string>(event: K, handler: (value: MarkerEventMap[K]) => void): Unsubscribe;
+  on<K extends keyof MarkerEventMap<T> & string>(event: K): EventSubscription<MarkerEventMap<T>[K]>;
+  on<K extends keyof MarkerEventMap<T> & string>(event: K, handler: (value: MarkerEventMap<T>[K]) => void): Unsubscribe;
 }
 
 /** Vector events surface with typed names and payloads. */
@@ -84,12 +84,12 @@ export interface LayerEvents<T> extends PublicEvents<LayerEventMap<T>> {
 }
 
 /** Map events surface with typed names and payloads. */
-export interface MapEvents extends PublicEvents<MapEventMap> {
+export interface MapEvents<T = unknown> extends PublicEvents<MapEventMap<T>> {
   /**
    * Subscribe to a map event.
    *
    * Common names: 'load' | 'resize' | 'move' | 'moveend' | 'zoom' | 'zoomend' | 'pointerdown' | 'pointermove' | 'pointerup' | 'mousedown' | 'mousemove' | 'mouseup' | 'click' | 'dblclick' | 'contextmenu' | 'frame' | 'markerenter' | 'markerleave' | 'markerclick' | 'markerdown' | 'markerup' | 'markerlongpress'
    */
-  on<K extends keyof MapEventMap & string>(event: K): EventSubscription<MapEventMap[K]>;
-  on<K extends keyof MapEventMap & string>(event: K, handler: (value: MapEventMap[K]) => void): Unsubscribe;
+  on<K extends keyof MapEventMap<T> & string>(event: K): EventSubscription<MapEventMap<T>[K]>;
+  on<K extends keyof MapEventMap<T> & string>(event: K, handler: (value: MapEventMap<T>[K]) => void): Unsubscribe;
 }

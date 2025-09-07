@@ -8,11 +8,11 @@ import { EventedEntity } from './base';
  *
  * @public
  */
-export interface MarkerOptions {
+export interface MarkerOptions<T = unknown> {
 	iconType?: string; // id of IconHandle, defaults to 'default'
 	size?: number;
 	rotation?: number; // degrees clockwise
-	data?: unknown;
+	data?: T;
 }
 
 let _idSeq = 0;
@@ -29,14 +29,14 @@ function genId(): string {
  * Emits typed events via {@link Marker.events | marker.events} (`click`,
  * `pointerenter`, `pointerleave`, `positionchange`, `remove`, …).
  */
-export class Marker extends EventedEntity<MarkerEventMap> {
+export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	readonly id: string;
 	private _x: number;
 	private _y: number;
 	private _iconType: string;
 	private _size?: number;
 	private _rotation?: number;
-	private _data?: unknown;
+	private _data?: T;
 	private _onChange?: () => void;
 
 	/**
@@ -49,7 +49,7 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 	 * @param onChange - Internal callback to notify the map facade of changes
 	 * @internal
 	 */
-	constructor(x: number, y: number, opts: MarkerOptions = {}, onChange?: () => void) {
+	constructor(x: number, y: number, opts: MarkerOptions<T> = {}, onChange?: () => void) {
 		super();
 		this.id = genId();
 		this._x = x;
@@ -82,7 +82,7 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 		return this._rotation;
 	}
 	/** Arbitrary user data attached to the marker. */
-	get data(): unknown {
+	get data(): T | undefined {
 		return this._data;
 	}
 
@@ -96,7 +96,7 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 	 * marker.setData({ id: 'poi-1', category: 'shop' });
 	 * ```
 	 */
-	setData(data: unknown): void {
+	setData(data: T): void {
 		this._data = data;
 		this._onChange?.();
 	}
@@ -151,7 +151,7 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 	 *
 	 * @public
 	 */
-	toData(): MarkerData {
+	toData(): MarkerData<T> {
 		return { id: this.id, x: this._x, y: this._y, data: this._data };
 	}
 
@@ -160,10 +160,10 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 	 * Forward an event from the renderer to this marker's event bus.
 	 * @internal
 	 */
-	emitFromMap<K extends keyof MarkerEventMap & string>(event: K, payload: MarkerEventMap[K]): void {
+	emitFromMap<K extends keyof MarkerEventMap<T> & string>(event: K, payload: MarkerEventMap<T>[K]): void {
 		this.emit(event, payload);
 	}
 
 	/** Public events surface for this marker (typed event names/payloads). */
-	declare readonly events: MarkerEvents;
+	declare readonly events: MarkerEvents<T>;
 }

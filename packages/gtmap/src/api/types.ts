@@ -250,7 +250,7 @@ export interface BaseEvent {
 }
 
 // Event map for type-safe event handling
-export interface EventMap {
+export interface EventMap<TMarkerData = unknown> {
 	/** Fired once after the first frame is scheduled. */
 	load: LoadEventData;
 	/** Fired after a debounced resize completes with final size + DPR. */
@@ -272,17 +272,17 @@ export interface EventMap {
 	/** Per‑frame hook with optional stats (HUD/diagnostics). */
 	frame: FrameEventData;
 	/** Marker hover enter (top‑most). */
-	markerenter: MarkerEventData;
+	markerenter: MarkerEventData<TMarkerData>;
 	/** Marker hover leave. */
-	markerleave: MarkerEventData;
+	markerleave: MarkerEventData<TMarkerData>;
 	/** Marker click (device‑agnostic). */
-	markerclick: MarkerEventData;
+	markerclick: MarkerEventData<TMarkerData>;
 	/** Marker pointer down. */
-	markerdown: MarkerEventData;
+	markerdown: MarkerEventData<TMarkerData>;
 	/** Marker pointer up. */
-	markerup: MarkerEventData;
+	markerup: MarkerEventData<TMarkerData>;
 	/** Marker long‑press (~500ms). */
-	markerlongpress: MarkerEventData;
+	markerlongpress: MarkerEventData<TMarkerData>;
 	/** Mouse down (derived from pointer). */
 	mousedown: MouseEventData;
 	/** Mouse move (derived from pointer); may include `markers?` hover hits. */
@@ -385,11 +385,11 @@ export interface IconDefInternal {
 	anchorY?: number;
 }
 
-export interface MarkerEventData {
+export interface MarkerEventData<T = unknown> {
 	now: number;
 	view: ViewState;
 	screen: { x: number; y: number };
-	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
+	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: T | null };
 	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 	originalEvent?: PointerEvent | MouseEvent;
 }

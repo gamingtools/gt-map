@@ -52,7 +52,10 @@ export { Layer } from '../entities/layer';
  * });
  * ```
  */
-export class GTMap {
+/**
+ * @group Overview
+ */
+export class GTMap<TMarkerData = unknown> {
 	private _impl: MapImpl;
 	/**
 	 * Marker layer for this map. Use to add/remove markers and subscribe to layer events.
@@ -61,10 +64,12 @@ export class GTMap {
 	 * const m = map.addMarker(100, 200);
 	 * map.markers.events.on('entityadd').each(({ entity }) => console.log('added', entity.id));
 	 */
-	readonly markers: Layer<Marker>;
+	/** @group Content */
+	readonly markers: Layer<Marker<TMarkerData>>;
 	/**
 	 * Vector layer for this map. Use to add/remove vectors and subscribe to layer events.
 	 */
+	/** @group Content */
 	readonly vectors: Layer<Vector>;
 	private _defaultIconReady = false;
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
@@ -87,6 +92,7 @@ export class GTMap {
      * @param options.screenCache - Enable screen-space caching for better performance (default: true)
      * @param options.fpsCap - Maximum frames per second (default: 60)
 	 */
+	/** @group Lifecycle */
 	constructor(container: HTMLElement, options: MapOptions) {
 		// Validate required tile source configuration up-front
 		const ts = options?.tileSource;
@@ -133,7 +139,7 @@ export class GTMap {
 		// Layers
 		const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
 		const onVectorsChanged = () => this._flushVectors();
-		this.markers = new Layer<Marker>({ id: 'markers', onChange: onMarkersChanged });
+		this.markers = new Layer<Marker<TMarkerData>>({ id: 'markers', onChange: onMarkersChanged });
 		this.vectors = new Layer<Vector>({ id: 'vectors', onChange: onVectorsChanged });
 
 		// Wire internal marker events to per-marker entity events
@@ -164,44 +170,44 @@ export class GTMap {
         };
 
 		if (this._impl.onMarkerEvent)
-			this._impl.onMarkerEvent('enter', (e: any) => {
+			this._impl.onMarkerEvent('enter', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
                 if (mk) mk.emitFromMap('pointerenter', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
-			this._impl.onMarkerEvent('leave', (e: any) => {
+			this._impl.onMarkerEvent('leave', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
                 if (mk) mk.emitFromMap('pointerleave', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
-			this._impl.onMarkerEvent('click', (e: any) => {
+			this._impl.onMarkerEvent('click', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
                 if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
-			this._impl.onMarkerEvent('down', (e: any) => {
+			this._impl.onMarkerEvent('down', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
                 if (mk) mk.emitFromMap('pointerdown', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
-			this._impl.onMarkerEvent('up', (e: any) => {
+			this._impl.onMarkerEvent('up', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
                 if (mk) mk.emitFromMap('pointerup', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
-			this._impl.onMarkerEvent('longpress', (e: any) => {
+			this._impl.onMarkerEvent('longpress', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
                 if (mk) mk.emitFromMap('longpress', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		// Synthesize 'tap' alias from 'click' for touch input
 		if (this._impl.onMarkerEvent)
-			this._impl.onMarkerEvent('click', (e: any) => {
+			this._impl.onMarkerEvent('click', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
                 const pm = toPointerMeta(e);
@@ -367,8 +373,8 @@ export class GTMap {
 	 * poi.events.on('click', (e) => console.log('clicked', e.marker.id));
 	 * ```
 	 */
-	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: unknown }): Marker {
-		const mk = new Marker(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
+	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: TMarkerData }): Marker<TMarkerData> {
+		const mk = new Marker<TMarkerData>(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
 		this.markers.add(mk);
 		return mk;
 	}
@@ -595,7 +601,8 @@ export class GTMap {
 	 * await map.events.once('zoomend');
 	 * ```
 	 */
-	get events(): MapEvents {
+/** @group Events */
+get events(): MapEvents<TMarkerData> {
 		return {
 			on: (name: any, handler?: any) => {
             // Bridge overloads: return the stream or subscribe inline. The cast is localized
@@ -604,7 +611,7 @@ export class GTMap {
 				return handler ? stream.each(handler) : stream;
 			},
         once: (name) => this._impl.events.when(name as keyof import('./types').EventMap),
-		} as MapEvents;
+		} as MapEvents<TMarkerData>;
 	}
 
 	/**
@@ -776,11 +783,11 @@ export interface ViewTransition {
 
 class ViewTransitionImpl implements ViewTransition {
   // Track at most one active transition per map instance
-  private static _active: WeakMap<GTMap, ViewTransitionImpl> = new WeakMap();
-  static _activeFor(map: GTMap): ViewTransitionImpl | undefined { return this._active.get(map); }
-  static _setActive(map: GTMap, tx: ViewTransitionImpl): void { this._active.set(map, tx); }
-  static _clearActive(map: GTMap): void { this._active.delete(map); }
-  private map: GTMap;
+  private static _active: WeakMap<GTMap<any>, ViewTransitionImpl> = new WeakMap();
+  static _activeFor(map: GTMap<any>): ViewTransitionImpl | undefined { return this._active.get(map); }
+  static _setActive(map: GTMap<any>, tx: ViewTransitionImpl): void { this._active.set(map, tx); }
+  static _clearActive(map: GTMap<any>): void { this._active.delete(map); }
+  private map: GTMap<any>;
   private targetCenter?: Point;
   private targetZoom?: number;
   private offsetDx = 0;
@@ -795,7 +802,7 @@ class ViewTransitionImpl implements ViewTransition {
   private unsubscribeMoveEnd?: () => void;
   private unsubscribeZoomEnd?: () => void;
 
-  constructor(map: GTMap) {
+  constructor(map: GTMap<any>) {
     this.map = map;
   }
 

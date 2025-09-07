@@ -16,7 +16,7 @@
   "excludeProtected": true,
   "excludeInternal": true,
   "excludeExternals": true,
-  "categorizeByGroup": false,
+  "categorizeByGroup": true,
   "hideGenerator": true,
   "readme": "docs/API_OVERVIEW.md"
 }

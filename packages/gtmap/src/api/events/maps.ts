@@ -3,11 +3,11 @@ import type { Polyline as PolylineT, Polygon as PolygonT, Circle as CircleT } fr
 /**
  * Lightweight snapshot of a marker used in event payloads.
  */
-export interface MarkerData {
+export interface MarkerData<T = unknown> {
 	id: string;
 	x: number;
 	y: number;
-	data?: unknown;
+	data?: T;
 }
 
 // Vector geometry (reuse public shapes without style fields)
@@ -48,25 +48,25 @@ export interface PointerMeta {
 
 // Per-entity event maps
 /** Events emitted by a Marker instance. */
-export interface MarkerEventMap {
+export interface MarkerEventMap<T = unknown> {
 	/** Device‑agnostic activate (mouse click or touch tap). */
-	click: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	click: { x: number; y: number; marker: MarkerData<T>; pointer?: PointerMeta };
 	/** Touch alias for click (emitted only on touch). */
-	tap: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	tap: { x: number; y: number; marker: MarkerData<T>; pointer?: PointerMeta };
 	/** Touch long‑press (~500ms) on the marker. */
-	longpress: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	longpress: { x: number; y: number; marker: MarkerData<T>; pointer?: PointerMeta };
 	/** Pointer pressed on the marker. */
-	pointerdown: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	pointerdown: { x: number; y: number; marker: MarkerData<T>; pointer?: PointerMeta };
 	/** Pointer released on the marker. */
-	pointerup: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	pointerup: { x: number; y: number; marker: MarkerData<T>; pointer?: PointerMeta };
 	/** Hover enter on the top‑most marker under the pointer. */
-	pointerenter: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	pointerenter: { x: number; y: number; marker: MarkerData<T>; pointer?: PointerMeta };
 	/** Hover leave for the previously hovered marker. */
-	pointerleave: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	pointerleave: { x: number; y: number; marker: MarkerData<T>; pointer?: PointerMeta };
 	/** Position changed via Marker.moveTo; includes deltas. */
-	positionchange: { x: number; y: number; dx: number; dy: number; marker: MarkerData };
+	positionchange: { x: number; y: number; dx: number; dy: number; marker: MarkerData<T> };
 	/** Marker was removed. */
-	remove: { marker: MarkerData };
+	remove: { marker: MarkerData<T> };
 }
 
 /** Events emitted by a Vector instance. */
