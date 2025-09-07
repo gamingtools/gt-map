@@ -34,16 +34,19 @@ export class RasterRenderer {
             wantTileKey?: (key: string) => void;
             quantizePixels?: boolean; // when false, avoid integer rounding for rotated views
             coverTlWorld?: { x: number; y: number }; // optional: expand coverage from a wider top-left for rotation
+            padTiles?: number,
         },
     ) {
 		const gl = this.gl;
 		const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom, filterMode } = params;
         const TS = tileSize;
         const baseTl = params.coverTlWorld ?? tlWorld;
-        const startX = Math.floor(baseTl.x / TS);
-        const startY = Math.floor(baseTl.y / TS);
-        const endX = Math.floor((baseTl.x + widthCSS / scale) / TS) + 1;
-        const endY = Math.floor((baseTl.y + heightCSS / scale) / TS) + 1;
+        let startX = Math.floor(baseTl.x / TS);
+        let startY = Math.floor(baseTl.y / TS);
+        let endX = Math.floor((baseTl.x + widthCSS / scale) / TS) + 1;
+        let endY = Math.floor((baseTl.y + heightCSS / scale) / TS) + 1;
+        const pad = Math.max(0, Math.floor(params.padTiles || 0));
+        startX -= pad; startY -= pad; endX += pad; endY += pad;
 		// const tilePixelSizeCSS = TS * scale; // reserved for future heuristics
 
 		// Limit tile ranges for finite, possibly non-square images
