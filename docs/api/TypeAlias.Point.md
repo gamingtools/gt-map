@@ -4,6 +4,15 @@
 
 # Type Alias: Point
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Remarks](#remarks)
+- [Properties](#properties)
+  - [x](#x)
+  - [y](#y)
+
 > **Point** = `object`
 
 Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L10)

@@ -4,6 +4,34 @@
 
 # Interface: EventMap
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [click](#click)
+  - [contextmenu](#contextmenu)
+  - [dblclick](#dblclick)
+  - [frame](#frame)
+  - [load](#load)
+  - [markerclick](#markerclick)
+  - [markerdown](#markerdown)
+  - [markerenter](#markerenter)
+  - [markerleave](#markerleave)
+  - [markerlongpress](#markerlongpress)
+  - [markerup](#markerup)
+  - [mousedown](#mousedown)
+  - [mousemove](#mousemove)
+  - [mouseup](#mouseup)
+  - [move](#move)
+  - [moveend](#moveend)
+  - [pointerdown](#pointerdown)
+  - [pointermove](#pointermove)
+  - [pointerup](#pointerup)
+  - [resize](#resize)
+  - [zoom](#zoom)
+  - [zoomend](#zoomend)
+
 Defined in: [api/types.ts:248](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L248)
 
 ## Properties

@@ -11,6 +11,11 @@ Features
 - Basic tile texture caching with LRU eviction
  - Typed event bus for input and render events
 
+Documentation
+
+- Guide: `docs/guide/README.md` (concepts and how-tos)
+- API Reference: `docs/api/README.md` (generated, with quick navigation)
+
 Getting Started
 Run locally
 
@@ -34,6 +39,8 @@ Public API
   - Add content with `addIcon`, `addMarker`/`addMarkers`, and `addVectors`.
   - Events are exposed via `map.events` (typed `EventBus`).
   - Note: In the demo apps, `@gtmap` is a Vite alias to the local package source.
+
+See the full API reference in `docs/api/README.md`.
 
 Demo app
 

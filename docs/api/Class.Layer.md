@@ -4,6 +4,26 @@
 
 # Class: Layer\<T\>
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Remarks](#remarks)
+- [Type Parameters](#type-parameters)
+  - [T](#t)
+- [Properties](#properties)
+  - [events](#events)
+  - [id](#id)
+- [Accessors](#accessors)
+  - [visible](#visible)
+- [Methods](#methods)
+  - [add()](#add)
+  - [clear()](#clear)
+  - [get()](#get)
+  - [getAll()](#getall)
+  - [remove()](#remove)
+  - [setVisible()](#setvisible)
+
 Defined in: [entities/Layer.ts:24](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/entities/Layer.ts#L24)
 
 Layer<T> - a collection of entities with lifecycle and visibility.

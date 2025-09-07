@@ -4,6 +4,23 @@
 
 # Interface: PointerMeta
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [buttons](#buttons)
+  - [device](#device)
+  - [height?](#height)
+  - [isPrimary](#isprimary)
+  - [modifiers](#modifiers)
+  - [pointerId](#pointerid)
+  - [pressure?](#pressure)
+  - [tiltX?](#tiltx)
+  - [tiltY?](#tilty)
+  - [twist?](#twist)
+  - [width?](#width)
+
 Defined in: [api/events/maps.ts:35](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/maps.ts#L35)
 
 ## Properties

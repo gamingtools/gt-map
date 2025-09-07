@@ -4,6 +4,16 @@
 
 # @gaming.tools/gtmap
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Namespaces](#namespaces)
+- [Classes](#classes)
+- [Interfaces](#interfaces)
+- [Type Aliases](#type-aliases)
+- [Functions](#functions)
+
 ## Namespaces
 
 - [easings](Namespace.easings.md)

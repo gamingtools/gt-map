@@ -4,6 +4,21 @@
 
 # Interface: MarkerEventMap
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [click](#click)
+  - [longpress](#longpress)
+  - [pointerdown](#pointerdown)
+  - [pointerenter](#pointerenter)
+  - [pointerleave](#pointerleave)
+  - [pointerup](#pointerup)
+  - [positionchange](#positionchange)
+  - [remove](#remove)
+  - [tap](#tap)
+
 Defined in: [api/events/maps.ts:51](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/maps.ts#L51)
 
 Events emitted by a Marker instance.

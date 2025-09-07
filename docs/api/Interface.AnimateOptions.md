@@ -4,6 +4,16 @@
 
 # Interface: AnimateOptions
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [delayMs?](#delayms)
+  - [durationMs](#durationms)
+  - [easing?](#easing)
+  - [interrupt?](#interrupt)
+
 Defined in: [api/types.ts:439](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L439)
 
 Options for animating a transition.

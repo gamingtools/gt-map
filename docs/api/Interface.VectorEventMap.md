@@ -4,6 +4,13 @@
 
 # Interface: VectorEventMap
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [remove](#remove)
+
 Defined in: [api/events/maps.ts:73](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/maps.ts#L73)
 
 Events emitted by a Vector instance.

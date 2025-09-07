@@ -4,6 +4,29 @@
 
 # Class: Marker
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Remarks](#remarks)
+- [Extends](#extends)
+- [Properties](#properties)
+  - [events](#events)
+  - [id](#id)
+- [Accessors](#accessors)
+  - [data](#data)
+  - [iconType](#icontype)
+  - [rotation](#rotation)
+  - [size](#size)
+  - [x](#x)
+  - [y](#y)
+- [Methods](#methods)
+  - [moveTo()](#moveto)
+  - [remove()](#remove)
+  - [setData()](#setdata)
+  - [setStyle()](#setstyle)
+  - [toData()](#todata)
+
 Defined in: [entities/Marker.ts:32](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/entities/Marker.ts#L32)
 
 Marker - an icon anchored at a world pixel coordinate.

@@ -4,6 +4,42 @@
 
 # Class: GTMap
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Remarks](#remarks)
+- [Example](#example)
+- [Constructors](#constructors)
+  - [Constructor](#constructor)
+- [Properties](#properties)
+  - [markers](#markers)
+  - [vectors](#vectors)
+- [Accessors](#accessors)
+  - [events](#events)
+  - [pointerAbs](#pointerabs)
+- [Methods](#methods)
+  - [addIcon()](#addicon)
+  - [addMarker()](#addmarker)
+  - [addVector()](#addvector)
+  - [addVectors()](#addvectors)
+  - [clearMarkers()](#clearmarkers)
+  - [clearVectors()](#clearvectors)
+  - [destroy()](#destroy)
+  - [getCenter()](#getcenter)
+  - [getZoom()](#getzoom)
+  - [invalidateSize()](#invalidatesize)
+  - [setActive()](#setactive)
+  - [setAutoResize()](#setautoresize)
+  - [setBackgroundColor()](#setbackgroundcolor)
+  - [setFpsCap()](#setfpscap)
+  - [setGridVisible()](#setgridvisible)
+  - [setIconScaleFunction()](#seticonscalefunction)
+  - [setTileSource()](#settilesource)
+  - [setUpscaleFilter()](#setupscalefilter)
+  - [setWheelSpeed()](#setwheelspeed)
+  - [transition()](#transition)
+
 Defined in: [api/Map.ts:50](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L50)
 
 GTMap - A high‑performance WebGL map renderer with a pixel‑based coordinate system.

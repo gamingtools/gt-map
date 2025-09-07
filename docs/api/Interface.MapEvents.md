@@ -4,6 +4,15 @@
 
 # Interface: MapEvents
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Extends](#extends)
+- [Methods](#methods)
+  - [on()](#on)
+  - [once()](#once)
+
 Defined in: [api/events/public.ts:87](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L87)
 
 Map events surface with typed names and payloads.

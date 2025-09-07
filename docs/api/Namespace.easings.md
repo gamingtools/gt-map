@@ -4,6 +4,12 @@
 
 # easings
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Functions](#functions)
+
 ## Functions
 
 - [easeInCubic](easings.Function.easeInCubic.md)

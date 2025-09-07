@@ -4,6 +4,25 @@
 
 # Interface: MapOptions
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [autoResize?](#autoresize)
+  - [backgroundColor?](#backgroundcolor)
+  - [center?](#center)
+  - [fpsCap?](#fpscap)
+  - [mapSize?](#mapsize)
+  - [maxZoom?](#maxzoom)
+  - [minZoom?](#minzoom)
+  - [prefetch?](#prefetch)
+  - [screenCache?](#screencache)
+  - [tileSize?](#tilesize)
+  - [tileUrl?](#tileurl)
+  - [wrapX?](#wrapx)
+  - [zoom?](#zoom)
+
 Defined in: [api/types.ts:40](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L40)
 
 ## Properties

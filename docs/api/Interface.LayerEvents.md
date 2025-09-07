@@ -4,6 +4,17 @@
 
 # Interface: LayerEvents\<T\>
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Extends](#extends)
+- [Type Parameters](#type-parameters)
+  - [T](#t)
+- [Methods](#methods)
+  - [on()](#on)
+  - [once()](#once)
+
 Defined in: [api/events/public.ts:80](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L80)
 
 Layer events surface with typed names and payloads.

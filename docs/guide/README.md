@@ -13,4 +13,4 @@ relevant API types when you need details.
 - Vectors: add simple geometry overlays
 - Cookbook: small, practical snippets
 
-For full signatures and types, open `docs/api/` (Markdown) — start with `docs/api/modules.md`.
+For full signatures and types, open the API reference at `docs/api/` — start with [`docs/api/README.md`](../api/README.md) or jump directly to [`GTMap`](../api/Class.GTMap.md).
