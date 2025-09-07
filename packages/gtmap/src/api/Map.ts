@@ -18,7 +18,6 @@ import type {
 	MarkerInternal,
 	VectorPrimitiveInternal,
 	IconScaleFunction,
-	EventMap as MapEventMap,
   ApplyOptions,
   ApplyResult,
 } from './types';
@@ -306,8 +305,29 @@ export class GTMap {
 	 *
 	 * @public
 	 * @param def - Icon bitmap metadata and source paths
+	 * @param def.iconPath - URL or data URL for the 1x icon bitmap
+	 * @param def.x2IconPath - Optional URL or data URL for a 2x (retina) bitmap
+	 * @param def.width - Intrinsic width of the icon (pixels, 1x)
+	 * @param def.height - Intrinsic height of the icon (pixels, 1x)
+	 * @param def.anchorX - Optional anchor X in pixels from the left (defaults to width/2)
+	 * @param def.anchorY - Optional anchor Y in pixels from the top (defaults to height/2)
 	 * @param id - Optional stable id (auto‑generated when omitted)
 	 * @returns Handle used by {@link GTMap.addMarker}
+	 *
+	 * @example
+	 * ```ts
+	 * // Register a 24x24 pin with a 2x asset and bottom‑center anchor
+	 * const pin = map.addIcon({
+	 *   iconPath: '/icons/pin-24.png',
+	 *   x2IconPath: '/icons/pin-48.png',
+	 *   width: 24,
+	 *   height: 24,
+	 *   anchorX: 12,
+	 *   anchorY: 24,
+	 * });
+	 * // Use the icon when adding a marker
+	 * const m = map.addMarker(2048, 2048, { icon: pin, size: 1.0 });
+	 * ```
 	 */
 	addIcon(def: IconDef, id?: string): IconHandle {
 		const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
@@ -331,7 +351,18 @@ export class GTMap {
 	 * @param x - World X (pixels)
 	 * @param y - World Y (pixels)
 	 * @param opts - Optional style and user data
+	 * @param opts.icon - Handle from {@link GTMap.addIcon} (defaults to built‑in dot)
+	 * @param opts.size - Scale multiplier (default 1)
+	 * @param opts.rotation - Rotation in degrees clockwise
+	 * @param opts.data - Arbitrary app data stored on the marker
 	 * @returns The created {@link Marker}
+	 *
+	 * @example
+	 * ```ts
+	 * // Add a POI marker using a registered icon
+	 * const poi = map.addMarker(1200, 900, { icon: pin, size: 1.25, rotation: 0, data: { id: 'poi-7' } });
+	 * poi.events.on('click', (e) => console.log('clicked', e.marker.id));
+	 * ```
 	 */
 	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: unknown }): Marker {
 		const mk = new Marker(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
@@ -369,6 +400,14 @@ export class GTMap {
 	 * @public
 	 * @param geometry - Vector geometry (polyline, polygon, circle)
 	 * @returns The created {@link Vector}
+ 	 *
+ 	 * @example
+ 	 * ```ts
+ 	 * // Add a polyline
+ 	 * const v = map.addVector({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] });
+ 	 * // Later, update its geometry
+ 	 * v.setGeometry({ type: 'circle', center: { x: 200, y: 200 }, radius: 40 });
+ 	 * ```
 	 */
 	addVector(geometry: VectorGeom): Vector {
 		const v = new Vector(geometry, {}, () => this._flushVectors());
@@ -433,6 +472,13 @@ export class GTMap {
 	 * @public
 	 * @param v - Speed multiplier (0.01–2.0)
 	 * @returns This map instance for chaining
+ 	 *
+ 	 * @example
+ 	 * ```ts
+ 	 * // Wire to a range input for user control
+ 	 * const input = document.querySelector('#wheelSpeed') as HTMLInputElement;
+ 	 * input.oninput = () => map.setWheelSpeed(Number(input.value));
+ 	 * ```
 	 */
 	setWheelSpeed(v: number): this {
 		this._impl.setWheelSpeed?.(v);
@@ -444,6 +490,12 @@ export class GTMap {
 	 * @public
 	 * @param v - FPS limit (15–240)
 	 * @returns This map instance for chaining
+ 	 *
+ 	 * @example
+ 	 * ```ts
+ 	 * // Lower FPS cap to save battery
+ 	 * map.setFpsCap(30);
+ 	 * ```
 	 */
 	setFpsCap(v: number): this {
 		this._impl.setFpsCap(v);
@@ -456,6 +508,14 @@ export class GTMap {
      * @public
      * @remarks
      * Policy: either `'transparent'` (fully transparent) or a solid color; alpha on colors is ignored.
+     *
+     * @example
+     * ```ts
+     * // Transparent viewport (useful over custom app backgrounds)
+     * map.setBackgroundColor('transparent');
+     * // Switch to a solid dark background
+     * map.setBackgroundColor('#0a0a0a');
+     * ```
      */
 	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
 		this._impl.setBackgroundColor?.(color as any);
@@ -501,10 +561,10 @@ export class GTMap {
         const bh = Math.max(1, b.maxY - b.minY);
         const k = Math.min(availW / bw, availH / bh);
         // CSS px per world px is 2^(z - imageMaxZ) => z = imageMaxZ + log2(k)
-        const imageMaxZ = (this._impl as any)._sourceMaxZoom ?? this._impl.maxZoom;
+        const imageMaxZ = this._impl.getImageMaxZoom();
         let z = imageMaxZ + Math.log2(Math.max(1e-6, k));
         // clamp
-        z = Math.max(this._impl.minZoom, Math.min(this._impl.maxZoom, z));
+        z = Math.max(this._impl.getMinZoom(), Math.min(this._impl.getMaxZoom(), z));
         const center: Point = { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 };
         return { center, zoom: z };
     }
@@ -643,7 +703,7 @@ class ViewTransitionImpl implements ViewTransition {
   private offsetDy = 0;
   private targetBounds?: { minX: number; minY: number; maxX: number; maxY: number };
   private boundsPadding?: { top: number; right: number; bottom: number; left: number };
-  private started = false;
+  // private started flag removed
   private settled = false;
   private cancelled = false;
   private resolveFn?: (r: ApplyResult) => void;

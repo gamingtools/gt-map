@@ -184,9 +184,13 @@ export interface MapImpl {
 	panTo?(lng: number, lat: number, durationMs?: number): void;
     flyTo?(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }): void;
     // Optional animation cancellation
-	cancelPanAnim?(): void;
-	cancelZoomAnim?(): void;
-	destroy(): void;
+    cancelPanAnim?(): void;
+    cancelZoomAnim?(): void;
+    // Read accessors for zoom ranges used by facade utilities
+    getMinZoom(): number;
+    getMaxZoom(): number;
+    getImageMaxZoom(): number;
+    destroy(): void;
 }
 
 export type VectorStyle = VectorStyleAPI;

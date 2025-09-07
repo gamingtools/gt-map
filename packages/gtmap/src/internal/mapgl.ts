@@ -65,7 +65,7 @@ export type EaseOptions = {
 	easePinch?: boolean;
 };
 export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
-export type MarkerInput = { lng: number; lat: number; type: string; size?: number };
+export type MarkerInput = { id?: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
 
 export default class GTMap implements MapImpl, GraphicsHost {
 	container: HTMLDivElement;
@@ -631,7 +631,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
         this._startPanBy(dxPx, dyPx, Math.max(0.05, durationMs / 1000));
     }
 
-    public flyTo(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }) {
+	public flyTo(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }) {
         const durMs = Math.max(0, (opts.durationMs ?? 600) | 0);
         if (Number.isFinite(opts.lng as number) && Number.isFinite(opts.lat as number)) this.panTo(opts.lng as number, opts.lat as number, durMs);
         if (Number.isFinite(opts.zoom as number)) {
@@ -644,6 +644,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	public cancelPanAnim() {
 		this._panAnim = null;
 	}
+
+	public getMinZoom(): number { return this.minZoom; }
+	public getMaxZoom(): number { return this.maxZoom; }
+	public getImageMaxZoom(): number { return (this as any)._sourceMaxZoom || this.maxZoom; }
 
 	public cancelZoomAnim() {
 		try {

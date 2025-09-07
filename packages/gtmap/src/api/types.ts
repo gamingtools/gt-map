@@ -72,17 +72,35 @@ export interface Marker {
 	data?: any | null;
 }
 
+/**
+ * Icon bitmap metadata for registering marker icons.
+ *
+ * @public
+ * @remarks
+ * Provide intrinsic pixel dimensions for the source image and optional 2x asset and anchor.
+ */
 export interface IconDef {
-	iconPath: string;
-	x2IconPath?: string;
-	width: number;
-	height: number;
-	anchorX?: number;
-	anchorY?: number;
+    /** URL or data URL for the 1x icon bitmap. */
+    iconPath: string;
+    /** Optional URL or data URL for a 2x (retina) icon bitmap. */
+    x2IconPath?: string;
+    /** Intrinsic width of the icon in pixels (1x asset). */
+    width: number;
+    /** Intrinsic height of the icon in pixels (1x asset). */
+    height: number;
+    /** Optional anchor X in pixels from the left (defaults to width/2). */
+    anchorX?: number;
+    /** Optional anchor Y in pixels from the top (defaults to height/2). */
+    anchorY?: number;
 }
 
+/**
+ * Opaque handle returned by {@link GTMap.addIcon} for use in {@link GTMap.addMarker}.
+ * @public
+ */
 export interface IconHandle {
-	id: string;
+    /** Stable icon id. */
+    id: string;
 }
 
 // Vector styling

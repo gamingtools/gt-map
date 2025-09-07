@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { GTMap } from '@gtmap';
+	import { GTMap, type IconDef, type IconHandle } from '@gtmap';
 	// Sample icons for demonstrating custom icon registration
-	type IconDef = { iconPath: string; x2IconPath?: string; width: number; height: number };
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
 	import Hud from '$lib/Hud.svelte';
@@ -24,7 +23,7 @@
 		return Math.random() * (max - min) + min;
 	}
 
-	let iconHandles: { id: string }[] | null = null;
+	let iconHandles: IconHandle[] | null = null;
 
 	function applyMarkerCount(n: number): void {
 		if (!map) return;
@@ -50,7 +49,7 @@
 			marker.events.on('pointerleave').each((e) => {
 				console.log('Marker pointerleave:', e);
 			});
-
+		}
 	}
 
 	function setMarkerCount(n: number): void {
@@ -200,6 +199,7 @@
 			map?.destroy?.();
 		};
 	});
+	
 </script>
 
 <div bind:this={container} class="map">
