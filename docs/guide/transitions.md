@@ -65,7 +65,6 @@ export interface ViewTransition {
   offset(dx: number, dy: number): this; // applied at commit time
   bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
   points(list: Array<{ x: number; y: number }>, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
-  markers(list?: Array<Marker | string>, padding?: number | { top: number; right: number; bottom: number; left: number }): this; // fit current or provided markers
   // Future‑ready (optional next): anchor(a: 'center' | { x: number; y: number }): this;
 
   apply(opts?: ApplyOptions): Promise<ApplyResult>; // never throws; resolves with status
@@ -146,16 +145,9 @@ await map.transition()
   .apply({ animate: { durationMs: 500 } });
 ```
 
-Fit markers
-
-```ts
-// All markers on the layer
-await map.transition().markers(undefined, 16).apply({ animate: { durationMs: 500 } });
-
-// Specific markers by instance or id
-const list = [ markerA, markerB, 'm_abcd123' ];
-await map.transition().markers(list, { top: 16, right: 24, bottom: 16, left: 24 }).apply({ animate: { durationMs: 600 } });
-```
+// To fit markers, gather their current positions and use points(...):
+// const pts = map.markers.getAll().map(m => ({ x: m.x, y: m.y }));
+// await map.transition().points(pts, 16).apply({ animate: { durationMs: 500 } });
 
 Easing helpers
 

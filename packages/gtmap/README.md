@@ -71,8 +71,9 @@ await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { d
 // Fit bounds
 await map.transition().bounds({ minX: 1000, minY: 1200, maxX: 2400, maxY: 2200 }, 24).apply({ animate: { durationMs: 500 } });
 
-// Fit markers (all)
-await map.transition().markers(undefined, 16).apply({ animate: { durationMs: 500 } });
+// Fit markers (all): gather positions and use points(...)
+const pts = map.markers.getAll().map(m => ({ x: m.x, y: m.y }));
+await map.transition().points(pts, 16).apply({ animate: { durationMs: 500 } });
 ```
 
 ### Rendering & Behavior

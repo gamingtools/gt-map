@@ -643,7 +643,6 @@ export interface ViewTransition {
   offset(dx: number, dy: number): this;
   bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
   points(list: Array<Point>, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
-  markers(list?: Array<Marker | string>, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
   apply(opts?: ApplyOptions): Promise<ApplyResult>;
   cancel(): void;
 }
@@ -721,25 +720,7 @@ class ViewTransitionImpl implements ViewTransition {
     return this.bounds({ minX, minY, maxX, maxY }, padding);
   }
 
-  markers(list?: Array<Marker | string>, padding?: number | { top: number; right: number; bottom: number; left: number }): this {
-    const pts: Point[] = [];
-    if (!list || list.length === 0) {
-      try {
-        for (const m of this.map.markers.getAll()) pts.push({ x: m.x, y: m.y });
-      } catch {}
-    } else {
-      for (const it of list) {
-        if (typeof it === 'string') {
-          const mk = this.map.markers.get(it);
-          if (mk) pts.push({ x: mk.x, y: mk.y });
-        } else {
-          pts.push({ x: it.x, y: it.y });
-        }
-      }
-    }
-    if (pts.length === 0) return this;
-    return this.points(pts, padding);
-  }
+  // markers(...) removed for now; use points(...) with marker positions if needed
 
   cancel(): void {
     if (this.settled) return;
