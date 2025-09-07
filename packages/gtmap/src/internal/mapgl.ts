@@ -1494,19 +1494,31 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		}
 	}
 
-	private _drawVectors() {
-		if (!this._vectorCtx) this._initVectorCanvas();
-		this._ensureOverlaySizes();
-		const ctx = this._vectorCtx!;
-		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-		ctx.save();
-		try {
-			ctx.scale(this._dpr || 1, this._dpr || 1);
-		} catch {}
-		if (this._vectors.length) {
-			const z = this.zoom;
-			const rect = this.container.getBoundingClientRect();
-			const viewport = { x: rect.width, y: rect.height };
+    private _drawVectors() {
+        if (!this._vectorCtx) this._initVectorCanvas();
+        this._ensureOverlaySizes();
+        const ctx = this._vectorCtx!;
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        ctx.save();
+        try {
+            ctx.scale(this._dpr || 1, this._dpr || 1);
+        } catch {}
+        // Apply map rotation in CSS pixels (rotate around viewport center)
+        try {
+            const rect = this.container.getBoundingClientRect();
+            const cx = rect.width * 0.5;
+            const cy = rect.height * 0.5;
+            const ang = (this._viewRotationDeg || 0) * Math.PI / 180;
+            if (ang !== 0) {
+                ctx.translate(cx, cy);
+                ctx.rotate(ang);
+                ctx.translate(-cx, -cy);
+            }
+        } catch {}
+        if (this._vectors.length) {
+            const z = this.zoom;
+            const rect = this.container.getBoundingClientRect();
+            const viewport = { x: rect.width, y: rect.height };
             const imageMaxZ = this._sourceMaxZoom || this.maxZoom;
 			for (const prim of this._vectors) {
 				const style: any = prim.style || {};

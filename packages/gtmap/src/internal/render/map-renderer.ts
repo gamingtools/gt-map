@@ -58,7 +58,8 @@ export default class MapRenderer {
 		gl.uniform2f(loc.u_uv1!, 1.0, 1.0);
 		if (opts?.zoomVelocityTick) opts.zoomVelocityTick();
 		if (opts?.panVelocityTick) opts.panVelocityTick();
-		if (ctx.useScreenCache && ctx.screenCache) {
+        // Disable screen cache when rotating to avoid ghosting artifacts
+        if ((ang === 0) && ctx.useScreenCache && ctx.screenCache) {
 			// Clip cached frame to the finite map extent to avoid overlay ghosts outside tiles
 			const imgMax = ctx.sourceMaxZoom || ctx.maxZoom;
 			const sLvl = Coords.sFor(imgMax, baseZ);
@@ -84,7 +85,11 @@ export default class MapRenderer {
 				if (!prevScissor) gl.disable(gl.SCISSOR_TEST);
 			}
 		}
-		const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
+        // Inflate viewport to cover rotated corners
+        const absS = Math.abs(s), absC = Math.abs(c);
+        const effW = widthCSS * absC + heightCSS * absS;
+        const effH = widthCSS * absS + heightCSS * absC;
+        const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorld, scale, effW, effH, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
 		if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
 
 		// Determine target LOD for idle resolution logic
@@ -104,8 +109,8 @@ export default class MapRenderer {
                 targetZ,
                 tlT,
                 scaleT,
-                widthCSS,
-                heightCSS,
+                effW,
+                effH,
                 ctx.wrapX,
                 ctx.tileSize,
                 ctx.mapSize,
@@ -125,21 +130,21 @@ export default class MapRenderer {
 				const covL = ctx.raster.coverage(ctx.tileCache, lvl, tlL, scaleL, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
 				// Backfill lower levels at full raster opacity
 				gl.uniform1f(loc.u_alpha!, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
-				ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
-					zLevel: lvl,
-					tlWorld: tlL,
-					scale: scaleL,
-					dpr: ctx.dpr,
-					widthCSS,
-					heightCSS,
-					wrapX: ctx.wrapX,
-					tileSize: ctx.tileSize,
-					mapSize: ctx.mapSize,
-					zMax: ctx.maxZoom,
-					sourceMaxZoom: ctx.sourceMaxZoom,
-					filterMode: this.levelFilter(scaleL),
-					wantTileKey: ctx.wantTileKey,
-				});
+                ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
+                    zLevel: lvl,
+                    tlWorld: tlL,
+                    scale: scaleL,
+                    dpr: ctx.dpr,
+                    widthCSS: effW,
+                    heightCSS: effH,
+                    wrapX: ctx.wrapX,
+                    tileSize: ctx.tileSize,
+                    mapSize: ctx.mapSize,
+                    zMax: ctx.maxZoom,
+                    sourceMaxZoom: ctx.sourceMaxZoom,
+                    filterMode: this.levelFilter(scaleL),
+                    wantTileKey: ctx.wantTileKey,
+                });
 				if (covL >= 0.995) break;
 			}
 		}
@@ -155,39 +160,39 @@ export default class MapRenderer {
 				const snapR = (v: number) => Coords.snapLevelToDevice(v, scaleR, ctx.dpr);
 				tlR = { x: snapR(tlR.x), y: snapR(tlR.y) };
 				gl.uniform1f(loc.u_alpha!, layerAlpha);
-				ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
-					zLevel: targetZ,
-					tlWorld: tlR,
-					scale: scaleR,
-					dpr: ctx.dpr,
-					widthCSS,
-					heightCSS,
-					wrapX: ctx.wrapX,
-					tileSize: ctx.tileSize,
-					mapSize: ctx.mapSize,
-					zMax: ctx.maxZoom,
-					sourceMaxZoom: ctx.sourceMaxZoom,
-					filterMode: this.levelFilter(scaleR),
-					wantTileKey: ctx.wantTileKey,
-				});
+                ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
+                    zLevel: targetZ,
+                    tlWorld: tlR,
+                    scale: scaleR,
+                    dpr: ctx.dpr,
+                    widthCSS: effW,
+                    heightCSS: effH,
+                    wrapX: ctx.wrapX,
+                    tileSize: ctx.tileSize,
+                    mapSize: ctx.mapSize,
+                    zMax: ctx.maxZoom,
+                    sourceMaxZoom: ctx.sourceMaxZoom,
+                    filterMode: this.levelFilter(scaleR),
+                    wantTileKey: ctx.wantTileKey,
+                });
 			} else {
 				// Not enough target coverage yet: render base + backfill, but suppress z+1 overlay blending
 				gl.uniform1f(loc.u_alpha!, layerAlpha);
-				ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
-					zLevel: baseZ,
-					tlWorld,
-					scale,
-					dpr: ctx.dpr,
-					widthCSS,
-					heightCSS,
-					wrapX: ctx.wrapX,
-					tileSize: ctx.tileSize,
-					mapSize: ctx.mapSize,
-					zMax: ctx.maxZoom,
-					sourceMaxZoom: ctx.sourceMaxZoom,
-					filterMode: this.levelFilter(scale),
-					wantTileKey: ctx.wantTileKey,
-				});
+                ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
+                    zLevel: baseZ,
+                    tlWorld,
+                    scale,
+                    dpr: ctx.dpr,
+                    widthCSS: effW,
+                    heightCSS: effH,
+                    wrapX: ctx.wrapX,
+                    tileSize: ctx.tileSize,
+                    mapSize: ctx.mapSize,
+                    zMax: ctx.maxZoom,
+                    sourceMaxZoom: ctx.sourceMaxZoom,
+                    filterMode: this.levelFilter(scale),
+                    wantTileKey: ctx.wantTileKey,
+                });
 			}
 		} else {
 			// Original behavior during interaction
@@ -219,21 +224,21 @@ export default class MapRenderer {
 				if (nextCoverage > 0.35) {
 					// Draw next-level tiles fully opaque where available to avoid gamma-darkening from blend
 					gl.uniform1f(loc.u_alpha!, layerAlpha);
-					ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
-					zLevel: zIntNext,
-					tlWorld: tlN,
-					scale: scaleN,
-					dpr: ctx.dpr,
-					widthCSS,
-					heightCSS,
-					wrapX: ctx.wrapX,
-					tileSize: ctx.tileSize,
-					mapSize: ctx.mapSize,
-					zMax: ctx.maxZoom,
-					sourceMaxZoom: ctx.sourceMaxZoom,
-					filterMode: this.levelFilter(scaleN),
-					wantTileKey: ctx.wantTileKey,
-					});
+                ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
+                    zLevel: zIntNext,
+                    tlWorld: tlN,
+                    scale: scaleN,
+                    dpr: ctx.dpr,
+                    widthCSS: effW,
+                    heightCSS: effH,
+                    wrapX: ctx.wrapX,
+                    tileSize: ctx.tileSize,
+                    mapSize: ctx.mapSize,
+                    zMax: ctx.maxZoom,
+                    sourceMaxZoom: ctx.sourceMaxZoom,
+                    filterMode: this.levelFilter(scaleN),
+                    wantTileKey: ctx.wantTileKey,
+                });
 					gl.uniform1f(loc.u_alpha!, 1.0);
 				}
 			}
