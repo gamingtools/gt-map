@@ -4,13 +4,13 @@
 
 # Interface: VectorEvents
 
-Defined in: [api/events/public.ts:73](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/events/public.ts#L73)
+Defined in: [api/events/public.ts:73](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L73)
 
 Vector events surface with typed names and payloads.
 
 ## Extends
 
-- [`PublicEvents`](Interface.PublicEvents.md)\<`VectorEventMap`\>
+- [`PublicEvents`](Interface.PublicEvents.md)\<[`VectorEventMap`](Interface.VectorEventMap.md)\>
 
 ## Methods
 
@@ -18,9 +18,9 @@ Vector events surface with typed names and payloads.
 
 #### Call Signature
 
-> **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<`VectorEventMap`\[`K`\]\>
+> **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`VectorEventMap`](Interface.VectorEventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:75](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/events/public.ts#L75)
+Defined in: [api/events/public.ts:75](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L75)
 
 Supported names: 'remove'
 
@@ -38,7 +38,7 @@ Supported names: 'remove'
 
 ##### Returns
 
-[`EventSubscription`](Interface.EventSubscription.md)\<`VectorEventMap`\[`K`\]\>
+[`EventSubscription`](Interface.EventSubscription.md)\<[`VectorEventMap`](Interface.VectorEventMap.md)\[`K`\]\>
 
 ##### Overrides
 
@@ -46,9 +46,9 @@ Supported names: 'remove'
 
 #### Call Signature
 
-> **on**\<`K`\>(`event`, `handler`): `Unsubscribe`
+> **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:76](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/events/public.ts#L76)
+Defined in: [api/events/public.ts:76](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L76)
 
 Subscribe to a named event.
 
@@ -72,7 +72,7 @@ Event name (typed by the entity's event map)
 
 ##### Returns
 
-`Unsubscribe`
+[`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
 An `EventStream<Payload>` with `.each(handler)` to subscribe.
 
@@ -92,9 +92,9 @@ marker.events.on('click').each((e) => {
 
 ### once()
 
-> **once**\<`K`\>(`event`): `Promise`\<`VectorEventMap`\[`K`\]\>
+> **once**\<`K`\>(`event`): `Promise`\<[`VectorEventMap`](Interface.VectorEventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 
@@ -114,7 +114,7 @@ Event name (typed)
 
 #### Returns
 
-`Promise`\<`VectorEventMap`\[`K`\]\>
+`Promise`\<[`VectorEventMap`](Interface.VectorEventMap.md)\[`K`\]\>
 
 Promise that resolves with the payload of the next event.
 

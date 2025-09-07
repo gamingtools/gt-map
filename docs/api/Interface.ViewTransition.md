@@ -4,7 +4,7 @@
 
 # Interface: ViewTransition
 
-Defined in: [api/Map.ts:685](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/Map.ts#L685)
+Defined in: [api/Map.ts:690](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L690)
 
 ## Methods
 
@@ -12,7 +12,7 @@ Defined in: [api/Map.ts:685](https://github.com/gamingtools/gt-map/blob/c25f4e7c
 
 > **apply**(`opts?`): `Promise`\<[`ApplyResult`](Interface.ApplyResult.md)\>
 
-Defined in: [api/Map.ts:691](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/Map.ts#L691)
+Defined in: [api/Map.ts:696](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L696)
 
 #### Parameters
 
@@ -30,7 +30,7 @@ Defined in: [api/Map.ts:691](https://github.com/gamingtools/gt-map/blob/c25f4e7c
 
 > **bounds**(`b`, `padding?`): `this`
 
-Defined in: [api/Map.ts:689](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/Map.ts#L689)
+Defined in: [api/Map.ts:694](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L694)
 
 #### Parameters
 
@@ -66,7 +66,7 @@ Defined in: [api/Map.ts:689](https://github.com/gamingtools/gt-map/blob/c25f4e7c
 
 > **cancel**(): `void`
 
-Defined in: [api/Map.ts:692](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/Map.ts#L692)
+Defined in: [api/Map.ts:697](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L697)
 
 #### Returns
 
@@ -78,7 +78,7 @@ Defined in: [api/Map.ts:692](https://github.com/gamingtools/gt-map/blob/c25f4e7c
 
 > **center**(`p`): `this`
 
-Defined in: [api/Map.ts:686](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/Map.ts#L686)
+Defined in: [api/Map.ts:691](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L691)
 
 #### Parameters
 
@@ -96,7 +96,7 @@ Defined in: [api/Map.ts:686](https://github.com/gamingtools/gt-map/blob/c25f4e7c
 
 > **offset**(`dx`, `dy`): `this`
 
-Defined in: [api/Map.ts:688](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/Map.ts#L688)
+Defined in: [api/Map.ts:693](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L693)
 
 #### Parameters
 
@@ -118,7 +118,7 @@ Defined in: [api/Map.ts:688](https://github.com/gamingtools/gt-map/blob/c25f4e7c
 
 > **points**(`list`, `padding?`): `this`
 
-Defined in: [api/Map.ts:690](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/Map.ts#L690)
+Defined in: [api/Map.ts:695](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L695)
 
 #### Parameters
 
@@ -140,7 +140,7 @@ Defined in: [api/Map.ts:690](https://github.com/gamingtools/gt-map/blob/c25f4e7c
 
 > **zoom**(`z`): `this`
 
-Defined in: [api/Map.ts:687](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/Map.ts#L687)
+Defined in: [api/Map.ts:692](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/Map.ts#L692)
 
 #### Parameters
 

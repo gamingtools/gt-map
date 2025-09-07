@@ -1,7 +1,6 @@
 // New simplified API (pixel CRS only)
-export * as api from './api';
 export { GTMap } from './api/Map';
-export { Marker, Vector, Layer } from './api/Map';
+export { Marker, Vector as VectorEntity, Layer } from './api/Map';
 export type { ViewTransition } from './api/Map';
 export * as easings from './api/easings';
 
@@ -13,6 +12,7 @@ export type {
   IconDef,
   IconHandle,
   VectorStyle,
+  Vector,
   Polyline,
   Polygon,
   Circle,
@@ -32,6 +32,9 @@ export type {
   LoadEventData,
   ResizeEventData,
   MarkerHit,
+  MarkerEventData,
+  RenderStats,
+  ViewState,
 } from './api/types';
 
 // Export type guard functions (not types)
@@ -42,6 +45,7 @@ export type { PublicEvents, EventSubscription, MarkerEvents, VectorEvents, Layer
 
 export type {
   MarkerData,
+  VectorData,
   VectorGeometry,
   MarkerEventMap,
   VectorEventMap,
@@ -50,3 +54,6 @@ export type {
   PointerModifiers,
   InputDevice,
 } from './api/events/maps';
+
+// Export entity option types
+export type { MarkerOptions } from './entities/Marker';

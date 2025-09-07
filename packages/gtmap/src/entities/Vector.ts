@@ -1,14 +1,12 @@
 import type { VectorEvents } from '../api/events/public';
-import type { VectorEventMap } from '../api/events/maps';
-import type { Point } from '../api/types';
+import type { VectorEventMap, VectorGeometry } from '../api/events/maps';
 
 import { EventedEntity } from './base';
 
 /** Vector type discriminator. */
 export type VectorType = 'polyline' | 'polygon' | 'circle';
 
-/** Discriminated union describing vector geometry. */
-export type VectorGeometry = { type: 'polyline'; points: Point[] } | { type: 'polygon'; points: Point[] } | { type: 'circle'; center: Point; radius: number };
+// Use public VectorGeometry (polyline/polygon/circle without style)
 
 /**
  * Options for creating a {@link Vector}.

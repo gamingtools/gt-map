@@ -7,23 +7,23 @@
 Quick links to common tasks using the GTMap API.
 
 - Create a map
-  - See: api/Map/classes/GTMap.md (constructor)
+  - See: api.Class.GTMap.md (constructor and methods)
 - Configure tiles
-  - See: api/Map/classes/GTMap.md#settilesource
+  - See: api.Class.GTMap.md#settilesource
 - Change the view
-  - Transition builder: api/Map/interfaces/ViewTransition.md
-  - Start a transition: api/Map/classes/GTMap.md#transition
+  - Transition builder: api.Interface.ViewTransition.md
+  - Start a transition: api.Class.GTMap.md#transition
 - Add content
-  - Icons: api/Map/classes/GTMap.md#addicon
-  - Markers: api/Map/classes/GTMap.md#addmarker
-  - Vectors: api/Map/classes/GTMap.md#addvector
+  - Icons: api.Class.GTMap.md#addicon
+  - Markers: api.Class.GTMap.md#addmarker
+  - Vectors: api.Class.GTMap.md#addvector
 - Events
-  - Map events: api/events/public/interfaces/MapEvents.md
-  - Marker events: entities/Marker/classes/Marker.md (events property)
-  - Layer events: entities/Layer/classes/Layer.md (events property)
+  - Map events: Interface.MapEvents.md
+  - Marker events: Class.Marker.md (events property)
+  - Layer events: Class.Layer.md (events property)
 - Utilities
-  - Resize handling: api/Map/classes/GTMap.md#setautoresize and #invalidatesize
-  - Performance: api/Map/classes/GTMap.md#setfpscap
-  - Background: api/Map/classes/GTMap.md#setbackgroundcolor
+  - Resize handling: api.Class.GTMap.md#setautoresize and #invalidatesize
+  - Performance: api.Class.GTMap.md#setfpscap
+  - Background: api.Class.GTMap.md#setbackgroundcolor
 
 Tip: The events pages list supported event names and payloads for IntelliSense.

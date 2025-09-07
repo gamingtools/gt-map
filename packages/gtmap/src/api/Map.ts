@@ -2,7 +2,8 @@ import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
 import { Layer } from '../entities/Layer';
 import { Marker } from '../entities/Marker';
-import { Vector, type VectorGeometry as VectorGeom } from '../entities/Vector';
+import { Vector } from '../entities/Vector';
+import type { VectorGeometry as VectorGeom } from './events/maps';
 
 import type { MapEvents } from './events/public';
 import type {
@@ -197,6 +198,7 @@ export class GTMap {
 	}
 
     // View control helpers (internal use by transition builder)
+    /** @internal */
     _applyInstant(center?: Point, zoom?: number): void {
         if (center) this._impl.setCenter(center.x, center.y);
         if (typeof zoom === 'number') this._impl.setZoom(zoom);
@@ -540,6 +542,7 @@ export class GTMap {
 		this._impl.setAutoResize?.(on);
 		return this;
 	}
+    /** @internal */
     _animateView(opts: { center?: Point; zoom?: number; durationMs: number; easing?: (t: number) => number }): void {
         const { center, zoom, durationMs, easing } = opts;
         const lng = center?.x;
@@ -547,11 +550,13 @@ export class GTMap {
         this._impl.flyTo?.({ lng, lat, zoom, durationMs, easing });
     }
 
+    /** @internal */
     _cancelPanZoom(): void {
         try { this._impl.cancelPanAnim?.(); } catch {}
         try { this._impl.cancelZoomAnim?.(); } catch {}
     }
 
+    /** @internal */
     _fitBounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding: { top: number; right: number; bottom: number; left: number }): { center: Point; zoom: number } {
         const rect = this._impl.container.getBoundingClientRect();
         const pad = padding || { top: 0, right: 0, bottom: 0, left: 0 };

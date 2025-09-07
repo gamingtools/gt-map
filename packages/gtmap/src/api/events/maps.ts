@@ -1,4 +1,4 @@
-import type { Point } from '../types';
+import type { Polyline as PolylineT, Polygon as PolygonT, Circle as CircleT } from '../types';
 
 /**
  * Lightweight snapshot of a marker used in event payloads.
@@ -10,12 +10,9 @@ export interface MarkerData {
 	data?: unknown;
 }
 
-// Vector geometry
-export type Polyline = { type: 'polyline'; points: Point[] };
-export type Polygon = { type: 'polygon'; points: Point[] };
-export type Circle = { type: 'circle'; center: Point; radius: number };
+// Vector geometry (reuse public shapes without style fields)
 /** Union of supported vector geometries. */
-export type VectorGeometry = Polyline | Polygon | Circle;
+export type VectorGeometry = PolylineT | PolygonT | CircleT;
 
 /**
  * Lightweight snapshot of a vector used in event payloads.

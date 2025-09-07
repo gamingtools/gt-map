@@ -4,13 +4,13 @@
 
 # Interface: LayerEvents\<T\>
 
-Defined in: [api/events/public.ts:80](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/events/public.ts#L80)
+Defined in: [api/events/public.ts:80](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L80)
 
 Layer events surface with typed names and payloads.
 
 ## Extends
 
-- [`PublicEvents`](Interface.PublicEvents.md)\<`LayerEventMap`\<`T`\>\>
+- [`PublicEvents`](Interface.PublicEvents.md)\<[`LayerEventMap`](Interface.LayerEventMap.md)\<`T`\>\>
 
 ## Type Parameters
 
@@ -24,9 +24,9 @@ Layer events surface with typed names and payloads.
 
 #### Call Signature
 
-> **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<`LayerEventMap`\<`T`\>\[`K`\]\>
+> **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`LayerEventMap`](Interface.LayerEventMap.md)\<`T`\>\[`K`\]\>
 
-Defined in: [api/events/public.ts:82](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/events/public.ts#L82)
+Defined in: [api/events/public.ts:82](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L82)
 
 Supported names: 'entityadd' | 'entityremove' | 'clear' | 'visibilitychange'
 
@@ -44,7 +44,7 @@ Supported names: 'entityadd' | 'entityremove' | 'clear' | 'visibilitychange'
 
 ##### Returns
 
-[`EventSubscription`](Interface.EventSubscription.md)\<`LayerEventMap`\<`T`\>\[`K`\]\>
+[`EventSubscription`](Interface.EventSubscription.md)\<[`LayerEventMap`](Interface.LayerEventMap.md)\<`T`\>\[`K`\]\>
 
 ##### Overrides
 
@@ -52,9 +52,9 @@ Supported names: 'entityadd' | 'entityremove' | 'clear' | 'visibilitychange'
 
 #### Call Signature
 
-> **on**\<`K`\>(`event`, `handler`): `Unsubscribe`
+> **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:83](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/events/public.ts#L83)
+Defined in: [api/events/public.ts:83](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L83)
 
 Subscribe to a named event.
 
@@ -78,7 +78,7 @@ Event name (typed by the entity's event map)
 
 ##### Returns
 
-`Unsubscribe`
+[`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
 An `EventStream<Payload>` with `.each(handler)` to subscribe.
 
@@ -98,9 +98,9 @@ marker.events.on('click').each((e) => {
 
 ### once()
 
-> **once**\<`K`\>(`event`): `Promise`\<`LayerEventMap`\<`T`\>\[`K`\]\>
+> **once**\<`K`\>(`event`): `Promise`\<[`LayerEventMap`](Interface.LayerEventMap.md)\<`T`\>\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/c25f4e7cc6e0afbbb4b9d41c7742cebe14ba6cd1/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 
@@ -120,7 +120,7 @@ Event name (typed)
 
 #### Returns
 
-`Promise`\<`LayerEventMap`\<`T`\>\[`K`\]\>
+`Promise`\<[`LayerEventMap`](Interface.LayerEventMap.md)\<`T`\>\[`K`\]\>
 
 Promise that resolves with the payload of the next event.
 
