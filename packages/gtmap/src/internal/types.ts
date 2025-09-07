@@ -145,6 +145,25 @@ export interface ZoomDeps {
 	getPublicView(): PublicViewState;
 }
 
+export interface PanDeps {
+    getZoom(): number;
+    getImageMaxZoom(): number;
+    getContainer(): HTMLElement;
+    getWrapX(): boolean;
+    getFreePan(): boolean;
+    getTileSize(): number;
+    getMapSize(): { width: number; height: number };
+    getMaxZoom(): number;
+    getMaxBoundsPx(): { minX: number; minY: number; maxX: number; maxY: number } | null;
+    getMaxBoundsViscosity(): number;
+    getCenter(): { x: number; y: number }; // native pixels
+    setCenter(lng: number, lat: number): void; // native pixels
+    requestRender(): void;
+    emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
+    now(): number;
+    getPublicView(): PublicViewState;
+}
+
 export interface MapImpl {
 	// state
 	container: HTMLElement;

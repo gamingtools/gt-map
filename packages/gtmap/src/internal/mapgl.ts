@@ -19,6 +19,7 @@ import { TypedEventBus } from './events/typed-stream';
 // zoom core used via ZoomController
 import ZoomController from './core/zoom-controller';
 import InputController from './input/input-controller';
+import PanController from './core/pan-controller';
 import type { InputDeps } from './types';
 import MapRenderer from './render/map-renderer';
 import { drawGrid } from './render/grid';
@@ -141,15 +142,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private inertiaDeceleration = 3400; // px/s^2
 	private inertiaMaxSpeed = 2000; // px/s (cap to prevent excessive throw)
 	private easeLinearity = 0.2;
-    private _panAnim: null | {
-        start: number;
-        dur: number;
-        from: { x: number; y: number };
-        offsetWorld: { x: number; y: number };
-        velocity?: { x: number; y: number };
-        lastTime?: number;
-        easing?: (t: number) => number;
-    } = null;
+    private _panCtrl!: PanController;
     // Track last mouse enrich time to throttle hover enrichment
     private _lastMouseEnrichAt: number = 0;
     // RequestIdleCallback gating for mask build
@@ -435,7 +428,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
             isIdle: () => {
                 const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
                 const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
-                const anim = this._zoomCtrl.isAnimating() || !!this._panAnim;
+                const anim = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
                 return idleByTime && !anim;
             },
 		};
@@ -444,15 +437,15 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		// Raster renderer
 		this._raster = new RasterRenderer(this.gl);
         this._icons = new IconRenderer(this.gl);
-		this._renderer = new MapRenderer(() => this.getRenderCtx(), {
-			stepAnimation: () => this._zoomCtrl.step(),
-			zoomVelocityTick: () => this.zoomVelocityTick(),
-			panVelocityTick: () => this.panVelocityTick(),
-			prefetchNeighbors: (z, tl, scale, w, h) => this.prefetchNeighbors(z, tl, scale, w, h),
-			cancelUnwanted: () => this.cancelUnwantedLoads(),
-			clearWanted: () => this.clearWantedKeys(),
-		});
-		this._zoomCtrl = new ZoomController({
+        this._renderer = new MapRenderer(() => this.getRenderCtx(), {
+            stepAnimation: () => this._zoomCtrl.step(),
+            zoomVelocityTick: () => this.zoomVelocityTick(),
+            panVelocityTick: () => { this._panCtrl.step(); },
+            prefetchNeighbors: (z, tl, scale, w, h) => this.prefetchNeighbors(z, tl, scale, w, h),
+            cancelUnwanted: () => this.cancelUnwantedLoads(),
+            clearWanted: () => this.clearWantedKeys(),
+        });
+        this._zoomCtrl = new ZoomController({
 			getZoom: () => this.zoom,
 			getMinZoom: () => this.minZoom,
 			getMaxZoom: () => this.maxZoom,
@@ -469,7 +462,29 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			},
 			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
 			getPublicView: () => this._viewPublic(),
-		});
+        });
+        // Initialize pan controller
+        this._panCtrl = new PanController({
+            getZoom: () => this.zoom,
+            getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
+            getContainer: () => this.container,
+            getWrapX: () => this.wrapX,
+            getFreePan: () => this.freePan,
+            getTileSize: () => this.tileSize,
+            getMapSize: () => this.mapSize,
+            getMaxZoom: () => this.maxZoom,
+            getMaxBoundsPx: () => this._maxBoundsPx,
+            getMaxBoundsViscosity: () => this._maxBoundsViscosity,
+            getCenter: () => ({ x: this.center.lng, y: this.center.lat }),
+            setCenter: (lng: number, lat: number) => {
+                this.center = { lng, lat };
+                this._state.center = this.center;
+            },
+            requestRender: () => { this._needsRender = true; },
+            emit: (name: any, payload: any) => this._events.emit(name, payload),
+            now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+            getPublicView: () => this._viewPublic(),
+        });
 		// View state
 		this._state = {
 			center: this.center,
@@ -651,9 +666,9 @@ export default class GTMap implements MapImpl, GraphicsHost {
         }
     }
 
-	public cancelPanAnim() {
-		this._panAnim = null;
-	}
+    public cancelPanAnim() {
+        this._panCtrl.cancel();
+    }
 
 	public getMinZoom(): number { return this.minZoom; }
 	public getMaxZoom(): number { return this.maxZoom; }
@@ -1018,9 +1033,9 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			getInertiaMaxSpeed: () => this.inertiaMaxSpeed,
 			getEaseLinearity: () => this.easeLinearity,
             startPanBy: (dxPx: number, dyPx: number, durSec: number, _ease?: number) => this._startPanBy(dxPx, dyPx, durSec, undefined),
-			cancelPanAnim: () => {
-				this._panAnim = null;
-			},
+            cancelPanAnim: () => {
+                this._panCtrl.cancel();
+            },
 		};
 		this._input = new InputController(this._inputDeps);
 		this._input.attach();
@@ -1112,7 +1127,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 				}
 				// Disable hover hit-testing during active pan/zoom and for a short debounce after
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+				const moving = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
 				const idle = !moving && now - this._lastInteractAt >= this._hitTestDebounceMs;
 				if (!idle) {
 					if (this._lastHover) {
@@ -1177,7 +1192,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			this.events.on('pointerup').each((e: any) => {
 				if (!e || e.x == null || e.y == null) return;
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+				const moving = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
 				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
 				this._downAt = null;
 				// Emit markerup if hit
@@ -1239,7 +1254,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 					return;
 				}
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+				const moving = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
 				const idle = !moving && now - this._lastInteractAt >= this._hitTestDebounceMs;
 				let payload = e;
 				if (idle) {
@@ -1282,7 +1297,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			this.events.on('pointerup').each((e: any) => {
 				if ((e.originalEvent?.pointerType || '') !== 'mouse') return;
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const moving = this._zoomCtrl.isAnimating() || !!this._panAnim;
+				const moving = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
 				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
 				if (!isClick) return;
 				emitMouseOnce('click', e);
@@ -1301,7 +1316,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		if (this._lastTS == null) this._lastTS = now;
 		this._dt = (now - this._lastTS) / 1000;
 		this._lastTS = now;
-		const animating = this._zoomCtrl.isAnimating() || !!this._panAnim;
+		const animating = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
 		if (!this._needsRender && !animating) return;
 		if (!allowRender) {
 			try {
@@ -1311,13 +1326,13 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 				this.zoomVelocityTick();
 			} catch {}
 			try {
-				this.panVelocityTick();
+				this._panCtrl.step();
 			} catch {}
 			this._needsRender = true;
 			return;
 		}
 		this._render();
-		if (!this._zoomCtrl.isAnimating() && !this._panAnim) this._needsRender = false;
+		if (!this._zoomCtrl.isAnimating() && !this._panCtrl.isAnimating()) this._needsRender = false;
 	}
 	private _render() {
 		this._renderer.render();
@@ -1427,59 +1442,11 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 
 	// image tile loading handled by TileLoader
 
-    public panVelocityTick() {
-        if (!this._panAnim) return;
-        const a = this._panAnim;
-        const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-        const t = Math.min(1, (now - a.start) / (a.dur * 1000));
-        // Use custom easing if provided, otherwise default easeOutExpo
-        let p = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-        try { if (typeof a.easing === 'function') p = a.easing(t); } catch {}
-
-		const { zInt, scale } = Coords.zParts(this.zoom);
-		const rect = this.container.getBoundingClientRect();
-		const widthCSS = rect.width;
-		const heightCSS = rect.height;
-		const from = a.from;
-		const target = { x: from.x + a.offsetWorld.x * p, y: from.y + a.offsetWorld.y * p };
-		let newCenter = clampCenterWorldCore(
-			target,
-			zInt,
-			scale,
-			widthCSS,
-			heightCSS,
-			this.wrapX,
-			this.freePan,
-			this.tileSize,
-			this.mapSize,
-			this.maxZoom,
-			this._maxBoundsPx,
-			this._maxBoundsViscosity,
-			false,
-		);
-		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-		const s0 = Coords.sFor(imageMaxZ, zInt);
-		const nx = newCenter.x * s0;
-		const ny = newCenter.y * s0;
-		this.center = { lng: nx, lat: ny };
-		this._state.center = this.center;
-		this._needsRender = true;
-		if (t >= 1) {
-			this._panAnim = null;
-			this._events.emit('moveend', { view: this._viewPublic() });
-		}
-	}
+    // pan velocity handled by PanController
 
     private _startPanBy(dxPx: number, dyPx: number, durSec: number, easing?: number | ((t: number) => number)) {
-        const { zInt, scale } = Coords.zParts(this.zoom);
-        const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-        const s = Coords.sFor(imageMaxZ, zInt);
-        const cw = { x: this.center.lng / s, y: this.center.lat / s };
-        // Use the same screen->world sign convention as during drag updates
-        const offsetWorld = { x: dxPx / scale, y: dyPx / scale };
-        const efn = typeof easing === 'function' ? easing : undefined;
-        this._panAnim = { start: typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(), dur: Math.max(0.05, durSec), from: cw, offsetWorld, easing: efn };
-        this._needsRender = true;
+        const ef = typeof easing === 'function' ? easing : undefined;
+        this._panCtrl.startBy(dxPx, dyPx, Math.max(0.05, durSec), ef);
     }
 
 	// Suspend/resume this map instance and optionally release the WebGL context.
