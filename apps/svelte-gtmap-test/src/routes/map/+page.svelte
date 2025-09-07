@@ -13,6 +13,7 @@
 
 	let markerCount = 1000;
 
+
 	function clampMarkerCount(n: number): number {
 		if (!Number.isFinite(n)) return 0;
 		n = Math.max(0, Math.min(999_999, Math.floor(n)));
@@ -24,6 +25,34 @@
 	}
 
 	let iconHandles: IconHandle[] | null = null;
+	let fallbackIcon: IconHandle | null = null;
+
+	function createFallbackIcon(): IconHandle | null {
+		try {
+			const size = 32;
+			const cnv = document.createElement('canvas');
+			cnv.width = size;
+			cnv.height = size;
+			const ctx = cnv.getContext('2d');
+			if (!ctx) return null;
+			ctx.clearRect(0, 0, size, size);
+			// Draw a rotated-looking triangle arrow so rotation is obvious
+			ctx.fillStyle = '#ef4444';
+			ctx.strokeStyle = '#111827';
+			ctx.lineWidth = 2;
+			ctx.beginPath();
+			ctx.moveTo(size * 0.50, size * 0.10);
+			ctx.lineTo(size * 0.85, size * 0.90);
+			ctx.lineTo(size * 0.15, size * 0.90);
+			ctx.closePath();
+			ctx.fill();
+			ctx.stroke();
+			const url = cnv.toDataURL('image/png');
+			return map.addIcon({ iconPath: url, width: size, height: size, anchorX: size / 2, anchorY: size / 2 });
+		} catch {
+			return null;
+		}
+	}
 
 	function applyMarkerCount(n: number): void {
 		if (!map) return;
@@ -34,7 +63,7 @@
 		for (let i = 0; i < markerCount; i++) {
 			const x = rand(0, 8192);
 			const y = rand(0, 8192);
-			const iconHandle = iconHandles ? iconHandles[i % iconHandles.length] : null;
+			const iconHandle = iconHandles && iconHandles.length > 0 ? iconHandles[i % iconHandles.length] : (fallbackIcon ?? null);
 			const marker = map.addMarker(
 				x,
 				y,
@@ -50,6 +79,8 @@
 			// 	console.log('Marker pointerleave:', e);
 			// });
 		}
+
+			// No persistence in demo: markers start fresh each run
 	}
 
 	function setMarkerCount(n: number): void {
@@ -164,6 +195,8 @@
 			}
 		} catch {}
 
+		// Ensure we have a visible, asymmetric icon for rotation if remote icons fail
+		fallbackIcon = createFallbackIcon();
 		applyMarkerCount(markerCount);
 		addVectors();
 
@@ -193,12 +226,11 @@
 		// map.events.on('click').each((e) => console.log('map click', e));
 		// map.events.on('mousedown').each((e) => console.log('mousedown', e));
 
-		// Teardown on navigation/unmount per Svelte docs
 
-		// Teardown on navigation/unmount per Svelte docs
-		return () => {
-			map?.destroy?.();
-		};
+			// Teardown on navigation/unmount per Svelte docs
+			return () => {
+				map?.destroy?.();
+			};
 	});
 	
 </script>

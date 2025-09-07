@@ -295,8 +295,9 @@ export class IconRenderer {
 				} else if (rec.uploaded !== td.version) {
 					gl.bindBuffer(gl.ARRAY_BUFFER, rec.buf);
 					const LARGE_BYTES = 1 << 20; // 1MB
-					const prevCount = Math.max(1, rec.count);
-					const newCount = td.data.length / 4;
+						const prevCount = Math.max(1, rec.count);
+						// 7 floats per instance (x,y,w,h,ax,ay,angle)
+						const newCount = td.data.length / 7;
 					const deltaRatio = Math.abs(newCount - prevCount) / prevCount;
 					const needResize = byteLen > rec.capacityBytes;
 					const shouldOrphan = needResize || byteLen >= LARGE_BYTES || deltaRatio >= 0.25;
@@ -402,14 +403,16 @@ export class IconRenderer {
 	}
 
 	private ensureInstanced(gl: WebGLRenderingContext): boolean {
-		if (!this.instExt) {
+		// WebGL2 supports instancing natively; WebGL1 requires ANGLE_instanced_arrays
+		const isGL2 = 'drawArraysInstanced' in (gl as unknown as WebGL2RenderingContext);
+		if (!isGL2 && !this.instExt) {
 			try {
 				this.instExt = (gl.getExtension('ANGLE_instanced_arrays') as ANGLEInstancedArrays | null) || null;
 			} catch {
 				this.instExt = null;
 			}
 		}
-		if (!this.instExt) return false;
+		if (!isGL2 && !this.instExt) return false;
 		if (!this.instProg) {
         const vs = `
         attribute vec2 a_pos;

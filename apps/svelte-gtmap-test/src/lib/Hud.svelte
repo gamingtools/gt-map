@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Single status widget: subscribes to map events and shows key values
-    import type { GTMap } from '@gtmap';
+    import type { GTMap, Marker as GTMarker } from '@gtmap';
 
 	const {
 		map,
@@ -29,11 +29,28 @@
 	let _prev = 0;
 	let wheelSpeed = $state(wheelSpeedInitial);
 	let fpsCap = $state(fpsCapInitial);
-	let gridEnabled = $state(false);
-	let markersEnabled = $state(true);
-	let vectorsEnabled = $state(true);
-	let markersLocal = $state<number>(markerCount ?? 0);
-	let markersDebounce: number | null = null;
+    let gridEnabled = $state(false);
+    let markersEnabled = $state(true);
+    let vectorsEnabled = $state(true);
+    // Animate markers (position-only) + optional rotation
+    let animateMarkers = $state(false);
+    let rotateMarkers = $state(false);
+    // Animation parameters
+    const ORBIT_AMP = 64; // pixels
+    const ORBIT_HZ = 0.6; // cycles per second
+    const ROT_DEG_PER_SEC = 360; // degrees per second
+    let markersLocal = $state<number>(markerCount ?? 0);
+    let markersDebounce: number | null = null;
+    
+    // Animation bookkeeping
+    let animStartMs = 0;   // for position orbit
+    let rotStartMs = 0;    // for rotation spin
+    const animState = new Map<string, { x0: number; y0: number; rot0: number; phase: number }>();
+    const rotateBase = new Map<string, number>(); // marker.id -> base rotation at enable
+    const rotateDir = new Map<string, number>();  // marker.id -> +1 (cw) or -1 (ccw)
+    let offLayerAdd: (() => void) | null = null;
+    let offLayerRemove: (() => void) | null = null;
+    let rafId: number | null = null;
 
 	// Perf stats from frame event
 	let cacheSize = $state<number | null>(null);
@@ -68,6 +85,11 @@
 			) => { each: (callback: (e: { now: number; stats?: { cacheSize?: number; inflight?: number; pending?: number; frame?: number } }) => void) => () => void }
 		)('frame').each((e) => {
 			refresh(true, e.now);
+            // When idle RAF is not running, drive a single step
+            if (rafId == null) {
+                try { if (animateMarkers) animateMarkersFrame(e.now); } catch {}
+                try { if (rotateMarkers) rotateMarkersFrame(e.now); } catch {}
+            }
 			try {
 				cacheSize = e.stats?.cacheSize ?? cacheSize;
 				inflight = e.stats?.inflight ?? inflight;
@@ -111,6 +133,118 @@
 			setVectorsEnabled?.(vectorsEnabled);
 		} catch {}
 	});
+
+		$effect(() => {
+			// Toggle marker animation/rotation
+			if (!map) return;
+			// Cleanup previous listeners
+			try { offLayerAdd?.(); } catch {}
+			try { offLayerRemove?.(); } catch {}
+			// Stop any prior RAF loop before re-enabling
+			try { if (rafId != null) cancelAnimationFrame(rafId); } catch {}
+			rafId = null;
+
+			const needPos = animateMarkers;
+			const needRot = rotateMarkers;
+
+			if (needPos || needRot) {
+				const now = performance.now ? performance.now() : Date.now();
+				if (needPos) {
+					animStartMs = now;
+					animState.clear();
+					// Seed state for existing markers without causing a jump on the next frame
+					for (const mk of map.markers.getAll()) {
+						const rot0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
+						const phase = Math.random() * Math.PI * 2;
+						const dx0 = ORBIT_AMP * Math.cos(phase);
+						const dy0 = ORBIT_AMP * Math.sin(phase);
+						animState.set(mk.id, { x0: mk.x - dx0, y0: mk.y - dy0, rot0, phase });
+					}
+				}
+                if (needRot) {
+                    rotStartMs = now;
+                    rotateBase.clear();
+                    rotateDir.clear();
+                    for (const mk of map.markers.getAll()) {
+                        const r0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
+                        rotateBase.set(mk.id, r0);
+                        rotateDir.set(mk.id, Math.random() < 0.5 ? -1 : 1);
+                    }
+                }
+
+				// Track dynamic add/remove while enabled
+				offLayerAdd = map.markers.events.on('entityadd').each(({ entity }: { entity: GTMarker }) => {
+					const mk = entity;
+					if (needPos) {
+						const rot0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
+						const phase = Math.random() * Math.PI * 2;
+						const dx0 = ORBIT_AMP * Math.cos(phase);
+						const dy0 = ORBIT_AMP * Math.sin(phase);
+						animState.set(mk.id, { x0: mk.x - dx0, y0: mk.y - dy0, rot0, phase });
+					}
+                    if (needRot) {
+                        const r0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
+                        rotateBase.set(mk.id, r0);
+                        rotateDir.set(mk.id, Math.random() < 0.5 ? -1 : 1);
+                    }
+                });
+                offLayerRemove = map.markers.events.on('entityremove').each(({ entity }) => {
+                    animState.delete(entity.id);
+                    rotateBase.delete(entity.id);
+                    rotateDir.delete(entity.id);
+                });
+
+				// Start RAF-driven loop so animation runs even when the map is idle
+				const tick = (tNow: number) => {
+					if (!animateMarkers && !rotateMarkers) { rafId = null; return; }
+					if (animateMarkers) animateMarkersFrame(tNow);
+					if (rotateMarkers) rotateMarkersFrame(tNow);
+					rafId = requestAnimationFrame(tick);
+				};
+				rafId = requestAnimationFrame(tick);
+			} else {
+				// Stop RAF if running
+				try { if (rafId != null) cancelAnimationFrame(rafId); } catch {}
+				rafId = null;
+                // Leave markers as-is; just clear state maps
+                animState.clear();
+                rotateBase.clear();
+                rotateDir.clear();
+            }
+        });
+
+    // Cleanup on component unmount
+    $effect(() => {
+        return () => {
+            try { if (rafId != null) cancelAnimationFrame(rafId); } catch {}
+            rafId = null;
+        };
+    });
+
+    function animateMarkersFrame(now: number): void {
+        if (!map || !animateMarkers) return;
+        const t = (now - animStartMs) / 1000; // seconds
+        const omega = 2 * Math.PI * ORBIT_HZ;
+        for (const mk of map.markers.getAll()) {
+            const st = animState.get(mk.id);
+            if (!st) continue;
+            const dx = ORBIT_AMP * Math.cos(omega * t + st.phase);
+            const dy = ORBIT_AMP * Math.sin(omega * t + st.phase);
+            try { mk.moveTo(st.x0 + dx, st.y0 + dy); } catch {}
+        }
+    }
+
+    function rotateMarkersFrame(now: number): void {
+        if (!map || !rotateMarkers) return;
+        const t = (now - rotStartMs) / 1000; // seconds
+        for (const mk of map.markers.getAll()) {
+            const r0 = rotateBase.get(mk.id);
+            if (r0 == null) continue;
+            const dir = rotateDir.get(mk.id) ?? 1;
+            const rot = r0 + dir * ROT_DEG_PER_SEC * t;
+            try { mk.setStyle({ rotation: ((rot % 360) + 360) % 360 }); } catch {}
+        }
+    }
 
     async function recenter() {
         if (!map || !home) return;
@@ -197,10 +331,18 @@
 			<input type="checkbox" bind:checked={gridEnabled} />
 			<span>Show Grid</span>
 		</label>
-		<label class="pointer-events-auto flex items-center gap-2">
-			<input type="checkbox" bind:checked={markersEnabled} />
-			<span>Show Markers</span>
-		</label>
+			<label class="pointer-events-auto flex items-center gap-2">
+				<input type="checkbox" bind:checked={markersEnabled} />
+				<span>Show Markers</span>
+			</label>
+            <label class="pointer-events-auto flex items-center gap-2">
+                <input type="checkbox" bind:checked={animateMarkers} />
+                <span>Animate Markers</span>
+            </label>
+            <label class="pointer-events-auto flex items-center gap-2">
+                <input type="checkbox" bind:checked={rotateMarkers} />
+                <span>Rotate Markers</span>
+            </label>
 		<label class="pointer-events-auto flex items-center gap-2">
 			<input type="checkbox" bind:checked={vectorsEnabled} />
 			<span>Show Vectors</span>

@@ -56,4 +56,4 @@ export type {
 } from './api/events/maps';
 
 // Export entity option types
-export type { MarkerOptions } from './entities/marker';
+export type { MarkerOptions, MarkerTransition } from './entities/marker';

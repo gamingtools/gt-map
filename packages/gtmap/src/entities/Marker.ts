@@ -2,6 +2,7 @@ import type { MarkerEvents } from '../api/events/public';
 import type { MarkerEventMap, MarkerData } from '../api/events/maps';
 
 import { EventedEntity } from './base';
+import type { ApplyOptions, ApplyResult, Easing } from '../api/types';
 
 /**
  * Options for creating or styling a {@link Marker}.
@@ -13,6 +14,18 @@ export interface MarkerOptions<T = unknown> {
 	size?: number;
 	rotation?: number; // degrees clockwise
 	data?: T;
+}
+
+/** Builder for animating a single Marker (position/rotation/size). */
+export interface MarkerTransition {
+  /** Target a new position in world pixels. */
+  moveTo(x: number, y: number): this;
+  /** Target style properties (size, rotation). */
+  setStyle(opts: { size?: number; rotation?: number }): this;
+  /** Commit the transition (instant or animated). */
+  apply(opts?: ApplyOptions): Promise<ApplyResult>;
+  /** Cancel a pending or running transition. */
+  cancel(): void;
 }
 
 let _idSeq = 0;
@@ -38,6 +51,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	private _rotation?: number;
 	private _data?: T;
 	private _onChange?: () => void;
+  private _activeTx?: MarkerTransitionImpl;
 
 	/**
 	 * Create a marker at the given world pixel coordinate.
@@ -164,6 +178,115 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		this.emit(event, payload);
 	}
 
-	/** Public events surface for this marker (typed event names/payloads). */
-	declare readonly events: MarkerEvents<T>;
+  /** Public events surface for this marker (typed event names/payloads). */
+  declare readonly events: MarkerEvents<T>;
+
+  /** Start a marker transition (position/rotation/size). */
+  transition(): MarkerTransition { return new MarkerTransitionImpl(this); }
+  /** Alias. */
+  transitions(): MarkerTransition { return this.transition(); }
+
+  /** @internal Cancel any active transition for this marker. */
+  _cancelActiveTransition(): void { try { this._activeTx?.cancel(); } catch {} this._activeTx = undefined; }
+  /** @internal Set the active transition for this marker. */
+  _setActiveTransition(tx: MarkerTransitionImpl): void { this._activeTx = tx; }
+}
+
+class MarkerTransitionImpl implements MarkerTransition {
+  private marker: Marker<unknown>;
+  private targetX?: number;
+  private targetY?: number;
+  private targetSize?: number;
+  private targetRotation?: number;
+  private rafId: number | null = null;
+  private resolve?: (r: ApplyResult) => void;
+  private promise?: Promise<ApplyResult>;
+  private cancelled = false;
+
+  constructor(marker: Marker<unknown>) { this.marker = marker; }
+
+  moveTo(x: number, y: number): this { this.targetX = x; this.targetY = y; return this; }
+  setStyle(opts: { size?: number; rotation?: number }): this {
+    if (opts.size !== undefined) this.targetSize = opts.size;
+    if (opts.rotation !== undefined) this.targetRotation = opts.rotation;
+    return this;
+  }
+
+  cancel(): void {
+    this.cancelled = true;
+    if (this.rafId != null) { try { cancelAnimationFrame(this.rafId); } catch {} this.rafId = null; }
+    if (this.resolve) this.resolve({ status: 'canceled' });
+  }
+
+  async apply(opts?: ApplyOptions): Promise<ApplyResult> {
+    if (this.promise) return this.promise;
+
+    const needsPos = typeof this.targetX === 'number' && typeof this.targetY === 'number';
+    const needsStyle = typeof this.targetSize === 'number' || typeof this.targetRotation === 'number';
+    if (!needsPos && !needsStyle) {
+      return Promise.resolve({ status: 'instant' });
+    }
+
+    const animate = opts?.animate;
+    if (!animate) {
+      if (needsPos) this.marker.moveTo(this.targetX as number, this.targetY as number);
+      if (needsStyle) this.marker.setStyle({ size: this.targetSize, rotation: this.targetRotation });
+      return Promise.resolve({ status: 'instant' });
+    }
+
+    // Interrupt policy: cancel prior marker transition
+    this.marker._cancelActiveTransition();
+    this.marker._setActiveTransition(this);
+
+    const duration = Math.max(0, animate.durationMs);
+    const easing: Easing = animate.easing ?? ((t) => t);
+
+    // Capture starts
+    const sx = this.marker.x;
+    const sy = this.marker.y;
+    const ss = this.marker.size;
+    const sr = (typeof this.marker.rotation === 'number' ? this.marker.rotation : 0);
+    const tx = needsPos ? (this.targetX as number) : sx;
+    const ty = needsPos ? (this.targetY as number) : sy;
+    const ts = typeof this.targetSize === 'number' ? this.targetSize as number : (ss as number | undefined);
+    const tr = typeof this.targetRotation === 'number' ? (this.targetRotation as number) : sr;
+
+    // Normalize rotation to shortest path
+    const norm = (a: number) => ((a % 360) + 360) % 360;
+    const srN = norm(sr);
+    const trN = norm(tr);
+    let dR = trN - srN;
+    if (dR > 180) dR -= 360; else if (dR < -180) dR += 360;
+
+    const startMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    const delay = Math.max(0, animate.delayMs ?? 0);
+    let delayed = delay === 0;
+
+    this.promise = new Promise<ApplyResult>((resolve) => {
+      this.resolve = resolve;
+      const tick = () => {
+        if (this.cancelled) { this.rafId = null; resolve({ status: 'canceled' }); return; }
+        const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+        const t0 = now - startMs;
+        if (!delayed) {
+          if (t0 < delay) { this.rafId = requestAnimationFrame(tick); return; }
+          delayed = true;
+        }
+        const t = Math.min(1, (t0 - (delay)) / duration);
+        const k = easing(t);
+        const cx = sx + (tx - sx) * k;
+        const cy = sy + (ty - sy) * k;
+        if (needsPos) this.marker.moveTo(cx, cy);
+        if (needsStyle) {
+          const rot = norm(srN + dR * k);
+          this.marker.setStyle({ size: ts, rotation: rot });
+        }
+        if (t >= 1) { this.rafId = null; resolve({ status: 'animated' }); return; }
+        this.rafId = requestAnimationFrame(tick);
+      };
+      this.rafId = requestAnimationFrame(tick);
+    });
+
+    return this.promise;
+  }
 }
