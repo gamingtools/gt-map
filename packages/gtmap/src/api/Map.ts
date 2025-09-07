@@ -507,11 +507,11 @@ export class GTMap {
 		this._impl.setAutoResize?.(on);
 		return this;
 	}
-    _animateView(opts: { center?: Point; zoom?: number; durationMs: number }): void {
-        const { center, zoom, durationMs } = opts;
+    _animateView(opts: { center?: Point; zoom?: number; durationMs: number; easing?: (t: number) => number }): void {
+        const { center, zoom, durationMs, easing } = opts;
         const lng = center?.x;
         const lat = center?.y;
-        this._impl.flyTo?.({ lng, lat, zoom, durationMs });
+        this._impl.flyTo?.({ lng, lat, zoom, durationMs, easing });
     }
 
     _cancelPanZoom(): void {
@@ -642,6 +642,8 @@ export interface ViewTransition {
   zoom(z: number): this;
   offset(dx: number, dy: number): this;
   bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
+  points(list: Array<Point>, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
+  markers(list?: Array<Marker | string>, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
   apply(opts?: ApplyOptions): Promise<ApplyResult>;
   cancel(): void;
 }
@@ -704,6 +706,39 @@ class ViewTransitionImpl implements ViewTransition {
       this.boundsPadding = { top: 0, right: 0, bottom: 0, left: 0 };
     }
     return this;
+  }
+
+  points(list: Array<Point>, padding?: number | { top: number; right: number; bottom: number; left: number }): this {
+    if (!list || list.length === 0) return this;
+    let minX = Number.POSITIVE_INFINITY, minY = Number.POSITIVE_INFINITY;
+    let maxX = Number.NEGATIVE_INFINITY, maxY = Number.NEGATIVE_INFINITY;
+    for (const p of list) {
+      if (p.x < minX) minX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y > maxY) maxY = p.y;
+    }
+    return this.bounds({ minX, minY, maxX, maxY }, padding);
+  }
+
+  markers(list?: Array<Marker | string>, padding?: number | { top: number; right: number; bottom: number; left: number }): this {
+    const pts: Point[] = [];
+    if (!list || list.length === 0) {
+      try {
+        for (const m of this.map.markers.getAll()) pts.push({ x: m.x, y: m.y });
+      } catch {}
+    } else {
+      for (const it of list) {
+        if (typeof it === 'string') {
+          const mk = this.map.markers.get(it);
+          if (mk) pts.push({ x: mk.x, y: mk.y });
+        } else {
+          pts.push({ x: it.x, y: it.y });
+        }
+      }
+    }
+    if (pts.length === 0) return this;
+    return this.points(pts, padding);
   }
 
   cancel(): void {
@@ -800,8 +835,8 @@ class ViewTransitionImpl implements ViewTransition {
 
     // Kick off the animation via existing API
     const durationMs = animate.durationMs;
-    // Easing is not currently plumbed through; reserved for future internal support
-    this.map._animateView({ center: finalCenter, zoom: finalZoom, durationMs });
+    const easing = animate.easing;
+    this.map._animateView({ center: finalCenter, zoom: finalZoom, durationMs, easing });
 
     return this.promise;
   }

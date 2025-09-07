@@ -620,7 +620,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	}
 
 	// Pan animation to a specific native center (x=lng,y=lat)
-	public panTo(lng: number, lat: number, durationMs = 500) {
+    public panTo(lng: number, lat: number, durationMs = 500) {
 		const { zInt, scale } = Coords.zParts(this.zoom);
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
 		const s0 = Coords.sFor(imageMaxZ, zInt);
@@ -628,18 +628,18 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		const target = { x: lng / s0, y: lat / s0 };
 		const dxPx = (cw.x - target.x) * scale;
 		const dyPx = (cw.y - target.y) * scale;
-		this._startPanBy(dxPx, dyPx, Math.max(0.05, durationMs / 1000));
-	}
+        this._startPanBy(dxPx, dyPx, Math.max(0.05, durationMs / 1000));
+    }
 
-	public flyTo(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number }) {
-		const durMs = Math.max(0, (opts.durationMs ?? 600) | 0);
-		if (Number.isFinite(opts.lng as number) && Number.isFinite(opts.lat as number)) this.panTo(opts.lng as number, opts.lat as number, durMs);
-		if (Number.isFinite(opts.zoom as number)) {
-			const rect = this.container.getBoundingClientRect();
-			const dz = (opts.zoom as number) - this.zoom;
-			this._zoomCtrl.startEase(dz, rect.width / 2, rect.height / 2, 'center');
-		}
-	}
+    public flyTo(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }) {
+        const durMs = Math.max(0, (opts.durationMs ?? 600) | 0);
+        if (Number.isFinite(opts.lng as number) && Number.isFinite(opts.lat as number)) this.panTo(opts.lng as number, opts.lat as number, durMs);
+        if (Number.isFinite(opts.zoom as number)) {
+            const rect = this.container.getBoundingClientRect();
+            const dz = (opts.zoom as number) - this.zoom;
+            this._zoomCtrl.startEase(dz, rect.width / 2, rect.height / 2, 'center', opts.easing);
+        }
+    }
 
 	public cancelPanAnim() {
 		this._panAnim = null;
@@ -1011,7 +1011,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			getInertiaDecel: () => this.inertiaDeceleration,
 			getInertiaMaxSpeed: () => this.inertiaMaxSpeed,
 			getEaseLinearity: () => this.easeLinearity,
-			startPanBy: (dxPx: number, dyPx: number, durSec: number, _ease?: number) => this._startPanBy(dxPx, dyPx, durSec),
+            startPanBy: (dxPx: number, dyPx: number, durSec: number, _ease?: number) => this._startPanBy(dxPx, dyPx, durSec, undefined),
 			cancelPanAnim: () => {
 				this._panAnim = null;
 			},
@@ -1421,15 +1421,14 @@ export default class GTMap implements MapImpl, GraphicsHost {
 
 	// image tile loading handled by TileLoader
 
-	public panVelocityTick() {
-		if (!this._panAnim) return;
-		const a = this._panAnim;
-		const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-		const t = Math.min(1, (now - a.start) / (a.dur * 1000));
-
-		// Use smoother easeOutExpo for more natural deceleration
-		// This creates a more gradual, less jerky slowdown
-		const p = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+    public panVelocityTick() {
+        if (!this._panAnim) return;
+        const a = this._panAnim;
+        const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+        const t = Math.min(1, (now - a.start) / (a.dur * 1000));
+        // Use custom easing if provided, otherwise default easeOutExpo
+        let p = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+        try { if (typeof (a as any).easing === 'function') p = (a as any).easing(t); } catch {}
 
 		const { zInt, scale } = Coords.zParts(this.zoom);
 		const rect = this.container.getBoundingClientRect();
@@ -1465,16 +1464,17 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		}
 	}
 
-	private _startPanBy(dxPx: number, dyPx: number, durSec: number) {
-		const { zInt, scale } = Coords.zParts(this.zoom);
-		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-		const s = Coords.sFor(imageMaxZ, zInt);
-		const cw = { x: this.center.lng / s, y: this.center.lat / s };
-		// Use the same screen->world sign convention as during drag updates
-		const offsetWorld = { x: dxPx / scale, y: dyPx / scale };
-		this._panAnim = { start: typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(), dur: Math.max(0.05, durSec), from: cw, offsetWorld };
-		this._needsRender = true;
-	}
+    private _startPanBy(dxPx: number, dyPx: number, durSec: number, easing?: number | ((t: number) => number)) {
+        const { zInt, scale } = Coords.zParts(this.zoom);
+        const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+        const s = Coords.sFor(imageMaxZ, zInt);
+        const cw = { x: this.center.lng / s, y: this.center.lat / s };
+        // Use the same screen->world sign convention as during drag updates
+        const offsetWorld = { x: dxPx / scale, y: dyPx / scale };
+        const efn = typeof easing === 'function' ? easing : undefined;
+        this._panAnim = { start: typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(), dur: Math.max(0.05, durSec), from: cw, offsetWorld, easing: efn } as any;
+        this._needsRender = true;
+    }
 
 	// Suspend/resume this map instance and optionally release the WebGL context.
 	public setActive(active: boolean, opts?: { releaseGL?: boolean }) {

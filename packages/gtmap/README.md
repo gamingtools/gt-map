@@ -67,6 +67,12 @@ await map.transition().center({ x: 5000, y: 3000 }).apply({ animate: { durationM
 
 // Animated zoom + center
 await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { durationMs: 800 } });
+
+// Fit bounds
+await map.transition().bounds({ minX: 1000, minY: 1200, maxX: 2400, maxY: 2200 }, 24).apply({ animate: { durationMs: 500 } });
+
+// Fit markers (all)
+await map.transition().markers(undefined, 16).apply({ animate: { durationMs: 500 } });
 ```
 
 ### Rendering & Behavior
@@ -309,6 +315,19 @@ map.events.on('pointermove').each(({ x, y }) => {
     });
   }
 });
+```
+
+### Easings
+
+Convenient easing functions are exported under `easings`:
+
+```ts
+import { easings } from '@gaming.tools/gtmap';
+
+await map.transition()
+  .center({ x: 4096, y: 4096 })
+  .zoom(4)
+  .apply({ animate: { durationMs: 700, easing: easings.easeInOutCubic } });
 ```
 
 ## Types & Bundles

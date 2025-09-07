@@ -8,16 +8,17 @@ export default class ZoomController {
 	private easePerUnitMs = 240;
 	private easeMinMs = 120;
 	private easeMaxMs = 420;
-	private zoomAnim: null | {
-		from: number;
-		to: number;
-		px: number;
-		py: number;
-		start: number;
-		dur: number;
-		anchor: 'pointer' | 'center';
-		bounce?: boolean;
-	} = null;
+    private zoomAnim: null | {
+        from: number;
+        to: number;
+        px: number;
+        py: number;
+        start: number;
+        dur: number;
+        anchor: 'pointer' | 'center';
+        bounce?: boolean;
+        easing?: (t: number) => number;
+    } = null;
 
 	constructor(deps: ZoomDeps) {
 		this.deps = deps;
@@ -28,15 +29,16 @@ export default class ZoomController {
 	cancel() {
 		this.zoomAnim = null;
 	}
-	startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center') {
-		const now = this.deps.now();
-		let current = this.deps.getZoom();
-		if (this.zoomAnim) {
-			const a = this.zoomAnim;
-			const t = Math.min(1, (now - a.start) / a.dur);
-			const ease = 1 - Math.pow(1 - t, 3);
-			current = a.from + (a.to - a.from) * ease;
-		}
+    startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center', easing?: (t: number) => number) {
+        const now = this.deps.now();
+        let current = this.deps.getZoom();
+        if (this.zoomAnim) {
+            const a = this.zoomAnim;
+            const t = Math.min(1, (now - a.start) / a.dur);
+            const ef = a.easing || ((tt: number) => 1 - Math.pow(1 - tt, 3));
+            const eased = ef(t);
+            current = a.from + (a.to - a.from) * eased;
+        }
 		let to = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), current + dz));
 		// Bounds-based min zoom + optional bounce at zoom limits
 		let bounce = false;
@@ -62,16 +64,16 @@ export default class ZoomController {
 		const dist = Math.abs(to - current);
 		const raw = this.easeBaseMs + this.easePerUnitMs * dist;
 		const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
-		this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor, bounce };
-		this.deps.requestRender();
-	}
+        this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor, bounce, easing };
+        this.deps.requestRender();
+    }
 	step(): boolean {
 		if (!this.zoomAnim) return false;
 		const now = this.deps.now();
 		const a = this.zoomAnim;
-		const t = Math.min(1, (now - a.start) / a.dur);
-		const ease = 1 - Math.pow(1 - t, 3);
-		let z = a.from + (a.to - a.from) * ease;
+        const t = Math.min(1, (now - a.start) / a.dur);
+        const ef = a.easing || ((tt: number) => 1 - Math.pow(1 - tt, 3));
+        let z = a.from + (a.to - a.from) * ef(t);
 		if (a.bounce) {
 			// easeOutBack to create a slight overshoot and return
 			const c1 = 1.70158,

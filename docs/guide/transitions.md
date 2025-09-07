@@ -64,6 +64,8 @@ export interface ViewTransition {
   zoom(z: number): this; // fractional allowed
   offset(dx: number, dy: number): this; // applied at commit time
   bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
+  points(list: Array<{ x: number; y: number }>, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
+  markers(list?: Array<Marker | string>, padding?: number | { top: number; right: number; bottom: number; left: number }): this; // fit current or provided markers
   // Future‑ready (optional next): anchor(a: 'center' | { x: number; y: number }): this;
 
   apply(opts?: ApplyOptions): Promise<ApplyResult>; // never throws; resolves with status
@@ -133,6 +135,37 @@ Fit bounds (with padding)
 await map.transition()
   .bounds({ minX: 1000, minY: 1200, maxX: 2400, maxY: 2200 }, 24)
   .apply({ animate: { durationMs: 500 } });
+```
+
+Fit a set of points
+
+```ts
+const points = [ { x: 1200, y: 900 }, { x: 2200, y: 1800 }, { x: 1800, y: 1400 } ];
+await map.transition()
+  .points(points, { top: 16, right: 16, bottom: 24, left: 16 })
+  .apply({ animate: { durationMs: 500 } });
+```
+
+Fit markers
+
+```ts
+// All markers on the layer
+await map.transition().markers(undefined, 16).apply({ animate: { durationMs: 500 } });
+
+// Specific markers by instance or id
+const list = [ markerA, markerB, 'm_abcd123' ];
+await map.transition().markers(list, { top: 16, right: 24, bottom: 16, left: 24 }).apply({ animate: { durationMs: 600 } });
+```
+
+Easing helpers
+
+```ts
+import { easings } from '@gtmap'; // or '@gaming.tools/gtmap'
+
+await map.transition()
+  .center({ x: 4096, y: 4096 })
+  .zoom(4)
+  .apply({ animate: { durationMs: 700, easing: easings.easeInOutCubic } });
 ```
 
 Cancellation

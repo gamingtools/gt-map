@@ -125,7 +125,7 @@ export interface InputDeps {
 	getInertiaDecel(): number; // px/s^2
 	getInertiaMaxSpeed(): number; // px/s
 	getEaseLinearity(): number;
-	startPanBy(offsetXPx: number, offsetYPx: number, durationSec: number, ease?: number): void;
+    startPanBy(offsetXPx: number, offsetYPx: number, durationSec: number, ease?: number): void;
 	cancelPanAnim(): void;
 }
 
@@ -182,8 +182,8 @@ export interface MapImpl {
 	onMarkerEvent?(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
 	// Optional animated controls
 	panTo?(lng: number, lat: number, durationMs?: number): void;
-	flyTo?(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number }): void;
-	// Optional animation cancellation
+    flyTo?(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }): void;
+    // Optional animation cancellation
 	cancelPanAnim?(): void;
 	cancelZoomAnim?(): void;
 	destroy(): void;
