@@ -1119,21 +1119,37 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			};
 			this._events.emit('frame', { now: t, stats });
 		} catch {}
-		if (this.showGrid) {
-			const rect = this.container.getBoundingClientRect();
-			const { zInt: baseZ, scale } = Coords.zParts(this.zoom);
-			const widthCSS = rect.width;
-			const heightCSS = rect.height;
-			const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-			const s = Coords.sFor(imageMaxZ, baseZ);
-			const centerLevel = { x: this.center.lng / s, y: this.center.lat / s };
-			let tlWorld = Coords.tlLevelFor(centerLevel, this.zoom, { x: widthCSS, y: heightCSS });
-			// Snap to device pixel grid to reduce shimmer during pan
-			const snap = (v: number) => Coords.snapLevelToDevice(v, scale, this._dpr);
-			tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
-			const pal = this._gridPalette();
-			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal);
-		}
+            if (this.showGrid) {
+                const rect = this.container.getBoundingClientRect();
+                const { zInt: baseZ, scale } = Coords.zParts(this.zoom);
+                const widthCSS = rect.width;
+                const heightCSS = rect.height;
+                const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+                const s = Coords.sFor(imageMaxZ, baseZ);
+                const centerLevel = { x: this.center.lng / s, y: this.center.lat / s };
+                let tlWorld = Coords.tlLevelFor(centerLevel, this.zoom, { x: widthCSS, y: heightCSS });
+                // Only snap when not rotating to avoid drift
+                const ang = (this._viewRotationDeg || 0) * Math.PI / 180;
+                if (ang === 0) {
+                    const snap = (v: number) => Coords.snapLevelToDevice(v, scale, this._dpr);
+                    tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
+                }
+                const pal = this._gridPalette();
+                // Rotate grid canvas around viewport center to match map rotation
+                if (this._gridCtx) {
+                    this._gridCtx.save();
+                    try {
+                        this._gridCtx.scale(this._dpr || 1, this._dpr || 1);
+                        this._gridCtx.translate(widthCSS * 0.5, heightCSS * 0.5);
+                        this._gridCtx.rotate(ang);
+                        this._gridCtx.translate(-widthCSS * 0.5, -heightCSS * 0.5);
+                    } catch {}
+                    // Undo the extra scale before drawGrid since drawGrid scales by dpr again
+                    try { this._gridCtx.scale(1 / (this._dpr || 1), 1 / (this._dpr || 1)); } catch {}
+                }
+                drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal);
+                if (this._gridCtx) try { this._gridCtx.restore(); } catch {}
+            }
 		// Draw vector overlay (if any)
 		try {
 			this._drawVectors();
