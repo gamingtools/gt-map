@@ -63,9 +63,8 @@ export interface ViewTransition {
   center(p: { x: number; y: number }): this;
   zoom(z: number): this; // fractional allowed
   offset(dx: number, dy: number): this; // applied at commit time
-  // Future‑ready (optional in first cut):
-  // anchor(a: 'center' | { x: number; y: number }): this;
-  // bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
+  bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
+  // Future‑ready (optional next): anchor(a: 'center' | { x: number; y: number }): this;
 
   apply(opts?: ApplyOptions): Promise<ApplyResult>; // never throws; resolves with status
   cancel(): void; // idempotent; resolves in‑flight apply with { status: 'canceled' }
@@ -126,6 +125,14 @@ await map.transition()
   .center({ x: 3000, y: 3000 })
   .offset(-200, 120)
   .apply({ animate: { durationMs: 400, easing: t => t*t*(3-2*t) } });
+```
+
+Fit bounds (with padding)
+
+```ts
+await map.transition()
+  .bounds({ minX: 1000, minY: 1200, maxX: 2400, maxY: 2200 }, 24)
+  .apply({ animate: { durationMs: 500 } });
 ```
 
 Cancellation
@@ -206,4 +213,3 @@ If you choose to remove legacy methods (`setCenter`, `setZoom`, `setView`, `panT
   - `panTo(center, ms)` → `await map.transition().center(center).apply({ animate: { durationMs: ms } })`
   - `flyTo({ center, zoom, durationMs })` → `await map.transition().center(center).zoom(zoom).apply({ animate: { durationMs } })`
 - Keep event semantics identical; only the entry point changes.
-

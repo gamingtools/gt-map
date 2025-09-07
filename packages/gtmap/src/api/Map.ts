@@ -518,6 +518,23 @@ export class GTMap {
         try { this._impl.cancelPanAnim?.(); } catch {}
         try { this._impl.cancelZoomAnim?.(); } catch {}
     }
+
+    _fitBounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding: { top: number; right: number; bottom: number; left: number }): { center: Point; zoom: number } {
+        const rect = this._impl.container.getBoundingClientRect();
+        const pad = padding || { top: 0, right: 0, bottom: 0, left: 0 };
+        const availW = Math.max(1, rect.width - (pad.left + pad.right));
+        const availH = Math.max(1, rect.height - (pad.top + pad.bottom));
+        const bw = Math.max(1, b.maxX - b.minX);
+        const bh = Math.max(1, b.maxY - b.minY);
+        const k = Math.min(availW / bw, availH / bh);
+        // CSS px per world px is 2^(z - imageMaxZ) => z = imageMaxZ + log2(k)
+        const imageMaxZ = (this._impl as any)._sourceMaxZoom ?? this._impl.maxZoom;
+        let z = imageMaxZ + Math.log2(Math.max(1e-6, k));
+        // clamp
+        z = Math.max(this._impl.minZoom, Math.min(this._impl.maxZoom, z));
+        const center: Point = { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 };
+        return { center, zoom: z };
+    }
 	/**
 	 * Updates the map size after container resize.
 	 * Call this if the container size changes.
@@ -624,6 +641,7 @@ export interface ViewTransition {
   center(p: Point): this;
   zoom(z: number): this;
   offset(dx: number, dy: number): this;
+  bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
   apply(opts?: ApplyOptions): Promise<ApplyResult>;
   cancel(): void;
 }
@@ -639,6 +657,8 @@ class ViewTransitionImpl implements ViewTransition {
   private targetZoom?: number;
   private offsetDx = 0;
   private offsetDy = 0;
+  private targetBounds?: { minX: number; minY: number; maxX: number; maxY: number };
+  private boundsPadding?: { top: number; right: number; bottom: number; left: number };
   private started = false;
   private settled = false;
   private cancelled = false;
@@ -667,6 +687,25 @@ class ViewTransitionImpl implements ViewTransition {
     return this;
   }
 
+  bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this {
+    this.targetBounds = b;
+    if (typeof padding === 'number') {
+      const p = Math.max(0, padding);
+      this.boundsPadding = { top: p, right: p, bottom: p, left: p };
+    } else if (padding) {
+      const pad = padding as { top: number; right: number; bottom: number; left: number };
+      this.boundsPadding = {
+        top: Math.max(0, pad.top),
+        right: Math.max(0, pad.right),
+        bottom: Math.max(0, pad.bottom),
+        left: Math.max(0, pad.left),
+      };
+    } else {
+      this.boundsPadding = { top: 0, right: 0, bottom: 0, left: 0 };
+    }
+    return this;
+  }
+
   cancel(): void {
     if (this.settled) return;
     this.cancelled = true;
@@ -679,12 +718,23 @@ class ViewTransitionImpl implements ViewTransition {
     // Compute final targets
     const currentCenter = this.map.getCenter();
     const currentZoom = this.map.getZoom();
-    const finalCenter: Point | undefined = this.targetCenter
-      ? { x: this.targetCenter.x + this.offsetDx, y: this.targetCenter.y + this.offsetDy }
-      : (this.offsetDx !== 0 || this.offsetDy !== 0)
-        ? { x: currentCenter.x + this.offsetDx, y: currentCenter.y + this.offsetDy }
-        : undefined;
-    const finalZoom = this.targetZoom;
+    let finalCenter: Point | undefined;
+    let finalZoom: number | undefined;
+
+    if (this.targetBounds) {
+      const fit = this.map._fitBounds(this.targetBounds, this.boundsPadding || { top: 0, right: 0, bottom: 0, left: 0 });
+      finalCenter = fit.center;
+      finalZoom = fit.zoom;
+    }
+
+    if (!finalCenter && this.targetCenter) {
+      finalCenter = { x: this.targetCenter.x + this.offsetDx, y: this.targetCenter.y + this.offsetDy };
+    } else if (!finalCenter && (this.offsetDx !== 0 || this.offsetDy !== 0)) {
+      finalCenter = { x: currentCenter.x + this.offsetDx, y: currentCenter.y + this.offsetDy };
+    }
+    if (typeof finalZoom !== 'number' && typeof this.targetZoom === 'number') {
+      finalZoom = this.targetZoom;
+    }
 
     const needsCenter = !!finalCenter && (finalCenter.x !== currentCenter.x || finalCenter.y !== currentCenter.y);
     const needsZoom = typeof finalZoom === 'number' && finalZoom !== currentZoom;

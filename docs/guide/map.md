@@ -103,6 +103,7 @@ View (Transition Builder)
   - `center(p: Point): this` — set target center in world pixels
   - `zoom(z: number): this` — set target zoom (fractional allowed; clamped on apply)
   - `offset(dx: number, dy: number): this` — offset applied at commit
+  - `bounds(b: { minX; minY; maxX; maxY }, padding?: number | { top; right; bottom; left }): this` — fit a world-rect with optional CSS padding
   - `apply(opts?: { animate?: { durationMs: number; easing?: Easing; delayMs?: number; interrupt?: 'cancel' | 'join' | 'enqueue' } }): Promise<{ status: 'instant' | 'animated' | 'canceled' }>`
   - `cancel(): void` — cancel in‑flight transition (promise resolves `{ status: 'canceled' }`)
 
