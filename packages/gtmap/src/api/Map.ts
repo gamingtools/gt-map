@@ -95,7 +95,7 @@ export class GTMap {
 			center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
 			zoom: options.zoom,
 			autoResize: options.autoResize,
-			backgroundColor: options.backgroundColor as any,
+            backgroundColor: options.backgroundColor,
 			prefetch: options.prefetch,
 			screenCache: options.screenCache,
 			fpsCap: options.fpsCap,
@@ -110,60 +110,59 @@ export class GTMap {
 		this.vectors = new Layer<Vector>({ id: 'vectors', onChange: onVectorsChanged });
 
 		// Wire internal marker events to per-marker entity events
-		const toPointerMeta = (ev: any) => {
-			try {
-				const oe = ev?.originalEvent as PointerEvent | MouseEvent | undefined;
-				const device: 'mouse' | 'touch' | 'pen' = oe && (oe as any).pointerType ? (String((oe as any).pointerType) as any) : 'mouse';
-				const isPrimary = (oe as any)?.isPrimary ?? true;
-				const buttons = (oe as any)?.buttons ?? 0;
-				const pointerId = (oe as any)?.pointerId ?? 0;
-				const pressure = (oe as any)?.pressure;
-				const width = (oe as any)?.width;
-				const height = (oe as any)?.height;
-				const tiltX = (oe as any)?.tiltX;
-				const tiltY = (oe as any)?.tiltY;
-				const twist = (oe as any)?.twist;
-				const mods = {
-					alt: !!(oe && (oe as any).altKey),
-					ctrl: !!(oe && (oe as any).ctrlKey),
-					meta: !!(oe && (oe as any).metaKey),
-					shift: !!(oe && (oe as any).shiftKey),
-				};
-				return { device, isPrimary, buttons, pointerId, pressure, width, height, tiltX, tiltY, twist, modifiers: mods };
-			} catch {
-				return undefined;
-			}
-		};
+        const toPointerMeta = (ev: { originalEvent?: PointerEvent | MouseEvent } | undefined) => {
+            const oe = ev?.originalEvent;
+            if (!oe) return undefined;
+            const has = <K extends string>(k: K): k is K => k in (oe as any);
+            const ptrType = has('pointerType') ? String((oe as PointerEvent).pointerType) : 'mouse';
+            const device = (ptrType === 'mouse' || ptrType === 'touch' || ptrType === 'pen') ? ptrType : 'mouse';
+            const isPrimary = has('isPrimary') ? !!(oe as PointerEvent).isPrimary : true;
+            const buttons = has('buttons') ? (oe as PointerEvent).buttons : 0;
+            const pointerId = has('pointerId') ? (oe as PointerEvent).pointerId : 0;
+            const pressure = has('pressure') ? (oe as PointerEvent).pressure : undefined;
+            const width = has('width') ? (oe as PointerEvent).width : undefined;
+            const height = has('height') ? (oe as PointerEvent).height : undefined;
+            const tiltX = has('tiltX') ? (oe as PointerEvent).tiltX : undefined;
+            const tiltY = has('tiltY') ? (oe as PointerEvent).tiltY : undefined;
+            const twist = has('twist') ? (oe as any).twist as number | undefined : undefined;
+            const mods = {
+                alt: 'altKey' in oe ? !!(oe as MouseEvent).altKey : false,
+                ctrl: 'ctrlKey' in oe ? !!(oe as MouseEvent).ctrlKey : false,
+                meta: 'metaKey' in oe ? !!(oe as MouseEvent).metaKey : false,
+                shift: 'shiftKey' in oe ? !!(oe as MouseEvent).shiftKey : false,
+            };
+            return { device, isPrimary, buttons, pointerId, pressure, width, height, tiltX, tiltY, twist, modifiers: mods };
+        };
 
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('enter', (e: any) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-				if (mk) mk.emitFromMap('pointerenter', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+                if (mk) mk.emitFromMap('pointerenter', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('leave', (e: any) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-				if (mk) mk.emitFromMap('pointerleave', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+                if (mk) mk.emitFromMap('pointerleave', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('click', (e: any) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-				if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+                if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('down', (e: any) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-				if (mk) mk.emitFromMap('pointerdown', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+                if (mk) mk.emitFromMap('pointerdown', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('up', (e: any) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-				if (mk) mk.emitFromMap('pointerup', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+                if (mk) mk.emitFromMap('pointerup', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('longpress', (e: any) => {
@@ -176,20 +175,20 @@ export class GTMap {
 			this._impl.onMarkerEvent('click', (e: any) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-				const pm = toPointerMeta(e) as any;
+                const pm = toPointerMeta(e);
 				if (mk && pm && pm.device === 'touch') mk.emitFromMap('tap', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: pm });
 			});
 
 		// Facade-level safety: emit pointerleave when markers are removed or hidden
 		this.markers.events.on('entityremove').each(({ entity }) => {
-			try {
-				entity.emitFromMap('pointerleave', { x: -1, y: -1, marker: entity.toData(), pointer: undefined as any });
-			} catch {}
+                    try {
+                        entity.emitFromMap('pointerleave', { x: -1, y: -1, marker: entity.toData(), pointer: undefined });
+                    } catch {}
 		});
 		this.markers.events.on('visibilitychange').each(({ visible }) => {
 			if (!visible) {
 				for (const mk of this.markers.getAll()) {
-					try { mk.emitFromMap('pointerleave', { x: -1, y: -1, marker: mk.toData(), pointer: undefined as any }); } catch {}
+                        try { mk.emitFromMap('pointerleave', { x: -1, y: -1, marker: mk.toData(), pointer: undefined }); } catch {}
 				}
 			}
 		});
@@ -593,10 +592,12 @@ export class GTMap {
 	get events(): MapEvents {
 		return {
 			on: (name: any, handler?: any) => {
-				const stream = this._impl.events.on(name as any);
+            // Bridge overloads: return the stream or subscribe inline. The cast is localized
+            // to preserve precise generic types for callers across the two forms.
+            const stream = this._impl.events.on(name as keyof MapEventMap);
 				return handler ? stream.each(handler) : stream;
 			},
-			once: (name: any) => this._impl.events.when(name as any),
+        once: (name) => this._impl.events.when(name as keyof MapEventMap),
 		} as MapEvents;
 	}
 

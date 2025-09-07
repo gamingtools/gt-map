@@ -1319,16 +1319,12 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._renderer.render();
 		// Kick off deferred icon mask build after first render
 		try {
+			// Defer icon mask build until after the first render, using requestIdleCallback when available.
 			if (!(this as any)._maskBuildRequested) {
 				(this as any)._maskBuildRequested = true;
-				const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: () => any) => any);
-				const start = () => {
-					try {
-						(this._icons as any)?.startMaskBuild?.();
-					} catch {}
-				};
-				if (typeof ric === 'function') ric(start);
-				else setTimeout(start, 0);
+				const start = () => { try { (this._icons as any)?.startMaskBuild?.(); } catch {} };
+				const idle: ((cb: () => void) => any) | undefined = typeof (window as any).requestIdleCallback === 'function' ? (window as any).requestIdleCallback.bind(window) : undefined;
+				if (idle) idle(start); else setTimeout(start, 0);
 			}
 		} catch {}
 		// Emit a frame event for HUD/diagnostics

@@ -142,7 +142,8 @@ export class IconRenderer {
 	startMaskBuild() {
 		if (this.maskBuildStarted) return;
 		this.maskBuildStarted = true;
-		const ric = (globalThis as any).requestIdleCallback as undefined | ((cb: (deadline?: any) => any) => any);
+		// Feature-test requestIdleCallback with a small typed shim
+		const ric: ((cb: () => void) => any) | undefined = typeof (window as any).requestIdleCallback === 'function' ? (window as any).requestIdleCallback.bind(window) : undefined;
 		const process = () => {
 			let budget = 3; // build a few per slice
 			while (budget-- > 0 && this.pendingMasks.length) {

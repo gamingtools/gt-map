@@ -115,20 +115,19 @@ export class TileLoader {
 				mode: 'cors',
 				credentials: 'omit',
 				signal: abortController.signal,
-				// @ts-ignore - priority is not in TS types yet but works in Chrome/Edge
-				priority: tile.priority > 1 ? 'high' : 'low',
-			} as any)
-				.then((r: any) => {
+				// Non-standard but supported in Chromium; harmless elsewhere.
+				// Cast limited to request init to avoid spreading any.
+				...( { priority: tile.priority > 1 ? 'high' : 'low' } as { priority?: 'high' | 'low' | 'auto' } ),
+			})
+				.then((r: Response) => {
 					if (!r.ok) throw new Error(`HTTP ${r.status}`);
 					return r.blob();
 				})
-				.then((blob: any) =>
-					(self as any).createImageBitmap(blob, {
-						premultiplyAlpha: 'none',
-						colorSpaceConversion: 'none',
-					}),
-				)
-				.then((bmp: any) => {
+				.then((blob: Blob) => createImageBitmap(blob, {
+					premultiplyAlpha: 'none',
+					colorSpaceConversion: 'none',
+				}))
+				.then((bmp: ImageBitmap) => {
 					try {
 						const gl: WebGLRenderingContext = deps.getGL();
 						const tex = deps.acquireTexture();
@@ -143,13 +142,13 @@ export class TileLoader {
 						gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 						gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 						gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-						gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp as any);
+						gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
 						gl.generateMipmap(gl.TEXTURE_2D);
-						deps.setReady(key, tex, (bmp as any).width, (bmp as any).height, deps.getFrame());
+						deps.setReady(key, tex, bmp.width, bmp.height, deps.getFrame());
 						deps.requestRender();
 					} finally {
 						try {
-							(bmp as any).close?.();
+							if ('close' in bmp && typeof (bmp as ImageBitmap).close === 'function') (bmp as ImageBitmap).close();
 						} catch {}
 						onFinally();
 					}
@@ -167,9 +166,9 @@ export class TileLoader {
 			return;
 		}
 
-		const img: any = new Image();
+		const img = new Image();
 		img.crossOrigin = 'anonymous';
-		img.decoding = 'async';
+		(img as HTMLImageElement & { decoding?: 'async' | 'auto' | 'sync' }).decoding = 'async';
 
 		// Handle abort for image loading
 		const onAbort = () => {
@@ -202,9 +201,9 @@ export class TileLoader {
 				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 				gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img as any);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
 				gl.generateMipmap(gl.TEXTURE_2D);
-				deps.setReady(key, tex, (img as any).naturalWidth, (img as any).naturalHeight, deps.getFrame());
+				deps.setReady(key, tex, img.naturalWidth, img.naturalHeight, deps.getFrame());
 				deps.requestRender();
 			} finally {
 				onFinally();
