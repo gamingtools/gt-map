@@ -363,10 +363,17 @@ export class IconRenderer {
     // For icons, avoid snapping TL to device pixels. Snapping is great for tiles
     // to prevent seam shimmer, but it introduces visible jitter for icons when
     // their screen size changes with zoom via an iconScaleFunction.
-    const tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
+    let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
 
 		// Calculate scale factor from icon scale function
-		const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
+    const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
+    // If icons are fixed-size (scale ~ 1), snap TL to device pixels like tiles to avoid
+    // subtle relative jitter during inertial pan when tiles are snapped and icons are not.
+    if (Math.abs(iconScale - 1) < 1e-3) {
+      const { scale: effScale2 } = Coords.zParts(ctx.zoom);
+      const snap = (v: number) => Coords.snapLevelToDevice(v, effScale2, ctx.dpr);
+      tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
+    }
 		// Compute map scissor in device pixels to clip icons outside the finite image
 		// Icons themselves are not clipped here; screen cache draw is clipped to map extent in renderer.
 
