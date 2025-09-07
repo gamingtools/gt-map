@@ -183,6 +183,9 @@ export interface MapImpl {
 	// Optional animated controls
 	panTo?(lng: number, lat: number, durationMs?: number): void;
 	flyTo?(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number }): void;
+	// Optional animation cancellation
+	cancelPanAnim?(): void;
+	cancelZoomAnim?(): void;
 	destroy(): void;
 }
 

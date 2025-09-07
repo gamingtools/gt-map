@@ -38,7 +38,7 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 1. **Coordinate System**: Pixel CRS where x=lng, y=lat in image pixel coordinates at native resolution. No Web Mercator projections.
 
 2. **GTMap API**: Main public interface with methods:
-   - View control: `setCenter()`, `setZoom()`, `setView()`
+   - View control: Transition Builder `map.transition().center(...).zoom(...).apply({ animate? })`
    - Tile source: `setTileSource()` 
    - Content: `addIcon()`, `addMarker()`, `addVectors()`
    - Lifecycle: `setActive()` for suspend/resume with optional GL release

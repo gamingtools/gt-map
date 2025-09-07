@@ -94,7 +94,9 @@ Object.assign(centerBtn.style, {
   cursor: 'pointer',
   zIndex: '11',
 } as CSSStyleDeclaration);
-centerBtn.addEventListener('click', () => map.flyTo({ center: HOME, durationMs: 600 }));
+centerBtn.addEventListener('click', async () => {
+  await map.transition().center(HOME).apply({ animate: { durationMs: 600 } });
+});
 container.appendChild(centerBtn);
 
 // Zoom speed control

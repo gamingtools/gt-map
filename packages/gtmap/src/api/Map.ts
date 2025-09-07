@@ -19,6 +19,8 @@ import type {
 	VectorPrimitiveInternal,
 	IconScaleFunction,
 	EventMap as MapEventMap,
+  ApplyOptions,
+  ApplyResult,
 } from './types';
 
 // Re-export types from centralized types file
@@ -58,6 +60,8 @@ export class GTMap {
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
+
+    // (active view transition tracking handled via module-level WeakMap in builder)
 
 	/**
 	 * Creates a new GTMap instance.
@@ -187,55 +191,11 @@ export class GTMap {
 		});
 	}
 
-	// View controls
-	/**
-	 * Sets the map center position.
-	 *
-	 * @param p - The new center position in pixel coordinates
-	 * @returns This map instance for method chaining
-	 *
-	 * @example
-	 * ```typescript
-	 * map.setCenter({ x: 2048, y: 2048 });
-	 * ```
-	 */
-	setCenter(p: Point): this {
-		this._impl.setCenter(p.x, p.y);
-		return this;
-	}
-	/**
-	 * Sets the map zoom level.
-	 *
-	 * @param z - The zoom level (will be clamped to minZoom/maxZoom)
-	 * @returns This map instance for method chaining
-	 *
-	 * @example
-	 * ```typescript
-	 * map.setZoom(4.5);
-	 * ```
-	 */
-	setZoom(z: number): this {
-		this._impl.setZoom(z);
-		return this;
-	}
-	/**
-	 * Sets both center and zoom in a single call.
-	 *
-	 * @param view - Object containing center and zoom
-	 * @param view.center - The new center position in pixel coordinates
-	 * @param view.zoom - The zoom level
-	 * @returns This map instance for method chaining
-	 *
-	 * @example
-	 * ```typescript
-	 * map.setView({ center: { x: 1024, y: 1024 }, zoom: 3 });
-	 * ```
-	 */
-	setView(view: { center: Point; zoom: number }): this {
-		this._impl.setCenter(view.center.x, view.center.y);
-		this._impl.setZoom(view.zoom);
-		return this;
-	}
+    // View control helpers (internal use by transition builder)
+    _applyInstant(center?: Point, zoom?: number): void {
+        if (center) this._impl.setCenter(center.x, center.y);
+        if (typeof zoom === 'number') this._impl.setZoom(zoom);
+    }
 
 	// Tile source
 	/**
@@ -547,22 +507,17 @@ export class GTMap {
 		this._impl.setAutoResize?.(on);
 		return this;
 	}
-	/**
-	 * Smoothly pan to a new center.
-	 */
-	panTo(center: Point, durationMs = 500): this {
-		this._impl.panTo?.(center.x, center.y, durationMs);
-		return this;
-	}
-	/**
-	 * Smoothly change center and/or zoom.
-	 */
-	flyTo(opts: { center?: Point; zoom?: number; durationMs?: number }): this {
-		const lng = opts.center?.x;
-		const lat = opts.center?.y;
-		this._impl.flyTo?.({ lng, lat, zoom: opts.zoom, durationMs: opts.durationMs });
-		return this;
-	}
+    _animateView(opts: { center?: Point; zoom?: number; durationMs: number }): void {
+        const { center, zoom, durationMs } = opts;
+        const lng = center?.x;
+        const lat = center?.y;
+        this._impl.flyTo?.({ lng, lat, zoom, durationMs });
+    }
+
+    _cancelPanZoom(): void {
+        try { this._impl.cancelPanAnim?.(); } catch {}
+        try { this._impl.cancelZoomAnim?.(); } catch {}
+    }
 	/**
 	 * Updates the map size after container resize.
 	 * Call this if the container size changes.
@@ -587,6 +542,13 @@ export class GTMap {
 			on: (name) => this._impl.events.on(name),
 			once: (name) => this._impl.events.when(name),
 		};
+	}
+
+	/**
+	 * Start a chainable view transition. No side-effects until apply().
+	 */
+	transition(): ViewTransition {
+		return new ViewTransitionImpl(this);
 	}
 
 	// Ensure a default icon is available so markers are visible without explicit icon defs
@@ -655,4 +617,169 @@ export class GTMap {
 		});
 		this._impl.setVectors?.(internalVectors);
 	}
+}
+
+// Transition builder implementation (internal)
+export interface ViewTransition {
+  center(p: Point): this;
+  zoom(z: number): this;
+  offset(dx: number, dy: number): this;
+  apply(opts?: ApplyOptions): Promise<ApplyResult>;
+  cancel(): void;
+}
+
+class ViewTransitionImpl implements ViewTransition {
+  // Track at most one active transition per map instance
+  private static _active: WeakMap<GTMap, ViewTransitionImpl> = new WeakMap();
+  static _activeFor(map: GTMap): ViewTransitionImpl | undefined { return this._active.get(map); }
+  static _setActive(map: GTMap, tx: ViewTransitionImpl): void { this._active.set(map, tx); }
+  static _clearActive(map: GTMap): void { this._active.delete(map); }
+  private map: GTMap;
+  private targetCenter?: Point;
+  private targetZoom?: number;
+  private offsetDx = 0;
+  private offsetDy = 0;
+  private started = false;
+  private settled = false;
+  private cancelled = false;
+  private resolveFn?: (r: ApplyResult) => void;
+  private promise?: Promise<ApplyResult>;
+  private unsubscribeMoveEnd?: () => void;
+  private unsubscribeZoomEnd?: () => void;
+
+  constructor(map: GTMap) {
+    this.map = map;
+  }
+
+  center(p: Point): this {
+    this.targetCenter = p;
+    return this;
+  }
+
+  zoom(z: number): this {
+    this.targetZoom = z;
+    return this;
+  }
+
+  offset(dx: number, dy: number): this {
+    this.offsetDx += dx;
+    this.offsetDy += dy;
+    return this;
+  }
+
+  cancel(): void {
+    if (this.settled) return;
+    this.cancelled = true;
+    this._resolve({ status: 'canceled' });
+  }
+
+  async apply(opts?: ApplyOptions): Promise<ApplyResult> {
+    if (this.promise) return this.promise;
+    this.started = true;
+    // Compute final targets
+    const currentCenter = this.map.getCenter();
+    const currentZoom = this.map.getZoom();
+    const finalCenter: Point | undefined = this.targetCenter
+      ? { x: this.targetCenter.x + this.offsetDx, y: this.targetCenter.y + this.offsetDy }
+      : (this.offsetDx !== 0 || this.offsetDy !== 0)
+        ? { x: currentCenter.x + this.offsetDx, y: currentCenter.y + this.offsetDy }
+        : undefined;
+    const finalZoom = this.targetZoom;
+
+    const needsCenter = !!finalCenter && (finalCenter.x !== currentCenter.x || finalCenter.y !== currentCenter.y);
+    const needsZoom = typeof finalZoom === 'number' && finalZoom !== currentZoom;
+
+    const noChange = !needsCenter && !needsZoom;
+    if (noChange) {
+      return this._finalizeImmediate({ status: 'instant' });
+    }
+
+    const animate = opts?.animate;
+    if (!animate) {
+      // Stop any ongoing pan/zoom animations to avoid inertia overriding instant set
+      try { this.map._cancelPanZoom(); } catch {}
+      this.map._applyInstant(needsCenter ? (finalCenter as Point) : undefined, needsZoom ? (finalZoom as number) : undefined);
+      return this._finalizeImmediate({ status: 'instant' });
+    }
+
+    // Interrupt policy handling (phase 1: treat join/enqueue as cancel)
+    const policy = animate.interrupt ?? 'cancel';
+    const prev = ViewTransitionImpl._activeFor(this.map);
+    if (policy === 'enqueue' && prev && prev !== this && !prev.settled) {
+      // Wait for the previous transition to finish before starting
+      if (prev.promise) await prev.promise;
+    }
+    if (policy === 'cancel' && prev && prev !== this && !prev.settled) {
+      prev.cancel();
+    }
+    // For 'join' we do not cancel the previous; both will resolve when the new animation ends
+    ViewTransitionImpl._setActive(this.map, this);
+
+    // Optional delay
+    if (animate.delayMs && animate.delayMs > 0) {
+      await new Promise<void>((res) => setTimeout(res, animate.delayMs));
+      if (this.cancelled) return { status: 'canceled' };
+    }
+
+    // Subscribe to end events according to what changes
+    const needsMoveEnd = needsCenter;
+    const needsZoomEnd = needsZoom;
+    let moveEnded = !needsMoveEnd;
+    let zoomEnded = !needsZoomEnd;
+
+    this.promise = new Promise<ApplyResult>((resolve) => {
+      this.resolveFn = resolve;
+      if (needsMoveEnd) {
+        this.unsubscribeMoveEnd = this.map.events.on('moveend').each(() => {
+          moveEnded = true;
+          this._maybeResolveAnimated(moveEnded, zoomEnded);
+        });
+      }
+      if (needsZoomEnd) {
+        this.unsubscribeZoomEnd = this.map.events.on('zoomend').each(() => {
+          zoomEnded = true;
+          this._maybeResolveAnimated(moveEnded, zoomEnded);
+        });
+      }
+    });
+
+    // For 'cancel', ensure underlying animations are stopped before starting new
+    if (policy === 'cancel') {
+      try { this.map._cancelPanZoom(); } catch {}
+    }
+
+    // Kick off the animation via existing API
+    const durationMs = animate.durationMs;
+    // Easing is not currently plumbed through; reserved for future internal support
+    this.map._animateView({ center: finalCenter, zoom: finalZoom, durationMs });
+
+    return this.promise;
+  }
+
+  private _maybeResolveAnimated(moveEnded: boolean, zoomEnded: boolean) {
+    if (this.settled) return;
+    if (this.cancelled) {
+      this._resolve({ status: 'canceled' });
+      return;
+    }
+    if (moveEnded && zoomEnded) {
+      this._resolve({ status: 'animated' });
+    }
+  }
+
+  private _finalizeImmediate(result: ApplyResult): Promise<ApplyResult> {
+    this.promise = Promise.resolve(result);
+    this.settled = true;
+    return this.promise;
+  }
+
+  private _resolve(result: ApplyResult) {
+    if (this.settled) return;
+    this.settled = true;
+    try { this.unsubscribeMoveEnd?.(); } catch {}
+    try { this.unsubscribeZoomEnd?.(); } catch {}
+    // Clear active if it is me
+    if (ViewTransitionImpl._activeFor(this.map) === this) ViewTransitionImpl._clearActive(this.map);
+    if (this.resolveFn) this.resolveFn(result);
+  }
 }

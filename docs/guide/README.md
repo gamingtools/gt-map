@@ -5,6 +5,7 @@ It explains the concepts, shows typical flows, and links you to the
 relevant API types when you need details.
 
 - Getting Started: basic setup and view controls
+- Transitions: chainable builder with single-commit apply
 - Map Object: properties, methods, and options
 - Events: how to subscribe and what payloads look like (including load/resize)
 - Markers: create, move, style, and listen to events

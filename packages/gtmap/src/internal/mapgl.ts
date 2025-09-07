@@ -640,6 +640,16 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			this._zoomCtrl.startEase(dz, rect.width / 2, rect.height / 2, 'center');
 		}
 	}
+
+	public cancelPanAnim() {
+		this._panAnim = null;
+	}
+
+	public cancelZoomAnim() {
+		try {
+			this._zoomCtrl.cancel();
+		} catch {}
+	}
 	// recenter helper removed from public surface; use setCenter/setView via facade
 	destroy() {
 		// Detach observers and listeners first

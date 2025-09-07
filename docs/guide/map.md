@@ -33,12 +33,14 @@ const map = new GTMap(el, {
 
 ## View Controls
 
+Use the Transition Builder:
+
 ```ts
-map.setCenter({ x: 2048, y: 2048 });
-map.setZoom(4.25);
-map.setView({ center: { x: 1024, y: 1024 }, zoom: 2 });
-map.panTo({ x: 5000, y: 3000 }, 600);
-map.flyTo({ center: { x: 4096, y: 4096 }, zoom: 4, durationMs: 800 });
+// Instant apply
+await map.transition().center({ x: 2048, y: 2048 }).zoom(4.25).apply();
+
+// Animated apply
+await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { durationMs: 800 } });
 ```
 
 ## Tile Source
@@ -95,28 +97,14 @@ map.clearVectors();
 
 ## Method Parameters
 
-View
+View (Transition Builder)
 
-- `setCenter(p: Point): this`
-  - `p.x: number` — center X in world pixels
-  - `p.y: number` — center Y in world pixels
-- `setZoom(z: number): this`
-  - `z: number` — zoom level (fractional allowed; clamped to `minZoom..maxZoom`)
-- `setView(view: { center: Point; zoom: number }): this`
-  - `view.center: Point` — new center in world pixels
-  - `view.zoom: number` — new zoom level
-
-Navigation
-
-- `panTo(center: Point, durationMs = 500): this`
-  - `center.x: number` — target X in world pixels
-  - `center.y: number` — target Y in world pixels
-  - `durationMs?: number` — animation duration in milliseconds (default `500`)
-- `flyTo(opts: { center?: Point; zoom?: number; durationMs?: number }): this`
-  - `opts.center?.x: number` — optional target X in world pixels
-  - `opts.center?.y: number` — optional target Y in world pixels
-  - `opts.zoom?: number` — optional target zoom
-  - `opts.durationMs?: number` — animation duration in milliseconds
+- `transition(): ViewTransition`
+  - `center(p: Point): this` — set target center in world pixels
+  - `zoom(z: number): this` — set target zoom (fractional allowed; clamped on apply)
+  - `offset(dx: number, dy: number): this` — offset applied at commit
+  - `apply(opts?: { animate?: { durationMs: number; easing?: Easing; delayMs?: number; interrupt?: 'cancel' | 'join' | 'enqueue' } }): Promise<{ status: 'instant' | 'animated' | 'canceled' }>`
+  - `cancel(): void` — cancel in‑flight transition (promise resolves `{ status: 'canceled' }`)
 
 Tiles
 

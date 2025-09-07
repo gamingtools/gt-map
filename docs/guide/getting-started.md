@@ -18,12 +18,17 @@ const map = new GTMap(container, {
 
 ## View controls
 
+Use the transition builder for instant or animated changes:
+
 ```ts
-map.setCenter({ x: 4200, y: 4100 });
-map.setZoom(3);
-map.setView({ center: { x: 2048, y: 2048 }, zoom: 2 });
-map.panTo({ x: 5000, y: 3000 }, 600);
-map.flyTo({ center: { x: 4096, y: 4096 }, zoom: 4, durationMs: 800 });
+// Instant
+await map.transition().center({ x: 4200, y: 4100 }).zoom(3).apply();
+
+// Animated recenter
+await map.transition().center({ x: 5000, y: 3000 }).apply({ animate: { durationMs: 600 } });
+
+// Animated zoom + center
+await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { durationMs: 800 } });
 ```
 
 ## Tile source

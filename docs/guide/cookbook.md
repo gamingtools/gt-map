@@ -4,7 +4,9 @@
 
 ```ts
 const m = map.addMarker(1200, 900);
-m.events.on('click').each(() => map.panTo({ x: m.x, y: m.y }, 400));
+m.events.on('click').each(async () => {
+  await map.transition().center({ x: m.x, y: m.y }).apply({ animate: { durationMs: 400 } });
+});
 ```
 
 ## Wheel speed slider

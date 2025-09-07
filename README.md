@@ -30,7 +30,7 @@ Files
 Public API
 
 - Use the `GTMap` class via `import { GTMap } from '@gtmap'`.
-  - Create an instance with a container element and options, then call methods like `setTileSource`, `setView`, `setCenter`, `setZoom`.
+  - Create an instance with a container element and options. Configure tiles with `setTileSource`. Change the view using the Transition Builder: `map.transition().center(...).zoom(...).apply({ animate? })`.
   - Add content with `addIcon`, `addMarker`/`addMarkers`, and `addVectors`.
   - Events are exposed via `map.events` (typed `EventBus`).
   - Note: In the demo apps, `@gtmap` is a Vite alias to the local package source.

@@ -335,3 +335,23 @@ export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
 export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number) => number;
 
 // Public event surface: exported via api/events/public
+
+// Transitions (builder) types
+export type Easing = (t: number) => number;
+
+export interface AnimateOptions {
+  durationMs: number;
+  easing?: Easing;
+  delayMs?: number;
+  interrupt?: 'cancel' | 'join' | 'enqueue';
+}
+
+export interface ApplyOptions {
+  animate?: AnimateOptions;
+}
+
+export type ApplyStatus = 'instant' | 'animated' | 'canceled';
+
+export interface ApplyResult {
+  status: ApplyStatus;
+}

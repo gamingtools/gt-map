@@ -56,14 +56,17 @@ const src: TileSourceOptions = {
 map.setTileSource(src);
 ```
 
-### View Controls
+### View Controls (Transition Builder)
 
 ```ts
-map.setCenter({ x: 4200, y: 4100 });
-map.setZoom(3);
-map.setView({ center: { x: 2048, y: 2048 }, zoom: 2 });
-map.panTo({ x: 5000, y: 3000 }, 600);
-map.flyTo({ center: { x: 4096, y: 4096 }, zoom: 4, durationMs: 800 });
+// Instant change
+await map.transition().center({ x: 4200, y: 4100 }).zoom(3).apply();
+
+// Animated recenter
+await map.transition().center({ x: 5000, y: 3000 }).apply({ animate: { durationMs: 600 } });
+
+// Animated zoom + center
+await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { durationMs: 800 } });
 ```
 
 ### Rendering & Behavior
@@ -271,7 +274,9 @@ Recenter on marker click
 
 ```ts
 const m = map.addMarker(1200, 900);
-m.events.on('click').each(() => map.panTo({ x: m.x, y: m.y }, 400));
+m.events.on('click').each(async () => {
+  await map.transition().center({ x: m.x, y: m.y }).apply({ animate: { durationMs: 400 } });
+});
 ```
 
 Wheel speed slider

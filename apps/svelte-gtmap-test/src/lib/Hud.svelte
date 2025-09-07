@@ -112,9 +112,9 @@
 		} catch {}
 	});
 
-    function recenter() {
+    async function recenter() {
         if (!map || !home) return;
-        map.setView({ center: { x: home.lng, y: home.lat }, zoom: map.getZoom() });
+        await map.transition().center({ x: home.lng, y: home.lat }).apply();
     }
 	function onMarkersChange() {
 		const n = Math.max(0, Math.min(999_999, Math.floor(markersLocal)));
