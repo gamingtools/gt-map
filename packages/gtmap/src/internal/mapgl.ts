@@ -1153,20 +1153,8 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                         g.translate(widthCSS * 0.5, heightCSS * 0.5);
                         g.rotate(ang);
                         g.translate(-widthCSS * 0.5, -heightCSS * 0.5);
-                        // Clip to map bounds in CSS pixels for lines pass
-                        const imgMax = imageMaxZ;
-                        const sLvl = Coords.sFor(imgMax, baseZ);
-                        const levelW = this.mapSize.width / sLvl;
-                        const levelH = this.mapSize.height / sLvl;
-                        const mapLeftCSS = -tlWorld.x * scale;
-                        const mapTopCSS = -tlWorld.y * scale;
-                        const mapRightCSS = (levelW - tlWorld.x) * scale;
-                        const mapBottomCSS = (levelH - tlWorld.y) * scale;
-                        g.beginPath();
-                        g.rect(mapLeftCSS, mapTopCSS, mapRightCSS - mapLeftCSS, mapBottomCSS - mapTopCSS);
-                        g.clip();
                     } catch {}
-                    // Draw grid lines only under clip
+                    // Draw grid lines across full canvas (no clip) so lines extend beyond tiles
                     drawGrid(g, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal, true, true, false);
                     try { g.restore(); } catch {}
 
