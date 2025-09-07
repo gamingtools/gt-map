@@ -132,12 +132,17 @@ export default class InputController {
 				}
 			}
 			if (!this.dragging) return;
-			const dx = e.clientX - this.lastX,
-				dy = e.clientY - this.lastY;
-			this.lastX = e.clientX;
-			this.lastY = e.clientY;
-			// screen-locked pan while dragging: shift center by dx/scale
-			let newCenter = { x: centerWorld.x - dx / scale, y: centerWorld.y - dy / scale };
+                const dx = e.clientX - this.lastX,
+                        dy = e.clientY - this.lastY;
+                this.lastX = e.clientX;
+                this.lastY = e.clientY;
+                // screen-locked pan while dragging: account for map rotation
+                const rotDeg = typeof deps.getRotationDeg === 'function' ? (deps.getRotationDeg() || 0) : 0;
+                const rot = (rotDeg * Math.PI) / 180;
+                const c = Math.cos(-rot), s = Math.sin(-rot);
+                const dxWorldPx = dx * c - dy * s;
+                const dyWorldPx = dx * s + dy * c;
+                let newCenter = { x: centerWorld.x - dxWorldPx / scale, y: centerWorld.y - dyWorldPx / scale };
 
 			newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS, true);
 			const nx = newCenter.x * s0;

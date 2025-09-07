@@ -1007,7 +1007,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		this._needsRender = true;
 	}
 	private _initEvents() {
-		this._inputDeps = {
+        this._inputDeps = {
 			getContainer: () => this.container,
 			getCanvas: () => this.canvas,
 			getMaxZoom: () => this.maxZoom,
@@ -1036,12 +1036,13 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			getInertia: () => this.inertia,
 			getInertiaDecel: () => this.inertiaDeceleration,
 			getInertiaMaxSpeed: () => this.inertiaMaxSpeed,
-			getEaseLinearity: () => this.easeLinearity,
+            getEaseLinearity: () => this.easeLinearity,
             startPanBy: (dxPx: number, dyPx: number, durSec: number, _ease?: number) => this._startPanBy(dxPx, dyPx, durSec, undefined),
             cancelPanAnim: () => {
                 this._panCtrl.cancel();
             },
-		};
+            getRotationDeg: () => this._viewRotationDeg || 0,
+        };
         this._input = new InputController(this._inputDeps);
         this._input.attach();
         // Wire marker hover/click and mouse derivations via EventBridge
