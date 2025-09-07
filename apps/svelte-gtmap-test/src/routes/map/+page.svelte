@@ -69,9 +69,9 @@
 				y,
 				iconHandle ? { icon: iconHandle, data: { id: i } } : undefined
 			);
-			// marker.events.on('click').each((e) => {
-			// 	console.log('Marker clicked:', e);
-			// });
+			marker.events.on('click').each((e) => {
+				console.log('Marker clicked:', e);
+			});
 			// marker.events.on('pointerenter').each((e) => {
 			// 	console.log('Marker pointerenter:', e);
 			// });

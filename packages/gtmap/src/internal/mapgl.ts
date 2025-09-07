@@ -1356,37 +1356,48 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			} catch {}
 		}
 	}
-	private _hitTestMarker(px: number, py: number, requireAlpha = false) {
-		void requireAlpha;
-		if (!this._icons) return null;
-		const rect = this.container.getBoundingClientRect();
-		const widthCSS = rect.width;
-		const heightCSS = rect.height;
+    private _hitTestMarker(px: number, py: number, requireAlpha = false) {
+        void requireAlpha;
+        if (!this._icons) return null;
+        const rect = this.container.getBoundingClientRect();
+        const widthCSS = rect.width;
+        const heightCSS = rect.height;
+        // Inverse-rotate pointer into unrotated screen space around viewport center
+        const bearing = (this._viewRotationDeg || 0) * Math.PI / 180;
+        let px0 = px, py0 = py;
+        if (bearing !== 0) {
+            const cx = widthCSS * 0.5, cy = heightCSS * 0.5;
+            const dx = px - cx, dy = py - cy;
+            const s = Math.sin(-bearing), c = Math.cos(-bearing);
+            px0 = cx + dx * c - dy * s;
+            py0 = cy + dx * s + dy * c;
+        }
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-		for (let i = info.length - 1; i >= 0; i--) {
-			const it = info[i];
-			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
-			const left = css.x - it.anchor.ax;
-			const top = css.y - it.anchor.ay;
-			if (px >= left && px <= left + it.w && py >= top && py <= top + it.h) {
-				// Optional alpha-mask sampling for pixel-accurate hits
+        for (let i = info.length - 1; i >= 0; i--) {
+            const it = info[i];
+            const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+            const left = css.x - it.anchor.ax;
+            const top = css.y - it.anchor.ay;
+            if (px0 >= left && px0 <= left + it.w && py0 >= top && py0 <= top + it.h) {
+                // Optional alpha-mask sampling for pixel-accurate hits
                 const mask = this._icons.getMaskInfo?.(it.type) || null;
-				if (mask) {
-					// Map pointer to icon local coords (account for rotation around anchor)
-					const ax = it.anchor.ax;
-					const ay = it.anchor.ay;
-					const lx = px - left;
-					const ly = py - top;
-					const cx = lx - ax;
-					const cy = ly - ay;
-					const theta = ((it.rotation || 0) * Math.PI) / 180;
-					const c = Math.cos(-theta),
-						s = Math.sin(-theta);
-					const rx = cx * c - cy * s + ax;
-					const ry = cx * s + cy * c + ay;
-					if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
+                if (mask) {
+                    // Map pointer to icon local coords (account for rotation around anchor)
+                    const ax = it.anchor.ax;
+                    const ay = it.anchor.ay;
+                    const lx = px0 - left;
+                    const ly = py0 - top;
+                    const cx = lx - ax;
+                    const cy = ly - ay;
+                    // Local rotation: use marker rotation only — view rotation already undone in pointer
+                    const theta = ((it.rotation || 0) * Math.PI) / 180;
+                    const c = Math.cos(-theta),
+                        s = Math.sin(-theta);
+                    const rx = cx * c - cy * s + ax;
+                    const ry = cx * s + cy * c + ay;
+                    if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
 					const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
 					const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
 					const alpha = mask.data[my * mask.w + mx] | 0;
@@ -1399,10 +1410,10 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		return null;
 	}
 
-	private _computeMarkerHits(
-		px: number,
-		py: number,
-	): Array<{
+    private _computeMarkerHits(
+        px: number,
+        py: number,
+    ): Array<{
 		id: string;
 		idx: number;
 		world: { x: number; y: number };
@@ -1419,32 +1430,42 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 		}> = [];
 		if (!this._icons) return out;
-		const rect = this.container.getBoundingClientRect();
-		const widthCSS = rect.width;
-		const heightCSS = rect.height;
+        const rect = this.container.getBoundingClientRect();
+        const widthCSS = rect.width;
+        const heightCSS = rect.height;
+        // Inverse-rotate pointer into unrotated screen space
+        const bearing = (this._viewRotationDeg || 0) * Math.PI / 180;
+        let px0 = px, py0 = py;
+        if (bearing !== 0) {
+            const cx = widthCSS * 0.5, cy = heightCSS * 0.5;
+            const dx = px - cx, dy = py - cy;
+            const s = Math.sin(-bearing), c = Math.cos(-bearing);
+            px0 = cx + dx * c - dy * s;
+            py0 = cy + dx * s + dy * c;
+        }
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-		for (let i = info.length - 1; i >= 0; i--) {
-			const it = info[i];
-			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
-			const left = css.x - it.anchor.ax;
-			const top = css.y - it.anchor.ay;
-			if (px < left || px > left + it.w || py < top || py > top + it.h) continue;
-                const mask = this._icons.getMaskInfo?.(it.type) || null;
-			if (mask) {
-				const ax = it.anchor.ax;
-				const ay = it.anchor.ay;
-				const lx = px - left;
-				const ly = py - top;
-				const cx = lx - ax;
-				const cy = ly - ay;
-				const theta = ((it.rotation || 0) * Math.PI) / 180;
-				const c = Math.cos(-theta),
-					s = Math.sin(-theta);
-				const rx = cx * c - cy * s + ax;
-				const ry = cx * s + cy * c + ay;
-				if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
+        for (let i = info.length - 1; i >= 0; i--) {
+            const it = info[i];
+            const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+            const left = css.x - it.anchor.ax;
+            const top = css.y - it.anchor.ay;
+            if (px0 < left || px0 > left + it.w || py0 < top || py0 > top + it.h) continue;
+            const mask = this._icons.getMaskInfo?.(it.type) || null;
+            if (mask) {
+                const ax = it.anchor.ax;
+                const ay = it.anchor.ay;
+                const lx = px0 - left;
+                const ly = py0 - top;
+                const cx = lx - ax;
+                const cy = ly - ay;
+                const theta = ((it.rotation || 0) * Math.PI) / 180;
+                const c = Math.cos(-theta),
+                    s = Math.sin(-theta);
+                const rx = cx * c - cy * s + ax;
+                const ry = cx * s + cy * c + ay;
+                if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
 				const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
 				const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
 				const alpha = mask.data[my * mask.w + mx] | 0;
