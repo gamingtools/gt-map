@@ -17,7 +17,7 @@
   - [url](#url)
   - [wrapX?](#wrapx)
 
-Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L29)
+Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L29)
 
 ## Properties
 
@@ -25,7 +25,7 @@ Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/05d69e9
 
 > `optional` **clearCache**: `boolean`
 
-Defined in: [api/types.ts:43](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L43)
+Defined in: [api/types.ts:43](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L43)
 
 Clear GPU/cache when switching sources.
 
@@ -35,7 +35,7 @@ Clear GPU/cache when switching sources.
 
 > **mapSize**: `object`
 
-Defined in: [api/types.ts:39](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L39)
+Defined in: [api/types.ts:39](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L39)
 
 Base image size at native resolution.
 
@@ -53,7 +53,7 @@ Base image size at native resolution.
 
 > **sourceMaxZoom**: `number`
 
-Defined in: [api/types.ts:37](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L37)
+Defined in: [api/types.ts:37](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L37)
 
 Max level provided by the source (top of the image pyramid).
 
@@ -63,7 +63,7 @@ Max level provided by the source (top of the image pyramid).
 
 > **sourceMinZoom**: `number`
 
-Defined in: [api/types.ts:35](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L35)
+Defined in: [api/types.ts:35](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L35)
 
 Min level provided by the source (usually 0).
 
@@ -73,7 +73,7 @@ Min level provided by the source (usually 0).
 
 > **tileSize**: `number`
 
-Defined in: [api/types.ts:33](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L33)
+Defined in: [api/types.ts:33](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L33)
 
 Tile size in pixels (e.g., 256).
 
@@ -83,7 +83,7 @@ Tile size in pixels (e.g., 256).
 
 > **url**: `string`
 
-Defined in: [api/types.ts:31](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L31)
+Defined in: [api/types.ts:31](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L31)
 
 URL template for tile loading. Use {z}, {x}, {y} placeholders.
 
@@ -93,6 +93,6 @@ URL template for tile loading. Use {z}, {x}, {y} placeholders.
 
 > `optional` **wrapX**: `boolean`
 
-Defined in: [api/types.ts:41](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L41)
+Defined in: [api/types.ts:41](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L41)
 
 Enable horizontal wrap for infinite panning.

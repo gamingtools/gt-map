@@ -2,7 +2,7 @@
 
 High‑performance, pixel‑CRS WebGL map renderer with a small, typed API. Optimized for image/scan maps (no geodetic lat‑lng). Ships a thin facade (`GTMap`) over a fast WebGL core: tiles, input, rendering, and caches.
 
-Status: early 0.x — public API may evolve. No heavy runtime deps; pure TypeScript and Web APIs.
+Status: early-stage, pre-release — everything is subject to change before the initial release (including public APIs and behavior). No heavy runtime deps; pure TypeScript and Web APIs.
 
 ## Install
 
@@ -30,11 +30,16 @@ import { GTMap, type MapOptions } from '@gaming.tools/gtmap';
 const container = document.getElementById('map') as HTMLDivElement;
 
 const map = new GTMap(container, {
-  tileUrl: 'https://example.com/tiles/{z}/{x}_{y}.webp',
-  tileSize: 256,
+  tileSource: {
+    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+    tileSize: 256,
+    mapSize: { width: 8192, height: 8192 },
+    wrapX: false,
+    sourceMinZoom: 0,
+    sourceMaxZoom: 5,
+  },
   minZoom: 0,
   maxZoom: 5,
-  mapSize: { width: 8192, height: 8192 },
   center: { x: 4096, y: 4096 },
   zoom: 3,
   backgroundColor: '#0a0a0a'

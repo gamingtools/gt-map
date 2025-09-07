@@ -25,9 +25,9 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 
 ### Package Structure
 - **packages/gtmap**: Core WebGL map library
-  - Public API: `GTMap` class in `src/api/Map.ts`
+  - Public API: `GTMap` class in `src/api/map.ts`
   - Internal implementation: `src/internal/mapgl.ts` and supporting modules
-  - Exports via `src/index.ts`: GTMap, EventBus, EventStream types
+  - Exports via `src/index.ts`: GTMap, easing helpers, and typed event/option payloads
   
 - **apps/svelte-gtmap-test**: Main demo app using SvelteKit
   - Map demo at `/map` route (`src/routes/map/+page.svelte`)
@@ -39,7 +39,7 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 
 2. **GTMap API**: Main public interface with methods:
    - View control: Transition Builder `map.transition().center(...).zoom(...).apply({ animate? })`
-  - Tile source: via constructor (`tileUrl`, `tileSize`, `mapSize`, `wrapX`)
+   - Tile source: via constructor `tileSource: { url, tileSize, mapSize, wrapX, sourceMinZoom, sourceMaxZoom }`
    - Content: `addIcon()`, `addMarker()`, `addVectors()`
    - Lifecycle: `setActive()` for suspend/resume with optional GL release
 
@@ -54,7 +54,7 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 5. **Tile System**:
    - Default: Hagga Basin tiles at `https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp`
    - Zoom levels 0-5, 256px tiles
-  - Configurable via constructor options (`tileUrl`, `tileSize`, `mapSize`, `wrapX`)
+   - Configurable via constructor `tileSource` (see above)
 
 ## Code Style
 

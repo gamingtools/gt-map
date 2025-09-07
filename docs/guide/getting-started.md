@@ -39,14 +39,18 @@ await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { d
 
 ## Tile source
 
-Provide tile configuration in the constructor via `MapOptions`:
+Provide tile configuration in the constructor via `MapOptions.tileSource`:
 
 ```ts
 const map = new GTMap(container, {
-  tileUrl: 'https://tiles.example.com/{z}/{x}_{y}.webp',
-  tileSize: 256,
-  mapSize: { width: 8192, height: 8192 },
-  wrapX: false,
+  tileSource: {
+    url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
+    tileSize: 256,
+    mapSize: { width: 8192, height: 8192 },
+    wrapX: false,
+    sourceMinZoom: 0,
+    sourceMaxZoom: 5,
+  },
   minZoom: 0,
   maxZoom: 5,
   center: { x: 4096, y: 4096 },

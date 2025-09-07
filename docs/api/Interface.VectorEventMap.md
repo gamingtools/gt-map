@@ -11,7 +11,7 @@
 - [Properties](#properties)
   - [remove](#remove)
 
-Defined in: [api/events/maps.ts:73](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/events/maps.ts#L73)
+Defined in: [api/events/maps.ts:73](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/events/maps.ts#L73)
 
 Events emitted by a Vector instance.
 
@@ -21,7 +21,7 @@ Events emitted by a Vector instance.
 
 > **remove**: `object`
 
-Defined in: [api/events/maps.ts:75](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/events/maps.ts#L75)
+Defined in: [api/events/maps.ts:75](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/events/maps.ts#L75)
 
 Vector was removed.
 

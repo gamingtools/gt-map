@@ -210,7 +210,7 @@ See the Events guide for payload shapes and examples.
 
 ## Options Reference (constructor)
 
-- Tiles: `tileUrl`, `tileSize`, `mapSize`, `minZoom`, `maxZoom`, `wrapX`
+- Tiles: `tileSource: { url, tileSize, mapSize, wrapX, sourceMinZoom, sourceMaxZoom }`
 - View: `center`, `zoom`
 - Sizing & perf: `autoResize`, `fpsCap`, `screenCache` (internal cache control)
 - Background: `backgroundColor` — either `'transparent'` or a solid color; alpha ignored

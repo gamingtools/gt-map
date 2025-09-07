@@ -33,6 +33,14 @@ map.events.on('mousemove').each((e) => {
     // Hovering over one or more markers
   }
 });
+
+// Map-level marker events (device-agnostic)
+map.events.on('markerenter').each((e) => {/* top-most hover enter */});
+map.events.on('markerleave').each((e) => {/* hover leave */});
+map.events.on('markerclick').each((e) => {/* click on marker */});
+map.events.on('markerdown').each((e) => {/* pointer down on marker */});
+map.events.on('markerup').each((e) => {/* pointer up on marker */});
+map.events.on('markerlongpress').each((e) => {/* ~500ms hold */});
 ```
 
 ### Lifecycle
@@ -77,6 +85,12 @@ Map events
 | `mouseup`    | `x`, `y`, `world`, `view`, `originalEvent`     | Mouse only |
 | `click`      | `x`, `y`, `world`, `view`, `originalEvent`     | Emitted on mouse click (derived from pointer) |
 | `frame`      | `now`, `stats?`                                | Per‑frame hook for HUD/diagnostics |
+| `markerenter`| marker event payload                           | Top‑most hover enter (map-level) |
+| `markerleave`| marker event payload                           | Hover leave (map-level) |
+| `markerclick`| marker event payload                           | Click on marker (map-level) |
+| `markerdown` | marker event payload                           | Pointer down on marker (map-level) |
+| `markerup`   | marker event payload                           | Pointer up on marker (map-level) |
+| `markerlongpress` | marker event payload                      | ~500ms hold (map-level) |
 
 Marker events (per marker via `m.events`)
 
