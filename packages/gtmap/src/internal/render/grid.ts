@@ -30,12 +30,17 @@ export function drawGrid(
 	dpr: number,
 	maxZoom: number,
 	tileSize: number,
-	palette?: GridPalette,
+    palette?: GridPalette,
+    skipClearAndScale?: boolean,
 ): void {
-	if (!ctx || !canvas) return;
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.save();
-	ctx.scale(dpr || 1, dpr || 1);
+		if (!ctx || !canvas) return;
+        if (!skipClearAndScale) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.scale(dpr || 1, dpr || 1);
+        } else {
+            ctx.save();
+        }
 	const spacingWorld = chooseGridSpacing(scale, tileSize);
 	const base = tileSize;
 	const zAbs = Math.floor(maxZoom);
@@ -87,5 +92,5 @@ export function drawGrid(
 			ctx.fillText(label, tx, ty);
 		}
 	}
-	ctx.restore();
+        ctx.restore();
 }

@@ -1135,20 +1135,39 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                     tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
                 }
                 const pal = this._gridPalette();
-                // Rotate grid canvas around viewport center to match map rotation
-                if (this._gridCtx) {
-                    this._gridCtx.save();
+                const g = this._gridCtx;
+                if (g) {
+                    // Pre-clear at identity to avoid transformed clearRect artifacts
+                    g.save();
                     try {
-                        this._gridCtx.scale(this._dpr || 1, this._dpr || 1);
-                        this._gridCtx.translate(widthCSS * 0.5, heightCSS * 0.5);
-                        this._gridCtx.rotate(ang);
-                        this._gridCtx.translate(-widthCSS * 0.5, -heightCSS * 0.5);
+                        g.setTransform(1, 0, 0, 1, 0, 0);
+                        g.clearRect(0, 0, g.canvas.width, g.canvas.height);
                     } catch {}
-                    // Undo the extra scale before drawGrid since drawGrid scales by dpr again
-                    try { this._gridCtx.scale(1 / (this._dpr || 1), 1 / (this._dpr || 1)); } catch {}
+                    g.restore();
+
+                    // Apply rotation and clip to finite map extent
+                    g.save();
+                    try {
+                        g.translate(widthCSS * 0.5, heightCSS * 0.5);
+                        g.rotate(ang);
+                        g.translate(-widthCSS * 0.5, -heightCSS * 0.5);
+                        // Clip to map bounds in CSS pixels
+                        const imgMax = imageMaxZ;
+                        const sLvl = Coords.sFor(imgMax, baseZ);
+                        const levelW = this.mapSize.width / sLvl;
+                        const levelH = this.mapSize.height / sLvl;
+                        const mapLeftCSS = -tlWorld.x * scale;
+                        const mapTopCSS = -tlWorld.y * scale;
+                        const mapRightCSS = (levelW - tlWorld.x) * scale;
+                        const mapBottomCSS = (levelH - tlWorld.y) * scale;
+                        g.beginPath();
+                        g.rect(mapLeftCSS, mapTopCSS, mapRightCSS - mapLeftCSS, mapBottomCSS - mapTopCSS);
+                        g.clip();
+                    } catch {}
+                    // Draw grid without additional clear/scale (we are in CSS units here)
+                    drawGrid(g, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal, true);
+                    try { g.restore(); } catch {}
                 }
-                drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal);
-                if (this._gridCtx) try { this._gridCtx.restore(); } catch {}
             }
 		// Draw vector overlay (if any)
 		try {
