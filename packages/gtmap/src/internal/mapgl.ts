@@ -564,9 +564,28 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		} catch {}
 		this._needsRender = true;
 	}
-	setMarkers(markers: MarkerInput[]) {
-		if (!this._icons) return;
-		this._icons.setMarkers(markers);
+    private _markerIds: Set<string> = new Set<string>();
+    setMarkers(markers: MarkerInput[]) {
+        if (!this._icons) return;
+        // Detect removals vs. previous set to emit a leave for hovered marker when removed
+        try {
+            const nextIds = new Set<string>(markers.map((m) => m.id));
+            if (this._lastHover && this._lastHover.id && !nextIds.has(this._lastHover.id)) {
+                // Hovered marker no longer exists: emit leave and clear
+                const prev = this._lastHover;
+                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+                this._emitMarker('leave', {
+                    now,
+                    view: this._viewPublic(),
+                    screen: { x: -1, y: -1 },
+                    marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+                    icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+                });
+                this._lastHover = null;
+            }
+            this._markerIds = nextIds;
+        } catch {}
+        this._icons.setMarkers(markers);
 		try {
 			if (DEBUG) console.debug('[map.setMarkers]', { count: markers.length });
 		} catch {}
@@ -1086,7 +1105,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 							now,
 							view: this._viewPublic(),
 							screen: { x: e.x, y: e.y },
-							marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+							marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
 							icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
 						});
 						this._lastHover = null;
@@ -1095,7 +1114,19 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				}
 				const hit = this._hitTestMarker(e.x, e.y, false);
 				if (hit) {
-					if (!this._lastHover || this._lastHover.idx !== hit.idx || this._lastHover.type !== hit.type) {
+					// If the top-most hit changed, emit leave for previous then enter for new
+					if (!this._lastHover || this._lastHover.id !== hit.id) {
+						if (this._lastHover) {
+							const prev = this._lastHover;
+							this._emitMarker('leave', {
+								now,
+								view: this._viewPublic(),
+								screen: { x: e.x, y: e.y },
+								marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+								icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+								originalEvent: e.originalEvent as any,
+							});
+						}
 						this._emitMarker('enter', {
 							now,
 							view: this._viewPublic(),
@@ -1112,7 +1143,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 							},
 							originalEvent: e.originalEvent as any,
 						});
-						this._lastHover = { idx: hit.idx, type: hit.type };
+						this._lastHover = { idx: hit.idx, type: hit.type, id: hit.id };
 					}
 				} else if (this._lastHover) {
 					const prev = this._lastHover;
@@ -1120,7 +1151,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 						now,
 						view: this._viewPublic(),
 						screen: { x: e.x, y: e.y },
-						marker: { id: '', index: -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+						marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
 						icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
 						originalEvent: e.originalEvent as any,
 					});
@@ -1556,7 +1587,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	}
 
 	// Simple hover/click hit testing on markers (AABB, ignores rotation)
-	private _lastHover: { type: string; idx: number } | null = null;
+	private _lastHover: { type: string; idx: number; id?: string } | null = null;
 	private _downAt: { x: number; y: number; t: number; tol: number } | null = null;
 	private _movedSinceDown = false;
 	private _markerData = new Map<string, any | null | undefined>();

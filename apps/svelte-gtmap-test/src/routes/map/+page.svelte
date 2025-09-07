@@ -44,6 +44,12 @@
 			marker.events.on('click').each((e) => {
 				console.log('Marker clicked:', e);
 			});
+			marker.events.on('pointerenter').each((e) => {
+				console.log('Marker pointerenter:', e);
+			});
+			marker.events.on('pointerleave').each((e) => {
+				console.log('Marker pointerleave:', e);
+			});
 		}
 	}
 

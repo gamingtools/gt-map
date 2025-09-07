@@ -171,6 +171,20 @@ export class GTMap {
 				const pm = toPointerMeta(e) as any;
 				if (mk && pm && pm.device === 'touch') mk.emitFromMap('tap', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: pm });
 			});
+
+		// Facade-level safety: emit pointerleave when markers are removed or hidden
+		this.markers.events.on('entityremove').each(({ entity }) => {
+			try {
+				entity.emitFromMap('pointerleave', { x: -1, y: -1, marker: entity.toData(), pointer: undefined as any });
+			} catch {}
+		});
+		this.markers.events.on('visibilitychange').each(({ visible }) => {
+			if (!visible) {
+				for (const mk of this.markers.getAll()) {
+					try { mk.emitFromMap('pointerleave', { x: -1, y: -1, marker: mk.toData(), pointer: undefined as any }); } catch {}
+				}
+			}
+		});
 	}
 
 	// View controls
