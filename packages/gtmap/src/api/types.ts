@@ -1,5 +1,10 @@
-// Comprehensive type definitions for GTMap
-// This file contains all public-facing types and interfaces
+/**
+ * Comprehensive type definitions for GTMap.
+ *
+ * @remarks
+ * This file contains all public‑facing types and interfaces for consumers of the library.
+ * Prefer these types over duplicating shapes in app code.
+ */
 
 // Core geometric types
 export type Point = { x: number; y: number };
@@ -182,28 +187,49 @@ export interface BaseEvent {
 
 // Event map for type-safe event handling
 export interface EventMap {
-	[k: string]: unknown;
+	/** Fired once after the first frame is scheduled. */
 	load: LoadEventData;
+	/** Fired after a debounced resize completes with final size + DPR. */
 	resize: ResizeEventData;
+	/** Continuous movement (center changed). */
 	move: MoveEventData;
+	/** Movement ended (center settled). */
 	moveend: MoveEventData;
+	/** Continuous zoom changes. */
 	zoom: ZoomEventData;
+	/** Zoom ended (zoom settled). */
 	zoomend: ZoomEventData;
+	/** Pointer pressed on the map. */
 	pointerdown: PointerEventData;
+	/** Pointer moved over the map. */
 	pointermove: PointerEventData;
+	/** Pointer released on the map. */
 	pointerup: PointerEventData;
+	/** Per‑frame hook with optional stats (HUD/diagnostics). */
 	frame: FrameEventData;
+	/** Marker hover enter (top‑most). */
 	markerenter: MarkerEventData;
+	/** Marker hover leave. */
 	markerleave: MarkerEventData;
+	/** Marker click (device‑agnostic). */
 	markerclick: MarkerEventData;
+	/** Marker pointer down. */
 	markerdown: MarkerEventData;
+	/** Marker pointer up. */
 	markerup: MarkerEventData;
+	/** Marker long‑press (~500ms). */
 	markerlongpress: MarkerEventData;
+	/** Mouse down (derived from pointer). */
 	mousedown: MouseEventData;
+	/** Mouse move (derived from pointer); may include `markers?` hover hits. */
 	mousemove: MouseEventData;
+	/** Mouse up (derived from pointer). */
 	mouseup: MouseEventData;
+	/** Mouse click (derived from pointer). */
 	click: MouseEventData;
+	/** Double‑click (derived). */
 	dblclick: MouseEventData;
+	/** Context menu (derived). */
 	contextmenu: MouseEventData;
 }
 
@@ -337,21 +363,52 @@ export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number)
 // Public event surface: exported via api/events/public
 
 // Transitions (builder) types
+/**
+ * Easing function type.
+ *
+ * @public
+ * @param t - Normalized time in the range [0, 1]
+ * @returns Normalized progress in the range [0, 1]
+ */
 export type Easing = (t: number) => number;
 
+/**
+ * Options for animating a transition.
+ *
+ * @public
+ */
 export interface AnimateOptions {
+  /** Total animation time in milliseconds. */
   durationMs: number;
+  /** Optional easing function; defaults to a built‑in ease curve. */
   easing?: Easing;
+  /** Optional delay before starting, in milliseconds. */
   delayMs?: number;
+  /**
+   * Policy when another transition targets the same object.
+   *
+   * - `cancel` (default): stop the previous transition
+   * - `join`: retarget the current transition to the new end state
+   * - `enqueue`: start after the current one finishes
+   */
   interrupt?: 'cancel' | 'join' | 'enqueue';
 }
 
+/**
+ * Options for committing a transition.
+ *
+ * @public
+ */
 export interface ApplyOptions {
+  /** Optional animation parameters; omit for an instant apply. */
   animate?: AnimateOptions;
 }
 
+/** Status describing how a transition completed. */
 export type ApplyStatus = 'instant' | 'animated' | 'canceled';
 
+/** Result returned by {@link ApplyOptions | apply} Promises. */
 export interface ApplyResult {
+  /** Completion status of the transition. */
   status: ApplyStatus;
 }

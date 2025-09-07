@@ -2,6 +2,7 @@ import { TypedEventBus } from '../internal/events/typed-stream';
 import type { PublicEvents } from '../api/events/public';
 import type { LayerEventMap } from '../api/events/maps';
 
+/** Options for creating a {@link Layer}. */
 export interface LayerOptions {
 	id?: string;
 	onChange?: () => void;
@@ -14,13 +15,16 @@ function genLayerId(): string {
 }
 
 /**
- * Layer<T> - a collection of entities with basic lifecycle and visibility.
+ * Layer<T> - a collection of entities with lifecycle and visibility.
  *
- * Emits typed events on entity add/remove, clear, and visibility change.
+ * @public
+ * @remarks
+ * Emits typed events on add/remove/clear/visibility change.
  */
 export class Layer<T extends { id: string; remove(): void }> {
 	readonly id: string;
 	private _eventsBus = new TypedEventBus<LayerEventMap<T>>();
+	/** Read‑only typed events for this layer. */
 	readonly events: PublicEvents<LayerEventMap<T>> = {
 		on: (event) => this._eventsBus.on(event),
 		once: (event) => this._eventsBus.when(event),
@@ -31,8 +35,9 @@ export class Layer<T extends { id: string; remove(): void }> {
 
 	/**
 	 * Create a new layer.
-	 * @param opts.id - Optional stable identifier
-	 * @param opts.onChange - Internal callback for renderer sync
+	 *
+	 * @public
+	 * @param opts - Optional id and internal change hook
 	 * @internal
 	 */
 	constructor(opts: LayerOptions = {}) {

@@ -4,10 +4,17 @@ import type { Point } from '../api/types';
 
 import { EventedEntity } from './base';
 
+/** Vector type discriminator. */
 export type VectorType = 'polyline' | 'polygon' | 'circle';
 
+/** Discriminated union describing vector geometry. */
 export type VectorGeometry = { type: 'polyline'; points: Point[] } | { type: 'polygon'; points: Point[] } | { type: 'circle'; center: Point; radius: number };
 
+/**
+ * Options for creating a {@link Vector}.
+ *
+ * @public
+ */
 export interface VectorOptions {
 	// Placeholder for future styling options
 }
@@ -21,7 +28,9 @@ function genVectorId(): string {
 /**
  * Vector - a simple geometric overlay (polyline, polygon, or circle).
  *
- * Events are minimal for now (remove); interaction events can be added later.
+ * @public
+ * @remarks
+ * Events are minimal for now (`remove`); interaction events can be added later.
  */
 export class Vector extends EventedEntity<VectorEventMap> {
 	readonly id: string;
@@ -30,6 +39,8 @@ export class Vector extends EventedEntity<VectorEventMap> {
 
 	/**
 	 * Create a vector with a geometry.
+	 *
+	 * @public
 	 * @param geometry - Discriminated union of vector shapes
 	 * @param _opts - Reserved for future styling options
 	 * @param onChange - Internal callback for renderer sync
@@ -42,12 +53,20 @@ export class Vector extends EventedEntity<VectorEventMap> {
 		this._onChange = onChange;
 	}
 
+	/** Get current geometry. */
 	get geometry(): VectorGeometry {
 		return this._geometry;
 	}
 
 	/**
 	 * Replace the vector geometry and trigger a renderer sync.
+	 *
+	 * @public
+	 * @example
+	 * ```ts
+	 * // Turn a polygon into a polyline with two points
+	 * v.setGeometry({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] });
+	 * ```
 	 */
 	setGeometry(geometry: VectorGeometry): void {
 		this._geometry = geometry;
@@ -55,11 +74,14 @@ export class Vector extends EventedEntity<VectorEventMap> {
 	}
 
 	/**
-	 * Emit a `remove` event. The owning layer clears it from the collection.
+	 * Emit a `remove` event (the owning layer clears it from the collection).
+	 *
+	 * @public
 	 */
 	remove(): void {
 		this.emit('remove', { vector: { id: this.id, geometry: this._geometry } });
 	}
 
+	/** Public events surface type for this vector. */
 	declare readonly events: PublicEvents<VectorEventMap>;
 }

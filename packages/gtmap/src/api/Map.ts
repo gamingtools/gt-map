@@ -30,11 +30,16 @@ export { Vector } from '../entities/Vector';
 export { Layer } from '../entities/Layer';
 
 /**
- * GTMap - A high-performance WebGL map renderer with pixel-based coordinate system.
+ * GTMap - A high‑performance WebGL map renderer with a pixel‑based coordinate system.
+ *
+ * @public
+ * @remarks
+ * Use this facade to configure tiles, control the view, add content and subscribe to events.
  *
  * @example
- * ```typescript
- * const map = new GTMap(document.getElementById('map'), {
+ * ```ts
+ * // Create a map with an initial tile source and view
+ * const map = new GTMap(document.getElementById('map')!, {
  *   tileUrl: 'https://example.com/tiles/{z}/{x}_{y}.webp',
  *   center: { x: 4096, y: 4096 },
  *   zoom: 3,
@@ -199,25 +204,24 @@ export class GTMap {
 
 	// Tile source
 	/**
-	 * Configures the tile source for the map.
+	 * Configure or replace the tile source.
 	 *
+	 * @public
 	 * @param opts - Tile source configuration
-	 * @param opts.url - URL template with {z}, {x}, {y} placeholders
-	 * @param opts.tileSize - Size of tiles in pixels
-	 * @param opts.sourceMaxZoom - Maximum zoom level available from tile source
-	 * @param opts.mapSize - Total map dimensions at native resolution
-	 * @param opts.wrapX - Enable horizontal wrapping
-	 * @param opts.clearCache - Clear existing tile cache
-	 * @returns This map instance for method chaining
+	 * @returns This map instance for chaining
 	 *
 	 * @example
-	 * ```typescript
-	 * map.setTileSource({
-	 *   url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
-	 *   sourceMaxZoom: 5,
-	 *   clearCache: true
-	 * });
-	 * ```
+ 	 * ```ts
+ 	 * // Replace the tile source with a finite 8k image pyramid (no wrap)
+ 	 * map.setTileSource({
+ 	 *   url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
+ 	 *   tileSize: 256,
+ 	 *   sourceMaxZoom: 5,
+ 	 *   mapSize: { width: 8192, height: 8192 },
+ 	 *   wrapX: false,
+ 	 *   clearCache: true
+ 	 * });
+ 	 * ```
 	 */
 	setTileSource(opts: TileSourceOptions): this {
 		const o: TileSourceOptions = { ...opts };
@@ -228,20 +232,22 @@ export class GTMap {
 
 	// Grid + filtering
 	/**
-	 * Shows or hides the tile grid overlay.
+	 * Show or hide the tile grid overlay.
 	 *
-	 * @param on - True to show grid, false to hide
-	 * @returns This map instance for method chaining
+	 * @public
+	 * @param on - `true` to show, `false` to hide
+	 * @returns This map instance for chaining
 	 */
 	setGridVisible(on: boolean): this {
 		this._impl.setGridVisible?.(on);
 		return this;
 	}
 	/**
-	 * Sets the upscale filtering mode for low-resolution tiles.
+	 * Set the upscale filtering mode for low‑resolution tiles.
 	 *
-	 * @param mode - Filtering mode: 'auto', 'linear', or 'bicubic'
-	 * @returns This map instance for method chaining
+	 * @public
+	 * @param mode - `'auto'` | `'linear'` | `'bicubic'`
+	 * @returns This map instance for chaining
 	 */
 	setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 		this._impl.setUpscaleFilter?.(mode);
@@ -249,32 +255,17 @@ export class GTMap {
 	}
 
 	/**
-	 * Sets a custom function to control icon scaling based on zoom level.
+	 * Set a custom function to control icon scaling vs. zoom.
 	 *
-	 * @param fn - Function that returns a scale multiplier (1.0 = original size)
-	 * @returns This map instance for method chaining
+	 * @public
+	 * @param fn - Returns a scale multiplier, where `1` means screen‑fixed size
+	 * @returns This map instance for chaining
 	 *
 	 * @example
-	 * ```typescript
-	 * // Icons scale with zoom (like real-world objects)
-	 * map.setIconScaleFunction((zoom) => Math.pow(2, zoom - 3));
-	 *
-	 * // Icons stay fixed size on screen (default behavior)
-	 * map.setIconScaleFunction(() => 1);
-	 *
-	 * // Step-based scaling
-	 * map.setIconScaleFunction((zoom) => {
-	 *   if (zoom < 2) return 0.5;
-	 *   if (zoom < 4) return 1;
-	 *   return 1.5;
-	 * });
-	 *
-	 * // Scale proportionally within zoom range
-	 * map.setIconScaleFunction((zoom, minZoom, maxZoom) => {
-	 *   const t = (zoom - minZoom) / (maxZoom - minZoom);
-	 *   return 0.5 + t * 1.5; // Scale from 0.5x to 2x
-	 * });
-	 * ```
+ 	 * ```ts
+ 	 * // Make icons grow/shrink with zoom around Z=3
+ 	 * map.setIconScaleFunction((z) => Math.pow(2, z - 3));
+ 	 * ```
 	 */
 	setIconScaleFunction(fn: IconScaleFunction | null): this {
 		this._impl.setIconScaleFunction?.(fn);
@@ -283,28 +274,27 @@ export class GTMap {
 
 	// Lifecycle
 	/**
-	 * Suspends or resumes the map rendering.
+	 * Suspend or resume the map.
 	 *
-	 * @param on - True to activate, false to suspend
-	 * @param opts - Optional settings
-	 * @param opts.releaseGL - Release WebGL context when suspending (frees GPU memory)
-	 * @returns This map instance for method chaining
-	 *
+	 * @public
+	 * @param on - `true` to activate, `false` to suspend
+	 * @param opts - Optional behavior
+	 * @returns This map instance for chaining
 	 * @example
-	 * ```typescript
-	 * // Suspend map when hidden
-	 * map.setActive(false, { releaseGL: true });
-	 * // Resume when visible again
-	 * map.setActive(true);
-	 * ```
+ 	 * ```ts
+ 	 * // Pause rendering and release VRAM, then resume later
+ 	 * map.setActive(false, { releaseGL: true });
+ 	 * map.setActive(true);
+ 	 * ```
 	 */
 	setActive(on: boolean, opts?: ActiveOptions): this {
 		this._impl.setActive?.(on, opts);
 		return this;
 	}
 	/**
-	 * Destroys the map instance and releases all resources.
-	 * Call this before removing the map from the DOM.
+	 * Destroy the map instance and release all resources.
+	 *
+	 * @public
 	 */
 	destroy(): void {
 		this._impl.destroy?.();
@@ -312,21 +302,12 @@ export class GTMap {
 
 	// Add content (batched internally)
 	/**
-	 * Registers an icon definition for use with markers.
+	 * Register an icon definition for use with markers.
 	 *
-	 * @param def - Icon definition with image path and dimensions
-	 * @param id - Optional identifier for the icon (auto-generated if not provided)
-	 * @returns IconHandle to use when adding markers
-	 *
-	 * @example
-	 * ```typescript
-	 * const icon = map.addIcon({
-	 *   iconPath: '/images/marker.png',
-	 *   width: 24,
-	 *   height: 24
-	 * });
-	 * map.addMarker(100, 200, { icon });
-	 * ```
+	 * @public
+	 * @param def - Icon bitmap metadata and source paths
+	 * @param id - Optional stable id (auto‑generated when omitted)
+	 * @returns Handle used by {@link GTMap.addMarker}
 	 */
 	addIcon(def: IconDef, id?: string): IconHandle {
 		const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
@@ -346,17 +327,11 @@ export class GTMap {
 	/**
 	 * Create and add a marker to the `markers` layer.
 	 *
-	 * @param x - X pixel coordinate
-	 * @param y - Y pixel coordinate
-	 * @param opts.icon - Icon from `addIcon` (defaults to built-in circle)
-	 * @param opts.size - Scale multiplier
-	 * @param opts.rotation - Degrees clockwise
-	 * @param opts.data - Arbitrary user data attached to the marker
-	 * @returns The created `Marker`
-	 *
-	 * @example
-	 * const m = map.addMarker(1024, 1024, { size: 1.25 });
-	 * m.events.on('click').each(({ x, y }) => console.log('marker click', x, y));
+	 * @public
+	 * @param x - World X (pixels)
+	 * @param y - World Y (pixels)
+	 * @param opts - Optional style and user data
+	 * @returns The created {@link Marker}
 	 */
 	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: unknown }): Marker {
 		const mk = new Marker(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
@@ -365,27 +340,11 @@ export class GTMap {
 	}
 	// addMarkers removed in favor of per-entity API
 	/**
-	 * Adds vector shapes (polylines, polygons, circles) to the map.
+	 * Add legacy vector shapes in a single batch.
 	 *
-	 * @param vectors - Array of vector shape definitions
-	 * @returns This map instance for method chaining
-	 *
-	 * @example
-	 * ```typescript
-	 * map.addVectors([
-	 *   {
-	 *     type: 'polyline',
-	 *     points: [{x: 0, y: 0}, {x: 100, y: 100}],
-	 *     style: { color: '#ff0000', weight: 2 }
-	 *   },
-	 *   {
-	 *     type: 'circle',
-	 *     center: {x: 500, y: 500},
-	 *     radius: 50,
-	 *     style: { color: '#0000ff', fill: true }
-	 *   }
-	 * ]);
-	 * ```
+	 * @public
+	 * @param vectors - Array of vector definitions
+	 * @returns This map instance for chaining
 	 */
 	/**
 	 * Add legacy vector primitives in a single batch (temporary helper).
@@ -405,10 +364,11 @@ export class GTMap {
 	}
 
 	/**
-	 * Create and add a `Vector` entity to the `vectors` layer.
+	 * Create and add a {@link Vector} to the `vectors` layer.
 	 *
+	 * @public
 	 * @param geometry - Vector geometry (polyline, polygon, circle)
-	 * @returns The created `Vector`
+	 * @returns The created {@link Vector}
 	 */
 	addVector(geometry: VectorGeom): Vector {
 		const v = new Vector(geometry, {}, () => this._flushVectors());
@@ -421,7 +381,7 @@ export class GTMap {
 	 *
 	 * @returns This map instance for method chaining
 	 */
-	/** Remove all markers from the map. */
+	/** @public Remove all markers from the map. */
 	clearMarkers(): this {
 		this.markers.clear();
 		return this;
@@ -431,7 +391,7 @@ export class GTMap {
 	 *
 	 * @returns This map instance for method chaining
 	 */
-	/** Remove all vectors from the map. */
+	/** @public Remove all vectors from the map. */
 	clearVectors(): this {
 		this.vectors.clear();
 		this._impl.setVectors?.([]);
@@ -440,45 +400,50 @@ export class GTMap {
 
 	// Compatibility getters used by HUD
 	/**
-	 * Gets the current center position of the map.
+	 * Get the current center position in world pixels.
 	 *
-	 * @returns The center position in pixel coordinates
+	 * @public
+	 * @returns The center position
 	 */
 	getCenter(): Point {
 		const c = this._impl.center as { lng: number; lat: number };
 		return { x: c.lng, y: c.lat };
 	}
 	/**
-	 * Gets the current zoom level.
+	 * Get the current zoom level.
 	 *
-	 * @returns The current zoom level
+	 * @public
+	 * @returns The zoom value (fractional allowed)
 	 */
 	getZoom(): number {
 		return this._impl.zoom;
 	}
 	/**
-	 * Gets the current pointer position in world coordinates.
+	 * Get the last pointer position in world pixels.
 	 *
-	 * @returns The pointer position or null if pointer is outside map
+	 * @public
+	 * @returns Position or `null` if outside the map
 	 */
 	get pointerAbs(): { x: number; y: number } | null {
 		return this._impl.pointerAbs ?? null;
 	}
 	/**
-	 * Sets the mouse wheel zoom speed.
+	 * Set mouse‑wheel zoom speed.
 	 *
-	 * @param v - Speed multiplier (0.01 to 2.0)
-	 * @returns This map instance for method chaining
+	 * @public
+	 * @param v - Speed multiplier (0.01–2.0)
+	 * @returns This map instance for chaining
 	 */
 	setWheelSpeed(v: number): this {
 		this._impl.setWheelSpeed?.(v);
 		return this;
 	}
 	/**
-	 * Sets the maximum frames per second.
+	 * Set the maximum frames per second.
 	 *
-	 * @param v - FPS limit (15 to 240)
-	 * @returns This map instance for method chaining
+	 * @public
+	 * @param v - FPS limit (15–240)
+	 * @returns This map instance for chaining
 	 */
 	setFpsCap(v: number): this {
 		this._impl.setFpsCap(v);
@@ -487,7 +452,10 @@ export class GTMap {
 
     /**
      * Set the viewport background.
-     * Policy: either 'transparent' (fully transparent) or a solid color; alpha on colors is ignored.
+     *
+     * @public
+     * @remarks
+     * Policy: either `'transparent'` (fully transparent) or a solid color; alpha on colors is ignored.
      */
 	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
 		this._impl.setBackgroundColor?.(color as any);
@@ -495,13 +463,18 @@ export class GTMap {
 	}
 	/**
 	 * Enable or disable automatic resize handling.
-	 * When enabled, a ResizeObserver watches the container and resizes
-	 * the canvases (debounced via rAF). A window resize listener is
-	 * also attached for DPR changes.
+	 *
+	 * @public
+	 * @remarks
+	 * When enabled, a ResizeObserver watches the container (debounced via rAF) and a window
+	 * resize listener tracks DPR changes.
 	 *
 	 * @example
-	 * map.setAutoResize(false); // manage size manually via invalidateSize()
-	 * map.setAutoResize(true);  // re-enable automatic handling
+ 	 * ```ts
+ 	 * // Manage size manually: disable auto and call invalidate on layout changes
+ 	 * map.setAutoResize(false);
+ 	 * map.invalidateSize();
+ 	 * ```
 	 */
 	setAutoResize(on: boolean): this {
 		this._impl.setAutoResize?.(on);
@@ -536,10 +509,10 @@ export class GTMap {
         return { center, zoom: z };
     }
 	/**
-	 * Updates the map size after container resize.
-	 * Call this if the container size changes.
+	 * Recompute canvas sizes after external container changes.
 	 *
-	 * @returns This map instance for method chaining
+	 * @public
+	 * @returns This map instance for chaining
 	 */
 	invalidateSize(): this {
 		this._impl.resize?.();
@@ -548,11 +521,14 @@ export class GTMap {
 
 	// Events proxy
 	/**
-	 * Read-only map events surface (`on/once`).
+	 * Read‑only map events surface (`on`/`once`).
 	 *
+	 * @public
 	 * @example
+	 * ```ts
 	 * map.events.on('move').each(({ view }) => console.log(view.center, view.zoom));
 	 * await map.events.once('zoomend');
+	 * ```
 	 */
 	get events(): PublicEvents<MapEventMap> {
 		return {
@@ -562,7 +538,11 @@ export class GTMap {
 	}
 
 	/**
-	 * Start a chainable view transition. No side-effects until apply().
+	 * Start a chainable view transition.
+	 *
+	 * @public
+	 * @remarks
+	 * The builder is side‑effect free until {@link ViewTransition.apply | apply()} is called.
 	 */
 	transition(): ViewTransition {
 		return new ViewTransitionImpl(this);
