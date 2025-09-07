@@ -1,5 +1,7 @@
 import * as Coords from '../coords';
 import type { ANGLEInstancedArrays } from '../../api/types';
+import { IconMaskBuilder } from './icons/icon-mask-builder';
+import { createAtlas } from './icons/icon-atlas';
 
 export type IconDef = { id: string; url: string; width: number; height: number; anchorX?: number; anchorY?: number };
 export type Marker = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
@@ -11,9 +13,7 @@ export class IconRenderer {
 	private texSize = new Map<string, { w: number; h: number }>();
 	private texAnchor = new Map<string, { ax: number; ay: number }>();
 	private iconMeta = new Map<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number }>();
-	private maskAlpha = new Map<string, { data: Uint8Array; w: number; h: number }>();
-	private pendingMasks: Array<{ key: string; src: ImageBitmap | HTMLImageElement; w: number; h: number }> = [];
-	private maskBuildStarted = false;
+    private maskBuilder = new IconMaskBuilder();
 	private markers: Marker[] = [];
 	// Texture atlas
 	// Atlas bookkeeping kept local in load; we do not need fields on the class.
@@ -100,66 +100,46 @@ export class IconRenderer {
 
 			let src2x: ImageBitmap | HTMLImageElement | null = null;
 			if (d.x2IconPath) src2x = await this.loadImageSource(d.x2IconPath);
-			if (src2x) {
-				imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
-				this.hasRetina.set(key, true);
-				this.pendingMasks.push({ key, src: src2x, w: d.width, h: d.height });
-			} else {
-				const src1x = await this.loadImageSource(d.iconPath);
-				if (src1x) {
-					imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
-					this.pendingMasks.push({ key, src: src1x, w: d.width, h: d.height });
-				}
-				this.hasRetina.set(key, false);
-			}
-		});
-		await Promise.all(loadTasks);
-		// Create 1x atlas
-		if (imgs1x.length > 0) {
-			const atlas1x = this.createAtlas(imgs1x);
-			if (atlas1x) {
-				for (const [key, data] of atlas1x) {
-					this.textures.set(key, data.tex);
-					this.uvRect.set(key, data.uv);
-				}
-			}
-		}
+            if (src2x) {
+                imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
+                this.hasRetina.set(key, true);
+                this.maskBuilder.enqueue(key, src2x, d.width, d.height);
+            } else {
+                const src1x = await this.loadImageSource(d.iconPath);
+                if (src1x) {
+                    imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+                    this.maskBuilder.enqueue(key, src1x, d.width, d.height);
+                }
+                this.hasRetina.set(key, false);
+            }
+        });
+        await Promise.all(loadTasks);
+        // Create 1x atlas
+        if (imgs1x.length > 0) {
+            const atlas1x = createAtlas(this.gl, imgs1x);
+            if (atlas1x) {
+                for (const [key, data] of atlas1x) {
+                    this.textures.set(key, data.tex);
+                    this.uvRect.set(key, data.uv);
+                }
+            }
+        }
 
-		// Create 2x atlas
-		if (imgs2x.length > 0) {
-			const atlas2x = this.createAtlas(imgs2x);
-			if (atlas2x) {
-				for (const [key, data] of atlas2x) {
-					this.textures2x.set(key, data.tex);
-					this.uvRect2x.set(key, data.uv);
-				}
-			}
-		}
+        // Create 2x atlas
+        if (imgs2x.length > 0) {
+            const atlas2x = createAtlas(this.gl, imgs2x);
+            if (atlas2x) {
+                for (const [key, data] of atlas2x) {
+                    this.textures2x.set(key, data.tex);
+                    this.uvRect2x.set(key, data.uv);
+                }
+            }
+        }
 
 		// Do not start mask build here; allow map to trigger after first frame
 	}
 
-	startMaskBuild() {
-		if (this.maskBuildStarted) return;
-		this.maskBuildStarted = true;
-		// Feature-test requestIdleCallback with a small typed shim. TS lib may not include it.
-		const ric: ((cb: () => void) => any) | undefined = typeof (window as unknown as { requestIdleCallback?: (cb: () => void) => any }).requestIdleCallback === 'function'
-			? (window as unknown as { requestIdleCallback: (cb: () => void) => any }).requestIdleCallback.bind(window)
-			: undefined;
-		const process = () => {
-			let budget = 3; // build a few per slice
-			while (budget-- > 0 && this.pendingMasks.length) {
-				const it = this.pendingMasks.shift()!;
-				if (!this.maskAlpha.has(it.key)) this.buildMaskSafe(it.key, it.src, it.w, it.h);
-			}
-			if (this.pendingMasks.length) {
-				if (typeof ric === 'function') ric(process);
-				else setTimeout(process, 0);
-			}
-		};
-		if (typeof ric === 'function') ric(process);
-		else setTimeout(process, 0);
-	}
+    startMaskBuild() { this.maskBuilder.start(); }
 
 	setMarkers(markers: Array<Marker | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
 		// Normalize to internal Marker list with ids
@@ -206,108 +186,7 @@ export class IconRenderer {
 		}
 	}
 
-	private createAtlas(
-		imgs: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }>,
-	): Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }> | null {
-		const MAX_W = 2048;
-		let x = 0,
-			y = 0,
-			rowH = 0,
-			atlasW = 0,
-			atlasH = 0;
-
-		// Sort by height descending for better packing
-		imgs.sort((a, b) => b.h - a.h);
-		const pos: Record<string, { x: number; y: number; w: number; h: number }> = {};
-
-		for (const img of imgs) {
-			if (img.w > MAX_W) continue;
-			if (x + img.w > MAX_W) {
-				x = 0;
-				y += rowH;
-				rowH = 0;
-			}
-			pos[img.key] = { x, y, w: img.w, h: img.h };
-			x += img.w;
-			rowH = Math.max(rowH, img.h);
-			atlasW = Math.max(atlasW, x);
-			atlasH = Math.max(atlasH, y + rowH);
-		}
-
-		// Create canvas and draw
-		const canvas = document.createElement('canvas');
-		canvas.width = atlasW || 1;
-		canvas.height = atlasH || 1;
-		const ctx2d = canvas.getContext('2d')!;
-		ctx2d.clearRect(0, 0, canvas.width, canvas.height);
-
-		for (const img of imgs) {
-			const p = pos[img.key];
-			if (!p) continue;
-			try {
-				const src = img.src as CanvasImageSource;
-				const sw = 'width' in img.src ? (img.src as ImageBitmap).width : (img.src as HTMLImageElement).naturalWidth;
-				const sh = 'height' in img.src ? (img.src as ImageBitmap).height : (img.src as HTMLImageElement).naturalHeight;
-				ctx2d.drawImage(src, 0, 0, sw, sh, p.x, p.y, p.w, p.h);
-			} catch {}
-		}
-
-		// Upload atlas texture
-		const gl = this.gl;
-		const tex = gl.createTexture();
-		if (!tex) return null;
-
-		gl.bindTexture(gl.TEXTURE_2D, tex);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
-
-		// Create result map
-		const result = new Map<string, { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } }>();
-
-		for (const img of imgs) {
-			const p = pos[img.key];
-			if (!p) continue;
-			const u0 = p.x / atlasW;
-			const v0 = p.y / atlasH;
-			const u1 = (p.x + p.w) / atlasW;
-			const v1 = (p.y + p.h) / atlasH;
-			result.set(img.key, { tex, uv: { u0, v0, u1, v1 } });
-		}
-
-		return result;
-	}
-
-	private buildMaskSafe(key: string, src: ImageBitmap | HTMLImageElement, w: number, h: number) {
-		try {
-			const cnv = document.createElement('canvas');
-			cnv.width = Math.max(1, w | 0);
-			cnv.height = Math.max(1, h | 0);
-			const ctx = cnv.getContext('2d');
-			if (!ctx) return;
-			ctx.clearRect(0, 0, cnv.width, cnv.height);
-			const sw = 'width' in src ? (src as ImageBitmap).width : (src as HTMLImageElement).naturalWidth;
-			const sh = 'height' in src ? (src as ImageBitmap).height : (src as HTMLImageElement).naturalHeight;
-			try {
-				ctx.drawImage(src as CanvasImageSource, 0, 0, sw, sh, 0, 0, w, h);
-			} catch {}
-			const img = ctx.getImageData(0, 0, w, h);
-			const rgba = img.data;
-			const data = new Uint8Array(w * h);
-			for (let i = 0, j = 0; i < rgba.length; i += 4, j++) data[j] = rgba[i + 3];
-			this.maskAlpha.set(key, { data, w, h });
-		} catch {
-			// Likely CORS taint; skip mask for this icon
-		}
-	}
-
-	getMaskInfo(type: string): { data: Uint8Array; w: number; h: number } | null {
-		return this.maskAlpha.get(type) || null;
-	}
+    getMaskInfo(type: string): { data: Uint8Array; w: number; h: number } | null { return this.maskBuilder.getMaskInfo(type); }
 
 	private async loadImageSource(url: string): Promise<ImageBitmap | HTMLImageElement | null> {
 		// Try fetch + createImageBitmap, fallback to Image element
