@@ -56,26 +56,30 @@ export default class TilePipeline {
 	}
 
 	process() {
-		const MAX_DEFERS_PER_PASS = 8;
+    // Allow many deferrals in a single pass so we don't start loads
+    // during interaction when ancestor coverage is available.
+    const MAX_DEFERS_PER_PASS = 64;
 		let defers = 0;
 		while (this.deps.hasCapacity()) {
 			const now = this.deps.now();
 			const idle = now - this.deps.getLastInteractAt() > this.deps.getInteractionIdleMs();
-			const baseZ = Math.floor(this.deps.getZoom());
-			const c = this.deps.getCenter();
-			const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
-			const s0 = Coords.sFor(zMax, baseZ);
-			const centerWorld = { x: c.lng / s0, y: c.lat / s0 };
-			const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());
-			if (!task) break;
-			// During interaction, if any ancestor tile (up to 3 levels) is already available,
-			// defer this fetch to keep the main thread responsive; renderer will blend ancestors.
-			if (!idle && task.z > baseZ) {
-				let covered = false;
-				const maxAncestor = 3;
-				for (let d = 1; d <= maxAncestor && task.z - d >= 0; d++) {
-					const az = task.z - d;
-					const ax = task.x >> d;
+            const baseZ = Math.floor(this.deps.getZoom());
+            const c = this.deps.getCenter();
+            const zMax = this.deps.getImageMaxZoom?.() ?? this.deps.getMaxZoom();
+            const s0 = Coords.sFor(zMax, baseZ);
+            const centerWorld = { x: c.lng / s0, y: c.lat / s0 };
+            const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());
+            if (!task) break;
+            // During interaction, if any ancestor tile (up to 3 levels) is already available,
+            // defer this fetch to keep the main thread responsive; renderer will blend ancestors.
+            // Apply for current level and above.
+            const effBaseZ = Math.min(baseZ, zMax);
+            if (!idle && task.z >= effBaseZ) {
+                let covered = false;
+                const maxAncestor = 3;
+                for (let d = 1; d <= maxAncestor && task.z - d >= 0; d++) {
+                    const az = task.z - d;
+                    const ax = task.x >> d;
 					const ay = task.y >> d;
 					const akey = `${az}/${ax}/${ay}`;
 					if (this.deps.hasTile(akey)) { covered = true; break; }
