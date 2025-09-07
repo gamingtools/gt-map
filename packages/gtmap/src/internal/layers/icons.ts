@@ -353,9 +353,10 @@ export class IconRenderer {
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
 		const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
-		let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
-		const snap = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
-		tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
+    // For icons, avoid snapping TL to device pixels. Snapping is great for tiles
+    // to prevent seam shimmer, but it introduces visible jitter for icons when
+    // their screen size changes with zoom via an iconScaleFunction.
+    const tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
 
 		// Calculate scale factor from icon scale function
 		const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
