@@ -273,8 +273,9 @@ export class IconRenderer {
             const s = Math.sin(ang); const c = Math.cos(ang);
             gl.uniform2f(this.instLoc!.u_centerPx!, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5);
             gl.uniform2f(this.instLoc!.u_rotSinCos!, s, c);
-            // Rotate mode: add map bearing to icon angle (icons spin with map); keep: no extra rotation
-            const mode = ((ctx as any).entityRotationMode === 'rotate') ? ang : 0.0;
+            // Keep: counter-rotate icons by -bearing so they remain screen-upright.
+            // Rotate: let scene rotation provide the visual spin; no extra local rotation.
+            const mode = ((ctx as any).entityRotationMode === 'keep') ? -ang : 0.0;
             gl.uniform1f(this.instLoc!.u_viewAngle!, mode);
 
 			// For each type

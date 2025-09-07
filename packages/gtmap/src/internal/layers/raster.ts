@@ -14,26 +14,27 @@ export class RasterRenderer {
 		this.gl = gl;
 	}
 
-	drawTilesForLevel(
-		loc: ProgramLocs,
-		tileCache: TileCacheLike,
-		enqueueTile: (z: number, x: number, y: number, priority?: number) => void,
-		params: {
-			zLevel: number;
-			tlWorld: { x: number; y: number };
-			scale: number;
-			dpr: number;
-			widthCSS: number;
-			heightCSS: number;
-			wrapX: boolean;
-			tileSize: number;
-			mapSize?: { width: number; height: number };
-			zMax?: number;
-			sourceMaxZoom?: number;
-			filterMode?: 'auto' | 'linear' | 'bicubic';
-			wantTileKey?: (key: string) => void;
-		},
-	) {
+    drawTilesForLevel(
+        loc: ProgramLocs,
+        tileCache: TileCacheLike,
+        enqueueTile: (z: number, x: number, y: number, priority?: number) => void,
+        params: {
+            zLevel: number;
+            tlWorld: { x: number; y: number };
+            scale: number;
+            dpr: number;
+            widthCSS: number;
+            heightCSS: number;
+            wrapX: boolean;
+            tileSize: number;
+            mapSize?: { width: number; height: number };
+            zMax?: number;
+            sourceMaxZoom?: number;
+            filterMode?: 'auto' | 'linear' | 'bicubic';
+            wantTileKey?: (key: string) => void;
+            quantizePixels?: boolean; // when false, avoid integer rounding for rotated views
+        },
+    ) {
 		const gl = this.gl;
 		const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom, filterMode } = params;
 		const TS = tileSize;
@@ -90,14 +91,19 @@ export class RasterRenderer {
 					gl.bindTexture(gl.TEXTURE_2D, rec.tex);
 					// Compute edges in device pixels, then derive integer-aligned width/height.
 					// This prevents 1px gaps during zoom from per-tile rounding error.
-					const leftPx = Math.round(sxCSS * dpr);
-					const topPx = Math.round(syCSS * dpr);
-					const rightPx = Math.round((sxCSS + TS * scale) * dpr);
-					const bottomPx = Math.round((syCSS + TS * scale) * dpr);
-					const wPx = Math.max(1, rightPx - leftPx);
-					const hPx = Math.max(1, bottomPx - topPx);
-					gl.uniform2f(loc.u_translate!, leftPx, topPx);
-					gl.uniform2f(loc.u_size!, wPx, hPx);
+                const quant = params.quantizePixels !== false; // default true
+                const leftPxF = sxCSS * dpr;
+                const topPxF = syCSS * dpr;
+                const rightPxF = (sxCSS + TS * scale) * dpr;
+                const bottomPxF = (syCSS + TS * scale) * dpr;
+                const leftPx = quant ? Math.round(leftPxF) : leftPxF;
+                const topPx = quant ? Math.round(topPxF) : topPxF;
+                const rightPx = quant ? Math.round(rightPxF) : rightPxF;
+                const bottomPx = quant ? Math.round(bottomPxF) : bottomPxF;
+                const wPx = Math.max(1, rightPx - leftPx);
+                const hPx = Math.max(1, bottomPx - topPx);
+                gl.uniform2f(loc.u_translate!, leftPx, topPx);
+                gl.uniform2f(loc.u_size!, wPx, hPx);
 					// Provide texel size and upscale hint to the shader for improved filtering
 					const texW = Math.max(1, rec.width || TS);
 					const texH = Math.max(1, rec.height || TS);

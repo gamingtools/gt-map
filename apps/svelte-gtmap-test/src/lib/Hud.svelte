@@ -140,8 +140,7 @@
     // Map rotation: apply on changes
     $effect(() => {
         try {
-            // Use transition builder for consistency; instant apply
-            map?.transition().rotate(bearing, { entityRotationMode }).apply();
+            map?.setRotation(bearing, { entityRotationMode });
         } catch {}
     });
 
