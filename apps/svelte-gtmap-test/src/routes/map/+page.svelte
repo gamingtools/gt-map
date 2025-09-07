@@ -40,15 +40,15 @@
 				y,
 				iconHandle ? { icon: iconHandle, data: { id: i } } : undefined
 			);
-			marker.events.on('click').each((e) => {
-				console.log('Marker clicked:', e);
-			});
-			marker.events.on('pointerenter').each((e) => {
-				console.log('Marker pointerenter:', e);
-			});
-			marker.events.on('pointerleave').each((e) => {
-				console.log('Marker pointerleave:', e);
-			});
+			// marker.events.on('click').each((e) => {
+			// 	console.log('Marker clicked:', e);
+			// });
+			// marker.events.on('pointerenter').each((e) => {
+			// 	console.log('Marker pointerenter:', e);
+			// });
+			// marker.events.on('pointerleave').each((e) => {
+			// 	console.log('Marker pointerleave:', e);
+			// });
 		}
 	}
 
@@ -67,47 +67,46 @@
 	function addVectors(): void {
 		if (!map) return;
 		try {
-			map.addVectors([
-				{
-					type: 'polyline',
-					points: [
-						{ x: 1000, y: 1000 },
-						{ x: 2000, y: 1400 },
-						{ x: 3000, y: 1200 }
-					],
-					style: { color: '#1e90ff', weight: 2, opacity: 0.9 }
-				},
-				{
-					type: 'polygon',
-					points: [
-						{ x: 2600, y: 2600 },
-						{ x: 3000, y: 3000 },
-						{ x: 2600, y: 3200 },
-						{ x: 2300, y: 3000 }
-					],
-					style: {
-						color: '#10b981',
-						weight: 2,
-						opacity: 0.9,
-						fill: true,
-						fillColor: '#10b981',
-						fillOpacity: 0.25
-					}
-				},
-				{
-					type: 'circle',
-					center: { x: 4096, y: 4096 },
-					radius: 200,
-					style: {
-						color: '#f59e0b',
-						weight: 2,
-						opacity: 0.9,
-						fill: true,
-						fillColor: '#f59e0b',
-						fillOpacity: 0.2
-					}
+			// Add vectors one by one (preferred over deprecated addVectors)
+			map.addVector({
+				type: 'polyline',
+				points: [
+					{ x: 1000, y: 1000 },
+					{ x: 2000, y: 1400 },
+					{ x: 3000, y: 1200 }
+				],
+				style: { color: '#1e90ff', weight: 2, opacity: 0.9 }
+			});
+			map.addVector({
+				type: 'polygon',
+				points: [
+					{ x: 2600, y: 2600 },
+					{ x: 3000, y: 3000 },
+					{ x: 2600, y: 3200 },
+					{ x: 2300, y: 3000 }
+				],
+				style: {
+					color: '#10b981',
+					weight: 2,
+					opacity: 0.9,
+					fill: true,
+					fillColor: '#10b981',
+					fillOpacity: 0.25
 				}
-			]);
+			});
+			map.addVector({
+				type: 'circle',
+				center: { x: 4096, y: 4096 },
+				radius: 200,
+				style: {
+					color: '#f59e0b',
+					weight: 2,
+					opacity: 0.9,
+					fill: true,
+					fillColor: '#f59e0b',
+					fillOpacity: 0.2
+				}
+			});
 		} catch {}
 	}
 
@@ -131,20 +130,18 @@
 		if (!container) return;
 
 		map = new GTMap(container, {
+			// Initial view
 			center: { x: HOME.lng, y: HOME.lat },
 			zoom: 2,
 			minZoom: 0,
 			maxZoom: 10,
 			fpsCap: 60,
 			autoResize: true,
-		});
-		map.setTileSource({
-			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
+			// Tile source (initialize via constructor instead of setTileSource)
+			tileUrl: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
 			tileSize: 256,
-			sourceMaxZoom: 5,
 			mapSize: { width: 8192, height: 8192 },
 			wrapX: false,
-			clearCache: true
 		});
 
 		// Register a custom icon to demonstrate addIcon/addMarker
@@ -186,11 +183,11 @@
 			return Math.min(maxScale, Math.max(0.5, scale));
 		});
 
-		map.events.on('pointerup').each((e) => console.log('up', e));
+		// map.events.on('pointerup').each((e) => console.log('up', e));
 		// map.events.on('markerenter').each((e) => console.log('markerenter', e));
 		// map.events.on('markerleave').each((e) => console.log('markerleave', e));
-		map.events.on('click').each((e) => console.log('map click', e));
-		map.events.on('mousedown').each((e) => console.log('mousedown', e));
+		// map.events.on('click').each((e) => console.log('map click', e));
+		// map.events.on('mousedown').each((e) => console.log('mousedown', e));
 
 		// Teardown on navigation/unmount per Svelte docs
 

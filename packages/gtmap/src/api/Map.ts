@@ -104,6 +104,27 @@ export class GTMap {
 		this._impl = new Impl(container as HTMLDivElement, implOpts);
 		this._ensureDefaultIcon();
 
+		// If a tile source was provided in options, finalize it via the internal API
+		// so sourceMaxZoom and related internals (prefetch, caches) are fully configured.
+		if (typeof options.tileUrl === 'string') {
+			let sourceMaxZoom: number | undefined;
+			if (options.mapSize && typeof options.tileSize === 'number' && options.tileSize > 0) {
+				const maxDim = Math.max(options.mapSize.width, options.mapSize.height);
+				const levels = Math.log2(Math.max(1, maxDim / options.tileSize));
+				sourceMaxZoom = Math.max(0, Math.floor(levels));
+			} else if (typeof options.maxZoom === 'number') {
+				sourceMaxZoom = options.maxZoom;
+			}
+			this._impl.setTileSource({
+				url: options.tileUrl,
+				tileSize: options.tileSize,
+				sourceMaxZoom,
+				mapSize: options.mapSize,
+				wrapX: options.wrapX,
+				clearCache: true,
+			});
+		}
+
 		// Layers
 		const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
 		const onVectorsChanged = () => this._flushVectors();
@@ -678,9 +699,9 @@ export class GTMap {
 		const internalVectors: VectorPrimitiveInternal[] = list.map((v) => {
 			const g = v.geometry;
 			if (g.type === 'polyline' || g.type === 'polygon') {
-				return { type: g.type, points: g.points.map((p) => ({ lng: p.x, lat: p.y })) };
+				return { type: g.type, points: g.points.map((p) => ({ lng: p.x, lat: p.y })), style: g.style };
 			}
-			return { type: 'circle', center: { lng: g.center.x, lat: g.center.y }, radius: g.radius };
+			return { type: 'circle', center: { lng: g.center.x, lat: g.center.y }, radius: g.radius, style: g.style };
 		});
 		this._impl.setVectors?.(internalVectors);
 	}
