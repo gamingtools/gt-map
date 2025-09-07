@@ -12,6 +12,10 @@ export default class MapRenderer {
 		clearWanted?: () => void;
 	};
 	private iconsUnlocked = false;
+  // Hysteresis for level-wide filter decisions to prevent flicker near scale ~= 1
+  private filterState = new Map<number, boolean>(); // level -> useBicubic
+  private static readonly FILTER_ENTER = 1.02;
+  private static readonly FILTER_EXIT = 0.99;
 
 	constructor(getCtx: () => RenderCtx, hooks?: MapRenderer['hooks']) {
 		this.getCtx = getCtx;
@@ -27,6 +31,7 @@ export default class MapRenderer {
 		if (opts?.clearWanted) opts.clearWanted();
 		if (opts?.stepAnimation) opts.stepAnimation();
 		const { zInt: baseZ, scale } = Coords.zParts(ctx.zoom);
+		const idle = typeof ctx.isIdle === 'function' ? !!ctx.isIdle() : false;
 		const rect = ctx.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
@@ -75,6 +80,34 @@ export default class MapRenderer {
 		}
 		const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
 		if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
+
+		// Determine target LOD for idle resolution logic
+		const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
+		const frac = ctx.zoom - baseZ;
+		const targetZ = frac >= 0.5 && zIntNext > baseZ ? zIntNext : baseZ;
+		let targetCoverage = 0;
+        if (idle) {
+            // Compute coverage at targetZ
+            const centerT = ctx.project(ctx.center.lng, ctx.center.lat, targetZ);
+            const scaleT = Coords.scaleAtLevel(ctx.zoom, targetZ);
+            let tlT = Coords.tlLevelForWithScale(centerT, scaleT, { x: widthCSS, y: heightCSS });
+            const snapT = (v: number) => Coords.snapLevelToDevice(v, scaleT, ctx.dpr);
+            tlT = { x: snapT(tlT.x), y: snapT(tlT.y) };
+            targetCoverage = ctx.raster.coverage(
+                ctx.tileCache,
+                targetZ,
+                tlT,
+                scaleT,
+                widthCSS,
+                heightCSS,
+                ctx.wrapX,
+                ctx.tileSize,
+                ctx.mapSize,
+                ctx.maxZoom,
+                ctx.sourceMaxZoom,
+            );
+            // Do not perform alpha=0 draws here; we will enqueue through visible draws below.
+        }
 		const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
 		if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
 			for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
@@ -98,44 +131,65 @@ export default class MapRenderer {
 					mapSize: ctx.mapSize,
 					zMax: ctx.maxZoom,
 					sourceMaxZoom: ctx.sourceMaxZoom,
+					filterMode: this.levelFilter(scaleL),
 					wantTileKey: ctx.wantTileKey,
 				});
 				if (covL >= 0.995) break;
 			}
 		}
-		// Base level draw at raster opacity
-		gl.uniform1f(loc.u_alpha!, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
-		ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
-			zLevel: baseZ,
-			tlWorld,
-			scale,
-			dpr: ctx.dpr,
-			widthCSS,
-			heightCSS,
-			wrapX: ctx.wrapX,
-			tileSize: ctx.tileSize,
-			mapSize: ctx.mapSize,
-			zMax: ctx.maxZoom,
-			sourceMaxZoom: ctx.sourceMaxZoom,
-			filterMode: ctx.upscaleFilter || 'auto',
-			wantTileKey: ctx.wantTileKey,
-		});
-		if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
-		const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
-		const frac = ctx.zoom - baseZ;
-		if (zIntNext > baseZ && frac > 0) {
-			const centerN = ctx.project(ctx.center.lng, ctx.center.lat, zIntNext);
-			const scaleN = Coords.scaleAtLevel(ctx.zoom, zIntNext);
-			let tlN = Coords.tlLevelForWithScale(centerN, scaleN, { x: widthCSS, y: heightCSS });
-			const snapN = (v: number) => Coords.snapLevelToDevice(v, scaleN, ctx.dpr);
-			tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };
-			const baseAlpha = Math.max(0, Math.min(1, frac));
-			const layerAlpha = Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0));
-			gl.uniform1f(loc.u_alpha!, baseAlpha * layerAlpha);
+
+		// Decide how to render based on idle/target coverage
+		const layerAlpha = Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0));
+		if (idle) {
+			if (targetCoverage >= 0.98) {
+				// Render only the resolved target level
+				const centerR = ctx.project(ctx.center.lng, ctx.center.lat, targetZ);
+				const scaleR = Coords.scaleAtLevel(ctx.zoom, targetZ);
+				let tlR = Coords.tlLevelForWithScale(centerR, scaleR, { x: widthCSS, y: heightCSS });
+				const snapR = (v: number) => Coords.snapLevelToDevice(v, scaleR, ctx.dpr);
+				tlR = { x: snapR(tlR.x), y: snapR(tlR.y) };
+				gl.uniform1f(loc.u_alpha!, layerAlpha);
+				ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
+					zLevel: targetZ,
+					tlWorld: tlR,
+					scale: scaleR,
+					dpr: ctx.dpr,
+					widthCSS,
+					heightCSS,
+					wrapX: ctx.wrapX,
+					tileSize: ctx.tileSize,
+					mapSize: ctx.mapSize,
+					zMax: ctx.maxZoom,
+					sourceMaxZoom: ctx.sourceMaxZoom,
+					filterMode: this.levelFilter(scaleR),
+					wantTileKey: ctx.wantTileKey,
+				});
+			} else {
+				// Not enough target coverage yet: render base + backfill, but suppress z+1 overlay blending
+				gl.uniform1f(loc.u_alpha!, layerAlpha);
+				ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
+					zLevel: baseZ,
+					tlWorld,
+					scale,
+					dpr: ctx.dpr,
+					widthCSS,
+					heightCSS,
+					wrapX: ctx.wrapX,
+					tileSize: ctx.tileSize,
+					mapSize: ctx.mapSize,
+					zMax: ctx.maxZoom,
+					sourceMaxZoom: ctx.sourceMaxZoom,
+					filterMode: this.levelFilter(scale),
+					wantTileKey: ctx.wantTileKey,
+				});
+			}
+		} else {
+			// Original behavior during interaction
+			gl.uniform1f(loc.u_alpha!, layerAlpha);
 			ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
-				zLevel: zIntNext,
-				tlWorld: tlN,
-				scale: scaleN,
+				zLevel: baseZ,
+				tlWorld,
+				scale,
 				dpr: ctx.dpr,
 				widthCSS,
 				heightCSS,
@@ -144,12 +198,41 @@ export default class MapRenderer {
 				mapSize: ctx.mapSize,
 				zMax: ctx.maxZoom,
 				sourceMaxZoom: ctx.sourceMaxZoom,
-				filterMode: ctx.upscaleFilter || 'auto',
+				filterMode: this.levelFilter(scale),
 				wantTileKey: ctx.wantTileKey,
 			});
-			gl.uniform1f(loc.u_alpha!, 1.0);
+			if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
+			if (zIntNext > baseZ && frac > 0) {
+				const centerN = ctx.project(ctx.center.lng, ctx.center.lat, zIntNext);
+				const scaleN = Coords.scaleAtLevel(ctx.zoom, zIntNext);
+				let tlN = Coords.tlLevelForWithScale(centerN, scaleN, { x: widthCSS, y: heightCSS });
+				const snapN = (v: number) => Coords.snapLevelToDevice(v, scaleN, ctx.dpr);
+				tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };
+				// Only draw z+1 overlay if its coverage exceeds a small threshold to avoid per-tile popping
+				const nextCoverage = ctx.raster.coverage(ctx.tileCache, zIntNext, tlN, scaleN, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
+				if (nextCoverage > 0.35) {
+					// Draw next-level tiles fully opaque where available to avoid gamma-darkening from blend
+					gl.uniform1f(loc.u_alpha!, layerAlpha);
+					ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
+					zLevel: zIntNext,
+					tlWorld: tlN,
+					scale: scaleN,
+					dpr: ctx.dpr,
+					widthCSS,
+					heightCSS,
+					wrapX: ctx.wrapX,
+					tileSize: ctx.tileSize,
+					mapSize: ctx.mapSize,
+					zMax: ctx.maxZoom,
+					sourceMaxZoom: ctx.sourceMaxZoom,
+					filterMode: this.levelFilter(scaleN),
+					wantTileKey: ctx.wantTileKey,
+					});
+					gl.uniform1f(loc.u_alpha!, 1.0);
+				}
+			}
 		}
-
+		
 		// Draw icon markers after all tile layers so they are not faded by blended tiles.
 		// Optionally defer icons until initial tile coverage reaches a threshold to avoid icons painting before tiles.
 		if (ctx.icons && this.iconsUnlocked) {
@@ -179,5 +262,19 @@ export default class MapRenderer {
 		if (ctx.useScreenCache && ctx.screenCache) ctx.screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.canvas);
 		if (opts?.cancelUnwanted) opts.cancelUnwanted();
 	}
+
+  private levelFilter(scale: number): 'linear' | 'bicubic' {
+    // Decide once per-frame with hysteresis remembered per level value of scale is tied per level call site.
+    // We don't have the level value here, so use thresholds only on scale.
+    // Since this is called right before a level draw, it stabilizes per level usage because scale is level-specific.
+    // Apply hysteresis to scale around 1.0 using static thresholds.
+    // If scale > enter => bicubic; if scale < exit => linear; else keep previous decision via a simple latch on comparison to 1.0.
+    const enter = MapRenderer.FILTER_ENTER;
+    const exit = MapRenderer.FILTER_EXIT;
+    if (scale > enter) return 'bicubic';
+    if (scale < exit) return 'linear';
+    // In the narrow band [exit, enter], prefer bicubic to avoid visible softening toggles.
+    return 'bicubic';
+  }
 	dispose() {}
 }

@@ -92,6 +92,8 @@ export interface RenderCtx {
 	upscaleFilter?: 'auto' | 'linear' | 'bicubic';
 	// Icon scaling
 	iconScaleFunction?: IconScaleFunction | null;
+	// Idle detection (true when user is not interacting and no animations are running)
+	isIdle?: () => boolean;
 	// Projection helpers
 	project(x: number, y: number, z: number): { x: number; y: number };
 	enqueueTile(z: number, x: number, y: number, priority?: number): void;

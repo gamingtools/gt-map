@@ -221,36 +221,42 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		};
 	}
 	// Build the rendering context (internal)
-	public getRenderCtx(): RenderCtx {
-		return {
-			gl: this.gl,
-			prog: this._prog!,
-			loc: this._loc!,
-			quad: this._quad!,
-			canvas: this.canvas,
-			dpr: this._dpr,
-			container: this.container,
-			zoom: this.zoom,
-			center: this.center,
-			minZoom: this.minZoom,
-			maxZoom: this.maxZoom,
-			mapSize: this.mapSize,
-			wrapX: this.wrapX,
-			useScreenCache: this.useScreenCache,
-			screenCache: this._screenCache,
-			raster: this._raster,
-			rasterOpacity: this._rasterOpacity,
-			upscaleFilter: this._upscaleFilter,
-			iconScaleFunction: this._iconScaleFunction,
-			icons: this._icons,
-			tileCache: this._tileCache,
-			tileSize: this.tileSize,
-			sourceMaxZoom: this._sourceMaxZoom,
-			// Project image pixels at native resolution into level-z pixel coords
-			project: (x: number, y: number, z: number) => {
-				const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-				return Coords.worldToLevel({ x, y }, imageMaxZ, Math.floor(z));
-			},
+    public getRenderCtx(): RenderCtx {
+        return {
+            gl: this.gl,
+            prog: this._prog!,
+            loc: this._loc!,
+            quad: this._quad!,
+            canvas: this.canvas,
+            dpr: this._dpr,
+            container: this.container,
+            zoom: this.zoom,
+            center: this.center,
+            minZoom: this.minZoom,
+            maxZoom: this.maxZoom,
+            mapSize: this.mapSize,
+            wrapX: this.wrapX,
+            useScreenCache: this.useScreenCache,
+            screenCache: this._screenCache,
+            raster: this._raster,
+            rasterOpacity: this._rasterOpacity,
+            upscaleFilter: this._upscaleFilter,
+            iconScaleFunction: this._iconScaleFunction,
+            icons: this._icons,
+            tileCache: this._tileCache,
+            tileSize: this.tileSize,
+            sourceMaxZoom: this._sourceMaxZoom,
+            isIdle: () => {
+                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+                const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
+                const anim = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
+                return idleByTime && !anim;
+            },
+            // Project image pixels at native resolution into level-z pixel coords
+            project: (x: number, y: number, z: number) => {
+                const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+                return Coords.worldToLevel({ x, y }, imageMaxZ, Math.floor(z));
+            },
 			enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
 			wantTileKey: (key: string) => {
 				this._wantedKeys.add(key);
