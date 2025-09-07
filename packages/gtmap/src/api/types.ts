@@ -131,50 +131,91 @@ export function isCircle(v: Vector): v is Circle {
 }
 
 // Event data types
+/**
+ * Map‑level pointer event payload.
+ *
+ * @public
+ * @remarks
+ * Includes screen coordinates (CSS pixels), best‑effort world position, and the current view.
+ */
 export interface PointerEventData {
-	x: number;
-	y: number;
-	world: Point | null;
-	view: ViewState;
-	originalEvent: PointerEvent;
+    /** Screen X in CSS pixels relative to the container. */
+    x: number;
+    /** Screen Y in CSS pixels relative to the container. */
+    y: number;
+    /** World position in pixels at current zoom, or `null` if the pointer is outside. */
+    world: Point | null;
+    /** Current view state snapshot. */
+    view: ViewState;
+    /** Original DOM pointer event. */
+    originalEvent: PointerEvent;
 }
 
+/**
+ * Map‑level mouse event payload (derived from pointer events).
+ *
+ * @public
+ * @remarks
+ * May include `markers?` hover hits for convenience when idle.
+ */
 export interface MouseEventData {
-	x: number;
-	y: number;
-	world: Point | null;
-	view: ViewState;
-	originalEvent: MouseEvent;
-	markers?: MarkerHit[];
+    /** Screen X in CSS pixels relative to the container. */
+    x: number;
+    /** Screen Y in CSS pixels relative to the container. */
+    y: number;
+    /** World position in pixels at current zoom, or `null` if the pointer is outside. */
+    world: Point | null;
+    /** Current view state snapshot. */
+    view: ViewState;
+    /** Original DOM mouse event. */
+    originalEvent: MouseEvent;
+    /** Optional hover hits under the cursor (when enabled). */
+    markers?: MarkerHit[];
 }
 
+/** Marker hover hit on the map surface (mouse only, when enabled). */
 export interface MarkerHit {
-	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
-	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+    /** Lightweight marker snapshot for hover purposes. */
+    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
+    /** Icon metadata associated with the hit marker. */
+    icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
 
+/** Movement event payload: center changed. */
 export interface MoveEventData {
-	view: ViewState;
+    /** Current view state snapshot. */
+    view: ViewState;
 }
 
+/** Zoom event payload: zoom changed. */
 export interface ZoomEventData {
-	view: ViewState;
+    /** Current view state snapshot. */
+    view: ViewState;
 }
 
+/** Per‑frame payload for diagnostics/HUD. */
 export interface FrameEventData {
-	now: number;
-	stats?: RenderStats;
+    /** High‑resolution timestamp for the frame. */
+    now: number;
+    /** Optional renderer stats if enabled. */
+    stats?: RenderStats;
 }
 
 // Lifecycle event payloads
+/** Load event payload: fired once after the first frame is scheduled. */
 export interface LoadEventData {
-	view: ViewState;
-	size: { width: number; height: number; dpr: number };
+    /** Current view state snapshot. */
+    view: ViewState;
+    /** Final container size and device pixel ratio. */
+    size: { width: number; height: number; dpr: number };
 }
 
+/** Resize event payload: fired after a debounced resize completes. */
 export interface ResizeEventData {
-	view: ViewState;
-	size: { width: number; height: number; dpr: number };
+    /** Current view state snapshot. */
+    view: ViewState;
+    /** Final container size and device pixel ratio. */
+    size: { width: number; height: number; dpr: number };
 }
 
 // Base event (shared fields for richer payloads)

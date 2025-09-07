@@ -50,6 +50,7 @@
 			marker.events.on('pointerleave').each((e) => {
 				console.log('Marker pointerleave:', e);
 			});
+
 	}
 
 	function setMarkerCount(n: number): void {

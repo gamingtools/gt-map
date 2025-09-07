@@ -532,9 +532,12 @@ export class GTMap {
 	 */
 	get events(): PublicEvents<MapEventMap> {
 		return {
-			on: (name) => this._impl.events.on(name),
-			once: (name) => this._impl.events.when(name),
-		};
+			on: (name: any, handler?: any) => {
+				const stream = this._impl.events.on(name as any);
+				return handler ? stream.each(handler) : stream;
+			},
+			once: (name: any) => this._impl.events.when(name as any),
+		} as PublicEvents<MapEventMap>;
 	}
 
 	/**

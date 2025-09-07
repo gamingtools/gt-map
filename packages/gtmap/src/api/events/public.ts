@@ -3,8 +3,8 @@ export type Unsubscribe = () => void;
 
 /** Minimal subscription interface exposed publicly. */
 export interface EventSubscription<T> {
-	/** Register a handler and receive an `Unsubscribe` function. */
-	each(handler: (value: T) => void): Unsubscribe;
+    /** Register a handler and receive an `Unsubscribe` function. */
+    each(handler: (value: T) => void): Unsubscribe;
 }
 
 /**
@@ -26,7 +26,20 @@ export interface PublicEvents<EventMap> {
 	 *   console.log('clicked at', e.x, e.y);
 	 * });
 	 */
-	on<K extends keyof EventMap & string>(event: K): EventSubscription<EventMap[K]>;
+    on<K extends keyof EventMap & string>(event: K): EventSubscription<EventMap[K]>;
+    /**
+     * Subscribe to a named event with an inline handler.
+     *
+     * @param event - Event name (typed)
+     * @param handler - Handler invoked synchronously with the event payload
+     * @returns An `Unsubscribe` function
+     *
+     * @example
+     * marker.events.on('click', (e) => {
+     *   console.log('clicked at', e.x, e.y);
+     * });
+     */
+    on<K extends keyof EventMap & string>(event: K, handler: (value: EventMap[K]) => void): Unsubscribe;
 	/**
 	 * Wait for the next event occurrence and resolve with its payload.
 	 *
