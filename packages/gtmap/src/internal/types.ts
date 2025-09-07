@@ -23,10 +23,10 @@ type InternalEventBus = {
 };
 
 import type { LngLat } from './mapgl';
-import type { ProgramLocs } from './render/screenCache';
+import type { ProgramLocs } from './render/screen-cache';
 import type { RasterRenderer } from './layers/raster';
 import type { IconRenderer } from './layers/icons';
-import type { ScreenCache } from './render/screenCache';
+import type { ScreenCache } from './render/screen-cache';
 import type { TileCache } from './tiles/cache';
 
 export type ViewState = {

@@ -3,11 +3,11 @@
 import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext } from '../api/types';
 import { DEBUG } from '../debug';
 
-import Graphics, { type GraphicsHost } from './gl/Graphics';
-import { ScreenCache } from './render/screenCache';
+import Graphics, { type GraphicsHost } from './gl/graphics';
+import { ScreenCache } from './render/screen-cache';
 import { TileCache } from './tiles/cache';
 // import { TileQueue } from './tiles/queue';
-import TilePipeline from './tiles/TilePipeline';
+import TilePipeline from './tiles/tile-pipeline';
 import { TileLoader, type TileLoaderDeps } from './tiles/loader';
 import type { TileDeps, RenderCtx, MapImpl } from './types';
 import * as Coords from './coords';
@@ -17,15 +17,15 @@ import { IconRenderer } from './layers/icons';
 import { TypedEventBus } from './events/typed-stream';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
-import ZoomController from './core/ZoomController';
-import InputController from './input/InputController';
+import ZoomController from './core/zoom-controller';
+import InputController from './input/input-controller';
 import type { InputDeps } from './types';
-import MapRenderer from './render/MapRenderer';
+import MapRenderer from './render/map-renderer';
 import { drawGrid } from './render/grid';
 import type { ViewState } from './types';
 // prefetch/grid helpers moved inline
 import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
-import { FrameLoop } from './core/FrameLoop';
+import { FrameLoop } from './core/frame-loop';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {

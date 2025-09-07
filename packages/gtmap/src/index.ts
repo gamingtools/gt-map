@@ -1,7 +1,7 @@
 // New simplified API (pixel CRS only)
-export { GTMap } from './api/Map';
-export { Marker, Vector as VectorEntity, Layer } from './api/Map';
-export type { ViewTransition } from './api/Map';
+export { GTMap } from './api/map';
+export { Marker, Vector as VectorEntity, Layer } from './api/map';
+export type { ViewTransition } from './api/map';
 export * as easings from './api/easings';
 
 // Export all public types
@@ -56,4 +56,4 @@ export type {
 } from './api/events/maps';
 
 // Export entity option types
-export type { MarkerOptions } from './entities/Marker';
+export type { MarkerOptions } from './entities/marker';

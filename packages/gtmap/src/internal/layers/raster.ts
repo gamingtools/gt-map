@@ -1,4 +1,4 @@
-import type { ProgramLocs } from '../render/screenCache';
+import type { ProgramLocs } from '../render/screen-cache';
 // per-level tile size provided via params
 import { tileKey as tileKeyOf, wrapX as wrapXTile } from '../tiles/source';
 import * as Coords from '../coords';

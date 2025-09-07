@@ -134,7 +134,7 @@
 			center: { x: HOME.lng, y: HOME.lat },
 			zoom: 2,
 			minZoom: 0,
-			maxZoom: 10,
+			maxZoom: 5,
 			fpsCap: 60,
 			autoResize: true,
 			// Tile source (initialize via constructor)

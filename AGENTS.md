@@ -8,7 +8,7 @@
 
 - `apps/svelte-gtmap-test`: SvelteKit demo app (visit `/map`).
 - `apps/noframework-gtmap-test/index.html`: No‑framework demo (simple HTML + TS).
-- `packages/gtmap/src/api/Map.ts`: Public `GTMap` facade (typed API surface).
+- `packages/gtmap/src/api/map.ts`: Public `GTMap` facade (typed API surface).
 - `packages/gtmap/src/internal/mapgl.ts`: Core WebGL implementation (tiles, input, rendering, cache).
 - Pixel CRS only: use image pixel coordinates (no geodetic CRS).
 - `package.json`: Scripts and dev deps (Vite, TypeScript, ESLint/Prettier).
@@ -24,6 +24,7 @@
 - Language: Modern ES modules/TypeScript; keep imports relative (e.g., `./mapgl`).
 - Indentation: 2 spaces; semicolons required; single quotes for strings.
 - Naming: PascalCase for classes (e.g., `MapGL`), camelCase for functions/vars, UPPER_SNAKE_CASE for constants.
+- Filenames: Use kebab-case for all TypeScript modules (e.g., `zoom-controller.ts`, `map-renderer.ts`). Do not use PascalCase or camelCase filenames.
 - Formatting: No enforced linter; keep diffs small and style consistent with existing files.
 
 ## Testing Guidelines

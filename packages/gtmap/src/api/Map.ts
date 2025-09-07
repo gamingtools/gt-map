@@ -1,8 +1,8 @@
 import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
-import { Layer } from '../entities/Layer';
-import { Marker } from '../entities/Marker';
-import { Vector } from '../entities/Vector';
+import { Layer } from '../entities/layer';
+import { Marker } from '../entities/marker';
+import { Vector } from '../entities/vector';
 import type { VectorGeometry as VectorGeom } from './events/maps';
 
 import type { MapEvents } from './events/public';
@@ -24,9 +24,9 @@ import type {
 
 // Re-export types from centralized types file
 export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector as VectorLegacy, ActiveOptions } from './types';
-export { Marker } from '../entities/Marker';
-export { Vector } from '../entities/Vector';
-export { Layer } from '../entities/Layer';
+export { Marker } from '../entities/marker';
+export { Vector } from '../entities/vector';
+export { Layer } from '../entities/layer';
 
 /**
  * GTMap - A high‑performance WebGL map renderer with a pixel‑based coordinate system.
