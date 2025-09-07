@@ -1,5 +1,5 @@
 import { TypedEventBus } from '../internal/events/typed-stream';
-import type { PublicEvents } from '../api/events/public';
+import type { LayerEvents } from '../api/events/public';
 import type { LayerEventMap } from '../api/events/maps';
 
 /** Options for creating a {@link Layer}. */
@@ -25,13 +25,13 @@ export class Layer<T extends { id: string; remove(): void }> {
 	readonly id: string;
 	private _eventsBus = new TypedEventBus<LayerEventMap<T>>();
 	/** Read‑only typed events for this layer. */
-    readonly events: PublicEvents<LayerEventMap<T>> = {
+	readonly events: LayerEvents<T> = {
         on: (event: any, handler?: any) => {
             const stream = this._eventsBus.on(event);
             return handler ? stream.each(handler) : stream;
         },
         once: (event: any) => this._eventsBus.when(event),
-    } as PublicEvents<LayerEventMap<T>>;
+	} as LayerEvents<T>;
 	private _entities: Map<string, T> = new Map();
 	private _visible = true;
 	private _onChange?: () => void;

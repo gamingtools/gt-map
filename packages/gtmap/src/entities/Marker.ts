@@ -1,4 +1,4 @@
-import type { PublicEvents } from '../api/events/public';
+import type { MarkerEvents } from '../api/events/public';
 import type { MarkerEventMap, MarkerData } from '../api/events/maps';
 
 import { EventedEntity } from './base';
@@ -164,6 +164,6 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 		this.emit(event, payload);
 	}
 
-	/** Public events surface type re‑exposed for convenience. */
-	declare readonly events: PublicEvents<MarkerEventMap>;
+	/** Public events surface for this marker (typed event names/payloads). */
+	declare readonly events: MarkerEvents;
 }

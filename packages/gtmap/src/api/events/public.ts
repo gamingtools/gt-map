@@ -51,3 +51,45 @@ export interface PublicEvents<EventMap> {
 	 */
 	once<K extends keyof EventMap & string>(event: K): Promise<EventMap[K]>;
 }
+
+// Typed event surfaces for better IntelliSense on hover
+// These extend PublicEvents but annotate common names for quick reference.
+
+import type { MarkerEventMap, VectorEventMap, LayerEventMap } from './maps';
+import type { EventMap as MapEventMap } from '../types';
+
+/** Marker events surface with typed names and payloads. */
+export interface MarkerEvents extends PublicEvents<MarkerEventMap> {
+  /**
+   * Subscribe to a marker event.
+   *
+   * Supported names: 'click' | 'tap' | 'longpress' | 'pointerdown' | 'pointerup' | 'pointerenter' | 'pointerleave' | 'positionchange' | 'remove'
+   */
+  on<K extends keyof MarkerEventMap & string>(event: K): EventSubscription<MarkerEventMap[K]>;
+  on<K extends keyof MarkerEventMap & string>(event: K, handler: (value: MarkerEventMap[K]) => void): Unsubscribe;
+}
+
+/** Vector events surface with typed names and payloads. */
+export interface VectorEvents extends PublicEvents<VectorEventMap> {
+  /** Supported names: 'remove' */
+  on<K extends keyof VectorEventMap & string>(event: K): EventSubscription<VectorEventMap[K]>;
+  on<K extends keyof VectorEventMap & string>(event: K, handler: (value: VectorEventMap[K]) => void): Unsubscribe;
+}
+
+/** Layer events surface with typed names and payloads. */
+export interface LayerEvents<T> extends PublicEvents<LayerEventMap<T>> {
+  /** Supported names: 'entityadd' | 'entityremove' | 'clear' | 'visibilitychange' */
+  on<K extends keyof LayerEventMap<T> & string>(event: K): EventSubscription<LayerEventMap<T>[K]>;
+  on<K extends keyof LayerEventMap<T> & string>(event: K, handler: (value: LayerEventMap<T>[K]) => void): Unsubscribe;
+}
+
+/** Map events surface with typed names and payloads. */
+export interface MapEvents extends PublicEvents<MapEventMap> {
+  /**
+   * Subscribe to a map event.
+   *
+   * Common names: 'load' | 'resize' | 'move' | 'moveend' | 'zoom' | 'zoomend' | 'pointerdown' | 'pointermove' | 'pointerup' | 'mousedown' | 'mousemove' | 'mouseup' | 'click' | 'dblclick' | 'contextmenu' | 'frame' | 'markerenter' | 'markerleave' | 'markerclick' | 'markerdown' | 'markerup' | 'markerlongpress'
+   */
+  on<K extends keyof MapEventMap & string>(event: K): EventSubscription<MapEventMap[K]>;
+  on<K extends keyof MapEventMap & string>(event: K, handler: (value: MapEventMap[K]) => void): Unsubscribe;
+}

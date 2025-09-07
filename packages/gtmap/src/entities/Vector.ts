@@ -1,4 +1,4 @@
-import type { PublicEvents } from '../api/events/public';
+import type { VectorEvents } from '../api/events/public';
 import type { VectorEventMap } from '../api/events/maps';
 import type { Point } from '../api/types';
 
@@ -82,6 +82,6 @@ export class Vector extends EventedEntity<VectorEventMap> {
 		this.emit('remove', { vector: { id: this.id, geometry: this._geometry } });
 	}
 
-	/** Public events surface type for this vector. */
-	declare readonly events: PublicEvents<VectorEventMap>;
+	/** Public events surface for this vector. */
+	declare readonly events: VectorEvents;
 }

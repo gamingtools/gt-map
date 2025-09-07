@@ -4,7 +4,7 @@ import { Layer } from '../entities/Layer';
 import { Marker } from '../entities/Marker';
 import { Vector, type VectorGeometry as VectorGeom } from '../entities/Vector';
 
-import type { PublicEvents } from './events/public';
+import type { MapEvents } from './events/public';
 import type {
 	Point,
 	TileSourceOptions,
@@ -530,14 +530,14 @@ export class GTMap {
 	 * await map.events.once('zoomend');
 	 * ```
 	 */
-	get events(): PublicEvents<MapEventMap> {
+	get events(): MapEvents {
 		return {
 			on: (name: any, handler?: any) => {
 				const stream = this._impl.events.on(name as any);
 				return handler ? stream.each(handler) : stream;
 			},
 			once: (name: any) => this._impl.events.when(name as any),
-		} as PublicEvents<MapEventMap>;
+		} as MapEvents;
 	}
 
 	/**

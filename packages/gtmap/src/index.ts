@@ -12,4 +12,4 @@ export type { Point, TileSourceOptions, MapOptions, IconDef, IconHandle, VectorS
 export { isPolyline, isPolygon, isCircle } from './api/types';
 
 // Export public event surface types
-export type { PublicEvents, EventSubscription } from './api/events/public';
+export type { PublicEvents, EventSubscription, MarkerEvents, VectorEvents, LayerEvents, MapEvents } from './api/events/public';
