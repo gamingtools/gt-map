@@ -91,10 +91,7 @@ export default class MapRenderer {
         const absS = Math.abs(s), absC = Math.abs(c);
         const effW = widthCSS * absC + heightCSS * absS;
         const effH = widthCSS * absS + heightCSS * absC;
-        const offXWorld = (effW - widthCSS) * 0.5 / Math.max(1e-6, scale);
-        const offYWorld = (effH - heightCSS) * 0.5 / Math.max(1e-6, scale);
-        const tlWorldExp = { x: tlWorld.x - offXWorld, y: tlWorld.y - offYWorld };
-        const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorldExp, scale, effW, effH, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
+        const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorld, scale, effW, effH, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
 		if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
 
 		// Determine target LOD for idle resolution logic
@@ -113,13 +110,10 @@ export default class MapRenderer {
                 const snapT = (v: number) => Coords.snapLevelToDevice(v, scaleT, ctx.dpr);
                 tlT = { x: snapT(tlT.x), y: snapT(tlT.y) };
             }
-            const offXT = (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleT);
-            const offYT = (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleT);
-            const tlTExp = { x: tlT.x - offXT, y: tlT.y - offYT };
             targetCoverage = ctx.raster.coverage(
                 ctx.tileCache,
                 targetZ,
-                tlTExp,
+                tlT,
                 scaleT,
                 effW,
                 effH,
@@ -148,7 +142,7 @@ export default class MapRenderer {
 				gl.uniform1f(loc.u_alpha!, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
                 ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
                     zLevel: lvl,
-                    tlWorld: { x: tlL.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleL), y: tlL.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleL) },
+                    tlWorld: tlL,
                     scale: scaleL,
                     dpr: ctx.dpr,
                     widthCSS: effW,
@@ -179,7 +173,7 @@ export default class MapRenderer {
 				gl.uniform1f(loc.u_alpha!, layerAlpha);
                 ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
                     zLevel: targetZ,
-                    tlWorld: { x: tlR.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleR), y: tlR.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleR) },
+                    tlWorld: tlR,
                     scale: scaleR,
                     dpr: ctx.dpr,
                     widthCSS: effW,
@@ -198,7 +192,7 @@ export default class MapRenderer {
 				gl.uniform1f(loc.u_alpha!, layerAlpha);
             ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
                 zLevel: baseZ,
-                tlWorld: tlWorldExp,
+                tlWorld: tlWorld,
                 scale,
                 dpr: ctx.dpr,
                 widthCSS: effW,
@@ -249,7 +243,7 @@ export default class MapRenderer {
 					gl.uniform1f(loc.u_alpha!, layerAlpha);
                 ctx.raster.drawTilesForLevel(ctx.loc!, ctx.tileCache, ctx.enqueueTile, {
                     zLevel: zIntNext,
-                    tlWorld: { x: tlN.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleN), y: tlN.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleN) },
+                    tlWorld: tlN,
                     scale: scaleN,
                     dpr: ctx.dpr,
                     widthCSS: effW,
