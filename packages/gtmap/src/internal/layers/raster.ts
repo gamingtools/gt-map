@@ -33,15 +33,17 @@ export class RasterRenderer {
             filterMode?: 'auto' | 'linear' | 'bicubic';
             wantTileKey?: (key: string) => void;
             quantizePixels?: boolean; // when false, avoid integer rounding for rotated views
+            coverTlWorld?: { x: number; y: number }; // optional: expand coverage from a wider top-left for rotation
         },
     ) {
 		const gl = this.gl;
 		const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom, filterMode } = params;
-		const TS = tileSize;
-		const startX = Math.floor(tlWorld.x / TS);
-		const startY = Math.floor(tlWorld.y / TS);
-		const endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
-		const endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
+        const TS = tileSize;
+        const baseTl = params.coverTlWorld ?? tlWorld;
+        const startX = Math.floor(baseTl.x / TS);
+        const startY = Math.floor(baseTl.y / TS);
+        const endX = Math.floor((baseTl.x + widthCSS / scale) / TS) + 1;
+        const endY = Math.floor((baseTl.y + heightCSS / scale) / TS) + 1;
 		// const tilePixelSizeCSS = TS * scale; // reserved for future heuristics
 
 		// Limit tile ranges for finite, possibly non-square images
@@ -70,14 +72,15 @@ export class RasterRenderer {
 					if (tx < 0 || tx >= tilesX) continue;
 				}
 				const tileX = wrapX && !Number.isFinite(tilesX) ? wrapXTile(tx, zLevel) : tx;
-				const wx = tx * TS;
-				const wy = ty * TS;
-				let sxCSS = (wx - tlWorld.x) * scale;
-				const syCSS = (wy - tlWorld.y) * scale;
-				if (wrapX && !Number.isFinite(tilesX) && tileX !== tx) {
-					const dxTiles = tx - tileX;
-					sxCSS -= dxTiles * TS * scale;
-				}
+                const wx = tx * TS;
+                const wy = ty * TS;
+                // Position tiles relative to the original view top-left (not the coverage top-left)
+                let sxCSS = (wx - tlWorld.x) * scale;
+                const syCSS = (wy - tlWorld.y) * scale;
+                if (wrapX && !Number.isFinite(tilesX) && tileX !== tx) {
+                    const dxTiles = tx - tileX;
+                    sxCSS -= dxTiles * TS * scale;
+                }
 				if (typeof sourceMaxZoom === 'number' && zLevel > sourceMaxZoom) continue;
 				const key = tileKeyOf(zLevel, tileX, ty);
 				// mark tile as wanted this frame to protect it in queue pruning

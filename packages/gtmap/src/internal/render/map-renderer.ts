@@ -155,6 +155,7 @@ export default class MapRenderer {
                     filterMode: this.levelFilter(scaleL),
                     wantTileKey: ctx.wantTileKey,
                     quantizePixels: (ang === 0),
+                    coverTlWorld: { x: tlL.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleL), y: tlL.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleL) },
                 });
 				if (covL >= 0.995) break;
 			}
@@ -186,6 +187,7 @@ export default class MapRenderer {
                     filterMode: this.levelFilter(scaleR),
                     wantTileKey: ctx.wantTileKey,
                     quantizePixels: (ang === 0),
+                    coverTlWorld: { x: tlR.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleR), y: tlR.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleR) },
                 });
 			} else {
 				// Not enough target coverage yet: render base + backfill, but suppress z+1 overlay blending
@@ -205,6 +207,7 @@ export default class MapRenderer {
                 filterMode: this.levelFilter(scale),
                 wantTileKey: ctx.wantTileKey,
                 quantizePixels: (ang === 0),
+                coverTlWorld: { x: tlWorld.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scale), y: tlWorld.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scale) },
             });
 			}
 		} else {
@@ -256,6 +259,7 @@ export default class MapRenderer {
                     filterMode: this.levelFilter(scaleN),
                     wantTileKey: ctx.wantTileKey,
                     quantizePixels: (ang === 0),
+                    coverTlWorld: { x: tlN.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleN), y: tlN.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleN) },
                 });
 					gl.uniform1f(loc.u_alpha!, 1.0);
 				}
