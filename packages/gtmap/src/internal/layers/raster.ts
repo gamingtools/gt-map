@@ -143,12 +143,15 @@ export class RasterRenderer {
 		mapSize?: { width: number; height: number },
 		zMax?: number,
 		sourceMaxZoom?: number,
+		padTiles?: number,
 	): number {
 		const TS = tileSize;
-		const startX = Math.floor(tlWorld.x / TS);
-		const startY = Math.floor(tlWorld.y / TS);
-		const endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
-		const endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
+		let startX = Math.floor(tlWorld.x / TS);
+		let startY = Math.floor(tlWorld.y / TS);
+		let endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
+		let endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
+		const pad = Math.max(0, Math.floor(padTiles || 0));
+		startX -= pad; startY -= pad; endX += pad; endY += pad;
 		let total = 0;
 		let ready = 0;
 		let tilesX = Infinity;

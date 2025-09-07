@@ -109,6 +109,7 @@ export default class MapRenderer {
             ctx.mapSize,
             ctx.maxZoom,
             ctx.sourceMaxZoom,
+            (ang !== 0) ? 2 : 0,
         );
 		if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
 
@@ -140,6 +141,7 @@ export default class MapRenderer {
                 ctx.mapSize,
                 ctx.maxZoom,
                 ctx.sourceMaxZoom,
+                (ang !== 0) ? 2 : 0,
             );
             // Do not perform alpha=0 draws here; we will enqueue through visible draws below.
         }
@@ -167,6 +169,7 @@ export default class MapRenderer {
                     ctx.mapSize,
                     ctx.maxZoom,
                     ctx.sourceMaxZoom,
+                    (ang !== 0) ? 2 : 0,
                 );
 				// Backfill lower levels at full raster opacity
 				gl.uniform1f(loc.u_alpha!, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
@@ -251,8 +254,8 @@ export default class MapRenderer {
 				tlWorld,
 				scale,
 				dpr: ctx.dpr,
-				widthCSS,
-				heightCSS,
+				widthCSS: effW,
+				heightCSS: effH,
 				wrapX: ctx.wrapX,
 				tileSize: ctx.tileSize,
 				mapSize: ctx.mapSize,
@@ -260,6 +263,9 @@ export default class MapRenderer {
 				sourceMaxZoom: ctx.sourceMaxZoom,
 				filterMode: this.levelFilter(scale),
 				wantTileKey: ctx.wantTileKey,
+				quantizePixels: (ang === 0),
+				coverTlWorld: (ang === 0) ? tlWorld : { x: centerLevel.x - (effW / scale) * 0.5, y: centerLevel.y - (effH / scale) * 0.5 },
+				padTiles: (ang !== 0) ? 2 : 0,
 			});
 			if (opts?.prefetchNeighbors) opts.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
 			if (zIntNext > baseZ && frac > 0) {
@@ -285,6 +291,7 @@ export default class MapRenderer {
                     ctx.mapSize,
                     ctx.maxZoom,
                     ctx.sourceMaxZoom,
+                    (ang !== 0) ? 2 : 0,
                 );
 				if (nextCoverage > 0.35) {
 					// Draw next-level tiles fully opaque where available to avoid gamma-darkening from blend
