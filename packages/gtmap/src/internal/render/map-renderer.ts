@@ -89,8 +89,14 @@ export default class MapRenderer {
 		}
         // Inflate viewport to cover rotated corners, centered on viewport
         const absS = Math.abs(s), absC = Math.abs(c);
-        const effW = widthCSS * absC + heightCSS * absS;
-        const effH = widthCSS * absS + heightCSS * absC;
+        let effW = widthCSS * absC + heightCSS * absS;
+        let effH = widthCSS * absS + heightCSS * absC;
+        if (ang !== 0) {
+            // Add a conservative margin to cover tile boundaries while panning at a bearing
+            const margin = ctx.tileSize * scale * 1.5;
+            effW += margin;
+            effH += margin;
+        }
         const coverage = ctx.raster.coverage(ctx.tileCache, baseZ, tlWorld, scale, effW, effH, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
 		if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
 
@@ -156,7 +162,7 @@ export default class MapRenderer {
                     wantTileKey: ctx.wantTileKey,
                     quantizePixels: (ang === 0),
                     coverTlWorld: { x: tlL.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleL), y: tlL.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleL) },
-                    padTiles: (ang !== 0) ? 1 : 0,
+                    padTiles: (ang !== 0) ? 2 : 0,
                 });
 				if (covL >= 0.995) break;
 			}
@@ -189,7 +195,7 @@ export default class MapRenderer {
                     wantTileKey: ctx.wantTileKey,
                     quantizePixels: (ang === 0),
                     coverTlWorld: { x: tlR.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleR), y: tlR.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleR) },
-                    padTiles: (ang !== 0) ? 1 : 0,
+                    padTiles: (ang !== 0) ? 2 : 0,
                 });
 			} else {
 				// Not enough target coverage yet: render base + backfill, but suppress z+1 overlay blending
@@ -210,7 +216,7 @@ export default class MapRenderer {
                 wantTileKey: ctx.wantTileKey,
                 quantizePixels: (ang === 0),
                 coverTlWorld: { x: tlWorld.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scale), y: tlWorld.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scale) },
-                padTiles: (ang !== 0) ? 1 : 0,
+                padTiles: (ang !== 0) ? 2 : 0,
             });
 			}
 		} else {
@@ -263,7 +269,7 @@ export default class MapRenderer {
                     wantTileKey: ctx.wantTileKey,
                     quantizePixels: (ang === 0),
                     coverTlWorld: { x: tlN.x - (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleN), y: tlN.y - (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleN) },
-                    padTiles: (ang !== 0) ? 1 : 0,
+                    padTiles: (ang !== 0) ? 2 : 0,
                 });
 					gl.uniform1f(loc.u_alpha!, 1.0);
 				}
