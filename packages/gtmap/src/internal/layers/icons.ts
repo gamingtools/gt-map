@@ -267,6 +267,14 @@ export class IconRenderer {
             gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
             gl.uniform1f(this.instLoc!.u_invS!, invS);
             gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
+            // View rotation uniforms
+            const angleDeg = (ctx as any).viewRotationDeg as number | undefined;
+            const ang = (typeof angleDeg === 'number' ? angleDeg : 0) * Math.PI / 180.0;
+            const s = Math.sin(ang); const c = Math.cos(ang);
+            gl.uniform2f(this.instLoc!.u_centerPx!, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5);
+            gl.uniform2f(this.instLoc!.u_rotSinCos!, s, c);
+            const mode = ((ctx as any).entityRotationMode === 'rotate') ? ang : 0.0;
+            gl.uniform1f(this.instLoc!.u_viewAngle!, mode);
 
 			// For each type
 			const isGL2 = 'drawArraysInstanced' in (gl as WebGL2RenderingContext);
@@ -427,6 +435,9 @@ export class IconRenderer {
         uniform float u_invS;
         uniform float u_iconScale;
         varying vec2 v_uv;
+        uniform vec2 u_centerPx; // viewport center in device px
+        uniform vec2 u_rotSinCos; // (sin, cos) of view rotation
+        uniform float u_viewAngle; // radians; 0 when entities should not rotate with map
         void main(){
           vec2 world = a_i_native * u_invS;
           vec2 css = (world - u_tlWorld) * u_scale;
@@ -438,11 +449,16 @@ export class IconRenderer {
           sizePx = floor(sizePx + 0.5);
           anchorPx = floor(anchorPx + 0.5);
           vec2 v = a_pos * sizePx - anchorPx;
-          float ang = a_i_angle;
+          float ang = a_i_angle + u_viewAngle;
           float s = sin(ang), c = cos(ang);
           vec2 vr = vec2(v.x * c - v.y * s, v.x * s + v.y * c);
           vec2 pixelPos = basePx + vr;
-          vec2 clip = (pixelPos / u_resolution) * 2.0 - 1.0;
+          // Rotate around viewport center by view rotation
+          float sv = u_rotSinCos.x; float cv = u_rotSinCos.y;
+          vec2 d = pixelPos - u_centerPx;
+          vec2 dr = vec2(d.x * cv - d.y * sv, d.x * sv + d.y * cv);
+          vec2 pixelRot = u_centerPx + dr;
+          vec2 clip = (pixelRot / u_resolution) * 2.0 - 1.0;
           clip.y *= -1.0;
           gl_Position = vec4(clip, 0.0, 1.0);
           v_uv = a_pos;
@@ -463,23 +479,26 @@ export class IconRenderer {
 			const prog = this.createProgram(gl, vs, fs);
 			if (!prog) return false;
 			this.instProg = prog;
-			this.instLoc = {
-				a_pos: gl.getAttribLocation(prog, 'a_pos'),
-				a_i_native: gl.getAttribLocation(prog, 'a_i_native'),
-				a_i_size: gl.getAttribLocation(prog, 'a_i_size'),
-				a_i_anchor: gl.getAttribLocation(prog, 'a_i_anchor'),
-				a_i_angle: gl.getAttribLocation(prog, 'a_i_angle'),
-				u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
-				u_tlWorld: gl.getUniformLocation(prog, 'u_tlWorld'),
-				u_scale: gl.getUniformLocation(prog, 'u_scale'),
-				u_dpr: gl.getUniformLocation(prog, 'u_dpr'),
-				u_invS: gl.getUniformLocation(prog, 'u_invS'),
-				u_tex: gl.getUniformLocation(prog, 'u_tex'),
-				u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
-				u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
-				u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
-				u_iconScale: gl.getUniformLocation(prog, 'u_iconScale'),
-			};
+            this.instLoc = {
+                a_pos: gl.getAttribLocation(prog, 'a_pos'),
+                a_i_native: gl.getAttribLocation(prog, 'a_i_native'),
+                a_i_size: gl.getAttribLocation(prog, 'a_i_size'),
+                a_i_anchor: gl.getAttribLocation(prog, 'a_i_anchor'),
+                a_i_angle: gl.getAttribLocation(prog, 'a_i_angle'),
+                u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
+                u_tlWorld: gl.getUniformLocation(prog, 'u_tlWorld'),
+                u_scale: gl.getUniformLocation(prog, 'u_scale'),
+                u_dpr: gl.getUniformLocation(prog, 'u_dpr'),
+                u_invS: gl.getUniformLocation(prog, 'u_invS'),
+                u_tex: gl.getUniformLocation(prog, 'u_tex'),
+                u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
+                u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
+                u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
+                u_iconScale: gl.getUniformLocation(prog, 'u_iconScale'),
+                u_centerPx: gl.getUniformLocation(prog, 'u_centerPx'),
+                u_rotSinCos: gl.getUniformLocation(prog, 'u_rotSinCos'),
+                u_viewAngle: gl.getUniformLocation(prog, 'u_viewAngle'),
+            };
 		}
 		return !!this.instProg;
 	}

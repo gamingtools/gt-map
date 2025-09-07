@@ -322,6 +322,9 @@ export interface ShaderLocations {
 	u_uv1: WebGLUniformLocation | null;
 	u_texel?: WebGLUniformLocation | null;
 	u_filterMode?: WebGLUniformLocation | null;
+  // Map rotation (for generic quad program)
+  u_centerPx?: WebGLUniformLocation | null;
+  u_rotSinCos?: WebGLUniformLocation | null; // (sin, cos)
 }
 
 // WebGL extension interfaces

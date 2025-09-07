@@ -57,10 +57,17 @@ export default class Graphics {
 		const vsSrc = `
       attribute vec2 a_pos;
       uniform vec2 u_translate; uniform vec2 u_size; uniform vec2 u_resolution;
+      uniform vec2 u_centerPx; // viewport center in device px
+      uniform vec2 u_rotSinCos; // (sin, cos) of view rotation
       varying vec2 v_uv;
       void main(){
-        vec2 pixelPos=u_translate + a_pos*u_size;
-        vec2 clip=(pixelPos/u_resolution)*2.0-1.0;
+        vec2 pixelPos = u_translate + a_pos * u_size;
+        // Rotate around viewport center
+        float s = u_rotSinCos.x; float c = u_rotSinCos.y;
+        vec2 d = pixelPos - u_centerPx;
+        vec2 dr = vec2(d.x * c - d.y * s, d.x * s + d.y * c);
+        vec2 pixelRot = u_centerPx + dr;
+        vec2 clip = (pixelRot / u_resolution) * 2.0 - 1.0;
         clip.y*=-1.0; gl_Position=vec4(clip,0.0,1.0); v_uv=a_pos;
       }
     `;
@@ -102,18 +109,20 @@ export default class Graphics {
       }
     `;
 		const prog = createProgramFromSources(gl, vsSrc, fsSrc);
-		const loc: ShaderLocations = {
-			a_pos: gl.getAttribLocation(prog, 'a_pos'),
-			u_translate: gl.getUniformLocation(prog, 'u_translate'),
-			u_size: gl.getUniformLocation(prog, 'u_size'),
-			u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
-			u_tex: gl.getUniformLocation(prog, 'u_tex'),
-			u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
-			u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
-			u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
-			u_texel: gl.getUniformLocation(prog, 'u_texel'),
-			u_filterMode: gl.getUniformLocation(prog, 'u_filterMode'),
-		};
+      const loc: ShaderLocations = {
+        a_pos: gl.getAttribLocation(prog, 'a_pos'),
+        u_translate: gl.getUniformLocation(prog, 'u_translate'),
+        u_size: gl.getUniformLocation(prog, 'u_size'),
+        u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
+        u_tex: gl.getUniformLocation(prog, 'u_tex'),
+        u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
+        u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
+        u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
+        u_texel: gl.getUniformLocation(prog, 'u_texel'),
+        u_filterMode: gl.getUniformLocation(prog, 'u_filterMode'),
+        u_centerPx: gl.getUniformLocation(prog, 'u_centerPx'),
+        u_rotSinCos: gl.getUniformLocation(prog, 'u_rotSinCos'),
+      };
 		const quad = createUnitQuad(gl);
 		this.map._prog = prog;
 		this.map._loc = loc;

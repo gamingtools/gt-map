@@ -102,6 +102,9 @@ export interface RenderCtx {
 	// Vectors (optional 2D overlay for early implementation)
 	vectorCtx?: CanvasRenderingContext2D | null;
 	drawVectors?: () => void;
+  // Map rotation (degrees) and entity rotation mode for renderer
+  viewRotationDeg?: number;
+  entityRotationMode?: import('../api/types').EntityRotationMode;
 }
 
 export interface InputDeps {

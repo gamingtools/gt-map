@@ -45,7 +45,13 @@ export default class MapRenderer {
 		const loc = ctx.loc;
 		gl.enableVertexAttribArray(loc.a_pos);
 		gl.vertexAttribPointer(loc.a_pos, 2, gl.FLOAT, false, 0, 0);
-		gl.uniform2f(loc.u_resolution!, ctx.canvas.width, ctx.canvas.height);
+        gl.uniform2f(loc.u_resolution!, ctx.canvas.width, ctx.canvas.height);
+        // Map rotation uniforms
+        const angleDeg = (ctx as any).viewRotationDeg as number | undefined;
+        const ang = (typeof angleDeg === 'number' ? angleDeg : 0) * Math.PI / 180.0;
+        const s = Math.sin(ang); const c = Math.cos(ang);
+        if (loc.u_centerPx) gl.uniform2f(loc.u_centerPx, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5);
+        if (loc.u_rotSinCos) gl.uniform2f(loc.u_rotSinCos, s, c);
 		gl.uniform1i(loc.u_tex!, 0);
 		gl.uniform1f(loc.u_alpha!, 1.0);
 		gl.uniform2f(loc.u_uv0!, 0.0, 0.0);
