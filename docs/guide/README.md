@@ -13,4 +13,4 @@ relevant API types when you need details.
 - Vectors: add simple geometry overlays
 - Cookbook: small, practical snippets
 
-For full signatures and types, open `docs/api/index.html`.
+For full signatures and types, open `docs/api/` (Markdown) — start with `docs/api/modules.md`.

@@ -95,7 +95,7 @@ export interface IconDef {
 }
 
 /**
- * Opaque handle returned by {@link GTMap.addIcon} for use in {@link GTMap.addMarker}.
+ * Opaque handle returned by GTMap.addIcon for use in GTMap.addMarker.
  * @public
  */
 export interface IconHandle {

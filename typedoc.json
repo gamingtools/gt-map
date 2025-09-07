@@ -1,21 +1,22 @@
 {
   "$schema": "https://typedoc.org/schema.json",
   "entryPoints": [
-    "packages/gtmap/src/api/Map.ts",
-    "packages/gtmap/src/entities/Marker.ts",
-    "packages/gtmap/src/entities/Layer.ts",
-    "packages/gtmap/src/entities/Vector.ts",
-    "packages/gtmap/src/api/events/public.ts",
-    "packages/gtmap/src/api/events/maps.ts",
-    "packages/gtmap/src/api/types.ts"
+    "packages/gtmap/src/index.ts"
   ],
+  "entryPointStrategy": "resolve",
   "tsconfig": "packages/gtmap/tsconfig.json",
   "out": "docs/api",
+  "theme": "markdown",
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
+  "flattenOutputFiles": true,
+  "hideBreadcrumbs": true,
   "excludePrivate": true,
   "excludeProtected": true,
   "excludeInternal": true,
   "excludeExternals": true,
   "categorizeByGroup": false,
   "hideGenerator": true,
-  "readme": "none"
+  "readme": "docs/API_OVERVIEW.md"
 }

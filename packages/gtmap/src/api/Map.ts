@@ -485,19 +485,20 @@ export class GTMap {
 		this._impl.setWheelSpeed?.(v);
 		return this;
 	}
-	/**
-	 * Set the maximum frames per second.
-	 *
-	 * @public
-	 * @param v - FPS limit (15–240)
-	 * @returns This map instance for chaining
- 	 *
- 	 * @example
- 	 * ```ts
- 	 * // Lower FPS cap to save battery
- 	 * map.setFpsCap(30);
- 	 * ```
-	 */
+    /**
+     * Set the maximum frames per second.
+     *
+     * @public
+     * @param v - FPS limit (15–240)
+     * @returns This map instance for chaining
+     *
+     * @remarks
+     * Example:
+     * ```ts
+     * // Lower FPS cap to save battery
+     * map.setFpsCap(30);
+     * ```
+     */
 	setFpsCap(v: number): this {
 		this._impl.setFpsCap(v);
 		return this;
@@ -509,8 +510,7 @@ export class GTMap {
      * @public
      * @remarks
      * Policy: either `'transparent'` (fully transparent) or a solid color; alpha on colors is ignored.
-     *
-     * @example
+     * Example:
      * ```ts
      * // Transparent viewport (useful over custom app backgrounds)
      * map.setBackgroundColor('transparent');
@@ -522,21 +522,20 @@ export class GTMap {
 		this._impl.setBackgroundColor?.(color);
 		return this;
 	}
-	/**
-	 * Enable or disable automatic resize handling.
-	 *
-	 * @public
-	 * @remarks
-	 * When enabled, a ResizeObserver watches the container (debounced via rAF) and a window
-	 * resize listener tracks DPR changes.
-	 *
-	 * @example
- 	 * ```ts
- 	 * // Manage size manually: disable auto and call invalidate on layout changes
- 	 * map.setAutoResize(false);
- 	 * map.invalidateSize();
- 	 * ```
-	 */
+    /**
+     * Enable or disable automatic resize handling.
+     *
+     * @public
+     * @remarks
+     * When enabled, a ResizeObserver watches the container (debounced via rAF) and a window
+     * resize listener tracks DPR changes.
+     * Example:
+     * ```ts
+     * // Manage size manually: disable auto and call invalidate on layout changes
+     * map.setAutoResize(false);
+     * map.invalidateSize();
+     * ```
+     */
 	setAutoResize(on: boolean): this {
 		this._impl.setAutoResize?.(on);
 		return this;

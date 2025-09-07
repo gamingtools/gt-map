@@ -6,10 +6,47 @@ export type { ViewTransition } from './api/Map';
 export * as easings from './api/easings';
 
 // Export all public types
-export type { Point, TileSourceOptions, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, ActiveOptions, IconScaleFunction, Easing, AnimateOptions, ApplyOptions, ApplyResult, ApplyStatus } from './api/types';
+export type {
+  Point,
+  TileSourceOptions,
+  MapOptions,
+  IconDef,
+  IconHandle,
+  VectorStyle,
+  Polyline,
+  Polygon,
+  Circle,
+  ActiveOptions,
+  IconScaleFunction,
+  Easing,
+  AnimateOptions,
+  ApplyOptions,
+  ApplyResult,
+  ApplyStatus,
+  EventMap,
+  PointerEventData,
+  MouseEventData,
+  MoveEventData,
+  ZoomEventData,
+  FrameEventData,
+  LoadEventData,
+  ResizeEventData,
+  MarkerHit,
+} from './api/types';
 
 // Export type guard functions (not types)
 export { isPolyline, isPolygon, isCircle } from './api/types';
 
 // Export public event surface types
-export type { PublicEvents, EventSubscription, MarkerEvents, VectorEvents, LayerEvents, MapEvents } from './api/events/public';
+export type { PublicEvents, EventSubscription, MarkerEvents, VectorEvents, LayerEvents, MapEvents, Unsubscribe } from './api/events/public';
+
+export type {
+  MarkerData,
+  VectorGeometry,
+  MarkerEventMap,
+  VectorEventMap,
+  LayerEventMap,
+  PointerMeta,
+  PointerModifiers,
+  InputDevice,
+} from './api/events/maps';

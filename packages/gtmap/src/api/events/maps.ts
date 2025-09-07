@@ -66,7 +66,7 @@ export interface MarkerEventMap {
 	pointerenter: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
 	/** Hover leave for the previously hovered marker. */
 	pointerleave: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
-	/** Position changed via {@link Marker.moveTo}; includes deltas. */
+	/** Position changed via Marker.moveTo; includes deltas. */
 	positionchange: { x: number; y: number; dx: number; dy: number; marker: MarkerData };
 	/** Marker was removed. */
 	remove: { marker: MarkerData };
