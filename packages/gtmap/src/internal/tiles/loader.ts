@@ -12,6 +12,8 @@ export interface TileLoaderDeps {
 	getUseImageBitmap(): boolean;
 	setUseImageBitmap(v: boolean): void;
 	acquireTexture(): WebGLTexture | null;
+  /** True when user is not actively interacting (pan/zoom) for a short debounce. */
+  isIdle(): boolean;
 }
 
 interface QueuedTile {
@@ -26,15 +28,42 @@ export class TileLoader {
 	private abortControllers = new Map<string, AbortController>();
 	private decodeQueue: QueuedTile[] = [];
 	private activeDecodes = 0;
-	private maxConcurrentDecodes: number;
+  private maxConcurrentDecodes: number;
+  private pendingMips: Array<{ key: string; tex: WebGLTexture }> = [];
+  private mipsScheduled = false;
 
-	constructor(deps: TileLoaderDeps) {
+  constructor(deps: TileLoaderDeps) {
 		this.deps = deps;
 		// Scale concurrent decodes based on hardware cores
 		const cores = navigator.hardwareConcurrency || 2;
 		// Use half the cores for decoding, minimum 2, maximum 8
-		this.maxConcurrentDecodes = Math.max(2, Math.min(Math.floor(cores / 2), 8));
-	}
+    this.maxConcurrentDecodes = Math.max(2, Math.min(Math.floor(cores / 2), 8));
+  }
+
+  private scheduleMips() {
+    if (this.mipsScheduled) return;
+    this.mipsScheduled = true;
+    const process = () => {
+      this.mipsScheduled = false;
+      if (!this.deps.isIdle()) {
+        requestAnimationFrame(() => this.scheduleMips());
+        return;
+      }
+      const gl: WebGLRenderingContext = this.deps.getGL();
+      const MAX_PER_FRAME = 2;
+      let n = 0;
+      while (n < MAX_PER_FRAME && this.pendingMips.length > 0) {
+        const it = this.pendingMips.shift()!;
+        gl.bindTexture(gl.TEXTURE_2D, it.tex);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        n++;
+      }
+      if (this.pendingMips.length > 0) requestAnimationFrame(() => this.scheduleMips());
+      this.deps.requestRender();
+    };
+    requestAnimationFrame(process);
+  }
 
 	cancel(key: string) {
 		const controller = this.abortControllers.get(key);
@@ -127,32 +156,30 @@ export class TileLoader {
 					premultiplyAlpha: 'none',
 					colorSpaceConversion: 'none',
 				}))
-				.then((bmp: ImageBitmap) => {
-					try {
-						const gl: WebGLRenderingContext = deps.getGL();
-						const tex = deps.acquireTexture();
-						if (!tex) {
-							deps.setError(key);
-							return;
-						}
-						gl.bindTexture(gl.TEXTURE_2D, tex);
-						gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-						gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-						gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-						gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-						gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-						gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-						gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
-						gl.generateMipmap(gl.TEXTURE_2D);
-						deps.setReady(key, tex, bmp.width, bmp.height, deps.getFrame());
-						deps.requestRender();
-					} finally {
-						try {
-							if ('close' in bmp && typeof (bmp as ImageBitmap).close === 'function') (bmp as ImageBitmap).close();
-						} catch {}
-						onFinally();
-					}
-				})
+                .then((bmp: ImageBitmap) => {
+                    try {
+                        const gl: WebGLRenderingContext = deps.getGL();
+                        const tex = deps.acquireTexture();
+                        if (!tex) { deps.setError(key); return; }
+                        gl.bindTexture(gl.TEXTURE_2D, tex);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                        // Defer mipmap generation; start with non-mipmap filter
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+                        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+                        deps.setReady(key, tex, bmp.width, bmp.height, deps.getFrame());
+                        // Queue mipmaps for idle time
+                        this.pendingMips.push({ key, tex });
+                        this.scheduleMips();
+                        deps.requestRender();
+                    } finally {
+                        try { (bmp as ImageBitmap).close?.(); } catch {}
+                        onFinally();
+                    }
+                })
 				.catch((err) => {
 					if (err.name === 'AbortError') {
 						// Request was cancelled, clean up silently
@@ -185,30 +212,28 @@ export class TileLoader {
 		}
 		abortController.signal.addEventListener('abort', onAbort);
 
-		img.onload = () => {
-			abortController.signal.removeEventListener('abort', onAbort);
-			try {
-				const gl: WebGLRenderingContext = deps.getGL();
-				const tex = deps.acquireTexture();
-				if (!tex) {
-					deps.setError(key);
-					return;
-				}
-				gl.bindTexture(gl.TEXTURE_2D, tex);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-				gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-				gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-				gl.generateMipmap(gl.TEXTURE_2D);
-				deps.setReady(key, tex, img.naturalWidth, img.naturalHeight, deps.getFrame());
-				deps.requestRender();
-			} finally {
-				onFinally();
-			}
-		};
+        img.onload = () => {
+          abortController.signal.removeEventListener('abort', onAbort);
+          try {
+            const gl: WebGLRenderingContext = deps.getGL();
+            const tex = deps.acquireTexture();
+            if (!tex) { deps.setError(key); return; }
+            gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+            gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+            deps.setReady(key, tex, img.naturalWidth, img.naturalHeight, deps.getFrame());
+            this.pendingMips.push({ key, tex });
+            this.scheduleMips();
+            deps.requestRender();
+          } finally {
+            onFinally();
+          }
+        };
 		img.onerror = () => {
 			abortController.signal.removeEventListener('abort', onAbort);
 			deps.setError(key);

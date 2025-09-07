@@ -432,6 +432,12 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				this.useImageBitmap = v;
 			},
 			acquireTexture: () => this._tileCache.acquireTexture(),
+            isIdle: () => {
+                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+                const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
+                const anim = this._zoomCtrl.isAnimating() || !!this._panAnim;
+                return idleByTime && !anim;
+            },
 		};
 		this._tiles = new TilePipeline(this._tileDeps);
 		this._loader = new TileLoader(this._loaderDeps);
