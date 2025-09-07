@@ -75,7 +75,7 @@ export class TileLoader {
 		this.decodeQueue = this.decodeQueue.filter((t) => t.key !== key);
 	}
 
-	cancelAll() {
+  cancelAll() {
 		for (const controller of this.abortControllers.values()) {
 			controller.abort();
 		}
@@ -83,6 +83,18 @@ export class TileLoader {
 		this.decodeQueue = [];
 		this.activeDecodes = 0;
 	}
+
+  /** Abort any in-flight or queued tiles that are not in the wanted set. */
+  cancelUnwanted(wantedKeys: Set<string>) {
+    // Abort in-flight requests not in wanted
+    for (const key of Array.from(this.abortControllers.keys())) {
+      if (!wantedKeys.has(key)) this.cancel(key);
+    }
+    // Filter decode queue to only keep wanted
+    if (this.decodeQueue.length) {
+      this.decodeQueue = this.decodeQueue.filter((t) => wantedKeys.has(t.key));
+    }
+  }
 
 	private processQueue() {
 		// Process tiles from queue while under decode limit

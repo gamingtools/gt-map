@@ -1572,11 +1572,12 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		}
 	}
 	private _cancelUnwantedLoads() {
-		// For now, only cancel the queue, not inflight requests
 		// Include pinned keys so baseline prefetch isn't pruned
 		const wanted = new Set<string>(this._wantedKeys);
 		for (const key of this._pinnedKeys) wanted.add(key);
+		// Cancel queued and in-flight loads not in the wanted set
 		this._tiles.cancelUnwanted(wanted);
+		try { this._loader.cancelUnwanted(wanted); } catch {}
 		this._wantedKeys.clear();
 		this._tiles.process();
 	}
