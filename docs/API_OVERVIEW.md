@@ -3,7 +3,7 @@
 Quick links to common tasks using the GTMap API.
 
 - Create a map: see [GTMap](api/Class.GTMap.md)
-- Configure tiles: [setTileSource](api/Class.GTMap.md#settilesource)
+- Configure tiles: set [tileSource](api/Interface.MapOptions.md#tilesource) ([url](api/Interface.TileSourceOptions.md#url), [tileSize](api/Interface.TileSourceOptions.md#tilesize), [mapSize](api/Interface.TileSourceOptions.md#mapsize), [sourceMinZoom](api/Interface.TileSourceOptions.md#sourceminzoom), [sourceMaxZoom](api/Interface.TileSourceOptions.md#sourcemaxzoom))
 - Change the view: [ViewTransition](api/Interface.ViewTransition.md), [transition()](api/Class.GTMap.md#transition)
 - Add content: [addIcon](api/Class.GTMap.md#addicon), [addMarker](api/Class.GTMap.md#addmarker), [addVector](api/Class.GTMap.md#addvector)
 - Events: [MapEvents](api/Interface.MapEvents.md), [Layer.events](api/Class.Layer.md#events), [Marker.events](api/Class.Marker.md#events)

@@ -39,7 +39,7 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 
 2. **GTMap API**: Main public interface with methods:
    - View control: Transition Builder `map.transition().center(...).zoom(...).apply({ animate? })`
-   - Tile source: `setTileSource()` 
+  - Tile source: via constructor (`tileUrl`, `tileSize`, `mapSize`, `wrapX`)
    - Content: `addIcon()`, `addMarker()`, `addVectors()`
    - Lifecycle: `setActive()` for suspend/resume with optional GL release
 
@@ -54,7 +54,7 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 5. **Tile System**:
    - Default: Hagga Basin tiles at `https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp`
    - Zoom levels 0-5, 256px tiles
-   - Configurable via `setTileSource()`
+  - Configurable via constructor options (`tileUrl`, `tileSize`, `mapSize`, `wrapX`)
 
 ## Code Style
 

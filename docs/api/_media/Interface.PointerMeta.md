@@ -4,7 +4,7 @@
 
 # Interface: PointerMeta
 
-Defined in: [api/events/maps.ts:35](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L35)
+Defined in: [api/events/maps.ts:35](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L35)
 
 ## Properties
 
@@ -12,7 +12,7 @@ Defined in: [api/events/maps.ts:35](https://github.com/gamingtools/gt-map/blob/1
 
 > **buttons**: `number`
 
-Defined in: [api/events/maps.ts:38](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L38)
+Defined in: [api/events/maps.ts:38](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L38)
 
 ***
 
@@ -20,7 +20,7 @@ Defined in: [api/events/maps.ts:38](https://github.com/gamingtools/gt-map/blob/1
 
 > **device**: [`InputDevice`](TypeAlias.InputDevice.md)
 
-Defined in: [api/events/maps.ts:36](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L36)
+Defined in: [api/events/maps.ts:36](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L36)
 
 ***
 
@@ -28,7 +28,7 @@ Defined in: [api/events/maps.ts:36](https://github.com/gamingtools/gt-map/blob/1
 
 > `optional` **height**: `number`
 
-Defined in: [api/events/maps.ts:42](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L42)
+Defined in: [api/events/maps.ts:42](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L42)
 
 ***
 
@@ -36,7 +36,7 @@ Defined in: [api/events/maps.ts:42](https://github.com/gamingtools/gt-map/blob/1
 
 > **isPrimary**: `boolean`
 
-Defined in: [api/events/maps.ts:37](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L37)
+Defined in: [api/events/maps.ts:37](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L37)
 
 ***
 
@@ -44,7 +44,7 @@ Defined in: [api/events/maps.ts:37](https://github.com/gamingtools/gt-map/blob/1
 
 > **modifiers**: [`PointerModifiers`](Interface.PointerModifiers.md)
 
-Defined in: [api/events/maps.ts:46](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L46)
+Defined in: [api/events/maps.ts:46](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L46)
 
 ***
 
@@ -52,7 +52,7 @@ Defined in: [api/events/maps.ts:46](https://github.com/gamingtools/gt-map/blob/1
 
 > **pointerId**: `number`
 
-Defined in: [api/events/maps.ts:39](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L39)
+Defined in: [api/events/maps.ts:39](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L39)
 
 ***
 
@@ -60,7 +60,7 @@ Defined in: [api/events/maps.ts:39](https://github.com/gamingtools/gt-map/blob/1
 
 > `optional` **pressure**: `number`
 
-Defined in: [api/events/maps.ts:40](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L40)
+Defined in: [api/events/maps.ts:40](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L40)
 
 ***
 
@@ -68,7 +68,7 @@ Defined in: [api/events/maps.ts:40](https://github.com/gamingtools/gt-map/blob/1
 
 > `optional` **tiltX**: `number`
 
-Defined in: [api/events/maps.ts:43](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L43)
+Defined in: [api/events/maps.ts:43](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L43)
 
 ***
 
@@ -76,7 +76,7 @@ Defined in: [api/events/maps.ts:43](https://github.com/gamingtools/gt-map/blob/1
 
 > `optional` **tiltY**: `number`
 
-Defined in: [api/events/maps.ts:44](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L44)
+Defined in: [api/events/maps.ts:44](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L44)
 
 ***
 
@@ -84,7 +84,7 @@ Defined in: [api/events/maps.ts:44](https://github.com/gamingtools/gt-map/blob/1
 
 > `optional` **twist**: `number`
 
-Defined in: [api/events/maps.ts:45](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L45)
+Defined in: [api/events/maps.ts:45](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L45)
 
 ***
 
@@ -92,4 +92,4 @@ Defined in: [api/events/maps.ts:45](https://github.com/gamingtools/gt-map/blob/1
 
 > `optional` **width**: `number`
 
-Defined in: [api/events/maps.ts:41](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/maps.ts#L41)
+Defined in: [api/events/maps.ts:41](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/events/maps.ts#L41)

@@ -35,12 +35,11 @@
   - [setFpsCap()](#setfpscap)
   - [setGridVisible()](#setgridvisible)
   - [setIconScaleFunction()](#seticonscalefunction)
-  - [setTileSource()](#settilesource)
   - [setUpscaleFilter()](#setupscalefilter)
   - [setWheelSpeed()](#setwheelspeed)
   - [transition()](#transition)
 
-Defined in: [api/Map.ts:50](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L50)
+Defined in: [api/Map.ts:55](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L55)
 
 GTMap - A high‑performance WebGL map renderer with a pixel‑based coordinate system.
 
@@ -53,7 +52,13 @@ Use this facade to configure tiles, control the view, add content and subscribe 
 ```ts
 // Create a map with an initial tile source and view
 const map = new GTMap(document.getElementById('map')!, {
-  tileUrl: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+  tileSource: {
+    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+    tileSize: 256,
+    mapSize: { width: 8192, height: 8192 },
+    wrapX: false,
+    sourceMaxZoom: 5,
+  },
   center: { x: 4096, y: 4096 },
   zoom: 3,
   maxZoom: 5
@@ -66,7 +71,7 @@ const map = new GTMap(document.getElementById('map')!, {
 
 > **new GTMap**(`container`, `options`): `GTMap`
 
-Defined in: [api/Map.ts:88](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L88)
+Defined in: [api/Map.ts:90](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L90)
 
 Creates a new GTMap instance.
 
@@ -77,12 +82,14 @@ Creates a new GTMap instance.
 `HTMLElement`
 
 The HTML element to render the map into
+   *
 
 ##### options
 
-[`MapOptions`](Interface.MapOptions.md) = `{}`
+[`MapOptions`](Interface.MapOptions.md)
 
 Configuration options for the map
+   *
 
 #### Returns
 
@@ -94,7 +101,7 @@ Configuration options for the map
 
 > `readonly` **markers**: [`Layer`](Class.Layer.md)\<[`Marker`](Class.Marker.md)\>
 
-Defined in: [api/Map.ts:59](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L59)
+Defined in: [api/Map.ts:64](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L64)
 
 Marker layer for this map. Use to add/remove markers and subscribe to layer events.
 
@@ -111,7 +118,7 @@ map.markers.events.on('entityadd').each(({ entity }) => console.log('added', ent
 
 > `readonly` **vectors**: [`Layer`](Class.Layer.md)\<[`VectorEntity`](Class.VectorEntity.md)\>
 
-Defined in: [api/Map.ts:63](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L63)
+Defined in: [api/Map.ts:68](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L68)
 
 Vector layer for this map. Use to add/remove vectors and subscribe to layer events.
 
@@ -123,7 +130,7 @@ Vector layer for this map. Use to add/remove vectors and subscribe to layer even
 
 > **get** **events**(): [`MapEvents`](Interface.MapEvents.md)
 
-Defined in: [api/Map.ts:598](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L598)
+Defined in: [api/Map.ts:598](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L598)
 
 Read‑only map events surface (`on`/`once`).
 
@@ -146,7 +153,7 @@ await map.events.once('zoomend');
 
 > **get** **pointerAbs**(): `null` \| \{ `x`: `number`; `y`: `number`; \}
 
-Defined in: [api/Map.ts:469](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L469)
+Defined in: [api/Map.ts:469](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L469)
 
 Get the last pointer position in world pixels.
 
@@ -162,7 +169,7 @@ Position or `null` if outside the map
 
 > **addIcon**(`def`, `id?`): [`IconHandle`](Interface.IconHandle.md)
 
-Defined in: [api/Map.ts:335](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L335)
+Defined in: [api/Map.ts:335](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L335)
 
 Register an icon definition for use with markers.
 
@@ -208,7 +215,7 @@ const m = map.addMarker(2048, 2048, { icon: pin, size: 1.0 });
 
 > **addMarker**(`x`, `y`, `opts?`): [`Marker`](Class.Marker.md)
 
-Defined in: [api/Map.ts:370](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L370)
+Defined in: [api/Map.ts:370](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L370)
 
 Create and add a marker to the `markers` layer.
 
@@ -274,7 +281,7 @@ poi.events.on('click', (e) => console.log('clicked', e.marker.id));
 
 > **addVector**(`geometry`): [`VectorEntity`](Class.VectorEntity.md)
 
-Defined in: [api/Map.ts:415](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L415)
+Defined in: [api/Map.ts:415](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L415)
 
 Create and add a [Vector](Class.VectorEntity.md) to the `vectors` layer.
 
@@ -309,7 +316,7 @@ The created [Vector](Class.VectorEntity.md)
 
 > **addVectors**(`_vectors`): `this`
 
-Defined in: [api/Map.ts:387](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L387)
+Defined in: [api/Map.ts:387](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L387)
 
 Add legacy vector primitives in a single batch (temporary helper).
 Prefer `addVector(geometry)` for the entity-based API.
@@ -330,7 +337,7 @@ Prefer `addVector(geometry)` for the entity-based API.
 
 > **clearMarkers**(): `this`
 
-Defined in: [api/Map.ts:427](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L427)
+Defined in: [api/Map.ts:427](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L427)
 
 Remove all markers from the map.
 
@@ -344,7 +351,7 @@ Remove all markers from the map.
 
 > **clearVectors**(): `this`
 
-Defined in: [api/Map.ts:437](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L437)
+Defined in: [api/Map.ts:437](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L437)
 
 Remove all vectors from the map.
 
@@ -358,7 +365,7 @@ Remove all vectors from the map.
 
 > **destroy**(): `void`
 
-Defined in: [api/Map.ts:301](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L301)
+Defined in: [api/Map.ts:301](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L301)
 
 Destroy the map instance and release all resources.
 
@@ -372,7 +379,7 @@ Destroy the map instance and release all resources.
 
 > **getCenter**(): [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/Map.ts:450](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L450)
+Defined in: [api/Map.ts:450](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L450)
 
 Get the current center position in world pixels.
 
@@ -388,7 +395,7 @@ The center position
 
 > **getZoom**(): `number`
 
-Defined in: [api/Map.ts:460](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L460)
+Defined in: [api/Map.ts:460](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L460)
 
 Get the current zoom level.
 
@@ -404,7 +411,7 @@ The zoom value (fractional allowed)
 
 > **invalidateSize**(): `this`
 
-Defined in: [api/Map.ts:582](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L582)
+Defined in: [api/Map.ts:582](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L582)
 
 Recompute canvas sizes after external container changes.
 
@@ -420,7 +427,7 @@ This map instance for chaining
 
 > **setActive**(`on`, `opts?`): `this`
 
-Defined in: [api/Map.ts:292](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L292)
+Defined in: [api/Map.ts:292](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L292)
 
 Suspend or resume the map.
 
@@ -458,7 +465,7 @@ This map instance for chaining
 
 > **setAutoResize**(`on`): `this`
 
-Defined in: [api/Map.ts:541](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L541)
+Defined in: [api/Map.ts:541](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L541)
 
 Enable or disable automatic resize handling.
 
@@ -489,7 +496,7 @@ map.invalidateSize();
 
 > **setBackgroundColor**(`color`): `this`
 
-Defined in: [api/Map.ts:523](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L523)
+Defined in: [api/Map.ts:523](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L523)
 
 Set the viewport background.
 
@@ -520,7 +527,7 @@ map.setBackgroundColor('#0a0a0a');
 
 > **setFpsCap**(`v`): `this`
 
-Defined in: [api/Map.ts:504](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L504)
+Defined in: [api/Map.ts:504](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L504)
 
 Set the maximum frames per second.
 
@@ -552,7 +559,7 @@ map.setFpsCap(30);
 
 > **setGridVisible**(`on`): `this`
 
-Defined in: [api/Map.ts:243](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L243)
+Defined in: [api/Map.ts:243](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L243)
 
 Show or hide the tile grid overlay.
 
@@ -576,7 +583,7 @@ This map instance for chaining
 
 > **setIconScaleFunction**(`fn`): `this`
 
-Defined in: [api/Map.ts:272](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L272)
+Defined in: [api/Map.ts:272](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L272)
 
 Set a custom function to control icon scaling vs. zoom.
 
@@ -603,49 +610,11 @@ This map instance for chaining
 
 ***
 
-### setTileSource()
-
-> **setTileSource**(`opts`): `this`
-
-Defined in: [api/Map.ts:228](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L228)
-
-Configure or replace the tile source.
-
-#### Parameters
-
-##### opts
-
-[`TileSourceOptions`](Interface.TileSourceOptions.md)
-
-Tile source configuration
-
-#### Returns
-
-`this`
-
-This map instance for chaining
-
-#### Example
-
-* ```ts
- * // Replace the tile source with a finite 8k image pyramid (no wrap)
- * map.setTileSource({
- *   url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
- *   tileSize: 256,
- *   sourceMaxZoom: 5,
- *   mapSize: { width: 8192, height: 8192 },
- *   wrapX: false,
- *   clearCache: true
- * });
- * ```
-
-***
-
 ### setUpscaleFilter()
 
 > **setUpscaleFilter**(`mode`): `this`
 
-Defined in: [api/Map.ts:254](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L254)
+Defined in: [api/Map.ts:254](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L254)
 
 Set the upscale filtering mode for low‑resolution tiles.
 
@@ -669,7 +638,7 @@ This map instance for chaining
 
 > **setWheelSpeed**(`v`): `this`
 
-Defined in: [api/Map.ts:486](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L486)
+Defined in: [api/Map.ts:486](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L486)
 
 Set mouse‑wheel zoom speed.
 
@@ -703,7 +672,7 @@ This map instance for chaining
 
 > **transition**(): [`ViewTransition`](Interface.ViewTransition.md)
 
-Defined in: [api/Map.ts:617](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/Map.ts#L617)
+Defined in: [api/Map.ts:617](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/Map.ts#L617)
 
 Start a chainable view transition.
 

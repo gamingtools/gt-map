@@ -10,14 +10,14 @@
 
 - [Properties](#properties)
   - [clearCache?](#clearcache)
-  - [mapSize?](#mapsize)
-  - [sourceMaxZoom?](#sourcemaxzoom)
-  - [sourceMinZoom?](#sourceminzoom)
-  - [tileSize?](#tilesize)
-  - [url?](#url)
+  - [mapSize](#mapsize)
+  - [sourceMaxZoom](#sourcemaxzoom)
+  - [sourceMinZoom](#sourceminzoom)
+  - [tileSize](#tilesize)
+  - [url](#url)
   - [wrapX?](#wrapx)
 
-Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L29)
+Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L29)
 
 ## Properties
 
@@ -25,15 +25,19 @@ Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/158dafc
 
 > `optional` **clearCache**: `boolean`
 
-Defined in: [api/types.ts:36](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L36)
+Defined in: [api/types.ts:43](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L43)
+
+Clear GPU/cache when switching sources.
 
 ***
 
-### mapSize?
+### mapSize
 
-> `optional` **mapSize**: `object`
+> **mapSize**: `object`
 
-Defined in: [api/types.ts:34](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L34)
+Defined in: [api/types.ts:39](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L39)
+
+Base image size at native resolution.
 
 #### height
 
@@ -45,35 +49,43 @@ Defined in: [api/types.ts:34](https://github.com/gamingtools/gt-map/blob/158dafc
 
 ***
 
-### sourceMaxZoom?
+### sourceMaxZoom
 
-> `optional` **sourceMaxZoom**: `number`
+> **sourceMaxZoom**: `number`
 
-Defined in: [api/types.ts:33](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L33)
+Defined in: [api/types.ts:37](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L37)
 
-***
-
-### sourceMinZoom?
-
-> `optional` **sourceMinZoom**: `number`
-
-Defined in: [api/types.ts:32](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L32)
+Max level provided by the source (top of the image pyramid).
 
 ***
 
-### tileSize?
+### sourceMinZoom
 
-> `optional` **tileSize**: `number`
+> **sourceMinZoom**: `number`
 
-Defined in: [api/types.ts:31](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L31)
+Defined in: [api/types.ts:35](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L35)
+
+Min level provided by the source (usually 0).
 
 ***
 
-### url?
+### tileSize
 
-> `optional` **url**: `string`
+> **tileSize**: `number`
 
-Defined in: [api/types.ts:30](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L30)
+Defined in: [api/types.ts:33](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L33)
+
+Tile size in pixels (e.g., 256).
+
+***
+
+### url
+
+> **url**: `string`
+
+Defined in: [api/types.ts:31](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L31)
+
+URL template for tile loading. Use {z}, {x}, {y} placeholders.
 
 ***
 
@@ -81,4 +93,6 @@ Defined in: [api/types.ts:30](https://github.com/gamingtools/gt-map/blob/158dafc
 
 > `optional` **wrapX**: `boolean`
 
-Defined in: [api/types.ts:35](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L35)
+Defined in: [api/types.ts:41](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L41)
+
+Enable horizontal wrap for infinite panning.

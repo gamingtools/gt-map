@@ -9,9 +9,14 @@ import { GTMap } from '@gtmap';
 
 const el = document.getElementById('map') as HTMLDivElement;
 const map = new GTMap(el, {
-  tileUrl: 'https://example.com/tiles/{z}/{x}_{y}.webp',
-  tileSize: 256,
-  mapSize: { width: 8192, height: 8192 },
+  tileSource: {
+    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+    tileSize: 256,
+    mapSize: { width: 8192, height: 8192 },
+    wrapX: false,
+    sourceMinZoom: 0,
+    sourceMaxZoom: 5,
+  },
   minZoom: 0,
   maxZoom: 5,
   center: { x: 4096, y: 4096 },
@@ -45,15 +50,20 @@ await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { d
 
 ## Tile Source
 
+Pass tile configuration in the constructor via MapOptions:
+
 ```ts
-map.setTileSource({
-  url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
-  tileSize: 256,
-  sourceMinZoom: 0,           // optional server minimum
-  sourceMaxZoom: 5,           // maximum server level
-  mapSize: { width: 8192, height: 8192 },
-  wrapX: false,               // enable for infinite horizontal panning
-  clearCache: true            // flush textures when switching sources
+const map = new GTMap(el, {
+  tileSource: {
+    url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
+    tileSize: 256,
+    mapSize: { width: 8192, height: 8192 },
+    wrapX: false,
+    sourceMinZoom: 0,
+    sourceMaxZoom: 5,
+  },
+  minZoom: 0,
+  maxZoom: 5,
 });
 ```
 
@@ -109,14 +119,7 @@ View (Transition Builder)
 
 Tiles
 
-- `setTileSource(opts: TileSourceOptions): this`
-  - `opts.url?: string` — template: `.../{z}/{x}_{y}.ext`
-  - `opts.tileSize?: number` — tile size in pixels (default `256`)
-  - `opts.sourceMinZoom?: number` — minimum server level (optional)
-  - `opts.sourceMaxZoom?: number` — maximum server level
-  - `opts.mapSize?: { width: number; height: number }` — base image size at native resolution
-  - `opts.wrapX?: boolean` — horizontal world wrap
-  - `opts.clearCache?: boolean` — clear existing tile textures on change
+- Configure via constructor option `tileSource` (URL, tileSize, mapSize, wrapX, sourceMinZoom/sourceMaxZoom) and view constraints (`minZoom`, `maxZoom`).
 
 Rendering & Behavior
 

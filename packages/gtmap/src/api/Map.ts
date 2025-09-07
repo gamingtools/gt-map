@@ -8,7 +8,6 @@ import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
 import type {
 	Point,
-	TileSourceOptions,
 	MapOptions,
 	IconDef,
 	IconHandle,
@@ -24,7 +23,7 @@ import type {
 } from './types';
 
 // Re-export types from centralized types file
-export type { Point, TileSourceOptions, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector as VectorLegacy, ActiveOptions } from './types';
+export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector as VectorLegacy, ActiveOptions } from './types';
 export { Marker } from '../entities/Marker';
 export { Vector } from '../entities/Vector';
 export { Layer } from '../entities/Layer';
@@ -40,7 +39,13 @@ export { Layer } from '../entities/Layer';
  * ```ts
  * // Create a map with an initial tile source and view
  * const map = new GTMap(document.getElementById('map')!, {
- *   tileUrl: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+ *   tileSource: {
+ *     url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+ *     tileSize: 256,
+ *     mapSize: { width: 8192, height: 8192 },
+ *     wrapX: false,
+ *     sourceMaxZoom: 5,
+ *   },
  *   center: { x: 4096, y: 4096 },
  *   zoom: 3,
  *   maxZoom: 5
@@ -72,27 +77,35 @@ export class GTMap {
 	 * Creates a new GTMap instance.
 	 *
 	 * @param container - The HTML element to render the map into
-	 * @param options - Configuration options for the map
-	 * @param options.tileUrl - URL template for tile loading (use {z}, {x}, {y} placeholders)
-	 * @param options.tileSize - Size of tiles in pixels (default: 256)
-	 * @param options.minZoom - Minimum zoom level (default: 0)
-	 * @param options.maxZoom - Maximum zoom level (default: 19)
-	 * @param options.mapSize - Total map dimensions in pixels at native resolution
-	 * @param options.wrapX - Enable horizontal wrapping for infinite pan (default: false)
-	 * @param options.center - Initial center position in pixel coordinates
-	 * @param options.zoom - Initial zoom level
-	 * @param options.prefetch - Tile prefetching configuration
-	 * @param options.screenCache - Enable screen-space caching for better performance (default: true)
-	 * @param options.fpsCap - Maximum frames per second (default: 60)
+     * @param options - Configuration options for the map
+     * @param options.tileSource - Tile source configuration (URL template, tile size, map size, wrap, source zooms)
+     * @param options.minZoom - Minimum zoom level (default: 0)
+     * @param options.maxZoom - Maximum zoom level (default: 19)
+     * @param options.center - Initial center position in pixel coordinates
+     * @param options.zoom - Initial zoom level
+     * @param options.prefetch - Tile prefetching configuration
+     * @param options.screenCache - Enable screen-space caching for better performance (default: true)
+     * @param options.fpsCap - Maximum frames per second (default: 60)
 	 */
-	constructor(container: HTMLElement, options: MapOptions = {}) {
+	constructor(container: HTMLElement, options: MapOptions) {
+		// Validate required tile source configuration up-front
+		const ts = options?.tileSource;
+		if (!ts) throw new Error('GTMap: tileSource is required in MapOptions');
+		if (!ts.url || typeof ts.url !== 'string') throw new Error('GTMap: tileSource.url must be a non-empty string');
+		if (!Number.isFinite(ts.tileSize) || (ts.tileSize as number) <= 0) throw new Error('GTMap: tileSource.tileSize must be a positive number');
+		if (!ts.mapSize || !Number.isFinite(ts.mapSize.width) || !Number.isFinite(ts.mapSize.height) || ts.mapSize.width <= 0 || ts.mapSize.height <= 0) {
+			throw new Error('GTMap: tileSource.mapSize.width/height must be positive numbers');
+		}
+		if (!Number.isFinite(ts.sourceMinZoom) || (ts.sourceMinZoom as number) < 0) throw new Error('GTMap: tileSource.sourceMinZoom must be a number >= 0');
+		if (!Number.isFinite(ts.sourceMaxZoom) || (ts.sourceMaxZoom as number) < (ts.sourceMinZoom as number)) {
+			throw new Error('GTMap: tileSource.sourceMaxZoom must be >= tileSource.sourceMinZoom');
+		}
+		if (Number.isFinite(options.minZoom as number) && Number.isFinite(options.maxZoom as number) && (options.minZoom as number) > (options.maxZoom as number)) {
+			throw new Error('GTMap: minZoom must be <= maxZoom');
+		}
 		const implOpts: Partial<ImplMapOptions> = {
-			tileUrl: options.tileUrl,
-			tileSize: options.tileSize,
 			minZoom: options.minZoom,
 			maxZoom: options.maxZoom,
-			mapSize: options.mapSize,
-			wrapX: options.wrapX,
 			center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
 			zoom: options.zoom,
 			autoResize: options.autoResize,
@@ -104,23 +117,15 @@ export class GTMap {
 		this._impl = new Impl(container as HTMLDivElement, implOpts);
 		this._ensureDefaultIcon();
 
-		// If a tile source was provided in options, finalize it via the internal API
-		// so sourceMaxZoom and related internals (prefetch, caches) are fully configured.
-		if (typeof options.tileUrl === 'string') {
-			let sourceMaxZoom: number | undefined;
-			if (options.mapSize && typeof options.tileSize === 'number' && options.tileSize > 0) {
-				const maxDim = Math.max(options.mapSize.width, options.mapSize.height);
-				const levels = Math.log2(Math.max(1, maxDim / options.tileSize));
-				sourceMaxZoom = Math.max(0, Math.floor(levels));
-			} else if (typeof options.maxZoom === 'number') {
-				sourceMaxZoom = options.maxZoom;
-			}
+		// If a tile source was provided in options, configure it now.
+		if (ts) {
 			this._impl.setTileSource({
-				url: options.tileUrl,
-				tileSize: options.tileSize,
-				sourceMaxZoom,
-				mapSize: options.mapSize,
-				wrapX: options.wrapX,
+				url: ts.url,
+				tileSize: ts.tileSize,
+				sourceMinZoom: ts.sourceMinZoom,
+				sourceMaxZoom: ts.sourceMaxZoom,
+				mapSize: ts.mapSize,
+				wrapX: typeof ts.wrapX === 'boolean' ? ts.wrapX : undefined,
 				clearCache: true,
 			});
 		}
@@ -225,33 +230,7 @@ export class GTMap {
         if (typeof zoom === 'number') this._impl.setZoom(zoom);
     }
 
-	// Tile source
-	/**
-	 * Configure or replace the tile source.
-	 *
-	 * @public
-	 * @param opts - Tile source configuration
-	 * @returns This map instance for chaining
-	 *
-	 * @example
- 	 * ```ts
- 	 * // Replace the tile source with a finite 8k image pyramid (no wrap)
- 	 * map.setTileSource({
- 	 *   url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
- 	 *   tileSize: 256,
- 	 *   sourceMaxZoom: 5,
- 	 *   mapSize: { width: 8192, height: 8192 },
- 	 *   wrapX: false,
- 	 *   clearCache: true
- 	 * });
- 	 * ```
-	 */
-	setTileSource(opts: TileSourceOptions): this {
-		const o: TileSourceOptions = { ...opts };
-		if (opts.mapSize) o.mapSize = { width: opts.mapSize.width, height: opts.mapSize.height };
-		this._impl.setTileSource(o);
-		return this;
-	}
+
 
 	// Grid + filtering
 	/**

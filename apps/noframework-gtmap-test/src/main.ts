@@ -14,19 +14,21 @@ const HAGGA = {
 
 const HOME = { x: 4096, y: 4096 };
 const map = new GTMap(container, {
+  // Initial view
   center: HOME,
   zoom: 2,
   minZoom: HAGGA.minZoom,
   maxZoom: 10,
   fpsCap: 60,
-});
-map.setTileSource({
-  url: HAGGA.url,
-  tileSize: 256,
-  sourceMaxZoom: HAGGA.maxZoom,
-  mapSize: HAGGA.mapSize,
-  wrapX: HAGGA.wrapX,
-  clearCache: true,
+  // Tile source (constructor)
+  tileSource: {
+    url: HAGGA.url,
+    tileSize: 256,
+    mapSize: HAGGA.mapSize,
+    wrapX: HAGGA.wrapX,
+    sourceMinZoom: 0,
+    sourceMaxZoom: HAGGA.maxZoom,
+  },
 });
 
 // HUD updates on actual render frames (engine emits 'frame')

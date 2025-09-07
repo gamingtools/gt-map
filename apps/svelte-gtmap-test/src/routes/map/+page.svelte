@@ -137,11 +137,15 @@
 			maxZoom: 10,
 			fpsCap: 60,
 			autoResize: true,
-			// Tile source (initialize via constructor instead of setTileSource)
-			tileUrl: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
-			tileSize: 256,
-			mapSize: { width: 8192, height: 8192 },
-			wrapX: false,
+			// Tile source (initialize via constructor)
+			tileSource: {
+				url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
+				tileSize: 256,
+				mapSize: { width: 8192, height: 8192 },
+				wrapX: false,
+				sourceMinZoom: 0,
+				sourceMaxZoom: 5,
+			},
 		});
 
 		// Register a custom icon to demonstrate addIcon/addMarker

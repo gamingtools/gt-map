@@ -16,7 +16,7 @@
 
 > **Circle** = `object`
 
-Defined in: [api/types.ts:129](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L129)
+Defined in: [api/types.ts:134](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L134)
 
 ## Properties
 
@@ -24,7 +24,7 @@ Defined in: [api/types.ts:129](https://github.com/gamingtools/gt-map/blob/158daf
 
 > **center**: [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:131](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L131)
+Defined in: [api/types.ts:136](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L136)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [api/types.ts:131](https://github.com/gamingtools/gt-map/blob/158daf
 
 > **radius**: `number`
 
-Defined in: [api/types.ts:132](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L132)
+Defined in: [api/types.ts:137](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L137)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [api/types.ts:132](https://github.com/gamingtools/gt-map/blob/158daf
 
 > `optional` **style**: [`VectorStyle`](Interface.VectorStyle.md)
 
-Defined in: [api/types.ts:133](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L133)
+Defined in: [api/types.ts:138](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L138)
 
 ***
 
@@ -48,4 +48,4 @@ Defined in: [api/types.ts:133](https://github.com/gamingtools/gt-map/blob/158daf
 
 > **type**: `"circle"`
 
-Defined in: [api/types.ts:130](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L130)
+Defined in: [api/types.ts:135](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L135)

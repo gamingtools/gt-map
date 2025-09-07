@@ -27,23 +27,28 @@ export interface TileBounds {
 }
 
 export interface TileSourceOptions {
-	url?: string;
-	tileSize?: number;
-	sourceMinZoom?: number;
-	sourceMaxZoom?: number;
-	mapSize?: { width: number; height: number };
-	wrapX?: boolean;
-	clearCache?: boolean;
+  /** URL template for tile loading. Use {z}, {x}, {y} placeholders. */
+  url: string;
+  /** Tile size in pixels (e.g., 256). */
+  tileSize: number;
+  /** Min level provided by the source (usually 0). */
+  sourceMinZoom: number;
+  /** Max level provided by the source (top of the image pyramid). */
+  sourceMaxZoom: number;
+  /** Base image size at native resolution. */
+  mapSize: { width: number; height: number };
+  /** Enable horizontal wrap for infinite panning. */
+  wrapX?: boolean;
+  /** Clear GPU/cache when switching sources. */
+  clearCache?: boolean;
 }
 
 // Map configuration
 export interface MapOptions {
-	tileUrl?: string;
-	tileSize?: number;
-	mapSize?: { width: number; height: number };
+  /** Tile source configuration (URL template, pyramid, wrap). */
+  tileSource: TileSourceOptions;
 	minZoom?: number;
 	maxZoom?: number;
-	wrapX?: boolean;
 	center?: Point;
 	zoom?: number;
 	/**

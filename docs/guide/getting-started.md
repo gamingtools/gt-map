@@ -7,8 +7,14 @@ import { GTMap } from '@gtmap';
 
 const container = document.getElementById('map') as HTMLDivElement;
 const map = new GTMap(container, {
-  tileUrl: 'https://example.com/tiles/{z}/{x}_{y}.webp',
-  mapSize: { width: 8192, height: 8192 },
+  tileSource: {
+    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+    tileSize: 256,
+    mapSize: { width: 8192, height: 8192 },
+    wrapX: false,
+    sourceMinZoom: 0,
+    sourceMaxZoom: 5,
+  },
   minZoom: 0,
   maxZoom: 5,
   center: { x: 4096, y: 4096 },
@@ -33,19 +39,18 @@ await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { d
 
 ## Tile source
 
+Provide tile configuration in the constructor via `MapOptions`:
+
 ```ts
-map.setTileSource({
-  url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
-  // Tile pyramid details
+const map = new GTMap(container, {
+  tileUrl: 'https://tiles.example.com/{z}/{x}_{y}.webp',
   tileSize: 256,
-  // Optional min level the server provides
-  sourceMinZoom: 0,
-  sourceMaxZoom: 5,
-  // Total pixel size of the base image at native resolution
   mapSize: { width: 8192, height: 8192 },
   wrapX: false,
-  // Clear existing tile textures when switching sources
-  clearCache: true
+  minZoom: 0,
+  maxZoom: 5,
+  center: { x: 4096, y: 4096 },
+  zoom: 2,
 });
 ```
 

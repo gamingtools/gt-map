@@ -25,7 +25,7 @@ HTML
 TypeScript
 
 ```ts
-import { GTMap, type MapOptions, type TileSourceOptions } from '@gaming.tools/gtmap';
+import { GTMap, type MapOptions } from '@gaming.tools/gtmap';
 
 const container = document.getElementById('map') as HTMLDivElement;
 
@@ -43,17 +43,6 @@ const map = new GTMap(container, {
 // Optional: grid + filtering
 map.setGridVisible(false);
 map.setUpscaleFilter('auto'); // 'auto' | 'linear' | 'bicubic'
-
-// Configure/replace tile source (can be called later)
-const src: TileSourceOptions = {
-  url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
-  tileSize: 256,
-  sourceMaxZoom: 5,
-  mapSize: { width: 8192, height: 8192 },
-  wrapX: false,
-  clearCache: true
-};
-map.setTileSource(src);
 ```
 
 ### View Controls (Transition Builder)

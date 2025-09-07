@@ -20,17 +20,16 @@
 			minZoom: 0,
 			maxZoom: 10,
 			fpsCap: 60,
-			prefetch: { enabled: true, baselineLevel: 2, ring: 0 }
-		});
-
-		// Set tile source
-		map.setTileSource({
-			url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
-			sourceMinZoom: 0,
-			sourceMaxZoom: 5,
-			tileSize: 256,
-			wrapX: false,
-			mapSize: { width: 8192, height: 8192 }
+			prefetch: { enabled: true, baselineLevel: 2, ring: 0 },
+			// Tile source
+			tileSource: {
+				url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
+				sourceMinZoom: 0,
+				sourceMaxZoom: 5,
+				tileSize: 256,
+				wrapX: false,
+				mapSize: { width: 8192, height: 8192 }
+			}
 		});
 
 		// Add icon and marker

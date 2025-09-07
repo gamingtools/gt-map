@@ -6,7 +6,7 @@
 
 > **isCircle**(`v`): `v is Circle`
 
-Defined in: [api/types.ts:147](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L147)
+Defined in: [api/types.ts:152](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L152)
 
 ## Parameters
 
