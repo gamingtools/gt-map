@@ -239,20 +239,14 @@ export class IconRenderer {
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
 		const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
-    // For icons, avoid snapping TL to device pixels. Snapping is great for tiles
-    // to prevent seam shimmer, but it introduces visible jitter for icons when
-    // their screen size changes with zoom via an iconScaleFunction.
+    // Always snap top-left to device pixels to share the same stable origin as tiles
+    // and quantize icon positions/sizes in device space to eliminate subpixel jitter.
     let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
+    const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
+    tlWorld = { x: snapTL(tlWorld.x), y: snapTL(tlWorld.y) };
 
-		// Calculate scale factor from icon scale function
+    // Calculate scale factor from icon scale function (screen-space scaling)
     const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
-    // If icons are fixed-size (scale ~ 1), snap TL to device pixels like tiles to avoid
-    // subtle relative jitter during inertial pan when tiles are snapped and icons are not.
-    if (Math.abs(iconScale - 1) < 1e-3) {
-      const { scale: effScale2 } = Coords.zParts(ctx.zoom);
-      const snap = (v: number) => Coords.snapLevelToDevice(v, effScale2, ctx.dpr);
-      tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
-    }
 		// Compute map scissor in device pixels to clip icons outside the finite image
 		// Icons themselves are not clipped here; screen cache draw is clipped to map extent in renderer.
 
@@ -269,10 +263,10 @@ export class IconRenderer {
 			gl.uniform1f(this.instLoc!.u_alpha, 1.0);
 			// UVs set per type when using atlas
 			gl.uniform2f(this.instLoc!.u_tlWorld!, tlWorld.x, tlWorld.y);
-			gl.uniform1f(this.instLoc!.u_scale!, effScale);
-			gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
-			gl.uniform1f(this.instLoc!.u_invS!, invS);
-			gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
+            gl.uniform1f(this.instLoc!.u_scale!, effScale);
+            gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
+            gl.uniform1f(this.instLoc!.u_invS!, invS);
+            gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
 
 			// For each type
 			const isGL2 = 'drawArraysInstanced' in (gl as WebGL2RenderingContext);
@@ -379,22 +373,21 @@ export class IconRenderer {
 			const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
 			gl.uniform2f(ctx.loc.u_uv0!, uv.u0, uv.v0);
 			gl.uniform2f(ctx.loc.u_uv1!, uv.u1, uv.v1);
-			for (const m of list) {
-				const p = ctx.project(m.lng, m.lat, baseZ);
-				const xCSS = (p.x - tlWorld.x) * effScale;
-				const yCSS = (p.y - tlWorld.y) * effScale;
-				const w = (m.size || sz.w) * iconScale;
-				const h = (m.size || sz.h) * iconScale;
+            for (const m of list) {
+                const p = ctx.project(m.lng, m.lat, baseZ);
+                const xCSS = (p.x - tlWorld.x) * effScale;
+                const yCSS = (p.y - tlWorld.y) * effScale;
+                const w = (m.size || sz.w) * iconScale;
+                const h = (m.size || sz.h) * iconScale;
 
 				// Frustum cull before adjusting for centering
 				if (xCSS + w / 2 < 0 || yCSS + h / 2 < 0 || xCSS - w / 2 > widthCSS || yCSS - h / 2 > heightCSS) continue;
 
-				// Calculate pixel position with centering
-				// Round the center position first to ensure stable positioning
-				const centerX = Math.round(xCSS * ctx.dpr);
-				const centerY = Math.round(yCSS * ctx.dpr);
-				const halfW = Math.round((w * ctx.dpr) / 2);
-				const halfH = Math.round((h * ctx.dpr) / 2);
+                // Calculate pixel position with centering and quantize to device pixels
+                const centerX = Math.round(xCSS * ctx.dpr);
+                const centerY = Math.round(yCSS * ctx.dpr);
+                const halfW = Math.round((w * ctx.dpr) / 2);
+                const halfH = Math.round((h * ctx.dpr) / 2);
 
 				const tx = centerX - halfW;
 				const ty = centerY - halfH;
@@ -418,7 +411,7 @@ export class IconRenderer {
 		}
 		if (!this.instExt) return false;
 		if (!this.instProg) {
-			const vs = `
+        const vs = `
         attribute vec2 a_pos;
         attribute vec2 a_i_native;
         attribute vec2 a_i_size;
@@ -434,13 +427,18 @@ export class IconRenderer {
         void main(){
           vec2 world = a_i_native * u_invS;
           vec2 css = (world - u_tlWorld) * u_scale;
-          vec2 sizePx = a_i_size * u_iconScale;
-          vec2 anchorPx = a_i_anchor * u_iconScale;
+          // Quantize center and size to device pixels to eliminate subpixel jitter
+          vec2 basePx = floor(css * u_dpr + 0.5);
+          vec2 sizePx = a_i_size * u_iconScale * u_dpr;
+          vec2 anchorPx = a_i_anchor * u_iconScale * u_dpr;
+          // Round size and anchor to integer pixels
+          sizePx = floor(sizePx + 0.5);
+          anchorPx = floor(anchorPx + 0.5);
           vec2 v = a_pos * sizePx - anchorPx;
           float ang = a_i_angle;
           float s = sin(ang), c = cos(ang);
           vec2 vr = vec2(v.x * c - v.y * s, v.x * s + v.y * c);
-          vec2 pixelPos = css * u_dpr + vr * u_dpr;
+          vec2 pixelPos = basePx + vr;
           vec2 clip = (pixelPos / u_resolution) * 2.0 - 1.0;
           clip.y *= -1.0;
           gl_Position = vec4(clip, 0.0, 1.0);
