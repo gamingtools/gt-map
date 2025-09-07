@@ -13,7 +13,7 @@
 - [Methods](#methods)
   - [each()](#each)
 
-Defined in: [api/events/public.ts:5](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L5)
+Defined in: [api/events/public.ts:5](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/public.ts#L5)
 
 Minimal subscription interface exposed publicly.
 
@@ -29,7 +29,7 @@ Minimal subscription interface exposed publicly.
 
 > **each**(`handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:7](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/events/public.ts#L7)
+Defined in: [api/events/public.ts:7](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/events/public.ts#L7)
 
 Register a handler and receive an `Unsubscribe` function.
 

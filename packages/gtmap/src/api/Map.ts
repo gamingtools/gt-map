@@ -687,13 +687,90 @@ export class GTMap {
 }
 
 // Transition builder implementation (internal)
+/**
+ * Chainable view transition builder.
+ *
+ * Configure desired changes (center/zoom/bounds/points/offset), then commit with {@link ViewTransition.apply | apply()}.
+ * The builder is side‑effect free until `apply()` is called.
+ *
+ * @public
+ */
 export interface ViewTransition {
+  /**
+   * Target an absolute center position in world pixels.
+   *
+   * @param p - Target center `{ x, y }` in world pixels
+   * @returns The builder for chaining
+   * @example
+   * ```ts
+   * await map.transition().center({ x: 4096, y: 4096 }).apply();
+   * ```
+   */
   center(p: Point): this;
+
+  /**
+   * Target an absolute zoom level.
+   *
+   * Zoom is a continuous number; integers align with image pyramid levels.
+   * @param z - Target zoom
+   * @returns The builder for chaining
+   * @example
+   * ```ts
+   * await map.transition().zoom(4).apply({ animate: { durationMs: 400 } });
+   * ```
+   */
   zoom(z: number): this;
+
+  /**
+   * Offset the current or targeted center by a delta in world pixels.
+   *
+   * Can be combined with {@link ViewTransition.center | center()}.
+   * @param dx - X delta in pixels
+   * @param dy - Y delta in pixels
+   * @returns The builder for chaining
+   */
   offset(dx: number, dy: number): this;
+
+  /**
+   * Fit the view to a bounding box with optional padding.
+   *
+   * Padding may be a single number (applied on all sides) or a per‑side object.
+   * @param b - Bounds in world pixels
+   * @param padding - Uniform number or `{ top, right, bottom, left }`
+   * @returns The builder for chaining
+   * @example
+   * ```ts
+   * await map.transition()
+   *   .bounds({ minX: 1000, minY: 1000, maxX: 2000, maxY: 1800 }, 24)
+   *   .apply({ animate: { durationMs: 500 } });
+   * ```
+   */
   bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
+
+  /**
+   * Fit the view to a set of points with optional padding.
+   *
+   * @param list - Points in world pixels
+   * @param padding - Uniform number or `{ top, right, bottom, left }`
+   * @returns The builder for chaining
+   */
   points(list: Array<Point>, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
+
+  /**
+   * Commit the transition.
+   *
+   * When `opts.animate` is omitted, the change is applied instantly. With animation,
+   * the returned promise resolves when relevant end events are observed.
+   * @param opts - Apply/animation options
+   * @returns A promise resolving with the {@link ApplyResult | result}
+   */
   apply(opts?: ApplyOptions): Promise<ApplyResult>;
+
+  /**
+   * Cancel a pending or running transition.
+   *
+   * If already settled, this is a no‑op.
+   */
   cancel(): void;
 }
 

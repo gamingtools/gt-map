@@ -23,7 +23,7 @@
   - [wrapX?](#wrapx)
   - [zoom?](#zoom)
 
-Defined in: [api/types.ts:40](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L40)
+Defined in: [api/types.ts:40](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L40)
 
 ## Properties
 
@@ -31,7 +31,7 @@ Defined in: [api/types.ts:40](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **autoResize**: `boolean`
 
-Defined in: [api/types.ts:53](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L53)
+Defined in: [api/types.ts:53](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L53)
 
 Automatically resize the map when the container size or window DPR changes.
 Enabled by default.
@@ -42,7 +42,7 @@ Enabled by default.
 
 > `optional` **backgroundColor**: `string` \| \{ `a?`: `number`; `b`: `number`; `g`: `number`; `r`: `number`; \}
 
-Defined in: [api/types.ts:58](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L58)
+Defined in: [api/types.ts:58](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L58)
 
 Viewport background: either 'transparent' (default when omitted) or a solid color.
 Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components.
@@ -53,7 +53,7 @@ Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components
 
 > `optional` **center**: [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:47](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L47)
+Defined in: [api/types.ts:47](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L47)
 
 ***
 
@@ -61,7 +61,7 @@ Defined in: [api/types.ts:47](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **fpsCap**: `number`
 
-Defined in: [api/types.ts:61](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L61)
+Defined in: [api/types.ts:61](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L61)
 
 ***
 
@@ -69,7 +69,7 @@ Defined in: [api/types.ts:61](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **mapSize**: `object`
 
-Defined in: [api/types.ts:43](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L43)
+Defined in: [api/types.ts:43](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L43)
 
 #### height
 
@@ -85,7 +85,7 @@ Defined in: [api/types.ts:43](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **maxZoom**: `number`
 
-Defined in: [api/types.ts:45](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L45)
+Defined in: [api/types.ts:45](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L45)
 
 ***
 
@@ -93,7 +93,7 @@ Defined in: [api/types.ts:45](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **minZoom**: `number`
 
-Defined in: [api/types.ts:44](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L44)
+Defined in: [api/types.ts:44](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L44)
 
 ***
 
@@ -101,7 +101,7 @@ Defined in: [api/types.ts:44](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **prefetch**: `object`
 
-Defined in: [api/types.ts:59](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L59)
+Defined in: [api/types.ts:59](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L59)
 
 #### baselineLevel?
 
@@ -121,7 +121,7 @@ Defined in: [api/types.ts:59](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **screenCache**: `boolean`
 
-Defined in: [api/types.ts:60](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L60)
+Defined in: [api/types.ts:60](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L60)
 
 ***
 
@@ -129,7 +129,7 @@ Defined in: [api/types.ts:60](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **tileSize**: `number`
 
-Defined in: [api/types.ts:42](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L42)
+Defined in: [api/types.ts:42](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L42)
 
 ***
 
@@ -137,7 +137,7 @@ Defined in: [api/types.ts:42](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **tileUrl**: `string`
 
-Defined in: [api/types.ts:41](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L41)
+Defined in: [api/types.ts:41](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L41)
 
 ***
 
@@ -145,7 +145,7 @@ Defined in: [api/types.ts:41](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **wrapX**: `boolean`
 
-Defined in: [api/types.ts:46](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L46)
+Defined in: [api/types.ts:46](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L46)
 
 ***
 
@@ -153,4 +153,4 @@ Defined in: [api/types.ts:46](https://github.com/gamingtools/gt-map/blob/37582d0
 
 > `optional` **zoom**: `number`
 
-Defined in: [api/types.ts:48](https://github.com/gamingtools/gt-map/blob/37582d0663306e25f7b67e6e3ae4390bd14c21af/packages/gtmap/src/api/types.ts#L48)
+Defined in: [api/types.ts:48](https://github.com/gamingtools/gt-map/blob/158dafcef9898e0f3f71a5a95a93f4449df181ba/packages/gtmap/src/api/types.ts#L48)
