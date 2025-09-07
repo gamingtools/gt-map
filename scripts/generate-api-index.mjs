@@ -36,37 +36,49 @@ function displayName(file) {
   return parts.length > 1 ? parts.slice(1).join('.') : name;
 }
 
-function toLinks(arr) {
-  return arr.map((f) => `- [${displayName(f)}](./${f})`).join('\n');
+function toLinks(arr, basePath) {
+  return arr.map((f) => `- [${displayName(f)}](${basePath}${f})`).join('\n');
 }
 
-function buildReadme(byPrefix) {
-  const header = '**@gaming.tools/gtmap**\n\n***\n\n# API Overview\n\nQuick links to common tasks using the GTMap API.\n\n- Create a map: see [GTMap](./Class.GTMap.md)\n- Configure tiles: [setTileSource](./Class.GTMap.md#settilesource)\n- Change the view: [ViewTransition](./Interface.ViewTransition.md), [transition()](./Class.GTMap.md#transition)\n- Add content: [addIcon](./Class.GTMap.md#addicon), [addMarker](./Class.GTMap.md#addmarker), [addVector](./Class.GTMap.md#addvector)\n- Events: [MapEvents](./Interface.MapEvents.md), [Layer.events](./Class.Layer.md#events), [Marker.events](./Class.Marker.md#events)\n- Utilities: [setAutoResize](./Class.GTMap.md#setautoresize), [invalidateSize](./Class.GTMap.md#invalidatesize), [setFpsCap](./Class.GTMap.md#setfpscap), [setBackgroundColor](./Class.GTMap.md#setbackgroundcolor)\n\nTip: The events pages list supported event names and payloads for IntelliSense.\n\n## Contents\n\nUse the lists below to jump directly to types and members.';
+function buildHeader(basePath) {
+  return '**@gaming.tools/gtmap**\n\n***\n\n# API Overview\n\nQuick links to common tasks using the GTMap API.\n\n'
+    + `- Create a map: see [GTMap](${basePath}Class.GTMap.md)\n`
+    + `- Configure tiles: [setTileSource](${basePath}Class.GTMap.md#settilesource)\n`
+    + `- Change the view: [ViewTransition](${basePath}Interface.ViewTransition.md), [transition()](${basePath}Class.GTMap.md#transition)\n`
+    + `- Add content: [addIcon](${basePath}Class.GTMap.md#addicon), [addMarker](${basePath}Class.GTMap.md#addmarker), [addVector](${basePath}Class.GTMap.md#addvector)\n`
+    + `- Events: [MapEvents](${basePath}Interface.MapEvents.md), [Layer.events](${basePath}Class.Layer.md#events), [Marker.events](${basePath}Class.Marker.md#events)\n`
+    + `- Utilities: [setAutoResize](${basePath}Class.GTMap.md#setautoresize), [invalidateSize](${basePath}Class.GTMap.md#invalidatesize), [setFpsCap](${basePath}Class.GTMap.md#setfpscap), [setBackgroundColor](${basePath}Class.GTMap.md#setbackgroundcolor)\n\n`
+    + 'Tip: The events pages list supported event names and payloads for IntelliSense.\n\n'
+    + '## Contents\n\nUse the lists below to jump directly to types and members.';
+}
+
+function buildReadme(byPrefix, basePath) {
+  const header = buildHeader(basePath);
 
   const sections = [];
   if (byPrefix.Class.length) {
-    sections.push(`\n### Classes\n\n${toLinks(byPrefix.Class)}`);
+    sections.push(`\n### Classes\n\n${toLinks(byPrefix.Class, basePath)}`);
   }
   if (byPrefix.Interface.length) {
-    sections.push(`\n### Interfaces\n\n${toLinks(byPrefix.Interface)}`);
+    sections.push(`\n### Interfaces\n\n${toLinks(byPrefix.Interface, basePath)}`);
   }
   if (byPrefix.TypeAlias.length) {
-    sections.push(`\n### Type Aliases\n\n${toLinks(byPrefix.TypeAlias)}`);
+    sections.push(`\n### Type Aliases\n\n${toLinks(byPrefix.TypeAlias, basePath)}`);
   }
   if (byPrefix.Function.length) {
-    sections.push(`\n### Functions\n\n${toLinks(byPrefix.Function)}`);
+    sections.push(`\n### Functions\n\n${toLinks(byPrefix.Function, basePath)}`);
   }
   if (byPrefix.Namespace.length) {
-    sections.push(`\n### Namespaces\n\n${toLinks(byPrefix.Namespace)}`);
+    sections.push(`\n### Namespaces\n\n${toLinks(byPrefix.Namespace, basePath)}`);
   }
   // If there are other pages (like globals.md), include them in an Extras section
   const others = byPrefix.Other.filter((f) => f !== 'globals.md');
   if (others.length || existsSync(join(API_DIR, 'globals.md'))) {
     const lines = [];
     if (existsSync(join(API_DIR, 'globals.md'))) {
-      lines.push(`- [globals](./globals.md)`);
+      lines.push(`- [globals](${basePath}globals.md)`);
     }
-    for (const f of others) lines.push(`- [${displayName(f)}](./${f})`);
+    for (const f of others) lines.push(`- [${displayName(f)}](${basePath}${f})`);
     if (lines.length) sections.push(`\n### Extras\n\n${lines.join('\n')}`);
   }
 
@@ -132,10 +144,11 @@ function injectLocalToc(content) {
 function main() {
   try {
     const byPrefix = listFiles();
-    const content = buildReadme(byPrefix);
-    writeFileSync(API_README, content, 'utf8');
-    // Keep source overview in sync so future TypeDoc runs stay current
-    writeFileSync(SOURCE_README, content.replace(/^\*\*@gaming\.tools\/gtmap\*\*[\s\S]*?\n\n# /, '# '), 'utf8');
+    const apiContent = buildReadme(byPrefix, './');
+    writeFileSync(API_README, apiContent, 'utf8');
+    // Keep source overview in sync so future TypeDoc runs stay current (links relative to docs/)
+    const overviewContent = buildReadme(byPrefix, 'api/').replace(/^\*\*@gaming\.tools\/gtmap\*\*[\s\S]*?\n\n# /, '# ');
+    writeFileSync(SOURCE_README, overviewContent, 'utf8');
     // Add per-file local TOC for easier navigation in GitHub
     const files = readdirSync(API_DIR).filter((f) => f.endsWith('.md') && f !== 'README.md');
     for (const f of files) {
