@@ -191,6 +191,9 @@ export interface MapImpl {
 	setVectors?(vectors: VectorPrimitiveInternal[]): void;
 	setUpscaleFilter?(mode: UpscaleFilterMode): void;
 	setWheelSpeed?(v: number): void;
+	// Rotation (bearing) control
+	setRotation?(deg: number, entityRotationMode?: import('../api/types').EntityRotationMode): void;
+	getRotation?(): number;
 	resize?(): void;
 	setMarkerHitboxesVisible?(on: boolean): void;
 	setActive?(on: boolean, opts?: ActiveOptions): void;

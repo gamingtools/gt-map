@@ -424,6 +424,9 @@ export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
 // Returns a scale multiplier where 1.0 = original size
 export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number) => number;
 
+// Map rotation
+export type EntityRotationMode = 'rotate' | 'keep';
+
 // Public event surface: exported via api/events/public
 
 // Transitions (builder) types

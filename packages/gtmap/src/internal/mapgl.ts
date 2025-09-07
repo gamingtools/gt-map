@@ -125,6 +125,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private _renderer!: MapRenderer;
 	private _rasterOpacity = 1.0;
 	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'auto';
+	private _viewRotationDeg = 0;
+	private _entityRotationMode: import('../api/types').EntityRotationMode = 'keep';
 	private _iconScaleFunction: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
 	private _zoomCtrl!: ZoomController;
 	private _gfx!: Graphics;
@@ -236,6 +238,11 @@ export default class GTMap implements MapImpl, GraphicsHost {
             maxZoom: this.maxZoom,
             mapSize: this.mapSize,
             wrapX: this.wrapX,
+            // rotation exposed for future renderer wiring
+            // @ts-expect-error: RenderCtx may not yet declare rotation fields
+            viewRotationDeg: this._viewRotationDeg,
+            // @ts-expect-error: RenderCtx may not yet declare entity rotation mode
+            entityRotationMode: this._entityRotationMode,
             useScreenCache: this.useScreenCache,
             screenCache: this._screenCache,
             raster: this._raster,
@@ -558,6 +565,16 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._state.center = this.center;
 		this._needsRender = true;
 	}
+
+	// Rotation: store and trigger rerender. Renderer will consume when wired.
+	public setRotation(deg: number, entityRotationMode?: import('../api/types').EntityRotationMode) {
+		const norm = (a: number) => ((a % 360) + 360) % 360;
+		this._viewRotationDeg = norm(deg);
+		if (entityRotationMode) this._entityRotationMode = entityRotationMode;
+		this._needsRender = true;
+	}
+
+	public getRotation(): number { return this._viewRotationDeg; }
 	setZoom(zoom: number) {
 		const z = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
 		if (z !== this.zoom) {

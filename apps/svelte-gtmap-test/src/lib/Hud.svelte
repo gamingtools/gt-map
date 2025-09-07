@@ -32,6 +32,9 @@
     let gridEnabled = $state(false);
     let markersEnabled = $state(true);
     let vectorsEnabled = $state(true);
+    // Map rotation
+    let rotateEntities = $state(false);
+    let bearing = $state(0);
     // Animate markers (position-only) + optional rotation
     let animateMarkers = $state(false);
     let rotateMarkers = $state(false);
@@ -128,11 +131,20 @@
 			setMarkersEnabled?.(markersEnabled);
 		} catch {}
 	});
-	$effect(() => {
-		try {
-			setVectorsEnabled?.(vectorsEnabled);
-		} catch {}
-	});
+    $effect(() => {
+        try {
+            setVectorsEnabled?.(vectorsEnabled);
+        } catch {}
+    });
+
+    // Map rotation: apply on changes
+    $effect(() => {
+        try {
+            const mode = rotateEntities ? 'rotate' : 'keep';
+            // Use transition builder for consistency; instant apply
+            map?.transition().rotate(bearing, { entityRotationMode: mode }).apply();
+        } catch {}
+    });
 
 		$effect(() => {
 			// Toggle marker animation/rotation
@@ -342,6 +354,17 @@
             <label class="pointer-events-auto flex items-center gap-2">
                 <input type="checkbox" bind:checked={rotateMarkers} />
                 <span>Rotate Markers</span>
+            </label>
+            <div>
+                <label class="block text-gray-700" for="bearing">Bearing</label>
+                <div class="flex items-center gap-2">
+                    <input id="bearing" class="pointer-events-auto w-40" type="range" min="0" max="360" step="1" bind:value={bearing} />
+                    <span class="w-10 text-right tabular-nums">{Math.round(bearing)}°</span>
+                </div>
+            </div>
+            <label class="pointer-events-auto flex items-center gap-2">
+                <input type="checkbox" bind:checked={rotateEntities} />
+                <span>Rotate Entities With Map</span>
             </label>
 		<label class="pointer-events-auto flex items-center gap-2">
 			<input type="checkbox" bind:checked={vectorsEnabled} />
