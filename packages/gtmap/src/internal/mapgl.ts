@@ -1322,7 +1322,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			// Defer icon mask build until after the first render, using requestIdleCallback when available.
 			if (!(this as any)._maskBuildRequested) {
 				(this as any)._maskBuildRequested = true;
-				const start = () => { try { (this._icons as any)?.startMaskBuild?.(); } catch {} };
+                const start = () => { try { this._icons?.startMaskBuild?.(); } catch {} };
 				const idle: ((cb: () => void) => any) | undefined = typeof (window as any).requestIdleCallback === 'function' ? (window as any).requestIdleCallback.bind(window) : undefined;
 				if (idle) idle(start); else setTimeout(start, 0);
 			}
@@ -1641,7 +1641,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			const top = css.y - it.anchor.ay;
 			if (px >= left && px <= left + it.w && py >= top && py <= top + it.h) {
 				// Optional alpha-mask sampling for pixel-accurate hits
-				const mask = (this._icons as any).getMaskInfo?.(it.type) as { data: Uint8Array; w: number; h: number } | null;
+                const mask = this._icons.getMaskInfo?.(it.type) || null;
 				if (mask) {
 					// Map pointer to icon local coords (account for rotation around anchor)
 					const ax = it.anchor.ax;
@@ -1700,7 +1700,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			const left = css.x - it.anchor.ax;
 			const top = css.y - it.anchor.ay;
 			if (px < left || px > left + it.w || py < top || py > top + it.h) continue;
-			const mask = (this._icons as any).getMaskInfo?.(it.type) as { data: Uint8Array; w: number; h: number } | null;
+                const mask = this._icons.getMaskInfo?.(it.type) || null;
 			if (mask) {
 				const ax = it.anchor.ax;
 				const ay = it.anchor.ay;
