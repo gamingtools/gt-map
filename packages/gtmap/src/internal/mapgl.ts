@@ -582,7 +582,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
                 });
                 this._lastHover = null;
             }
-            this._markerIds = nextIds;
+            // no persistent marker id set required here
         } catch {}
         this._icons.setMarkers(markers);
 		try {
