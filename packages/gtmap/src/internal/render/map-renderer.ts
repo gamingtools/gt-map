@@ -35,11 +35,13 @@ export default class MapRenderer {
 		const rect = ctx.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
-		const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
-		let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
-		// Snap tlWorld to device pixel grid to stabilize sampling during pan
-		const snap = (v: number) => Coords.snapLevelToDevice(v, scale, ctx.dpr);
-		tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
+        const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
+        let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
+        // Only snap to device pixels when not rotating to avoid rotation jitter
+        const snap = (v: number) => Coords.snapLevelToDevice(v, scale, ctx.dpr);
+        const angleDeg0 = (ctx as any).viewRotationDeg as number | undefined;
+        const ang0 = (typeof angleDeg0 === 'number' ? angleDeg0 : 0) * Math.PI / 180.0;
+        if (ang0 === 0) tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 		gl.useProgram(ctx.prog);
 		gl.bindBuffer(gl.ARRAY_BUFFER, ctx.quad);
 		const loc = ctx.loc;
@@ -105,8 +107,12 @@ export default class MapRenderer {
             const centerT = ctx.project(ctx.center.lng, ctx.center.lat, targetZ);
             const scaleT = Coords.scaleAtLevel(ctx.zoom, targetZ);
             let tlT = Coords.tlLevelForWithScale(centerT, scaleT, { x: widthCSS, y: heightCSS });
-            const snapT = (v: number) => Coords.snapLevelToDevice(v, scaleT, ctx.dpr);
-            tlT = { x: snapT(tlT.x), y: snapT(tlT.y) };
+            if (ang !== 0) {
+                // avoid snapping during rotation
+            } else {
+                const snapT = (v: number) => Coords.snapLevelToDevice(v, scaleT, ctx.dpr);
+                tlT = { x: snapT(tlT.x), y: snapT(tlT.y) };
+            }
             const offXT = (effW - widthCSS) * 0.5 / Math.max(1e-6, scaleT);
             const offYT = (effH - heightCSS) * 0.5 / Math.max(1e-6, scaleT);
             const tlTExp = { x: tlT.x - offXT, y: tlT.y - offYT };
@@ -130,9 +136,13 @@ export default class MapRenderer {
 			for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
 				const centerL = ctx.project(ctx.center.lng, ctx.center.lat, lvl);
 				const scaleL = Coords.scaleAtLevel(ctx.zoom, lvl);
-				let tlL = Coords.tlLevelForWithScale(centerL, scaleL, { x: widthCSS, y: heightCSS });
-				const snapL = (v: number) => Coords.snapLevelToDevice(v, scaleL, ctx.dpr);
-				tlL = { x: snapL(tlL.x), y: snapL(tlL.y) };
+            let tlL = Coords.tlLevelForWithScale(centerL, scaleL, { x: widthCSS, y: heightCSS });
+            if (ang !== 0) {
+                // skip snapping when rotating
+            } else {
+                const snapL = (v: number) => Coords.snapLevelToDevice(v, scaleL, ctx.dpr);
+                tlL = { x: snapL(tlL.x), y: snapL(tlL.y) };
+            }
 				const covL = ctx.raster.coverage(ctx.tileCache, lvl, tlL, scaleL, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
 				// Backfill lower levels at full raster opacity
 				gl.uniform1f(loc.u_alpha!, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
@@ -225,9 +235,13 @@ export default class MapRenderer {
 			if (zIntNext > baseZ && frac > 0) {
 				const centerN = ctx.project(ctx.center.lng, ctx.center.lat, zIntNext);
 				const scaleN = Coords.scaleAtLevel(ctx.zoom, zIntNext);
-				let tlN = Coords.tlLevelForWithScale(centerN, scaleN, { x: widthCSS, y: heightCSS });
-				const snapN = (v: number) => Coords.snapLevelToDevice(v, scaleN, ctx.dpr);
-				tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };
+            let tlN = Coords.tlLevelForWithScale(centerN, scaleN, { x: widthCSS, y: heightCSS });
+            if (ang !== 0) {
+                // skip snapping when rotating
+            } else {
+                const snapN = (v: number) => Coords.snapLevelToDevice(v, scaleN, ctx.dpr);
+                tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };
+            }
 				// Only draw z+1 overlay if its coverage exceeds a small threshold to avoid per-tile popping
 				const nextCoverage = ctx.raster.coverage(ctx.tileCache, zIntNext, tlN, scaleN, widthCSS, heightCSS, ctx.wrapX, ctx.tileSize, ctx.mapSize, ctx.maxZoom, ctx.sourceMaxZoom);
 				if (nextCoverage > 0.35) {

@@ -242,8 +242,13 @@ export class IconRenderer {
     // Always snap top-left to device pixels to share the same stable origin as tiles
     // and quantize icon positions/sizes in device space to eliminate subpixel jitter.
     let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
-    const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
-    tlWorld = { x: snapTL(tlWorld.x), y: snapTL(tlWorld.y) };
+    // Avoid snapping during rotation to keep icons aligned with rotating tiles
+    const angleDegIcons = (ctx as any).viewRotationDeg as number | undefined;
+    const angIcons = (typeof angleDegIcons === 'number' ? angleDegIcons : 0) * Math.PI / 180.0;
+    if (angIcons === 0) {
+        const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
+        tlWorld = { x: snapTL(tlWorld.x), y: snapTL(tlWorld.y) };
+    }
 
     // Calculate scale factor from icon scale function (screen-space scaling)
     const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
