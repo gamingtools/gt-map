@@ -2,29 +2,37 @@
 
 ***
 
-# Interface: MarkerOptions
+# Interface: MarkerOptions\<T\>
 
 [← Back to API index](./README.md)
 
 ## Contents
 
+- [Type Parameters](#type-parameters)
+  - [T](#t)
 - [Properties](#properties)
   - [data?](#data)
   - [iconType?](#icontype)
   - [rotation?](#rotation)
   - [size?](#size)
 
-Defined in: [entities/Marker.ts:11](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/entities/Marker.ts#L11)
+Defined in: entities/marker.ts:11
 
 Options for creating or styling a [Marker](Class.Marker.md).
+
+## Type Parameters
+
+### T
+
+`T` = `unknown`
 
 ## Properties
 
 ### data?
 
-> `optional` **data**: `unknown`
+> `optional` **data**: `T`
 
-Defined in: [entities/Marker.ts:15](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/entities/Marker.ts#L15)
+Defined in: entities/marker.ts:15
 
 ***
 
@@ -32,7 +40,7 @@ Defined in: [entities/Marker.ts:15](https://github.com/gamingtools/gt-map/blob/4
 
 > `optional` **iconType**: `string`
 
-Defined in: [entities/Marker.ts:12](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/entities/Marker.ts#L12)
+Defined in: entities/marker.ts:12
 
 ***
 
@@ -40,7 +48,7 @@ Defined in: [entities/Marker.ts:12](https://github.com/gamingtools/gt-map/blob/4
 
 > `optional` **rotation**: `number`
 
-Defined in: [entities/Marker.ts:14](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/entities/Marker.ts#L14)
+Defined in: entities/marker.ts:14
 
 ***
 
@@ -48,4 +56,4 @@ Defined in: [entities/Marker.ts:14](https://github.com/gamingtools/gt-map/blob/4
 
 > `optional` **size**: `number`
 
-Defined in: [entities/Marker.ts:13](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/entities/Marker.ts#L13)
+Defined in: entities/marker.ts:13

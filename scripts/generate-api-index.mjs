@@ -44,6 +44,7 @@ function buildHeader(basePath) {
   return '**@gaming.tools/gtmap**\n\n***\n\n# API Overview\n\nQuick links to common tasks using the GTMap API.\n\n'
     + `- Create a map: see [GTMap](${basePath}Class.GTMap.md)\n`
     + `- Configure tiles: set [tileSource](${basePath}Interface.MapOptions.md#tilesource) ([url](${basePath}Interface.TileSourceOptions.md#url), [tileSize](${basePath}Interface.TileSourceOptions.md#tilesize), [mapSize](${basePath}Interface.TileSourceOptions.md#mapsize), [sourceMinZoom](${basePath}Interface.TileSourceOptions.md#sourceminzoom), [sourceMaxZoom](${basePath}Interface.TileSourceOptions.md#sourcemaxzoom))\n`
+    + `- Wrap & bounds: [setWrapX](${basePath}Class.GTMap.md#setwrapx), [setMaxBoundsPx](${basePath}Class.GTMap.md#setmaxboundspx), [setMaxBoundsViscosity](${basePath}Class.GTMap.md#setmaxboundsviscosity)\n`
     + `- Change the view: [ViewTransition](${basePath}Interface.ViewTransition.md), [transition()](${basePath}Class.GTMap.md#transition)\n`
     + `- Add content: [addIcon](${basePath}Class.GTMap.md#addicon), [addMarker](${basePath}Class.GTMap.md#addmarker), [addVector](${basePath}Class.GTMap.md#addvector)\n`
     + `- Events: [MapEvents](${basePath}Interface.MapEvents.md), [Layer.events](${basePath}Class.Layer.md#events), [Marker.events](${basePath}Class.Marker.md#events)\n`

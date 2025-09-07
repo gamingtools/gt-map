@@ -2,12 +2,14 @@
 
 ***
 
-# Interface: EventMap
+# Interface: EventMap\<TMarkerData\>
 
 [← Back to API index](./README.md)
 
 ## Contents
 
+- [Type Parameters](#type-parameters)
+  - [TMarkerData](#tmarkerdata)
 - [Properties](#properties)
   - [click](#click)
   - [contextmenu](#contextmenu)
@@ -32,7 +34,13 @@
   - [zoom](#zoom)
   - [zoomend](#zoomend)
 
-Defined in: [api/types.ts:253](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L253)
+Defined in: [api/types.ts:253](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L253)
+
+## Type Parameters
+
+### TMarkerData
+
+`TMarkerData` = `unknown`
 
 ## Properties
 
@@ -40,7 +48,7 @@ Defined in: [api/types.ts:253](https://github.com/gamingtools/gt-map/blob/456675
 
 > **click**: [`MouseEventData`](Interface.MouseEventData.md)
 
-Defined in: [api/types.ts:293](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L293)
+Defined in: [api/types.ts:293](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L293)
 
 Mouse click (derived from pointer).
 
@@ -50,7 +58,7 @@ Mouse click (derived from pointer).
 
 > **contextmenu**: [`MouseEventData`](Interface.MouseEventData.md)
 
-Defined in: [api/types.ts:297](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L297)
+Defined in: [api/types.ts:297](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L297)
 
 Context menu (derived).
 
@@ -60,7 +68,7 @@ Context menu (derived).
 
 > **dblclick**: [`MouseEventData`](Interface.MouseEventData.md)
 
-Defined in: [api/types.ts:295](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L295)
+Defined in: [api/types.ts:295](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L295)
 
 Double‑click (derived).
 
@@ -70,7 +78,7 @@ Double‑click (derived).
 
 > **frame**: [`FrameEventData`](Interface.FrameEventData.md)
 
-Defined in: [api/types.ts:273](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L273)
+Defined in: [api/types.ts:273](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L273)
 
 Per‑frame hook with optional stats (HUD/diagnostics).
 
@@ -80,7 +88,7 @@ Per‑frame hook with optional stats (HUD/diagnostics).
 
 > **load**: [`LoadEventData`](Interface.LoadEventData.md)
 
-Defined in: [api/types.ts:255](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L255)
+Defined in: [api/types.ts:255](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L255)
 
 Fired once after the first frame is scheduled.
 
@@ -88,9 +96,9 @@ Fired once after the first frame is scheduled.
 
 ### markerclick
 
-> **markerclick**: [`MarkerEventData`](Interface.MarkerEventData.md)
+> **markerclick**: [`MarkerEventData`](Interface.MarkerEventData.md)\<`TMarkerData`\>
 
-Defined in: [api/types.ts:279](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L279)
+Defined in: [api/types.ts:279](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L279)
 
 Marker click (device‑agnostic).
 
@@ -98,9 +106,9 @@ Marker click (device‑agnostic).
 
 ### markerdown
 
-> **markerdown**: [`MarkerEventData`](Interface.MarkerEventData.md)
+> **markerdown**: [`MarkerEventData`](Interface.MarkerEventData.md)\<`TMarkerData`\>
 
-Defined in: [api/types.ts:281](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L281)
+Defined in: [api/types.ts:281](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L281)
 
 Marker pointer down.
 
@@ -108,9 +116,9 @@ Marker pointer down.
 
 ### markerenter
 
-> **markerenter**: [`MarkerEventData`](Interface.MarkerEventData.md)
+> **markerenter**: [`MarkerEventData`](Interface.MarkerEventData.md)\<`TMarkerData`\>
 
-Defined in: [api/types.ts:275](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L275)
+Defined in: [api/types.ts:275](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L275)
 
 Marker hover enter (top‑most).
 
@@ -118,9 +126,9 @@ Marker hover enter (top‑most).
 
 ### markerleave
 
-> **markerleave**: [`MarkerEventData`](Interface.MarkerEventData.md)
+> **markerleave**: [`MarkerEventData`](Interface.MarkerEventData.md)\<`TMarkerData`\>
 
-Defined in: [api/types.ts:277](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L277)
+Defined in: [api/types.ts:277](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L277)
 
 Marker hover leave.
 
@@ -128,9 +136,9 @@ Marker hover leave.
 
 ### markerlongpress
 
-> **markerlongpress**: [`MarkerEventData`](Interface.MarkerEventData.md)
+> **markerlongpress**: [`MarkerEventData`](Interface.MarkerEventData.md)\<`TMarkerData`\>
 
-Defined in: [api/types.ts:285](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L285)
+Defined in: [api/types.ts:285](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L285)
 
 Marker long‑press (~500ms).
 
@@ -138,9 +146,9 @@ Marker long‑press (~500ms).
 
 ### markerup
 
-> **markerup**: [`MarkerEventData`](Interface.MarkerEventData.md)
+> **markerup**: [`MarkerEventData`](Interface.MarkerEventData.md)\<`TMarkerData`\>
 
-Defined in: [api/types.ts:283](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L283)
+Defined in: [api/types.ts:283](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L283)
 
 Marker pointer up.
 
@@ -150,7 +158,7 @@ Marker pointer up.
 
 > **mousedown**: [`MouseEventData`](Interface.MouseEventData.md)
 
-Defined in: [api/types.ts:287](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L287)
+Defined in: [api/types.ts:287](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L287)
 
 Mouse down (derived from pointer).
 
@@ -160,7 +168,7 @@ Mouse down (derived from pointer).
 
 > **mousemove**: [`MouseEventData`](Interface.MouseEventData.md)
 
-Defined in: [api/types.ts:289](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L289)
+Defined in: [api/types.ts:289](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L289)
 
 Mouse move (derived from pointer); may include `markers?` hover hits.
 
@@ -170,7 +178,7 @@ Mouse move (derived from pointer); may include `markers?` hover hits.
 
 > **mouseup**: [`MouseEventData`](Interface.MouseEventData.md)
 
-Defined in: [api/types.ts:291](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L291)
+Defined in: [api/types.ts:291](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L291)
 
 Mouse up (derived from pointer).
 
@@ -180,7 +188,7 @@ Mouse up (derived from pointer).
 
 > **move**: [`MoveEventData`](Interface.MoveEventData.md)
 
-Defined in: [api/types.ts:259](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L259)
+Defined in: [api/types.ts:259](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L259)
 
 Continuous movement (center changed).
 
@@ -190,7 +198,7 @@ Continuous movement (center changed).
 
 > **moveend**: [`MoveEventData`](Interface.MoveEventData.md)
 
-Defined in: [api/types.ts:261](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L261)
+Defined in: [api/types.ts:261](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L261)
 
 Movement ended (center settled).
 
@@ -200,7 +208,7 @@ Movement ended (center settled).
 
 > **pointerdown**: [`PointerEventData`](Interface.PointerEventData.md)
 
-Defined in: [api/types.ts:267](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L267)
+Defined in: [api/types.ts:267](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L267)
 
 Pointer pressed on the map.
 
@@ -210,7 +218,7 @@ Pointer pressed on the map.
 
 > **pointermove**: [`PointerEventData`](Interface.PointerEventData.md)
 
-Defined in: [api/types.ts:269](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L269)
+Defined in: [api/types.ts:269](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L269)
 
 Pointer moved over the map.
 
@@ -220,7 +228,7 @@ Pointer moved over the map.
 
 > **pointerup**: [`PointerEventData`](Interface.PointerEventData.md)
 
-Defined in: [api/types.ts:271](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L271)
+Defined in: [api/types.ts:271](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L271)
 
 Pointer released on the map.
 
@@ -230,7 +238,7 @@ Pointer released on the map.
 
 > **resize**: [`ResizeEventData`](Interface.ResizeEventData.md)
 
-Defined in: [api/types.ts:257](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L257)
+Defined in: [api/types.ts:257](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L257)
 
 Fired after a debounced resize completes with final size + DPR.
 
@@ -240,7 +248,7 @@ Fired after a debounced resize completes with final size + DPR.
 
 > **zoom**: [`ZoomEventData`](Interface.ZoomEventData.md)
 
-Defined in: [api/types.ts:263](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L263)
+Defined in: [api/types.ts:263](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L263)
 
 Continuous zoom changes.
 
@@ -250,6 +258,6 @@ Continuous zoom changes.
 
 > **zoomend**: [`ZoomEventData`](Interface.ZoomEventData.md)
 
-Defined in: [api/types.ts:265](https://github.com/gamingtools/gt-map/blob/456675b84d19e7c9d557294c3b19a4bb0dcd9d51/packages/gtmap/src/api/types.ts#L265)
+Defined in: [api/types.ts:265](https://github.com/gamingtools/gt-map/blob/05d69e937e6093e14da4884825215d18bb9b0084/packages/gtmap/src/api/types.ts#L265)
 
 Zoom ended (zoom settled).

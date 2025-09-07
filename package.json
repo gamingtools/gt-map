@@ -23,7 +23,7 @@
     "format": "prettier -w \"packages/**/*\"",
     "format:check": "prettier -c \"packages/**/*\"",
     "fetch:svelte-docs": "node scripts/fetch-svelte-llm-docs.mjs",
-    "docs:api": "typedoc --options typedoc.json && node scripts/generate-api-index.mjs",
+    "docs:api": "node scripts/clean-docs.mjs && typedoc --options typedoc.json && node scripts/generate-api-index.mjs",
     "version:auto": "node scripts/version-auto.mjs --patch-only",
     "version:auto:commit": "node scripts/version-auto.mjs --patch-only --commit",
     "version:auto:detect": "node scripts/version-auto.mjs --detect",

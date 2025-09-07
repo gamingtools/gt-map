@@ -17,9 +17,10 @@ import type {
 	IconDefInternal,
 	MarkerInternal,
 	VectorPrimitiveInternal,
-	IconScaleFunction,
+  IconScaleFunction,
   ApplyOptions,
   ApplyResult,
+  MaxBoundsPx,
 } from './types';
 
 // Re-export types from centralized types file
@@ -246,7 +247,8 @@ export class GTMap<TMarkerData = unknown> {
 	 * @param on - `true` to show, `false` to hide
 	 * @returns This map instance for chaining
 	 */
-	setGridVisible(on: boolean): this {
+/** @group Tiles & Styling */
+setGridVisible(on: boolean): this {
 		this._impl.setGridVisible?.(on);
 		return this;
 	}
@@ -257,7 +259,8 @@ export class GTMap<TMarkerData = unknown> {
 	 * @param mode - `'auto'` | `'linear'` | `'bicubic'`
 	 * @returns This map instance for chaining
 	 */
-	setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
+/** @group Tiles & Styling */
+setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 		this._impl.setUpscaleFilter?.(mode);
 		return this;
 	}
@@ -338,7 +341,8 @@ export class GTMap<TMarkerData = unknown> {
 	 * const m = map.addMarker(2048, 2048, { icon: pin, size: 1.0 });
 	 * ```
 	 */
-	addIcon(def: IconDef, id?: string): IconHandle {
+  /** @group Content */
+  addIcon(def: IconDef, id?: string): IconHandle {
 		const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
 		this._icons.set(iconId, def);
 		// Push to impl immediately
@@ -373,7 +377,8 @@ export class GTMap<TMarkerData = unknown> {
 	 * poi.events.on('click', (e) => console.log('clicked', e.marker.id));
 	 * ```
 	 */
-	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: TMarkerData }): Marker<TMarkerData> {
+  /** @group Content */
+  addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: TMarkerData }): Marker<TMarkerData> {
 		const mk = new Marker<TMarkerData>(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
 		this.markers.add(mk);
 		return mk;
@@ -417,8 +422,9 @@ export class GTMap<TMarkerData = unknown> {
  	 * // Later, update its geometry
  	 * v.setGeometry({ type: 'circle', center: { x: 200, y: 200 }, radius: 40 });
  	 * ```
-	 */
-	addVector(geometry: VectorGeom): Vector {
+  */
+  /** @group Content */
+  addVector(geometry: VectorGeom): Vector {
 		const v = new Vector(geometry, {}, () => this._flushVectors());
 		this.vectors.add(v);
 		return v;
@@ -428,9 +434,10 @@ export class GTMap<TMarkerData = unknown> {
 	 * Removes all markers from the map.
 	 *
 	 * @returns This map instance for method chaining
-	 */
-	/** @public Remove all markers from the map. */
-	clearMarkers(): this {
+  */
+  /** @public Remove all markers from the map. */
+  /** @group Content */
+  clearMarkers(): this {
 		this.markers.clear();
 		return this;
 	}
@@ -438,9 +445,10 @@ export class GTMap<TMarkerData = unknown> {
 	 * Removes all vector shapes from the map.
 	 *
 	 * @returns This map instance for method chaining
-	 */
-	/** @public Remove all vectors from the map. */
-	clearVectors(): this {
+  */
+  /** @public Remove all vectors from the map. */
+  /** @group Content */
+  clearVectors(): this {
 		this.vectors.clear();
 		this._impl.setVectors?.([]);
 		return this;
@@ -453,7 +461,8 @@ export class GTMap<TMarkerData = unknown> {
 	 * @public
 	 * @returns The center position
 	 */
-	getCenter(): Point {
+  /** @group View */
+  getCenter(): Point {
 		const c = this._impl.center as { lng: number; lat: number };
 		return { x: c.lng, y: c.lat };
 	}
@@ -463,7 +472,8 @@ export class GTMap<TMarkerData = unknown> {
 	 * @public
 	 * @returns The zoom value (fractional allowed)
 	 */
-	getZoom(): number {
+  /** @group View */
+  getZoom(): number {
 		return this._impl.zoom;
 	}
 	/**
@@ -489,10 +499,53 @@ export class GTMap<TMarkerData = unknown> {
  	 * input.oninput = () => map.setWheelSpeed(Number(input.value));
  	 * ```
 	 */
-	setWheelSpeed(v: number): this {
-		this._impl.setWheelSpeed?.(v);
-		return this;
-	}
+  setWheelSpeed(v: number): this {
+    this._impl.setWheelSpeed?.(v);
+    return this;
+  }
+
+  /**
+   * Enable or disable horizontal world wrap.
+   *
+   * @public
+   * @group Tiles & Styling
+   * @param on - `true` to allow infinite panning across X (wrap), `false` to clamp at image edges
+   * @returns This map instance for chaining
+   * @remarks
+   * Pixel CRS only: when wrapping is enabled, the world repeats seamlessly along X; Y is never wrapped.
+   */
+  setWrapX(on: boolean): this {
+    this._impl.setWrapX(on);
+    return this;
+  }
+
+  /**
+   * Constrain panning to pixel bounds (Leaflet‑like). Pass `null` to clear.
+   *
+   * @public
+   * @group Tiles & Styling
+   * @param bounds - `{ minX, minY, maxX, maxY }` in world pixels, or `null` to remove constraints
+   * @returns This map instance for chaining
+   * @remarks
+   * When set, zoom‑out is also clamped so the given bounds always cover the viewport.
+   */
+  setMaxBoundsPx(bounds: MaxBoundsPx | null): this {
+    this._impl.setMaxBoundsPx(bounds);
+    return this;
+  }
+
+  /**
+   * Set bounds viscosity (0..1) for a resistive effect near the edges.
+   *
+   * @public
+   * @group Tiles & Styling
+   * @param v - Viscosity factor in [0..1]; `0` = hard clamp, `1` = very soft
+   * @returns This map instance for chaining
+   */
+  setMaxBoundsViscosity(v: number): this {
+    this._impl.setMaxBoundsViscosity(v);
+    return this;
+  }
     /**
      * Set the maximum frames per second.
      *
@@ -507,7 +560,8 @@ export class GTMap<TMarkerData = unknown> {
      * map.setFpsCap(30);
      * ```
      */
-	setFpsCap(v: number): this {
+/** @group View */
+setFpsCap(v: number): this {
 		this._impl.setFpsCap(v);
 		return this;
 	}
@@ -526,7 +580,8 @@ export class GTMap<TMarkerData = unknown> {
      * map.setBackgroundColor('#0a0a0a');
      * ```
      */
-	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
+/** @group Tiles & Styling */
+setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
 		this._impl.setBackgroundColor?.(color);
 		return this;
 	}
@@ -544,7 +599,8 @@ export class GTMap<TMarkerData = unknown> {
      * map.invalidateSize();
      * ```
      */
-	setAutoResize(on: boolean): this {
+/** @group View */
+setAutoResize(on: boolean): this {
 		this._impl.setAutoResize?.(on);
 		return this;
 	}
@@ -585,7 +641,8 @@ export class GTMap<TMarkerData = unknown> {
 	 * @public
 	 * @returns This map instance for chaining
 	 */
-	invalidateSize(): this {
+/** @group View */
+invalidateSize(): this {
 		this._impl.resize?.();
 		return this;
 	}
@@ -621,7 +678,8 @@ get events(): MapEvents<TMarkerData> {
 	 * @remarks
 	 * The builder is side‑effect free until {@link ViewTransition.apply | apply()} is called.
 	 */
-	transition(): ViewTransition {
+/** @group View */
+transition(): ViewTransition {
 		return new ViewTransitionImpl(this);
 	}
 

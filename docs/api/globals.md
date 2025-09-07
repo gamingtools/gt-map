@@ -13,6 +13,7 @@
 - [Interfaces](#interfaces)
 - [Type Aliases](#type-aliases)
 - [Functions](#functions)
+- [Overview](#overview)
 
 ## Namespaces
 
@@ -20,7 +21,6 @@
 
 ## Classes
 
-- [GTMap](Class.GTMap.md)
 - [Layer](Class.Layer.md)
 - [Marker](Class.Marker.md)
 - [VectorEntity](Class.VectorEntity.md)
@@ -83,3 +83,7 @@
 - [isCircle](Function.isCircle.md)
 - [isPolygon](Function.isPolygon.md)
 - [isPolyline](Function.isPolyline.md)
+
+## Overview
+
+- [GTMap](Class.GTMap.md)
