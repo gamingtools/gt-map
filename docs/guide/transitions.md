@@ -31,6 +31,13 @@ await map.transition()
   .apply({ animate: { durationMs: 400 } });
 ```
 
+API Reference Links
+
+- View builder: ../api/Interface.ViewTransition.md
+- Apply options: ../api/Interface.ApplyOptions.md, ../api/Interface.AnimateOptions.md
+- Results: ../api/Interface.ApplyResult.md, ../api/TypeAlias.ApplyStatus.md
+- Easing helpers: ../api/Namespace.easings.md
+
 ## Public Surface
 
 Entry
@@ -93,9 +100,9 @@ Animation & Interrupts
   - Emits `move`/`zoom` during, then `moveend`/`zoomend` at the end.
   - Resolves `{ status: 'animated' }` upon completion.
   - Interrupt policy when another animated apply starts for the same target:
-    - `'cancel'` (default): stop current animation immediately; its in‑flight Promise resolves `{ status: 'canceled' }`; new animation starts.
-    - `'join'`: retarget current animation to the new end state, keeping elapsed easing phase; existing Promise resolves `{ status: 'animated' }` when the retargeted motion finishes.
-    - `'enqueue'`: start new animation after current completes; both Promises resolve `{ status: 'animated' }` in sequence.
+    - `'cancel'` (default): stop the current animation immediately; its in‑flight Promise resolves `{ status: 'canceled' }`; new animation starts.
+    - `'join'`: do not cancel the previous animation; both Promises resolve `{ status: 'animated' }` when the new animation ends. (Current impl does not retarget the previous animation; it simply joins resolution to the new completion.)
+    - `'enqueue'`: start the new animation after the current completes; both Promises resolve `{ status: 'animated' }` in sequence.
 - External interruptions (e.g., user pan/zoom) are treated as a new transition with `'cancel'` policy for the view: in‑flight Promise resolves `{ status: 'canceled' }`.
 
 Events & Promise Resolution
