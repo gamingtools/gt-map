@@ -291,7 +291,7 @@ export default class MapRenderer {
                 iconScaleFunction: ctx.iconScaleFunction,
                 // pass map rotation to icon renderer
                 viewRotationDeg: (ctx as any).viewRotationDeg,
-                entityRotationMode: (ctx as any).entityRotationMode,
+                markerRotationMode: (ctx as any).markerRotationMode,
             });
 		}
 		// Update screen cache after full draw so it matches the frame

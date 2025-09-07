@@ -21,7 +21,7 @@ import type {
   ApplyOptions,
   ApplyResult,
   MaxBoundsPx,
-  EntityRotationMode,
+  MarkerRotationMode,
 } from './types';
 
 // Re-export types from centralized types file
@@ -29,7 +29,7 @@ export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Pol
 export { Marker } from '../entities/marker';
 export { Vector } from '../entities/vector';
 export { Layer } from '../entities/layer';
-export type { EntityRotationMode } from './types';
+export type { MarkerRotationMode } from './types';
 
 /**
  * GTMap - A high‑performance WebGL map renderer with a pixel‑based coordinate system.
@@ -234,10 +234,10 @@ export class GTMap<TMarkerData = unknown> {
 
     // View control helpers (internal use by transition builder)
     /** @internal */
-    _applyInstant(center?: Point, zoom?: number, rotationDeg?: number, entityRotationMode?: EntityRotationMode): void {
+    _applyInstant(center?: Point, zoom?: number, rotationDeg?: number, markerRotationMode?: MarkerRotationMode): void {
         if (center) this._impl.setCenter(center.x, center.y);
         if (typeof zoom === 'number') this._impl.setZoom(zoom);
-        if (typeof rotationDeg === 'number') this._impl.setRotation?.(rotationDeg, entityRotationMode);
+        if (typeof rotationDeg === 'number') this._impl.setRotation?.(rotationDeg, markerRotationMode);
     }
 
 
@@ -608,12 +608,12 @@ setAutoResize(on: boolean): this {
 		return this;
 	}
     /** @internal */
-    _animateView(opts: { center?: Point; zoom?: number; rotationDeg?: number; entityRotationMode?: EntityRotationMode; durationMs: number; easing?: (t: number) => number }): void {
-        const { center, zoom, rotationDeg, entityRotationMode, durationMs, easing } = opts;
+    _animateView(opts: { center?: Point; zoom?: number; rotationDeg?: number; markerRotationMode?: MarkerRotationMode; durationMs: number; easing?: (t: number) => number }): void {
+        const { center, zoom, rotationDeg, markerRotationMode, durationMs, easing } = opts;
         const lng = center?.x;
         const lat = center?.y;
         this._impl.flyTo?.({ lng, lat, zoom, durationMs, easing });
-        if (typeof rotationDeg === 'number') this._impl.setRotation?.(rotationDeg, entityRotationMode);
+        if (typeof rotationDeg === 'number') this._impl.setRotation?.(rotationDeg, markerRotationMode);
     }
 
     /** @internal */
@@ -689,8 +689,8 @@ invalidateSize(): this {
 
   /** Rotate the map instantly (no animation). */
   /** @group View */
-  setRotation(deg: number, opts?: { entityRotationMode?: EntityRotationMode }): this {
-    this._impl.setRotation?.(deg, opts?.entityRotationMode);
+  setRotation(deg: number, opts?: { markerRotationMode?: MarkerRotationMode }): this {
+    this._impl.setRotation?.(deg, opts?.markerRotationMode);
     return this;
   }
   /** Get the current map rotation in degrees (clockwise). */
@@ -844,7 +844,7 @@ export interface ViewTransition {
    * @param opts - Optional entity rotation behavior
    * @returns The builder for chaining
    */
-  rotate(deg: number, opts?: { entityRotationMode?: EntityRotationMode }): this;
+  rotate(deg: number, opts?: { markerRotationMode?: MarkerRotationMode }): this;
 
   /**
    * Commit the transition.
@@ -878,7 +878,7 @@ class ViewTransitionImpl implements ViewTransition {
   private targetBounds?: { minX: number; minY: number; maxX: number; maxY: number };
   private boundsPadding?: { top: number; right: number; bottom: number; left: number };
   private targetRotationDeg?: number;
-  private targetEntityRotMode?: EntityRotationMode;
+  private targetMarkerRotMode?: MarkerRotationMode;
   // private started flag removed
   private settled = false;
   private cancelled = false;
@@ -939,9 +939,9 @@ class ViewTransitionImpl implements ViewTransition {
     return this.bounds({ minX, minY, maxX, maxY }, padding);
   }
 
-  rotate(deg: number, opts?: { entityRotationMode?: EntityRotationMode }): this {
+  rotate(deg: number, opts?: { markerRotationMode?: MarkerRotationMode }): this {
     this.targetRotationDeg = deg;
-    this.targetEntityRotMode = opts?.entityRotationMode;
+    this.targetMarkerRotMode = opts?.markerRotationMode;
     return this;
   }
 
@@ -993,7 +993,7 @@ class ViewTransitionImpl implements ViewTransition {
         needsCenter ? (finalCenter as Point) : undefined,
         needsZoom ? (finalZoom as number) : undefined,
         needsRotation ? (this.targetRotationDeg as number) : undefined,
-        needsRotation ? this.targetEntityRotMode : undefined,
+        needsRotation ? this.targetMarkerRotMode : undefined,
       );
       return this._finalizeImmediate({ status: 'instant' });
     }
@@ -1047,7 +1047,7 @@ class ViewTransitionImpl implements ViewTransition {
     // Kick off the animation via existing API
     const durationMs = animate.durationMs;
     const easing = animate.easing;
-    this.map._animateView({ center: finalCenter, zoom: finalZoom, rotationDeg: this.targetRotationDeg, entityRotationMode: this.targetEntityRotMode, durationMs, easing });
+    this.map._animateView({ center: finalCenter, zoom: finalZoom, rotationDeg: this.targetRotationDeg, markerRotationMode: this.targetMarkerRotMode, durationMs, easing });
 
     return this.promise;
   }

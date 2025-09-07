@@ -104,7 +104,7 @@ export interface RenderCtx {
 	drawVectors?: () => void;
   // Map rotation (degrees) and entity rotation mode for renderer
   viewRotationDeg?: number;
-  entityRotationMode?: import('../api/types').EntityRotationMode;
+  markerRotationMode?: import('../api/types').MarkerRotationMode;
 }
 
 export interface InputDeps {
@@ -199,8 +199,8 @@ export interface MapImpl {
 	setUpscaleFilter?(mode: UpscaleFilterMode): void;
 	setWheelSpeed?(v: number): void;
 	// Rotation (bearing) control
-	setRotation?(deg: number, entityRotationMode?: import('../api/types').EntityRotationMode): void;
-	getRotation?(): number;
+    setRotation?(deg: number, markerRotationMode?: import('../api/types').MarkerRotationMode): void;
+    getRotation?(): number;
 	resize?(): void;
 	setMarkerHitboxesVisible?(on: boolean): void;
 	setActive?(on: boolean, opts?: ActiveOptions): void;

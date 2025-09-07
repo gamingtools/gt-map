@@ -35,7 +35,7 @@ export type {
   MarkerEventData,
   RenderStats,
   ViewState,
-  EntityRotationMode,
+  MarkerRotationMode,
 } from './api/types';
 
 // Export type guard functions (not types)

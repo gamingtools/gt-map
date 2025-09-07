@@ -428,7 +428,7 @@ export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
 export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number) => number;
 
 // Map rotation
-export type EntityRotationMode = 'rotate' | 'keep';
+export type MarkerRotationMode = 'rotate' | 'keep';
 
 // Public event surface: exported via api/events/public
 

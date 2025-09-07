@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Single status widget: subscribes to map events and shows key values
-    import type { GTMap, Marker as GTMarker, EntityRotationMode } from '@gtmap';
+    import type { GTMap, Marker as GTMarker, MarkerRotationMode } from '@gtmap';
 
 	const {
 		map,
@@ -34,7 +34,7 @@
     let vectorsEnabled = $state(true);
     // Map rotation
     let bearing = $state(0);
-    let entityRotationMode = $state<EntityRotationMode>('keep');
+    let markerRotationMode = $state<MarkerRotationMode>('keep');
     // Animate markers (position-only) + optional rotation
     let animateMarkers = $state(false);
     let rotateMarkers = $state(false);
@@ -140,7 +140,7 @@
     // Map rotation: apply on changes
     $effect(() => {
         try {
-            map?.setRotation(bearing, { entityRotationMode });
+            map?.setRotation(bearing, { markerRotationMode });
         } catch {}
     });
 
@@ -361,8 +361,8 @@
                 </div>
             </div>
             <div>
-                <label class="block text-gray-700" for="entity-rotation">Entity Rotation Mode</label>
-                <select id="entity-rotation" class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1" bind:value={entityRotationMode}>
+                <label class="block text-gray-700" for="marker-rotation">Marker Rotation Mode</label>
+                <select id="marker-rotation" class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1" bind:value={markerRotationMode}>
                     <option value="keep">keep</option>
                     <option value="rotate">rotate</option>
                 </select>

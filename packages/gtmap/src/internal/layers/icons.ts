@@ -280,7 +280,7 @@ export class IconRenderer {
             gl.uniform2f(this.instLoc!.u_rotSinCos!, s, c);
             // Keep: counter-rotate icons by -bearing so they remain screen-upright.
             // Rotate: let scene rotation provide the visual spin; no extra local rotation.
-            const mode = ((ctx as any).entityRotationMode === 'keep') ? -ang : 0.0;
+            const mode = ((ctx as any).markerRotationMode === 'keep') ? -ang : 0.0;
             gl.uniform1f(this.instLoc!.u_viewAngle!, mode);
 
 			// For each type
