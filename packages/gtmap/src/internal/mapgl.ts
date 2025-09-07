@@ -28,6 +28,7 @@ import type { ViewState } from './types';
 import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 import { FrameLoop } from './core/frame-loop';
 import AutoResizeManager from './core/auto-resize-manager';
+import EventBridge from './events/event-bridge';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -144,8 +145,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private inertiaMaxSpeed = 2000; // px/s (cap to prevent excessive throw)
 	private easeLinearity = 0.2;
     private _panCtrl!: PanController;
-    // Track last mouse enrich time to throttle hover enrichment
-    private _lastMouseEnrichAt: number = 0;
+    // (moved to EventBridge)
     // RequestIdleCallback gating for mask build
     private _maskBuildRequested = false;
 
@@ -1018,272 +1018,25 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                 this._panCtrl.cancel();
             },
 		};
-		this._input = new InputController(this._inputDeps);
-		this._input.attach();
-		// Wire marker hover/click based on pointer events
-		try {
-			// State for long-press gesture
-			let longPressTimer: number | null = null;
-			let longPressed = false;
-			let pressTarget: { id: string; idx: number } | null = null;
-			// Click intention: record down and detect movement
-			this.events.on('pointerdown').each((e: any) => {
-				if (!e || e.x == null || e.y == null) return;
-				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const ptrType = (e.originalEvent?.pointerType || '').toString();
-				const tol = ptrType === 'touch' ? 18 : 8;
-				this._downAt = { x: e.x, y: e.y, t: now, tol };
-				this._movedSinceDown = false;
-				// Emit markerdown if hit
-				const hit = this._hitTestMarker(e.x, e.y, false);
-				if (hit) {
-                this._emitMarker('down', {
-                    now,
-                    view: this._viewPublic(),
-                    screen: { x: e.x, y: e.y },
-                    marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-                    icon: {
-							id: hit.type,
-							iconPath: hit.icon.iconPath,
-							x2IconPath: hit.icon.x2IconPath,
-							width: hit.icon.width,
-							height: hit.icon.height,
-							anchorX: hit.icon.anchorX,
-							anchorY: hit.icon.anchorY,
-						},
-                    originalEvent: e.originalEvent,
-                });
-					pressTarget = { id: hit.id, idx: hit.idx };
-					longPressed = false;
-					// Start long-press timer for touch
-					if (ptrType === 'touch') {
-						if (longPressTimer != null) clearTimeout(longPressTimer);
-						longPressTimer = window.setTimeout(() => {
-							longPressTimer = null;
-							longPressed = true;
-							// Emit markerlongpress at current pointer
-							const lpHit = this._hitTestMarker(e.x, e.y, false);
-							if (lpHit && pressTarget && lpHit.id === pressTarget.id) {
-								this._emitMarker('longpress', {
-									now: typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now(),
-									view: this._viewPublic(),
-									screen: { x: e.x, y: e.y },
-									marker: {
-										id: lpHit.id,
-										index: lpHit.idx,
-										world: { x: lpHit.world.x, y: lpHit.world.y },
-										size: lpHit.size,
-										rotation: lpHit.rotation,
-										data: this._markerData.get(lpHit.id),
-									},
-									icon: {
-										id: lpHit.type,
-										iconPath: lpHit.icon.iconPath,
-										x2IconPath: lpHit.icon.x2IconPath,
-										width: lpHit.icon.width,
-										height: lpHit.icon.height,
-										anchorX: lpHit.icon.anchorX,
-										anchorY: lpHit.icon.anchorY,
-									},
-                            originalEvent: e.originalEvent,
-								});
-							}
-						}, 500);
-					}
-				} else {
-					pressTarget = null;
-				}
-			});
-			this.events.on('pointermove').each((e: any) => {
-				if (!e || e.x == null || e.y == null) return;
-				if (this._downAt) {
-					const dx = e.x - this._downAt.x;
-					const dy = e.y - this._downAt.y;
-					if (Math.hypot(dx, dy) > this._downAt.tol) this._movedSinceDown = true;
-					// Cancel long-press if moved too far
-					if (this._movedSinceDown && longPressTimer != null) {
-						clearTimeout(longPressTimer);
-						longPressTimer = null;
-					}
-				}
-				// Disable hover hit-testing during active pan/zoom and for a short debounce after
-				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const moving = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
-				const idle = !moving && now - this._lastInteractAt >= this._hitTestDebounceMs;
-				if (!idle) {
-					if (this._lastHover) {
-						const prev = this._lastHover;
-						this._emitMarker('leave', {
-							now,
-							view: this._viewPublic(),
-							screen: { x: e.x, y: e.y },
-							marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-							icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-						});
-						this._lastHover = null;
-					}
-					return;
-				}
-				const hit = this._hitTestMarker(e.x, e.y, false);
-				if (hit) {
-					// If the top-most hit changed, emit leave for previous then enter for new
-					if (!this._lastHover || this._lastHover.id !== hit.id) {
-						if (this._lastHover) {
-							const prev = this._lastHover;
-							this._emitMarker('leave', {
-								now,
-								view: this._viewPublic(),
-								screen: { x: e.x, y: e.y },
-								marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-								icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-                            originalEvent: e.originalEvent,
-							});
-						}
-						this._emitMarker('enter', {
-							now,
-							view: this._viewPublic(),
-							screen: { x: e.x, y: e.y },
-							marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-							icon: {
-								id: hit.type,
-								iconPath: hit.icon.iconPath,
-								x2IconPath: hit.icon.x2IconPath,
-								width: hit.icon.width,
-								height: hit.icon.height,
-								anchorX: hit.icon.anchorX,
-								anchorY: hit.icon.anchorY,
-							},
-                        originalEvent: e.originalEvent,
-						});
-						this._lastHover = { idx: hit.idx, type: hit.type, id: hit.id };
-					}
-				} else if (this._lastHover) {
-					const prev = this._lastHover;
-					this._emitMarker('leave', {
-						now,
-						view: this._viewPublic(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-						icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-                    originalEvent: e.originalEvent,
-					});
-					this._lastHover = null;
-				}
-			});
-			this.events.on('pointerup').each((e: any) => {
-				if (!e || e.x == null || e.y == null) return;
-				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const moving = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
-				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
-				this._downAt = null;
-				// Emit markerup if hit
-				const upHit = this._hitTestMarker(e.x, e.y, true);
-				if (upHit) {
-					this._emitMarker('up', {
-						now,
-						view: this._viewPublic(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation, data: this._markerData.get(upHit.id) },
-						icon: {
-							id: upHit.type,
-							iconPath: upHit.icon.iconPath,
-							x2IconPath: upHit.icon.x2IconPath,
-							width: upHit.icon.width,
-							height: upHit.icon.height,
-							anchorX: upHit.icon.anchorX,
-							anchorY: upHit.icon.anchorY,
-						},
-                    originalEvent: e.originalEvent,
-					});
-				}
-				// Cancel any pending long-press
-				if (longPressTimer != null) {
-					clearTimeout(longPressTimer);
-					longPressTimer = null;
-				}
-				if (!isClick) return;
-				const hit = this._hitTestMarker(e.x, e.y, true);
-				if (hit)
-					this._emitMarker('click', {
-						now,
-						view: this._viewPublic(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: this._markerData.get(hit.id) },
-						icon: {
-							id: hit.type,
-							iconPath: hit.icon.iconPath,
-							x2IconPath: hit.icon.x2IconPath,
-							width: hit.icon.width,
-							height: hit.icon.height,
-							anchorX: hit.icon.anchorX,
-							anchorY: hit.icon.anchorY,
-						},
-						originalEvent: e.originalEvent,
-					});
-				// Reset press state
-				pressTarget = null;
-				if (longPressed) {
-					// suppress synthetic follow-up behaviors if needed
-					longPressed = false;
-				}
-			});
-
-			// Enrich mouse events with markers when hover is enabled
-			const emitMouseOnce = (name: keyof import('../api/types').EventMap, e: any) => {
-				if (!e || e.x == null || e.y == null) {
-					this._events.emit(name, e);
-					return;
-				}
-				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const moving = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
-				const idle = !moving && now - this._lastInteractAt >= this._hitTestDebounceMs;
-				let payload = e;
-				if (idle) {
-					if (name === 'mousemove') {
-                    const last = this._lastMouseEnrichAt || 0;
-                    if (now - last >= 16) this._lastMouseEnrichAt = now;
-						else idle && (payload = e);
-					}
-					try {
-						const hits = this._computeMarkerHits(e.x, e.y);
-						if (hits.length) {
-							const mapped = hits.map((h) => ({
-								marker: { id: h.id, index: h.idx, world: { x: h.world.x, y: h.world.y }, size: h.size, rotation: h.rotation, data: this._markerData.get(h.id) },
-								icon: h.icon,
-							}));
-                        // Enrich mouse event payload with marker hits; MouseEventData.markers is optional
-                        payload = { ...e, markers: mapped };
-						}
-					} catch {}
-				}
-				this._events.emit(name, payload);
-			};
-			// Derive mouse events from pointer events to avoid duplicate emissions
-			this.events.on('pointerdown').each((e: any) => {
-				if ((e.originalEvent?.pointerType || '') === 'mouse') {
-					emitMouseOnce('mousedown', e);
-				}
-			});
-			this.events.on('pointermove').each((e: any) => {
-				if ((e.originalEvent?.pointerType || '') === 'mouse') {
-					emitMouseOnce('mousemove', e);
-				}
-			});
-			this.events.on('pointerup').each((e: any) => {
-				if ((e.originalEvent?.pointerType || '') === 'mouse') {
-					emitMouseOnce('mouseup', e);
-				}
-			});
-			// Click and dblclick/contextmenu derived here if needed
-			this.events.on('pointerup').each((e: any) => {
-				if ((e.originalEvent?.pointerType || '') !== 'mouse') return;
-				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const moving = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
-				const isClick = !!this._downAt && !this._movedSinceDown && !moving && now - this._downAt.t < 400;
-				if (!isClick) return;
-				emitMouseOnce('click', e);
-			});
-		} catch {}
+        this._input = new InputController(this._inputDeps);
+        this._input.attach();
+        // Wire marker hover/click and mouse derivations via EventBridge
+        try {
+            const bridge = new EventBridge({
+                events: this._events,
+                getView: () => this._viewPublic(),
+                now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+                isMoving: () => this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating(),
+                getLastInteractAt: () => this._lastInteractAt,
+                getHitTestDebounceMs: () => this._hitTestDebounceMs,
+                hitTest: (x, y, alpha) => this._hitTestMarker(x, y, alpha),
+                computeHits: (x, y) => this._computeMarkerHits(x, y),
+                emitMarker: (name, payload) => this._emitMarker(name, payload),
+                getLastHover: () => this._lastHover,
+                setLastHover: (h) => { this._lastHover = h; },
+            });
+            bridge.attach();
+        } catch {}
 	}
 
 	public setMarkerData(payloads: Record<string, any | null | undefined>) {
@@ -1553,8 +1306,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 
 	// Simple hover/click hit testing on markers (AABB, ignores rotation)
 	private _lastHover: { type: string; idx: number; id?: string } | null = null;
-	private _downAt: { x: number; y: number; t: number; tol: number } | null = null;
-	private _movedSinceDown = false;
+    // (moved to EventBridge)
 	private _markerData = new Map<string, any | null | undefined>();
 	// Private marker event sinks (not exposed on public bus)
 	private _markerSinks: Record<'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', Set<(e: any) => void>> = {
