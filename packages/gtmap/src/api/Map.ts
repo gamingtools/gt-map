@@ -664,16 +664,14 @@ invalidateSize(): this {
 	 */
 /** @group Events */
   get events(): MapEvents<TMarkerData> {
-		return {
-			on: (name: any, handler?: any) => {
-            // Bridge overloads: return the stream or subscribe inline. The cast is localized
-            // to preserve precise generic types for callers across the two forms.
-            const stream = this._impl.events.on(name as keyof import('./types').EventMap);
-				return handler ? stream.each(handler) : stream;
-			},
-        once: (name) => this._impl.events.when(name as keyof import('./types').EventMap),
-		} as MapEvents<TMarkerData>;
-	}
+        type EM = import('./types').EventMap<TMarkerData>;
+        const on = <K extends keyof EM & string>(event: K, handler?: (value: EM[K]) => void) => {
+            const stream = this._impl.events.on(event);
+            return handler ? stream.each(handler) : stream;
+        };
+        const once = <K extends keyof EM & string>(event: K) => this._impl.events.when(event);
+        return { on, once } as MapEvents<TMarkerData>;
+    }
 
 	/**
 	 * Start a chainable view transition.
@@ -866,11 +864,11 @@ export interface ViewTransition {
 
 class ViewTransitionImpl implements ViewTransition {
   // Track at most one active transition per map instance
-  private static _active: WeakMap<GTMap<any>, ViewTransitionImpl> = new WeakMap();
-  static _activeFor(map: GTMap<any>): ViewTransitionImpl | undefined { return this._active.get(map); }
-  static _setActive(map: GTMap<any>, tx: ViewTransitionImpl): void { this._active.set(map, tx); }
-  static _clearActive(map: GTMap<any>): void { this._active.delete(map); }
-  private map: GTMap<any>;
+  private static _active: WeakMap<GTMap<unknown>, ViewTransitionImpl> = new WeakMap();
+  static _activeFor(map: GTMap<unknown>): ViewTransitionImpl | undefined { return this._active.get(map); }
+  static _setActive(map: GTMap<unknown>, tx: ViewTransitionImpl): void { this._active.set(map, tx); }
+  static _clearActive(map: GTMap<unknown>): void { this._active.delete(map); }
+  private map: GTMap<unknown>;
   private targetCenter?: Point;
   private targetZoom?: number;
   private offsetDx = 0;
@@ -887,7 +885,7 @@ class ViewTransitionImpl implements ViewTransition {
   private unsubscribeMoveEnd?: () => void;
   private unsubscribeZoomEnd?: () => void;
 
-  constructor(map: GTMap<any>) {
+  constructor(map: GTMap<unknown>) {
     this.map = map;
   }
 

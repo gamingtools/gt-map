@@ -3,6 +3,7 @@ import type { MarkerEventMap, MarkerData } from '../api/events/maps';
 
 import { EventedEntity } from './base';
 import type { ApplyOptions, ApplyResult, Easing } from '../api/types';
+import { normalizeAngle } from '../internal/utils/angles';
 
 /**
  * Options for creating or styling a {@link Marker}.
@@ -252,9 +253,8 @@ class MarkerTransitionImpl implements MarkerTransition {
     const tr = typeof this.targetRotation === 'number' ? (this.targetRotation as number) : sr;
 
     // Normalize rotation to shortest path
-    const norm = (a: number) => ((a % 360) + 360) % 360;
-    const srN = norm(sr);
-    const trN = norm(tr);
+    const srN = normalizeAngle(sr);
+    const trN = normalizeAngle(tr);
     let dR = trN - srN;
     if (dR > 180) dR -= 360; else if (dR < -180) dR += 360;
 

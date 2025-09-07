@@ -29,6 +29,10 @@ import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 import { FrameLoop } from './core/frame-loop';
 import AutoResizeManager from './core/auto-resize-manager';
 import EventBridge from './events/event-bridge';
+import { degToRad, normalizeAngle } from './utils/angles';
+import { HIT_TEST } from './utils/constants';
+import { alphaMaskHit, unrotatePoint } from './utils/hit-testing';
+import { calculateTileBounds } from './utils/tiles';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -300,7 +304,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Vector overlay (initially 2D canvas; upgradeable to WebGL later)
 	private vectorCanvas: HTMLCanvasElement | null = null;
 	private _vectorCtx: CanvasRenderingContext2D | null = null;
-	private _vectors: Array<{ type: string; [k: string]: any }> = [];
+    private _vectors: Array<{ type: string; [k: string]: unknown }> = [];
 	public pointerAbs: { x: number; y: number } | null = null;
 	// Loading pacing/cancel
 	private interactionIdleMs = 160;
@@ -468,7 +472,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			getOutCenterBias: () => this.outCenterBias,
 			clampCenterWorld: (cw, zInt, s, w, h) =>
 				clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
-			emit: (name: any, payload: any) => this._events.emit(name, payload),
+			emit: (name, payload) => this._events.emit(name, payload),
 			requestRender: () => {
 				this._needsRender = true;
 			},
@@ -493,7 +497,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
                 this._state.center = this.center;
             },
             requestRender: () => { this._needsRender = true; },
-            emit: (name: any, payload: any) => this._events.emit(name, payload),
+            emit: (name, payload) => this._events.emit(name, payload),
             now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
             getPublicView: () => this._viewPublic(),
             getRotationDeg: () => this._viewRotationDeg || 0,
@@ -569,7 +573,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 
 	// Rotation: store and trigger rerender. Renderer will consume when wired.
     public setRotation(deg: number, markerRotationMode?: import('../api/types').MarkerRotationMode) {
-        const norm = (a: number) => ((a % 360) + 360) % 360;
+        const norm = (a: number) => normalizeAngle(a);
         this._viewRotationDeg = norm(deg);
         if (markerRotationMode) this._markerRotationMode = markerRotationMode;
         this._needsRender = true;
@@ -1022,7 +1026,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 				if (Number.isFinite(x as number) && Number.isFinite(y as number)) this.pointerAbs = { x: x as number, y: y as number };
 				else this.pointerAbs = null;
 			},
-			emit: (name: any, payload: any) => this._events.emit(name, payload),
+			emit: (name, payload) => this._events.emit(name, payload),
 			setLastInteractAt: (t: number) => {
 				this._lastInteractAt = t;
 			},
@@ -1047,7 +1051,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
         this._input.attach();
         // Wire marker hover/click and mouse derivations via EventBridge
         try {
-            const bridge = new EventBridge({
+            const bridge = new EventBridge<unknown>({
                 events: this._events,
                 getView: () => this._viewPublic(),
                 now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
@@ -1064,11 +1068,9 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
         } catch {}
 	}
 
-	public setMarkerData(payloads: Record<string, any | null | undefined>) {
-		try {
-			for (const k of Object.keys(payloads)) this._markerData.set(k, payloads[k]);
-		} catch {}
-	}
+    public setMarkerData(payloads: Record<string, unknown | null | undefined>) {
+        for (const k of Object.keys(payloads)) this._markerData.set(k, payloads[k]);
+    }
 	// wheel normalization handled in input/handlers internally
 	private _tick(now: number, allowRender: boolean) {
 		this._frame++;
@@ -1102,8 +1104,8 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                 this._maskBuildRequested = true;
                 const start = () => { try { this._icons?.startMaskBuild?.(); } catch {} };
                 // requestIdleCallback is not in TS lib in all environments; feature-test and bind if present
-                const idle: ((cb: () => void) => any) | undefined = typeof (window as unknown as { requestIdleCallback?: (cb: () => void) => any }).requestIdleCallback === 'function'
-                    ? (window as unknown as { requestIdleCallback: (cb: () => void) => any }).requestIdleCallback.bind(window)
+                const idle: ((cb: () => void) => number) | undefined = typeof (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback === 'function'
+                    ? (window as unknown as { requestIdleCallback: (cb: () => void) => number }).requestIdleCallback.bind(window)
                     : undefined;
 				if (idle) idle(start); else setTimeout(start, 0);
 			}
@@ -1129,7 +1131,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                 const centerLevel = { x: this.center.lng / s, y: this.center.lat / s };
                 let tlWorld = Coords.tlLevelFor(centerLevel, this.zoom, { x: widthCSS, y: heightCSS });
                 // Only snap when not rotating to avoid drift
-                const ang = (this._viewRotationDeg || 0) * Math.PI / 180;
+                const ang = degToRad(this._viewRotationDeg || 0);
                 if (ang === 0) {
                     const snap = (v: number) => Coords.snapLevelToDevice(v, scale, this._dpr);
                     tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
@@ -1306,15 +1308,12 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		} catch {}
 	}
 
-	public prefetchNeighbors(z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) {
-		if (!this.prefetchEnabled) return;
-		const zClamped = Math.min(z, this._sourceMaxZoom || z);
-		const zInt = Math.floor(zClamped);
-		const TS = this.tileSize;
-		const startX = Math.floor(tl.x / TS) - 1;
-		const startY = Math.floor(tl.y / TS) - 1;
-		const endX = Math.floor((tl.x + w / scale) / TS) + 1;
-		const endY = Math.floor((tl.y + h / scale) / TS) + 1;
+    public prefetchNeighbors(z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) {
+        if (!this.prefetchEnabled) return;
+        const zClamped = Math.min(z, this._sourceMaxZoom || z);
+        const zInt = Math.floor(zClamped);
+        const TS = this.tileSize;
+        const { startX, startY, endX, endY } = calculateTileBounds({ tlWorld: tl, widthCSS: w, heightCSS: h, scale, tileSize: TS, pad: 1 });
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
 		const counts = Coords.tileCounts(this.mapSize.width, this.mapSize.height, TS, imageMaxZ, zInt);
 		const NX = counts.NX;
@@ -1361,7 +1360,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		this._vectorCtx = c.getContext('2d');
 	}
 
-	public setVectors(vectors: Array<{ type: string; [k: string]: any }>) {
+    public setVectors(vectors: Array<{ type: string; [k: string]: unknown }>) {
 		this._vectors = vectors.slice();
 		this._needsRender = true;
 	}
@@ -1369,9 +1368,9 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 	// Simple hover/click hit testing on markers (AABB, ignores rotation)
 	private _lastHover: { type: string; idx: number; id?: string } | null = null;
     // (moved to EventBridge)
-	private _markerData = new Map<string, any | null | undefined>();
-	// Private marker event sinks (not exposed on public bus)
-	private _markerSinks: Record<'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', Set<(e: any) => void>> = {
+    private _markerData = new Map<string, unknown | null | undefined>();
+    // Private marker event sinks (not exposed on public bus)
+    private _markerSinks: Record<'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', Set<(e: import('../api/types').MarkerEventData<unknown>) => void>> = {
 		enter: new Set(),
 		leave: new Set(),
 		click: new Set(),
@@ -1380,13 +1379,13 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		longpress: new Set(),
 	};
 
-	public onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: any) => void): () => void {
+    public onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: import('../api/types').MarkerEventData<unknown>) => void): () => void {
 		const set = this._markerSinks[name];
 		set.add(handler);
 		return () => set.delete(handler);
 	}
 
-	private _emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: any) {
+    private _emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: import('../api/types').MarkerEventData<unknown>) {
 		const set = this._markerSinks[name];
 		if (!set || set.size === 0) return;
 		for (const fn of Array.from(set)) {
@@ -1402,15 +1401,9 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
         const widthCSS = rect.width;
         const heightCSS = rect.height;
         // Inverse-rotate pointer into unrotated screen space around viewport center
-        const bearing = (this._viewRotationDeg || 0) * Math.PI / 180;
-        let px0 = px, py0 = py;
-        if (bearing !== 0) {
-            const cx = widthCSS * 0.5, cy = heightCSS * 0.5;
-            const dx = px - cx, dy = py - cy;
-            const s = Math.sin(-bearing), c = Math.cos(-bearing);
-            px0 = cx + dx * c - dy * s;
-            py0 = cy + dx * s + dy * c;
-        }
+        const bearing = degToRad(this._viewRotationDeg || 0);
+        const ctr = { x: widthCSS * 0.5, y: heightCSS * 0.5 };
+        const { x: px0, y: py0 } = unrotatePoint(px, py, ctr.x, ctr.y, bearing);
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
@@ -1423,31 +1416,27 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
                 // Optional alpha-mask sampling for pixel-accurate hits
                 const mask = this._icons.getMaskInfo?.(it.type) || null;
                 if (mask) {
-                    // Map pointer to icon local coords (account for rotation around anchor)
-                    const ax = it.anchor.ax;
-                    const ay = it.anchor.ay;
+                    // Map pointer to icon local coords (account for rotation around anchor) and sample mask
                     const lx = px0 - left;
                     const ly = py0 - top;
-                    const cx = lx - ax;
-                    const cy = ly - ay;
-                    // Local rotation: use marker rotation only — view rotation already undone in pointer
-                    const theta = ((it.rotation || 0) * Math.PI) / 180;
-                    const c = Math.cos(-theta),
-                        s = Math.sin(-theta);
-                    const rx = cx * c - cy * s + ax;
-                    const ry = cx * s + cy * c + ay;
-                    if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
-					const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
-					const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
-					const alpha = mask.data[my * mask.w + mx] | 0;
-					const THRESH = 32; // ~12.5%
-					if (alpha < THRESH) continue; // treat as transparent: no hit
-				}
-				return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { w: it.w, h: it.h }, rotation: it.rotation, icon: it.icon };
-			}
-		}
-		return null;
-	}
+                    const hit = alphaMaskHit({
+                        pointerLocalX: lx,
+                        pointerLocalY: ly,
+                        iconWidth: it.w,
+                        iconHeight: it.h,
+                        anchorX: it.anchor.ax,
+                        anchorY: it.anchor.ay,
+                        iconRotationDeg: it.rotation || 0,
+                        mask: { data: mask.data, w: mask.w, h: mask.h },
+                        threshold: HIT_TEST.ALPHA_THRESHOLD,
+                    });
+                    if (!hit) continue;
+                }
+                return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { w: it.w, h: it.h }, rotation: it.rotation, icon: it.icon };
+            }
+        }
+        return null;
+    }
 
     private _computeMarkerHits(
         px: number,
@@ -1473,15 +1462,9 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
         const widthCSS = rect.width;
         const heightCSS = rect.height;
         // Inverse-rotate pointer into unrotated screen space
-        const bearing = (this._viewRotationDeg || 0) * Math.PI / 180;
-        let px0 = px, py0 = py;
-        if (bearing !== 0) {
-            const cx = widthCSS * 0.5, cy = heightCSS * 0.5;
-            const dx = px - cx, dy = py - cy;
-            const s = Math.sin(-bearing), c = Math.cos(-bearing);
-            px0 = cx + dx * c - dy * s;
-            py0 = cy + dx * s + dy * c;
-        }
+        const bearing = degToRad(this._viewRotationDeg || 0);
+        const ctr = { x: widthCSS * 0.5, y: heightCSS * 0.5 };
+        const { x: px0, y: py0 } = unrotatePoint(px, py, ctr.x, ctr.y, bearing);
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
 		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
@@ -1493,24 +1476,21 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
             if (px0 < left || px0 > left + it.w || py0 < top || py0 > top + it.h) continue;
             const mask = this._icons.getMaskInfo?.(it.type) || null;
             if (mask) {
-                const ax = it.anchor.ax;
-                const ay = it.anchor.ay;
                 const lx = px0 - left;
                 const ly = py0 - top;
-                const cx = lx - ax;
-                const cy = ly - ay;
-                const theta = ((it.rotation || 0) * Math.PI) / 180;
-                const c = Math.cos(-theta),
-                    s = Math.sin(-theta);
-                const rx = cx * c - cy * s + ax;
-                const ry = cx * s + cy * c + ay;
-                if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
-				const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
-				const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
-				const alpha = mask.data[my * mask.w + mx] | 0;
-				const THRESH = 32;
-				if (alpha < THRESH) continue;
-			}
+                const hit = alphaMaskHit({
+                    pointerLocalX: lx,
+                    pointerLocalY: ly,
+                    iconWidth: it.w,
+                    iconHeight: it.h,
+                    anchorX: it.anchor.ax,
+                    anchorY: it.anchor.ay,
+                    iconRotationDeg: it.rotation || 0,
+                    mask: { data: mask.data, w: mask.w, h: mask.h },
+                    threshold: HIT_TEST.ALPHA_THRESHOLD,
+                });
+                if (!hit) continue;
+            }
 			out.push({
 				id: it.id,
 				idx: it.index,
@@ -1568,7 +1548,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
             const rect = this.container.getBoundingClientRect();
             const cx = rect.width * 0.5;
             const cy = rect.height * 0.5;
-            const ang = (this._viewRotationDeg || 0) * Math.PI / 180;
+            const ang = degToRad(this._viewRotationDeg || 0);
             if (ang !== 0) {
                 ctx.translate(cx, cy);
                 ctx.rotate(ang);
@@ -1580,8 +1560,8 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
             const rect = this.container.getBoundingClientRect();
             const viewport = { x: rect.width, y: rect.height };
             const imageMaxZ = this._sourceMaxZoom || this.maxZoom;
-			for (const prim of this._vectors) {
-				const style: any = prim.style || {};
+				for (const prim of this._vectors) {
+					const style: import('../api/types').VectorStyle = prim.style || {};
 				ctx.lineWidth = Math.max(1, style.weight ?? 2);
 				ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
 				ctx.globalAlpha = style.opacity ?? 1;

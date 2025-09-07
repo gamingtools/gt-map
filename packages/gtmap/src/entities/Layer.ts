@@ -25,13 +25,13 @@ export class Layer<T extends { id: string; remove(): void }> {
 	readonly id: string;
 	private _eventsBus = new TypedEventBus<LayerEventMap<T>>();
 	/** Read‑only typed events for this layer. */
-	readonly events: LayerEvents<T> = {
-        on: (event: any, handler?: any) => {
-            const stream = this._eventsBus.on(event);
-            return handler ? stream.each(handler) : stream;
+    readonly events: LayerEvents<T> = {
+        on: (event, handler?: (value: LayerEventMap<T>[typeof event]) => void) => {
+            const stream = this._eventsBus.on(event as keyof LayerEventMap<T>);
+            return handler ? (stream.each as any)(handler) : (stream as any);
         },
-        once: (event: any) => this._eventsBus.when(event),
-	} as LayerEvents<T>;
+        once: (event) => this._eventsBus.when(event as keyof LayerEventMap<T>),
+	} as unknown as LayerEvents<T>;
 	private _entities: Map<string, T> = new Map();
 	private _visible = true;
 	private _onChange?: () => void;

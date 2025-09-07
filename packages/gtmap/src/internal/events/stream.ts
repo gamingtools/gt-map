@@ -158,23 +158,23 @@ export class EventStream<T> {
 export type EventName = string;
 
 export class EventBus {
-	private listeners = new Map<EventName, Set<Listener<any>>>();
+	private listeners = new Map<EventName, Set<Listener<unknown>>>();
 
-	on<T = any>(name: EventName): EventStream<T> {
+	on<T = unknown>(name: EventName): EventStream<T> {
 		return new EventStream<T>((next) => {
 			let set = this.listeners.get(name);
 			if (!set) {
 				set = new Set();
 				this.listeners.set(name, set);
 			}
-			set.add(next as Listener<any>);
+			set.add(next as unknown as Listener<unknown>);
 			return () => {
-				set!.delete(next as Listener<any>);
+				set!.delete(next as unknown as Listener<unknown>);
 			};
 		});
 	}
 
-	emit<T = any>(name: EventName, payload: T): void {
+	emit<T = unknown>(name: EventName, payload: T): void {
 		const set = this.listeners.get(name);
 		if (!set || set.size === 0) return;
 		for (const fn of Array.from(set)) {
@@ -184,7 +184,7 @@ export class EventBus {
 		}
 	}
 
-	when<T = any>(name: EventName): Promise<T> {
+	when<T = unknown>(name: EventName): Promise<T> {
 		return this.on<T>(name).first();
 	}
 }

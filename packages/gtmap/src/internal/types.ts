@@ -143,7 +143,7 @@ export interface ZoomDeps {
 	getImageMaxZoom(): number;
 	getTileSize(): number;
 	shouldAnchorCenterForZoom(targetZoom: number): boolean;
-	getMap(): any;
+	getMap(): MapImpl;
 	getOutCenterBias(): number;
 	clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number): { x: number; y: number };
 	emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
@@ -208,7 +208,7 @@ export interface MapImpl {
 	setAutoResize?(on: boolean): void;
 	setBackgroundColor?(color: string | { r: number; g: number; b: number; a?: number }): void;
 	// Optional: user payloads per marker id
-	setMarkerData?(payloads: Record<string, any | null | undefined>): void;
+	setMarkerData?(payloads: Record<string, unknown | null | undefined>): void;
 	// Internal marker event sink (facade wires to entity events)
 	onMarkerEvent?(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
 	// Optional animated controls

@@ -72,12 +72,12 @@
 			marker.events.on('click').each((e) => {
 				console.log('Marker clicked:', e);
 			});
-			// marker.events.on('pointerenter').each((e) => {
-			// 	console.log('Marker pointerenter:', e);
-			// });
-			// marker.events.on('pointerleave').each((e) => {
-			// 	console.log('Marker pointerleave:', e);
-			// });
+			marker.events.on('pointerenter').each((e) => {
+				console.log('Marker pointerenter:', e);
+			});
+			marker.events.on('pointerleave').each((e) => {
+				console.log('Marker pointerleave:', e);
+			});
 		}
 
 			// No persistence in demo: markers start fresh each run
@@ -220,11 +220,14 @@
 			return Math.min(maxScale, Math.max(0.5, scale));
 		});
 
-		// map.events.on('pointerup').each((e) => console.log('up', e));
-		// map.events.on('markerenter').each((e) => console.log('markerenter', e));
-		// map.events.on('markerleave').each((e) => console.log('markerleave', e));
-		// map.events.on('click').each((e) => console.log('map click', e));
-		// map.events.on('mousedown').each((e) => console.log('mousedown', e));
+		// map.events.on('pointerup').each((e) => console.log('pointerup', e));
+
+		// map.events.on('pointerdown').each((e) => console.log('pointerdown', e));
+		// map.events.on('click').each((e) => console.log('click', e));
+		// map.events.on('dblclick').each((e) => console.log('dblclick', e));
+		// map.events.on('contextmenu').each((e) => console.log('contextmenu', e));
+		// map.events.on('move').each((e) => console.log('move', e));
+		// map.events.on('zoom').each((e) => console.log('zoom', e));
 
 
 			// Teardown on navigation/unmount per Svelte docs

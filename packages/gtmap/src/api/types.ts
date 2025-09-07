@@ -67,14 +67,14 @@ export interface MapOptions {
 }
 
 // Content types
-export interface Marker {
+export interface Marker<T = unknown> {
 	x: number;
 	y: number;
 	type?: string;
 	size?: number;
 	rotation?: number; // degrees clockwise (optional)
 	id?: string;
-	data?: any | null;
+	data?: T | null;
 }
 
 /**
@@ -181,7 +181,7 @@ export interface PointerEventData {
  * @remarks
  * May include `markers?` hover hits for convenience when idle.
  */
-export interface MouseEventData {
+export interface MouseEventData<T = unknown> {
     /** Screen X in CSS pixels relative to the container. */
     x: number;
     /** Screen Y in CSS pixels relative to the container. */
@@ -193,13 +193,13 @@ export interface MouseEventData {
     /** Original DOM mouse event. */
     originalEvent: MouseEvent;
     /** Optional hover hits under the cursor (when enabled). */
-    markers?: MarkerHit[];
+    markers?: MarkerHit<T>[];
 }
 
 /** Marker hover hit on the map surface (mouse only, when enabled). */
-export interface MarkerHit {
+export interface MarkerHit<T = unknown> {
     /** Lightweight marker snapshot for hover purposes. */
-    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
+    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: T | null };
     /** Icon metadata associated with the hit marker. */
     icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
@@ -284,17 +284,17 @@ export interface EventMap<TMarkerData = unknown> {
 	/** Marker long‑press (~500ms). */
 	markerlongpress: MarkerEventData<TMarkerData>;
 	/** Mouse down (derived from pointer). */
-	mousedown: MouseEventData;
+    mousedown: MouseEventData<TMarkerData>;
 	/** Mouse move (derived from pointer); may include `markers?` hover hits. */
-	mousemove: MouseEventData;
+    mousemove: MouseEventData<TMarkerData>;
 	/** Mouse up (derived from pointer). */
-	mouseup: MouseEventData;
+    mouseup: MouseEventData<TMarkerData>;
 	/** Mouse click (derived from pointer). */
-	click: MouseEventData;
+    click: MouseEventData<TMarkerData>;
 	/** Double‑click (derived). */
-	dblclick: MouseEventData;
+    dblclick: MouseEventData<TMarkerData>;
 	/** Context menu (derived). */
-	contextmenu: MouseEventData;
+    contextmenu: MouseEventData<TMarkerData>;
 }
 
 // Performance stats

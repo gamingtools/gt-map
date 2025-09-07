@@ -1,4 +1,6 @@
 import * as Coords from '../coords';
+import type { ProgramLocs } from '../render/screen-cache';
+import { degToRad } from '../utils/angles';
 import type { ANGLEInstancedArrays } from '../../api/types';
 import { IconMaskBuilder } from './icons/icon-mask-builder';
 import { createAtlas } from './icons/icon-atlas';
@@ -218,7 +220,7 @@ export class IconRenderer {
 	draw(ctx: {
 		gl: WebGLRenderingContext;
 		prog: WebGLProgram;
-		loc: any;
+		loc: ProgramLocs;
 		quad: WebGLBuffer;
 		canvas: HTMLCanvasElement;
 		dpr: number;
@@ -243,8 +245,8 @@ export class IconRenderer {
     // and quantize icon positions/sizes in device space to eliminate subpixel jitter.
     let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
     // Avoid snapping during rotation to keep icons aligned with rotating tiles
-    const angleDegIcons = (ctx as any).viewRotationDeg as number | undefined;
-    const angIcons = (typeof angleDegIcons === 'number' ? angleDegIcons : 0) * Math.PI / 180.0;
+    const angleDegIcons = ctx.viewRotationDeg as number | undefined;
+    const angIcons = degToRad(angleDegIcons);
     if (angIcons === 0) {
         const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
         tlWorld = { x: snapTL(tlWorld.x), y: snapTL(tlWorld.y) };
@@ -273,14 +275,14 @@ export class IconRenderer {
             gl.uniform1f(this.instLoc!.u_invS!, invS);
             gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
             // View rotation uniforms
-            const angleDeg = (ctx as any).viewRotationDeg as number | undefined;
-            const ang = (typeof angleDeg === 'number' ? angleDeg : 0) * Math.PI / 180.0;
+            const angleDeg = ctx.viewRotationDeg as number | undefined;
+            const ang = degToRad(angleDeg);
             const s = Math.sin(ang); const c = Math.cos(ang);
             gl.uniform2f(this.instLoc!.u_centerPx!, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5);
             gl.uniform2f(this.instLoc!.u_rotSinCos!, s, c);
             // Keep: counter-rotate icons by -bearing so they remain screen-upright.
             // Rotate: let scene rotation provide the visual spin; no extra local rotation.
-            const mode = ((ctx as any).markerRotationMode === 'keep') ? -ang : 0.0;
+            const mode = ((ctx.markerRotationMode === 'keep') ? -ang : 0.0);
             gl.uniform1f(this.instLoc!.u_viewAngle!, mode);
 
 			// For each type

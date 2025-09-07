@@ -1,5 +1,6 @@
 import type { RenderCtx } from '../types';
 import * as Coords from '../coords';
+import { degToRad } from '../utils/angles';
 
 export default class MapRenderer {
 	private getCtx: () => RenderCtx;
@@ -39,8 +40,7 @@ export default class MapRenderer {
         let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
         // Only snap to device pixels when not rotating to avoid rotation jitter
         const snap = (v: number) => Coords.snapLevelToDevice(v, scale, ctx.dpr);
-        const angleDeg0 = (ctx as any).viewRotationDeg as number | undefined;
-        const ang0 = (typeof angleDeg0 === 'number' ? angleDeg0 : 0) * Math.PI / 180.0;
+        const ang0 = degToRad(ctx.viewRotationDeg);
         if (ang0 === 0) tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 		gl.useProgram(ctx.prog);
 		gl.bindBuffer(gl.ARRAY_BUFFER, ctx.quad);
@@ -49,8 +49,7 @@ export default class MapRenderer {
 		gl.vertexAttribPointer(loc.a_pos, 2, gl.FLOAT, false, 0, 0);
         gl.uniform2f(loc.u_resolution!, ctx.canvas.width, ctx.canvas.height);
         // Map rotation uniforms
-        const angleDeg = (ctx as any).viewRotationDeg as number | undefined;
-        const ang = (typeof angleDeg === 'number' ? angleDeg : 0) * Math.PI / 180.0;
+        const ang = degToRad(ctx.viewRotationDeg);
         const s = Math.sin(ang); const c = Math.cos(ang);
         if (loc.u_centerPx) gl.uniform2f(loc.u_centerPx, ctx.canvas.width * 0.5, ctx.canvas.height * 0.5);
         if (loc.u_rotSinCos) gl.uniform2f(loc.u_rotSinCos, s, c);
@@ -343,8 +342,8 @@ export default class MapRenderer {
                 wrapX: ctx.wrapX,
                 iconScaleFunction: ctx.iconScaleFunction,
                 // pass map rotation to icon renderer
-                viewRotationDeg: (ctx as any).viewRotationDeg,
-                markerRotationMode: (ctx as any).markerRotationMode,
+                viewRotationDeg: ctx.viewRotationDeg,
+                markerRotationMode: ctx.markerRotationMode,
             });
 		}
 		// Update screen cache after full draw so it matches the frame

@@ -1,6 +1,7 @@
 import type { InputDeps } from '../types';
 import { DEBUG } from '../../debug';
 import * as Coords from '../coords';
+import { extractTouchPair, touchMidpoint } from '../utils/touch';
 
 export default class InputController {
 	private deps: InputDeps;
@@ -258,20 +259,18 @@ export default class InputController {
 			this.lastTouchAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 			if (e.touches.length === 1) {
 				this.touchState = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
-			} else if (e.touches.length === 2) {
-				this.lastTouchAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				// While pinching, keep a cooldown window active to block inertia after pinch
-				this.pinchCooldownUntil = this.lastTouchAt + 500;
-				const t0 = e.touches[0];
-				const t1 = e.touches[1];
-				const dx = t1.clientX - t0.clientX;
-				const dy = t1.clientY - t0.clientY;
-				// Record starting zoom and center (keep center fixed during pinch like Leaflet 'center')
-				const view = deps.getView();
-				const startCenter = { x: view.center.x, y: view.center.y };
-				const rect = deps.getContainer().getBoundingClientRect();
-				const midPx = (t0.clientX + t1.clientX) / 2 - rect.left;
-				const midPy = (t0.clientY + t1.clientY) / 2 - rect.top;
+            } else if (e.touches.length === 2) {
+                this.lastTouchAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+                // While pinching, keep a cooldown window active to block inertia after pinch
+                this.pinchCooldownUntil = this.lastTouchAt + 500;
+                const pair = extractTouchPair(e);
+                if (!pair) return;
+                const { t0, t1, dx, dy } = pair;
+                // Record starting zoom and center (keep center fixed during pinch like Leaflet 'center')
+                const view = deps.getView();
+                const startCenter = { x: view.center.x, y: view.center.y };
+                const rect = deps.getContainer().getBoundingClientRect();
+                const { x: midPx, y: midPy } = touchMidpoint(t0, t1, rect);
 				// Compute the native-pixel world coordinates under the initial pinch midpoint
 				const widthCSS = rect.width,
 					heightCSS = rect.height;
@@ -339,14 +338,13 @@ export default class InputController {
 				const ny = newCenter.y * s0;
 				deps.setCenter(nx, ny);
 				deps.emit('move', { view: deps.getView() });
-			} else if (touchState.mode === 'pinch' && e.touches.length === 2) {
+            } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
                 // Update cooldown on every pinch frame and mark as interaction
                 this.pinchCooldownUntil = Math.max(this.pinchCooldownUntil, this.lastTouchAt + 500);
                 deps.setLastInteractAt(this.lastTouchAt);
-				const t0 = e.touches[0];
-				const t1 = e.touches[1];
-				const dx = t1.clientX - t0.clientX;
-				const dy = t1.clientY - t0.clientY;
+                const pair = extractTouchPair(e);
+                if (!pair) return;
+                const { t0, t1, dx, dy } = pair;
 				const dist = Math.hypot(dx, dy);
 				// Compute zoom relative to the starting pinch distance like Leaflet
 				const startDist = touchState.startDist || dist;
@@ -358,8 +356,7 @@ export default class InputController {
 				const rect = deps.getContainer().getBoundingClientRect();
 				const widthCSS = rect.width,
 					heightCSS = rect.height;
-				const midPx = (t0.clientX + t1.clientX) / 2 - rect.left;
-				const midPy = (t0.clientY + t1.clientY) / 2 - rect.top;
+                const { x: midPx, y: midPy } = touchMidpoint(t0, t1, rect);
 				const cp = touchState.centerPointCSS || { x: widthCSS / 2, y: heightCSS / 2 };
 				const deltaCSS = { x: midPx - cp.x, y: midPy - cp.y };
 				const zInt2 = Math.floor(nextZoom);

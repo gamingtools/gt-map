@@ -1,5 +1,6 @@
-import type { EventMap, MarkerEventData } from '../../api/types';
+import type { EventMap, MarkerEventData, MouseEventData, MarkerHit } from '../../api/types';
 import { TypedEventBus } from './typed-stream';
+import { INTERACTION } from '../utils/constants';
 
 type HoverKey = { type: string; idx: number; id?: string };
 
@@ -14,8 +15,8 @@ type Hit = {
   icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 };
 
-export interface EventBridgeDeps {
-  events: TypedEventBus<EventMap>;
+export interface EventBridgeDeps<T = unknown> {
+  events: TypedEventBus<EventMap<T>>;
   getView(): import('../../api/types').ViewState;
   now(): number;
   isMoving(): boolean;
@@ -24,19 +25,20 @@ export interface EventBridgeDeps {
   // marker helpers
   hitTest(px: number, py: number, requireAlpha: boolean): Hit | null;
   computeHits(px: number, py: number): Array<{ id: string; idx: number; world: { x: number; y: number }; size: { w: number; h: number }; rotation?: number; icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number } }>;
-  emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: MarkerEventData): void;
+  emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: MarkerEventData<T>): void;
   // hover state bridge for removal handling elsewhere
   getLastHover(): HoverKey | null;
   setLastHover(h: HoverKey | null): void;
 }
 
-export default class EventBridge {
-  private d: EventBridgeDeps;
+export default class EventBridge<T = unknown> {
+  private d: EventBridgeDeps<T>;
   private downAt: { x: number; y: number; t: number; tol: number } | null = null;
   private movedSinceDown = false;
   private longPressTimer: number | null = null;
   private longPressed = false;
   private pressTarget: { id: string; idx: number } | null = null;
+  private lastClick: { x: number; y: number; t: number } | null = null;
 
   constructor(deps: EventBridgeDeps) {
     this.d = deps;
@@ -52,9 +54,16 @@ export default class EventBridge {
       const tol = ptrType === 'touch' ? 18 : 8;
       this.downAt = { x: e.x, y: e.y, t: now, tol };
       this.movedSinceDown = false;
-      const hit = this.d.hitTest(e.x, e.y, false);
+      let hit = this.d.hitTest(e.x, e.y, false);
+      if (!hit) {
+        const hits = this.d.computeHits(e.x, e.y);
+        if (hits.length) {
+          const h = hits[0];
+          hit = { id: h.id, idx: h.idx, type: h.icon.id, world: h.world, screen: { x: e.x, y: e.y }, size: h.size, rotation: h.rotation, icon: { iconPath: h.icon.iconPath, x2IconPath: h.icon.x2IconPath, width: h.icon.width, height: h.icon.height, anchorX: h.icon.anchorX, anchorY: h.icon.anchorY } } as any;
+        }
+      }
       if (hit) {
-        const payload: MarkerEventData = {
+        const payload: MarkerEventData<T> = {
           now,
           view: this.d.getView(),
           screen: { x: e.x, y: e.y },
@@ -72,7 +81,7 @@ export default class EventBridge {
             this.longPressed = true;
             const lpHit = this.d.hitTest(e.x, e.y, false);
             if (lpHit && this.pressTarget && lpHit.id === this.pressTarget.id) {
-              const pl: MarkerEventData = {
+              const pl: MarkerEventData<T> = {
                 now: this.d.now(),
                 view: this.d.getView(),
                 screen: { x: e.x, y: e.y },
@@ -82,7 +91,7 @@ export default class EventBridge {
               };
               this.d.emitMarker('longpress', pl);
             }
-          }, 500);
+          }, INTERACTION.LONGPRESS_MS);
         }
       } else {
         this.pressTarget = null;
@@ -107,7 +116,7 @@ export default class EventBridge {
       if (!idle) {
         const prev = this.d.getLastHover();
         if (prev) {
-          const leavePayload: MarkerEventData = {
+          const leavePayload: MarkerEventData<T> = {
             now,
             view: this.d.getView(),
             screen: { x: e.x, y: e.y },
@@ -147,7 +156,7 @@ export default class EventBridge {
           this.d.setLastHover({ idx: hit.idx, type: hit.type, id: hit.id });
         }
       } else if (prev) {
-        const leavePayload: MarkerEventData = {
+        const leavePayload: MarkerEventData<T> = {
           now,
           view: this.d.getView(),
           screen: { x: e.x, y: e.y },
@@ -165,11 +174,17 @@ export default class EventBridge {
       if (!e || e.x == null || e.y == null) return;
       const now = this.d.now();
       const moving = this.d.isMoving();
-      const isClick = !!this.downAt && !this.movedSinceDown && !moving && now - this.downAt.t < 400;
-      this.downAt = null;
-      const upHit = this.d.hitTest(e.x, e.y, true);
+      const isClick = !!this.downAt && !this.movedSinceDown && !moving && now - this.downAt.t < INTERACTION.CLICK_TIMEOUT_MS;
+      let upHit = this.d.hitTest(e.x, e.y, false);
+      if (!upHit) {
+        const hits = this.d.computeHits(e.x, e.y);
+        if (hits.length) {
+          const h = hits[0];
+          upHit = { id: h.id, idx: h.idx, type: h.icon.id, world: h.world, screen: { x: e.x, y: e.y }, size: h.size, rotation: h.rotation, icon: { iconPath: h.icon.iconPath, x2IconPath: h.icon.x2IconPath, width: h.icon.width, height: h.icon.height, anchorX: h.icon.anchorX, anchorY: h.icon.anchorY } } as any;
+        }
+      }
       if (upHit) {
-        const payload: MarkerEventData = {
+        const payload: MarkerEventData<T> = {
           now,
           view: this.d.getView(),
           screen: { x: e.x, y: e.y },
@@ -183,10 +198,19 @@ export default class EventBridge {
         clearTimeout(this.longPressTimer);
         this.longPressTimer = null;
       }
+      // Defer clearing downAt for mouse so the click synthesizer can read it
+      if ((e.originalEvent?.pointerType || '') !== 'mouse') this.downAt = null;
       if (!isClick) return;
-      const hit = this.d.hitTest(e.x, e.y, true);
+      let hit = this.d.hitTest(e.x, e.y, false);
+      if (!hit) {
+        const hits = this.d.computeHits(e.x, e.y);
+        if (hits.length) {
+          const h = hits[0];
+          hit = { id: h.id, idx: h.idx, type: h.icon.id, world: h.world, screen: { x: e.x, y: e.y }, size: h.size, rotation: h.rotation, icon: { iconPath: h.icon.iconPath, x2IconPath: h.icon.x2IconPath, width: h.icon.width, height: h.icon.height, anchorX: h.icon.anchorX, anchorY: h.icon.anchorY } } as any;
+        }
+      }
       if (hit) {
-        const payload: MarkerEventData = {
+        const payload: MarkerEventData<T> = {
           now,
           view: this.d.getView(),
           screen: { x: e.x, y: e.y },
@@ -201,28 +225,43 @@ export default class EventBridge {
     });
 
     // Derive mouse events from pointer events; enrich with marker hits when idle
-    const emitMouseOnce = (name: keyof EventMap, e: EventMap['pointermove'] | EventMap['pointerdown'] | EventMap['pointerup']) => {
+    const emitMouseOnce = (
+      name: keyof EventMap<T> & ('mousedown' | 'mousemove' | 'mouseup' | 'click'),
+      e: EventMap<T>['pointermove'] | EventMap<T>['pointerdown'] | EventMap<T>['pointerup']
+    ) => {
       if (!('x' in e) || e.x == null || e.y == null) {
-        this.d.events.emit(name as any, e as any);
+        // payload missing screen coordinates; emit as-is by constructing minimal MouseEventData
+        const base: MouseEventData<T> = {
+          x: (e as any).x ?? 0,
+          y: (e as any).y ?? 0,
+          world: (e as any).world ?? null,
+          view: this.d.getView(),
+          originalEvent: (e as any).originalEvent as MouseEvent,
+        };
+        this.d.events.emit(name, base as unknown as EventMap<T>[typeof name]);
         return;
       }
       const now = this.d.now();
       const moving = this.d.isMoving();
       const idle = !moving && now - this.d.getLastInteractAt() >= this.d.getHitTestDebounceMs();
-      let payload: any = e;
+      const base: MouseEventData<T> = {
+        x: e.x,
+        y: e.y,
+        world: e.world,
+        view: e.view,
+        originalEvent: e.originalEvent as MouseEvent,
+      };
       if (idle && name === 'mousemove') {
-        try {
-          const hits = this.d.computeHits(e.x, e.y);
-          if (hits.length) {
-            const mapped = hits.map((h) => ({
-              marker: { id: h.id, index: h.idx, world: { x: h.world.x, y: h.world.y }, size: h.size, rotation: h.rotation },
-              icon: { id: h.icon.id, iconPath: h.icon.iconPath, x2IconPath: h.icon.x2IconPath, width: h.icon.width, height: h.icon.height, anchorX: h.icon.anchorX, anchorY: h.icon.anchorY },
-            }));
-            payload = { ...(e as any), markers: mapped };
-          }
-        } catch {}
+        const hits = this.d.computeHits(e.x, e.y);
+        if (hits.length) {
+          const mapped: MarkerHit<T>[] = hits.map((h) => ({
+            marker: { id: h.id, index: h.idx, world: { x: h.world.x, y: h.world.y }, size: h.size, rotation: h.rotation },
+            icon: { id: h.icon.id, iconPath: h.icon.iconPath, x2IconPath: h.icon.x2IconPath, width: h.icon.width, height: h.icon.height, anchorX: h.icon.anchorX, anchorY: h.icon.anchorY },
+          }));
+          (base as any).markers = mapped;
+        }
       }
-      this.d.events.emit(name as any, payload);
+      this.d.events.emit(name, base as unknown as EventMap<T>[typeof name]);
     };
 
     bus.on('pointerdown').each((e) => {
@@ -238,9 +277,29 @@ export default class EventBridge {
       if ((e.originalEvent?.pointerType || '') !== 'mouse') return;
       const now = this.d.now();
       const moving = this.d.isMoving();
-      const isClick = !!this.downAt && !this.movedSinceDown && !moving && now - (this.downAt?.t || 0) < 400;
-      if (!isClick) return;
+      const isClick = !!this.downAt && !this.movedSinceDown && !moving && now - (this.downAt?.t || 0) < INTERACTION.CLICK_TIMEOUT_MS;
+      // from here on, clear the click baseline
+      const wasClick = isClick;
+      this.downAt = null;
+      if (!wasClick) return;
       emitMouseOnce('click', e);
+      // Synthesize dblclick when two clicks happen close in time/space
+      const prev = this.lastClick;
+      const maxDelay = 300; // ms
+      const maxDist = 6; // px
+      if (prev && (now - prev.t) < maxDelay && Math.hypot(e.x - prev.x, e.y - prev.y) <= maxDist) {
+        this.lastClick = null; // reset
+        // Emit dblclick as a mouse event
+        this.d.events.emit('dblclick', {
+          x: e.x,
+          y: e.y,
+          world: e.world,
+          view: e.view,
+          originalEvent: e.originalEvent as MouseEvent,
+        } as unknown as EventMap<T>['dblclick']);
+      } else {
+        this.lastClick = { x: e.x, y: e.y, t: now };
+      }
     });
   }
 }

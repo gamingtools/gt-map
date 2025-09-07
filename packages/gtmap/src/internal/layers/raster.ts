@@ -2,6 +2,7 @@ import type { ProgramLocs } from '../render/screen-cache';
 // per-level tile size provided via params
 import { tileKey as tileKeyOf, wrapX as wrapXTile } from '../tiles/source';
 import * as Coords from '../coords';
+import { calculateTileBounds } from '../utils/tiles';
 
 type TileCacheLike = {
 	get(key: string): { status: 'ready' | 'loading' | 'error'; tex?: WebGLTexture; width?: number; height?: number } | undefined;
@@ -41,12 +42,7 @@ export class RasterRenderer {
 		const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom, filterMode } = params;
         const TS = tileSize;
         const baseTl = params.coverTlWorld ?? tlWorld;
-        let startX = Math.floor(baseTl.x / TS);
-        let startY = Math.floor(baseTl.y / TS);
-        let endX = Math.floor((baseTl.x + widthCSS / scale) / TS) + 1;
-        let endY = Math.floor((baseTl.y + heightCSS / scale) / TS) + 1;
-        const pad = Math.max(0, Math.floor(params.padTiles || 0));
-        startX -= pad; startY -= pad; endX += pad; endY += pad;
+        const { startX, startY, endX, endY } = calculateTileBounds({ tlWorld: baseTl, widthCSS, heightCSS, scale, tileSize: TS, pad: params.padTiles });
 		// const tilePixelSizeCSS = TS * scale; // reserved for future heuristics
 
 		// Limit tile ranges for finite, possibly non-square images
@@ -145,13 +141,8 @@ export class RasterRenderer {
 		sourceMaxZoom?: number,
 		padTiles?: number,
 	): number {
-		const TS = tileSize;
-		let startX = Math.floor(tlWorld.x / TS);
-		let startY = Math.floor(tlWorld.y / TS);
-		let endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
-		let endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
-		const pad = Math.max(0, Math.floor(padTiles || 0));
-		startX -= pad; startY -= pad; endX += pad; endY += pad;
+        const TS = tileSize;
+        const { startX, startY, endX, endY } = calculateTileBounds({ tlWorld, widthCSS, heightCSS, scale, tileSize: TS, pad: padTiles });
 		let total = 0;
 		let ready = 0;
 		let tilesX = Infinity;
