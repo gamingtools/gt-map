@@ -1,7 +1,7 @@
 import { TypedEventBus } from '../internal/events/typed-stream';
 import type { PublicEvents } from '../api/events/public';
 
-export abstract class EventedEntity<EventMap extends Record<string, unknown>> {
+export abstract class EventedEntity<EventMap = any> {
 	protected readonly _bus = new TypedEventBus<EventMap>();
 
     readonly events: PublicEvents<EventMap> = {

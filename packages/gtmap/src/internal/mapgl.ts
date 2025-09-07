@@ -564,12 +564,11 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		} catch {}
 		this._needsRender = true;
 	}
-    private _markerIds: Set<string> = new Set<string>();
     setMarkers(markers: MarkerInput[]) {
         if (!this._icons) return;
         // Detect removals vs. previous set to emit a leave for hovered marker when removed
         try {
-            const nextIds = new Set<string>(markers.map((m) => m.id));
+            const nextIds = new Set<string>((markers.map((m) => m.id).filter((id): id is string => typeof id === 'string')));
             if (this._lastHover && this._lastHover.id && !nextIds.has(this._lastHover.id)) {
                 // Hovered marker no longer exists: emit leave and clear
                 const prev = this._lastHover;

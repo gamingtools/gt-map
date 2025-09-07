@@ -773,7 +773,6 @@ class ViewTransitionImpl implements ViewTransition {
 
   async apply(opts?: ApplyOptions): Promise<ApplyResult> {
     if (this.promise) return this.promise;
-    this.started = true;
     // Compute final targets
     const currentCenter = this.map.getCenter();
     const currentZoom = this.map.getZoom();
