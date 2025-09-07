@@ -142,8 +142,10 @@ export class IconRenderer {
 	startMaskBuild() {
 		if (this.maskBuildStarted) return;
 		this.maskBuildStarted = true;
-		// Feature-test requestIdleCallback with a small typed shim
-		const ric: ((cb: () => void) => any) | undefined = typeof (window as any).requestIdleCallback === 'function' ? (window as any).requestIdleCallback.bind(window) : undefined;
+		// Feature-test requestIdleCallback with a small typed shim. TS lib may not include it.
+		const ric: ((cb: () => void) => any) | undefined = typeof (window as unknown as { requestIdleCallback?: (cb: () => void) => any }).requestIdleCallback === 'function'
+			? (window as unknown as { requestIdleCallback: (cb: () => void) => any }).requestIdleCallback.bind(window)
+			: undefined;
 		const process = () => {
 			let budget = 3; // build a few per slice
 			while (budget-- > 0 && this.pendingMasks.length) {
@@ -164,8 +166,12 @@ export class IconRenderer {
 		let idx = 0;
 		const norm: Marker[] = [];
 		for (const m of markers || []) {
-			if ((m as Marker).id) norm.push(m as Marker);
-			else norm.push({ id: `m${idx++}`, lng: (m as any).lng, lat: (m as any).lat, type: (m as any).type, size: (m as any).size, rotation: (m as any).rotation });
+			if ('id' in (m as Record<string, unknown>)) {
+				norm.push(m as Marker);
+			} else {
+				const mm = m as { lng: number; lat: number; type: string; size?: number; rotation?: number };
+				norm.push({ id: `m${idx++}`, lng: mm.lng, lat: mm.lat, type: mm.type, size: mm.size, rotation: mm.rotation });
+			}
 		}
 		this.markers = norm;
 		// Prepare per-type instance data for instanced path
@@ -451,7 +457,7 @@ export class IconRenderer {
 				const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
 				gl.uniform2f(this.instLoc!.u_uv0!, uv.u0, uv.v0);
 				gl.uniform2f(this.instLoc!.u_uv1!, uv.u1, uv.v1);
-				if (isGL2) (gl as any).drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, rec.count);
+				if (isGL2) (gl as WebGL2RenderingContext).drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, rec.count);
 				else this.instExt!.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, rec.count);
 			}
 			return;

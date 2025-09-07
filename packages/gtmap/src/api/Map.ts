@@ -113,9 +113,10 @@ export class GTMap {
         const toPointerMeta = (ev: { originalEvent?: PointerEvent | MouseEvent } | undefined) => {
             const oe = ev?.originalEvent;
             if (!oe) return undefined;
-            const has = <K extends string>(k: K): k is K => k in (oe as any);
+            // Safe field presence check on a PointerEvent/MouseEvent union
+            const has = <K extends keyof (PointerEvent & MouseEvent)>(k: K): boolean => (k in (oe as PointerEvent | MouseEvent));
             const ptrType = has('pointerType') ? String((oe as PointerEvent).pointerType) : 'mouse';
-            const device = (ptrType === 'mouse' || ptrType === 'touch' || ptrType === 'pen') ? ptrType : 'mouse';
+            const device: import('./events/maps').InputDevice = (ptrType === 'mouse' || ptrType === 'touch' || ptrType === 'pen') ? (ptrType as import('./events/maps').InputDevice) : 'mouse';
             const isPrimary = has('isPrimary') ? !!(oe as PointerEvent).isPrimary : true;
             const buttons = has('buttons') ? (oe as PointerEvent).buttons : 0;
             const pointerId = has('pointerId') ? (oe as PointerEvent).pointerId : 0;
@@ -124,7 +125,8 @@ export class GTMap {
             const height = has('height') ? (oe as PointerEvent).height : undefined;
             const tiltX = has('tiltX') ? (oe as PointerEvent).tiltX : undefined;
             const tiltY = has('tiltY') ? (oe as PointerEvent).tiltY : undefined;
-            const twist = has('twist') ? (oe as any).twist as number | undefined : undefined;
+            // twist is not in standard PointerEvent in all browsers; probe safely via optional field
+            const twist = (oe as PointerEvent & { twist?: number }).twist;
             const mods = {
                 alt: 'altKey' in oe ? !!(oe as MouseEvent).altKey : false,
                 ctrl: 'ctrlKey' in oe ? !!(oe as MouseEvent).ctrlKey : false,
@@ -168,7 +170,7 @@ export class GTMap {
 			this._impl.onMarkerEvent('longpress', (e: any) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-				if (mk) mk.emitFromMap('longpress', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) as any });
+                if (mk) mk.emitFromMap('longpress', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		// Synthesize 'tap' alias from 'click' for touch input
 		if (this._impl.onMarkerEvent)
@@ -517,7 +519,7 @@ export class GTMap {
      * ```
      */
 	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
-		this._impl.setBackgroundColor?.(color as any);
+		this._impl.setBackgroundColor?.(color);
 		return this;
 	}
 	/**
@@ -594,10 +596,10 @@ export class GTMap {
 			on: (name: any, handler?: any) => {
             // Bridge overloads: return the stream or subscribe inline. The cast is localized
             // to preserve precise generic types for callers across the two forms.
-            const stream = this._impl.events.on(name as keyof MapEventMap);
+            const stream = this._impl.events.on(name as keyof import('./types').EventMap);
 				return handler ? stream.each(handler) : stream;
 			},
-        once: (name) => this._impl.events.when(name as keyof MapEventMap),
+        once: (name) => this._impl.events.when(name as keyof import('./types').EventMap),
 		} as MapEvents;
 	}
 
