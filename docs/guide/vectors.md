@@ -13,6 +13,10 @@ map.addVector({ type: 'polygon', points: [ { x: 100, y: 100 }, { x: 150, y: 160 
 
 // Circle
 map.addVector({ type: 'circle', center: { x: 300, y: 300 }, radius: 60 });
+
+// Keep a handle to update geometry later
+const v = map.addVector({ type: 'polygon', points: [ { x: 100, y: 100 }, { x: 160, y: 160 }, { x: 80, y: 190 } ] });
+v.setGeometry({ type: 'polyline', points: [ { x: 120, y: 120 }, { x: 180, y: 210 } ] });
 ```
 
 ## Remove / clear

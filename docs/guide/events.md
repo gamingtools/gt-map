@@ -18,6 +18,21 @@ map.events.on('zoomend').each(({ view }) => {
 map.events.on('click').each((e) => {
   console.log('screen', e.x, e.y, 'world', e.world);
 });
+
+// Pointer events with device-agnostic coordinates and world hit
+map.events.on('pointerdown').each((e) => {
+  // e: { x, y, world, view, originalEvent }
+});
+map.events.on('pointermove').each((e) => {/* ... */});
+map.events.on('pointerup').each((e) => {/* ... */});
+
+// Mouse events include optional marker hits when hover is enabled
+map.events.on('mousemove').each((e) => {
+  // e.markers?: Array<{ marker: { id, index, world, size, rotation?, data? }, icon: { id, iconPath, width, height, anchorX, anchorY } }>
+  if (e.markers?.length) {
+    // Hovering over one or more markers
+  }
+});
 ```
 
 ### Lifecycle
@@ -35,15 +50,68 @@ map.events.on('load').each(({ size, view }) => {
 map.events.on('resize').each(({ size }) => {
   console.log('resized to', size.width, size.height, 'dpr', size.dpr);
 });
+
+// Frame loop hook (stats reported by renderer when available)
+map.events.on('frame').each(({ now, stats }) => {
+  // stats?.fps, stats?.tilesLoaded, etc.
+});
 ```
+
+## Event Reference
+
+Map events
+
+| Event        | Payload keys                                  | Notes |
+|--------------|-----------------------------------------------|-------|
+| `load`       | `size{width,height,dpr}`, `view`               | Fired once after first frame is scheduled |
+| `resize`     | `size{width,height,dpr}`, `view`               | Debounced final size + DPR |
+| `move`       | `view`                                         | During panning/zooming when center changes |
+| `moveend`    | `view`                                         | After movement settles |
+| `zoom`       | `view`                                         | During zoom changes |
+| `zoomend`    | `view`                                         | After zoom settles |
+| `pointerdown`| `x`, `y`, `world`, `view`, `originalEvent`     | Device‑agnostic pointer |
+| `pointermove`| `x`, `y`, `world`, `view`, `originalEvent`     | Device‑agnostic pointer |
+| `pointerup`  | `x`, `y`, `world`, `view`, `originalEvent`     | Device‑agnostic pointer |
+| `mousedown`  | `x`, `y`, `world`, `view`, `originalEvent`     | Mouse only |
+| `mousemove`  | `x`, `y`, `world`, `view`, `originalEvent`, `markers?` | `markers?` present only when idle hover is enabled |
+| `mouseup`    | `x`, `y`, `world`, `view`, `originalEvent`     | Mouse only |
+| `click`      | `x`, `y`, `world`, `view`, `originalEvent`     | Emitted on mouse click (derived from pointer) |
+| `frame`      | `now`, `stats?`                                | Per‑frame hook for HUD/diagnostics |
+
+Marker events (per marker via `m.events`)
+
+| Event            | Payload keys                               | Notes |
+|------------------|--------------------------------------------|-------|
+| `click`          | `x`, `y`, `marker`, `pointer?`             | Device‑agnostic activate |
+| `tap`            | `x`, `y`, `marker`, `pointer?`             | Touch alias for click |
+| `longpress`      | `x`, `y`, `marker`, `pointer?`             | ~500ms touch hold |
+| `pointerdown`    | `x`, `y`, `marker`, `pointer?`             | |
+| `pointerup`      | `x`, `y`, `marker`, `pointer?`             | |
+| `pointerenter`   | `x`, `y`, `marker`, `pointer?`             | Top‑most hover enter |
+| `pointerleave`   | `x`, `y`, `marker`, `pointer?`             | Hover leave or hide/remove |
+| `positionchange` | `x`, `y`, `dx`, `dy`, `marker`             | Emitted by `moveTo` |
+| `remove`         | `marker`                                   | Emitted on removal |
+
+Layer events (via `map.markers.events` or `map.vectors.events`)
+
+| Event             | Payload keys              |
+|-------------------|---------------------------|
+| `entityadd`       | `entity`                  |
+| `entityremove`    | `entity`                  |
+| `clear`           | `{}`                      |
+| `visibilitychange`| `visible: boolean`        |
 
 ## Marker events
 
-Each Marker has its own event map:
+Each Marker instance exposes its own typed event map via `m.events`:
 
-- `click`: `{ x, y, marker }`
-- `enter`: `{ x, y, marker }`
-- `leave`: `{ x, y, marker }`
+- `click`: `{ x, y, marker, pointer? }`
+- `tap`: `{ x, y, marker, pointer? }` (touch alias for click)
+- `longpress`: `{ x, y, marker, pointer? }` (~500ms touch hold)
+- `pointerdown`: `{ x, y, marker, pointer? }`
+- `pointerup`: `{ x, y, marker, pointer? }`
+- `pointerenter`: `{ x, y, marker, pointer? }`
+- `pointerleave`: `{ x, y, marker, pointer? }`
 - `positionchange`: `{ x, y, dx, dy, marker }`
 - `remove`: `{ marker }`
 

@@ -1,6 +1,6 @@
 # Markers
 
-Markers are entities anchored at pixel pixel coordinates (the map uses a pixel CRS). Each marker has an ID, position, style, optional user data, and a typed event stream.
+Markers are entities anchored at pixel coordinates (the map uses a pixel CRS). Each marker has an ID, position, style, optional user data, and a typed event stream.
 
 Use the map’s `markers` layer to add/remove markers and to observe layer-level events.
 
@@ -27,10 +27,20 @@ Creation options
 - rotation: `number` degrees clockwise. Defaults to 0.
 - data: `unknown`. Attached to the marker and included in event payloads.
 
+Icon tips
+
+- Define anchors on icons when registering them so the visual point matches the world position:
+
+```ts
+const pin = map.addIcon({ iconPath: '/assets/pin.png', width: 24, height: 24, anchorX: 12, anchorY: 24 });
+map.addMarker(2048, 2048, { icon: pin });
+```
+
 Notes
 
 - Marker IDs are auto-generated (e.g. `m_...`). Retrieve an existing marker with `map.markers.get(id)`.
 - The default icon is provided so markers are visible without any icon setup.
+- The `iconType` property reflects the icon id assigned when calling `addIcon` (or `'default'`).
 
 ## Properties
 
@@ -105,7 +115,7 @@ Event names and payloads
 
 Coordinates
 
-- `x`, `y` in event payloads for `click`/`enter`/`leave` are screen (CSS-pixel) coordinates relative to the map container.
+- `x`, `y` in event payloads for `click`/`pointerenter`/`pointerleave` are screen (CSS‑pixel) coordinates relative to the map container.
 - `marker.x`, `marker.y` are world pixel coordinates (the same coordinate space used by `moveTo`).
 
 Examples
@@ -136,7 +146,7 @@ m.events.on('positionchange').each(({ dx, dy }) => {
 });
 
 // Filtered subscription (unsubscribe when hidden)
-const off = m.events.on('enter').each(() => highlight(m));
+const off = m.events.on('pointerenter').each(() => highlight(m));
 // later
 off();
 ```

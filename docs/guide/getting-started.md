@@ -31,9 +31,16 @@ map.flyTo({ center: { x: 4096, y: 4096 }, zoom: 4, durationMs: 800 });
 ```ts
 map.setTileSource({
   url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
+  // Tile pyramid details
   tileSize: 256,
+  // Optional min level the server provides
+  sourceMinZoom: 0,
   sourceMaxZoom: 5,
-  wrapX: false
+  // Total pixel size of the base image at native resolution
+  mapSize: { width: 8192, height: 8192 },
+  wrapX: false,
+  // Clear existing tile textures when switching sources
+  clearCache: true
 });
 ```
 
@@ -69,4 +76,9 @@ map.setActive(false, { releaseGL: true });
 map.setActive(true);
 // When done
 map.destroy();
+
+// If you disable auto-resize, call this when container size changes
+map.setAutoResize(false);
+// ... update container size ...
+map.invalidateSize();
 ```
