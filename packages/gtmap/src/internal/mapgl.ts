@@ -27,6 +27,7 @@ import type { ViewState } from './types';
 // prefetch/grid helpers moved inline
 import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 import { FrameLoop } from './core/frame-loop';
+import AutoResizeManager from './core/auto-resize-manager';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -205,12 +206,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._needsRender = true;
 	}
 
-	// Auto-resize
-	private _autoResize = true;
-	private _ro: ResizeObserver | null = null;
-	private _resizeTimer: number | null = null;
-	private _resizeDebounceMs = 150;
-	private _onWindowResize = () => this._scheduleResizeTrailing();
+    // Auto-resize
+    private _autoResize = true;
+    private _resizeDebounceMs = 150;
+    private _resizeMgr: AutoResizeManager | null = null;
 
 	private _viewPublic(): PublicViewState {
 		return {
@@ -516,11 +515,18 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			else setTimeout(emitLoad, 0);
 		} catch {}
 		// Attach auto-resize after first stable frame to avoid initial layout interference
-		if (this._autoResize) {
-			const attach = () => this._attachAutoResize();
-			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(attach));
-			else setTimeout(attach, 0);
-		}
+        if (this._autoResize) {
+            const attach = () => {
+                this._resizeMgr = new AutoResizeManager({
+                    getContainer: () => this.container,
+                    onResize: () => this.resize(),
+                    getDebounceMs: () => this._resizeDebounceMs,
+                });
+                this._resizeMgr.attach();
+            };
+            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(attach));
+            else setTimeout(attach, 0);
+        }
 		// Delay baseline prefetch until a tile source is explicitly set
 		// DI in place for input/tiles/render; no need for TS usage hacks
 	}
@@ -682,9 +688,10 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 	// recenter helper removed from public surface; use setCenter/setView via facade
 	destroy() {
 		// Detach observers and listeners first
-		try {
-			this._detachAutoResize();
-		} catch {}
+        try {
+            this._resizeMgr?.detach();
+            this._resizeMgr = null;
+        } catch {}
 		if (this._frameLoop) {
 			try {
 				this._frameLoop.stop();
@@ -904,48 +911,22 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		}
 	}
 
-	private _scheduleResizeTrailing() {
-		if (this._resizeTimer != null) {
-			clearTimeout(this._resizeTimer);
-		}
-		const fire = () => {
-			this._resizeTimer = null;
-			const run = () => this.resize();
-			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
-			else run();
-		};
-		this._resizeTimer = window.setTimeout(fire, this._resizeDebounceMs);
-	}
-
-	private _attachAutoResize() {
-		try {
-			if (typeof window !== 'undefined') window.addEventListener('resize', this._onWindowResize);
-			if (typeof ResizeObserver !== 'undefined') {
-				this._ro = new ResizeObserver(() => this._scheduleResizeTrailing());
-				this._ro.observe(this.container);
-			}
-		} catch {}
-	}
-
-	private _detachAutoResize() {
-		try {
-			if (typeof window !== 'undefined') window.removeEventListener('resize', this._onWindowResize);
-			this._ro?.disconnect();
-		} catch {}
-		this._ro = null;
-		if (this._resizeTimer != null) {
-			clearTimeout(this._resizeTimer);
-			this._resizeTimer = null;
-		}
-	}
-
-	public setAutoResize(on: boolean) {
-		const v = !!on;
-		if (v === this._autoResize) return;
-		this._autoResize = v;
-		if (v) this._attachAutoResize();
-		else this._detachAutoResize();
-	}
+    public setAutoResize(on: boolean) {
+        const v = !!on;
+        if (v === this._autoResize) return;
+        this._autoResize = v;
+        if (v) {
+            this._resizeMgr = new AutoResizeManager({
+                getContainer: () => this.container,
+                onResize: () => this.resize(),
+                getDebounceMs: () => this._resizeDebounceMs,
+            });
+            this._resizeMgr.attach();
+        } else {
+            this._resizeMgr?.detach();
+            this._resizeMgr = null;
+        }
+    }
 	// Toggle screen-space cache
 	public setScreenCacheEnabled(enabled: boolean) {
 		this.useScreenCache = !!enabled;
