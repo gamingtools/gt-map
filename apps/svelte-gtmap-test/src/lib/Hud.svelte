@@ -1,6 +1,6 @@
 <script lang="ts">
 	// Single status widget: subscribes to map events and shows key values
-    import type { GTMap, Marker as GTMarker } from '@gtmap';
+    import type { GTMap, Marker as GTMarker, EntityRotationMode } from '@gtmap';
 
 	const {
 		map,
@@ -33,8 +33,8 @@
     let markersEnabled = $state(true);
     let vectorsEnabled = $state(true);
     // Map rotation
-    let rotateEntities = $state(false);
     let bearing = $state(0);
+    let entityRotationMode = $state<EntityRotationMode>('keep');
     // Animate markers (position-only) + optional rotation
     let animateMarkers = $state(false);
     let rotateMarkers = $state(false);
@@ -140,9 +140,8 @@
     // Map rotation: apply on changes
     $effect(() => {
         try {
-            const mode = rotateEntities ? 'rotate' : 'keep';
             // Use transition builder for consistency; instant apply
-            map?.transition().rotate(bearing, { entityRotationMode: mode }).apply();
+            map?.transition().rotate(bearing, { entityRotationMode }).apply();
         } catch {}
     });
 
@@ -362,10 +361,13 @@
                     <span class="w-10 text-right tabular-nums">{Math.round(bearing)}°</span>
                 </div>
             </div>
-            <label class="pointer-events-auto flex items-center gap-2">
-                <input type="checkbox" bind:checked={rotateEntities} />
-                <span>Rotate Entities With Map</span>
-            </label>
+            <div>
+                <label class="block text-gray-700" for="entity-rotation">Entity Rotation Mode</label>
+                <select id="entity-rotation" class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1" bind:value={entityRotationMode}>
+                    <option value="keep">keep</option>
+                    <option value="rotate">rotate</option>
+                </select>
+            </div>
 		<label class="pointer-events-auto flex items-center gap-2">
 			<input type="checkbox" bind:checked={vectorsEnabled} />
 			<span>Show Vectors</span>

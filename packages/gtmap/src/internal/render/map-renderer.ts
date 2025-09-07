@@ -251,23 +251,26 @@ export default class MapRenderer {
 			gl.uniform1f(loc.u_alpha!, 1.0);
 			// Icons use native texture filtering
 			if (loc.u_filterMode) gl.uniform1i(loc.u_filterMode!, 0);
-			ctx.icons.draw({
-				gl: ctx.gl,
-				prog: ctx.prog,
-				loc: ctx.loc,
-				quad: ctx.quad,
-				canvas: ctx.canvas,
-				dpr: ctx.dpr,
-				tileSize: ctx.tileSize,
-				zoom: ctx.zoom,
-				center: ctx.center,
-				minZoom: ctx.minZoom,
-				maxZoom: ctx.maxZoom,
-				container: ctx.container,
-				project: (x: number, y: number, z: number) => ctx.project(x, y, z),
-				wrapX: ctx.wrapX,
-				iconScaleFunction: ctx.iconScaleFunction,
-			});
+            ctx.icons.draw({
+                gl: ctx.gl,
+                prog: ctx.prog,
+                loc: ctx.loc,
+                quad: ctx.quad,
+                canvas: ctx.canvas,
+                dpr: ctx.dpr,
+                tileSize: ctx.tileSize,
+                zoom: ctx.zoom,
+                center: ctx.center,
+                minZoom: ctx.minZoom,
+                maxZoom: ctx.maxZoom,
+                container: ctx.container,
+                project: (x: number, y: number, z: number) => ctx.project(x, y, z),
+                wrapX: ctx.wrapX,
+                iconScaleFunction: ctx.iconScaleFunction,
+                // pass map rotation to icon renderer
+                viewRotationDeg: (ctx as any).viewRotationDeg,
+                entityRotationMode: (ctx as any).entityRotationMode,
+            });
 		}
 		// Update screen cache after full draw so it matches the frame
 		if (ctx.useScreenCache && ctx.screenCache) ctx.screenCache.update({ zInt: baseZ, scale, widthCSS, heightCSS, dpr: ctx.dpr, tlWorld }, ctx.canvas);
