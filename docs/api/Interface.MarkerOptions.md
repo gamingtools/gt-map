@@ -16,7 +16,7 @@
   - [rotation?](#rotation)
   - [size?](#size)
 
-Defined in: entities/marker.ts:11
+Defined in: [entities/Marker.ts:14](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/entities/Marker.ts#L14)
 
 Options for creating or styling a [Marker](Class.Marker.md).
 
@@ -26,13 +26,17 @@ Options for creating or styling a [Marker](Class.Marker.md).
 
 `T` = `unknown`
 
+Type of custom data attached to the marker
+
 ## Properties
 
 ### data?
 
 > `optional` **data**: `T`
 
-Defined in: entities/marker.ts:15
+Defined in: [entities/Marker.ts:36](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/entities/Marker.ts#L36)
+
+Custom user data attached to the marker.
 
 ***
 
@@ -40,7 +44,13 @@ Defined in: entities/marker.ts:15
 
 > `optional` **iconType**: `string`
 
-Defined in: entities/marker.ts:12
+Defined in: [entities/Marker.ts:19](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/entities/Marker.ts#L19)
+
+Icon type identifier from registered icons.
+
+#### Default Value
+
+`'default'`
 
 ***
 
@@ -48,7 +58,13 @@ Defined in: entities/marker.ts:12
 
 > `optional` **rotation**: `number`
 
-Defined in: entities/marker.ts:14
+Defined in: [entities/Marker.ts:31](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/entities/Marker.ts#L31)
+
+Rotation angle in degrees (clockwise).
+
+#### Default Value
+
+`0`
 
 ***
 
@@ -56,4 +72,10 @@ Defined in: entities/marker.ts:14
 
 > `optional` **size**: `number`
 
-Defined in: entities/marker.ts:13
+Defined in: [entities/Marker.ts:25](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/entities/Marker.ts#L25)
+
+Scale multiplier for the icon.
+
+#### Default Value
+
+`1`

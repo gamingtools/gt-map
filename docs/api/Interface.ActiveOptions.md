@@ -11,7 +11,9 @@
 - [Properties](#properties)
   - [releaseGL?](#releasegl)
 
-Defined in: [api/types.ts:358](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L358)
+Defined in: [api/types.ts:556](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L556)
+
+Options for map activation/deactivation.
 
 ## Properties
 
@@ -19,4 +21,10 @@ Defined in: [api/types.ts:358](https://github.com/gamingtools/gt-map/blob/a614a9
 
 > `optional` **releaseGL**: `boolean`
 
-Defined in: [api/types.ts:359](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L359)
+Defined in: [api/types.ts:561](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L561)
+
+Release WebGL resources when deactivating.
+
+#### Default Value
+
+`false`

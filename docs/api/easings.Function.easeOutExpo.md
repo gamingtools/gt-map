@@ -14,7 +14,7 @@
 
 > **easeOutExpo**(`t`): `number`
 
-Defined in: [api/easings.ts:46](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/easings.ts#L46)
+Defined in: [api/easings.ts:46](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/easings.ts#L46)
 
 Exponential ease‑out.
 

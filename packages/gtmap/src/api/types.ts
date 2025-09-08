@@ -1,28 +1,47 @@
 /**
  * Comprehensive type definitions for GTMap.
  *
+ * @module
  * @remarks
- * This file contains all public‑facing types and interfaces for consumers of the library.
+ * This file contains all public-facing types and interfaces for consumers of the library.
  * Prefer these types over duplicating shapes in app code.
  */
 
-// Core geometric types
+/**
+ * 2D point in world pixel coordinates.
+ * @public
+ */
 export type Point = { x: number; y: number };
 
-// View and state types
+/**
+ * Current map view state snapshot.
+ * @public
+ */
 export interface ViewState {
+	/** Center position in world pixels */
 	center: Point;
+	/** Current zoom level (fractional allowed) */
 	zoom: number;
+	/** Minimum allowed zoom level */
 	minZoom: number;
+	/** Maximum allowed zoom level */
 	maxZoom: number;
+	/** Whether horizontal wrapping is enabled */
 	wrapX: boolean;
 }
 
-// Tile system types
+/**
+ * Bounding box for tile coordinates.
+ * @public
+ */
 export interface TileBounds {
+	/** Minimum X tile coordinate */
 	minX: number;
+	/** Minimum Y tile coordinate */
 	minY: number;
+	/** Maximum X tile coordinate */
 	maxX: number;
+	/** Maximum Y tile coordinate */
 	maxY: number;
 }
 
@@ -43,37 +62,94 @@ export interface TileSourceOptions {
   clearCache?: boolean;
 }
 
-// Map configuration
+/**
+ * Configuration options for creating a GTMap instance.
+ * @public
+ */
 export interface MapOptions {
-  /** Tile source configuration (URL template, pyramid, wrap). */
+  /** 
+   * Tile source configuration (URL template, pyramid, wrap).
+   * Required for map initialization.
+   */
   tileSource: TileSourceOptions;
+  
+  /** 
+   * Minimum zoom level.
+   * @defaultValue `0`
+   */
 	minZoom?: number;
+	
+	/** 
+	 * Maximum zoom level.
+	 * @defaultValue `sourceMaxZoom` from tile source
+	 */
 	maxZoom?: number;
+	
+	/** 
+	 * Initial center position in world pixels.
+	 * @defaultValue Center of the map
+	 */
 	center?: Point;
+	
+	/** 
+	 * Initial zoom level.
+	 * @defaultValue `0`
+	 */
 	zoom?: number;
+	
 	/**
 	 * Automatically resize the map when the container size or window DPR changes.
-	 * Enabled by default.
+	 * @defaultValue `true`
 	 */
 	autoResize?: boolean;
+	
   /**
-   * Viewport background: either 'transparent' (default when omitted) or a solid color.
+   * Viewport background: either 'transparent' or a solid color.
+   * @defaultValue `'transparent'`
+   * @remarks
    * Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components.
    */
   backgroundColor?: string | { r: number; g: number; b: number; a?: number };
+  
+  /** 
+   * Tile prefetching configuration.
+   * @defaultValue `{ enabled: true, baselineLevel: 2, ring: 1 }`
+   */
 	prefetch?: { enabled?: boolean; baselineLevel?: number; ring?: number };
+	
+	/** 
+	 * Enable screen caching optimization.
+	 * @defaultValue `true`
+	 */
 	screenCache?: boolean;
+	
+	/** 
+	 * Maximum frames per second.
+	 * @defaultValue `60`
+	 */
 	fpsCap?: number;
 }
 
-// Content types
+/**
+ * Marker definition for map display.
+ * @public
+ * @typeParam T - Type of custom data attached to the marker
+ * @deprecated Use {@link GTMap.addMarker} with {@link MarkerOptions} instead
+ */
 export interface Marker<T = unknown> {
+	/** X coordinate in world pixels */
 	x: number;
+	/** Y coordinate in world pixels */
 	y: number;
+	/** Icon type identifier */
 	type?: string;
+	/** Scale multiplier */
 	size?: number;
-	rotation?: number; // degrees clockwise (optional)
+	/** Rotation in degrees (clockwise) */
+	rotation?: number;
+	/** Unique marker ID */
 	id?: string;
+	/** Custom user data */
 	data?: T | null;
 }
 
@@ -108,47 +184,121 @@ export interface IconHandle {
     id: string;
 }
 
-// Vector styling
+/**
+ * Style properties for vector shapes.
+ * @public
+ */
 export interface VectorStyle {
+	/** 
+	 * Stroke color (CSS color string).
+	 * @defaultValue `'#3388ff'`
+	 */
 	color?: string;
+	
+	/** 
+	 * Stroke width in pixels.
+	 * @defaultValue `3`
+	 */
 	weight?: number;
+	
+	/** 
+	 * Stroke opacity (0-1).
+	 * @defaultValue `1`
+	 */
 	opacity?: number;
+	
+	/** 
+	 * Whether to fill the shape (polygon/circle only).
+	 * @defaultValue `false`
+	 */
 	fill?: boolean;
+	
+	/** 
+	 * Fill color (CSS color string).
+	 * @defaultValue Same as `color`
+	 */
 	fillColor?: string;
+	
+	/** 
+	 * Fill opacity (0-1).
+	 * @defaultValue `0.2`
+	 */
 	fillOpacity?: number;
 }
 
-// Vector primitives with discriminated unions
+/**
+ * Polyline vector shape.
+ * @public
+ */
 export type Polyline = {
+	/** Shape type discriminator */
 	type: 'polyline';
+	/** Array of points defining the line */
 	points: Point[];
+	/** Optional style properties */
 	style?: VectorStyle;
 };
 
+/**
+ * Polygon vector shape.
+ * @public
+ */
 export type Polygon = {
+	/** Shape type discriminator */
 	type: 'polygon';
+	/** Array of points defining the polygon (auto-closed) */
 	points: Point[];
+	/** Optional style properties */
 	style?: VectorStyle;
 };
 
+/**
+ * Circle vector shape.
+ * @public
+ */
 export type Circle = {
+	/** Shape type discriminator */
 	type: 'circle';
+	/** Center position in world pixels */
 	center: Point;
+	/** Radius in pixels at native zoom */
 	radius: number;
+	/** Optional style properties */
 	style?: VectorStyle;
 };
 
+/**
+ * Union type for all vector shapes.
+ * @public
+ */
 export type Vector = Polyline | Polygon | Circle;
 
-// Type guards for vector types
+/**
+ * Type guard to check if a vector is a polyline.
+ * @public
+ * @param v - Vector to check
+ * @returns `true` if the vector is a polyline
+ */
 export function isPolyline(v: Vector): v is Polyline {
 	return v.type === 'polyline';
 }
 
+/**
+ * Type guard to check if a vector is a polygon.
+ * @public
+ * @param v - Vector to check
+ * @returns `true` if the vector is a polygon
+ */
 export function isPolygon(v: Vector): v is Polygon {
 	return v.type === 'polygon';
 }
 
+/**
+ * Type guard to check if a vector is a circle.
+ * @public
+ * @param v - Vector to check
+ * @returns `true` if the vector is a circle
+ */
 export function isCircle(v: Vector): v is Circle {
 	return v.type === 'circle';
 }
@@ -196,12 +346,44 @@ export interface MouseEventData<T = unknown> {
     markers?: MarkerHit<T>[];
 }
 
-/** Marker hover hit on the map surface (mouse only, when enabled). */
+/**
+ * Marker hit information for hover/interaction.
+ * @public
+ * @typeParam T - Type of custom data attached to the marker
+ */
 export interface MarkerHit<T = unknown> {
-    /** Lightweight marker snapshot for hover purposes. */
-    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: T | null };
-    /** Icon metadata associated with the hit marker. */
-    icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+    /** Lightweight marker snapshot for hover purposes */
+    marker: { 
+        /** Unique marker ID */
+        id: string; 
+        /** Marker index in render batch */
+        index: number; 
+        /** World position */
+        world: Point; 
+        /** Icon dimensions */
+        size: { w: number; h: number }; 
+        /** Rotation in degrees */
+        rotation?: number; 
+        /** Custom user data */
+        data?: T | null;
+    };
+    /** Icon metadata associated with the hit marker */
+    icon: { 
+        /** Icon type ID */
+        id: string; 
+        /** Icon image URL */
+        iconPath: string; 
+        /** 2x resolution URL */
+        x2IconPath?: string; 
+        /** Icon width */
+        width: number; 
+        /** Icon height */
+        height: number; 
+        /** Anchor X offset */
+        anchorX: number; 
+        /** Anchor Y offset */
+        anchorY: number;
+    };
 }
 
 /** Movement event payload: center changed. */
@@ -297,14 +479,24 @@ export interface EventMap<TMarkerData = unknown> {
     contextmenu: MouseEventData<TMarkerData>;
 }
 
-// Performance stats
+/**
+ * Rendering performance statistics.
+ * @public
+ */
 export interface RenderStats {
+	/** Current frames per second */
 	fps?: number;
+	/** Total tiles loaded in cache */
 	tilesLoaded?: number;
+	/** Tiles currently visible */
 	tilesVisible?: number;
+	/** Number of tiles in cache */
 	cacheSize?: number;
+	/** Tiles currently loading */
 	inflight?: number;
+	/** Tiles waiting to load */
 	pending?: number;
+	/** Current frame number */
 	frame?: number;
 }
 
@@ -357,8 +549,15 @@ export function iconID(id: string): IconID {
 	return id as IconID;
 }
 
-// Lifecycle options
+/**
+ * Options for map activation/deactivation.
+ * @public
+ */
 export interface ActiveOptions {
+	/** 
+	 * Release WebGL resources when deactivating.
+	 * @defaultValue `false`
+	 */
 	releaseGL?: boolean;
 }
 
@@ -412,22 +611,43 @@ export interface PrefetchOptions {
 	ring?: number;
 }
 
-// Max bounds (pixel coordinates)
+/**
+ * Maximum bounds constraint in world pixel coordinates.
+ * @public
+ */
 export interface MaxBoundsPx {
+	/** Minimum X coordinate */
 	minX: number;
+	/** Minimum Y coordinate */
 	minY: number;
+	/** Maximum X coordinate */
 	maxX: number;
+	/** Maximum Y coordinate */
 	maxY: number;
 }
 
-// Filter modes
+/**
+ * Upscaling filter mode for tile rendering.
+ * @public
+ */
 export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
 
-// Icon scaling function
-// Returns a scale multiplier where 1.0 = original size
+/**
+ * Function to calculate icon scale based on zoom level.
+ * @public
+ * @param zoom - Current zoom level
+ * @param minZoom - Minimum zoom level
+ * @param maxZoom - Maximum zoom level
+ * @returns Scale multiplier where 1.0 = original size
+ */
 export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number) => number;
 
-// Map rotation
+/**
+ * Marker behavior during map rotation.
+ * @public
+ * - `'rotate'` - Markers rotate with the map
+ * - `'keep'` - Markers maintain screen orientation
+ */
 export type MarkerRotationMode = 'rotate' | 'keep';
 
 // Public event surface: exported via api/events/public

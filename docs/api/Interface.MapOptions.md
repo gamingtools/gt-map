@@ -20,7 +20,9 @@
   - [tileSource](#tilesource)
   - [zoom?](#zoom)
 
-Defined in: [api/types.ts:47](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L47)
+Defined in: [api/types.ts:69](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L69)
+
+Configuration options for creating a GTMap instance.
 
 ## Properties
 
@@ -28,10 +30,13 @@ Defined in: [api/types.ts:47](https://github.com/gamingtools/gt-map/blob/a614a9d
 
 > `optional` **autoResize**: `boolean`
 
-Defined in: [api/types.ts:58](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L58)
+Defined in: [api/types.ts:104](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L104)
 
 Automatically resize the map when the container size or window DPR changes.
-Enabled by default.
+
+#### Default Value
+
+`true`
 
 ***
 
@@ -39,9 +44,16 @@ Enabled by default.
 
 > `optional` **backgroundColor**: `string` \| \{ `a?`: `number`; `b`: `number`; `g`: `number`; `r`: `number`; \}
 
-Defined in: [api/types.ts:63](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L63)
+Defined in: [api/types.ts:112](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L112)
 
-Viewport background: either 'transparent' (default when omitted) or a solid color.
+Viewport background: either 'transparent' or a solid color.
+
+#### Default Value
+
+`'transparent'`
+
+#### Remarks
+
 Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components.
 
 ***
@@ -50,7 +62,15 @@ Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components
 
 > `optional` **center**: [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:52](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L52)
+Defined in: [api/types.ts:92](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L92)
+
+Initial center position in world pixels.
+
+#### Default Value
+
+```ts
+Center of the map
+```
 
 ***
 
@@ -58,7 +78,13 @@ Defined in: [api/types.ts:52](https://github.com/gamingtools/gt-map/blob/a614a9d
 
 > `optional` **fpsCap**: `number`
 
-Defined in: [api/types.ts:66](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L66)
+Defined in: [api/types.ts:130](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L130)
+
+Maximum frames per second.
+
+#### Default Value
+
+`60`
 
 ***
 
@@ -66,7 +92,13 @@ Defined in: [api/types.ts:66](https://github.com/gamingtools/gt-map/blob/a614a9d
 
 > `optional` **maxZoom**: `number`
 
-Defined in: [api/types.ts:51](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L51)
+Defined in: [api/types.ts:86](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L86)
+
+Maximum zoom level.
+
+#### Default Value
+
+`sourceMaxZoom` from tile source
 
 ***
 
@@ -74,7 +106,13 @@ Defined in: [api/types.ts:51](https://github.com/gamingtools/gt-map/blob/a614a9d
 
 > `optional` **minZoom**: `number`
 
-Defined in: [api/types.ts:50](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L50)
+Defined in: [api/types.ts:80](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L80)
+
+Minimum zoom level.
+
+#### Default Value
+
+`0`
 
 ***
 
@@ -82,7 +120,9 @@ Defined in: [api/types.ts:50](https://github.com/gamingtools/gt-map/blob/a614a9d
 
 > `optional` **prefetch**: `object`
 
-Defined in: [api/types.ts:64](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L64)
+Defined in: [api/types.ts:118](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L118)
+
+Tile prefetching configuration.
 
 #### baselineLevel?
 
@@ -96,13 +136,23 @@ Defined in: [api/types.ts:64](https://github.com/gamingtools/gt-map/blob/a614a9d
 
 > `optional` **ring**: `number`
 
+#### Default Value
+
+`{ enabled: true, baselineLevel: 2, ring: 1 }`
+
 ***
 
 ### screenCache?
 
 > `optional` **screenCache**: `boolean`
 
-Defined in: [api/types.ts:65](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L65)
+Defined in: [api/types.ts:124](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L124)
+
+Enable screen caching optimization.
+
+#### Default Value
+
+`true`
 
 ***
 
@@ -110,9 +160,10 @@ Defined in: [api/types.ts:65](https://github.com/gamingtools/gt-map/blob/a614a9d
 
 > **tileSource**: [`TileSourceOptions`](Interface.TileSourceOptions.md)
 
-Defined in: [api/types.ts:49](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L49)
+Defined in: [api/types.ts:74](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L74)
 
 Tile source configuration (URL template, pyramid, wrap).
+Required for map initialization.
 
 ***
 
@@ -120,4 +171,10 @@ Tile source configuration (URL template, pyramid, wrap).
 
 > `optional` **zoom**: `number`
 
-Defined in: [api/types.ts:53](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L53)
+Defined in: [api/types.ts:98](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L98)
+
+Initial zoom level.
+
+#### Default Value
+
+`0`

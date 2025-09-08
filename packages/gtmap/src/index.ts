@@ -36,6 +36,7 @@ export type {
   RenderStats,
   ViewState,
   MarkerRotationMode,
+  MaxBoundsPx,
 } from './api/types';
 
 // Export type guard functions (not types)

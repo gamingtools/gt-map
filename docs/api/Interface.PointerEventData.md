@@ -16,7 +16,7 @@
   - [x](#x)
   - [y](#y)
 
-Defined in: [api/types.ts:164](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L164)
+Defined in: [api/types.ts:314](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L314)
 
 Map‑level pointer event payload.
 
@@ -30,7 +30,7 @@ Includes screen coordinates (CSS pixels), best‑effort world position, and the 
 
 > **originalEvent**: `PointerEvent`
 
-Defined in: [api/types.ts:174](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L174)
+Defined in: [api/types.ts:324](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L324)
 
 Original DOM pointer event.
 
@@ -40,7 +40,7 @@ Original DOM pointer event.
 
 > **view**: [`ViewState`](Interface.ViewState.md)
 
-Defined in: [api/types.ts:172](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L172)
+Defined in: [api/types.ts:322](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L322)
 
 Current view state snapshot.
 
@@ -50,7 +50,7 @@ Current view state snapshot.
 
 > **world**: `null` \| [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:170](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L170)
+Defined in: [api/types.ts:320](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L320)
 
 World position in pixels at current zoom, or `null` if the pointer is outside.
 
@@ -60,7 +60,7 @@ World position in pixels at current zoom, or `null` if the pointer is outside.
 
 > **x**: `number`
 
-Defined in: [api/types.ts:166](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L166)
+Defined in: [api/types.ts:316](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L316)
 
 Screen X in CSS pixels relative to the container.
 
@@ -70,6 +70,6 @@ Screen X in CSS pixels relative to the container.
 
 > **y**: `number`
 
-Defined in: [api/types.ts:168](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L168)
+Defined in: [api/types.ts:318](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L318)
 
 Screen Y in CSS pixels relative to the container.

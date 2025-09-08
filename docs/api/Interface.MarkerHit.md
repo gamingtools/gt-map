@@ -2,19 +2,29 @@
 
 ***
 
-# Interface: MarkerHit
+# Interface: MarkerHit\<T\>
 
 [← Back to API index](./README.md)
 
 ## Contents
 
+- [Type Parameters](#type-parameters)
+  - [T](#t)
 - [Properties](#properties)
   - [icon](#icon)
   - [marker](#marker)
 
-Defined in: [api/types.ts:200](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L200)
+Defined in: [api/types.ts:354](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L354)
 
-Marker hover hit on the map surface (mouse only, when enabled).
+Marker hit information for hover/interaction.
+
+## Type Parameters
+
+### T
+
+`T` = `unknown`
+
+Type of custom data attached to the marker
 
 ## Properties
 
@@ -22,37 +32,51 @@ Marker hover hit on the map surface (mouse only, when enabled).
 
 > **icon**: `object`
 
-Defined in: [api/types.ts:204](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L204)
+Defined in: [api/types.ts:371](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L371)
 
-Icon metadata associated with the hit marker.
+Icon metadata associated with the hit marker
 
 #### anchorX
 
 > **anchorX**: `number`
 
+Anchor X offset
+
 #### anchorY
 
 > **anchorY**: `number`
+
+Anchor Y offset
 
 #### height
 
 > **height**: `number`
 
+Icon height
+
 #### iconPath
 
 > **iconPath**: `string`
+
+Icon image URL
 
 #### id
 
 > **id**: `string`
 
+Icon type ID
+
 #### width
 
 > **width**: `number`
 
+Icon width
+
 #### x2IconPath?
 
 > `optional` **x2IconPath**: `string`
+
+2x resolution URL
 
 ***
 
@@ -60,29 +84,39 @@ Icon metadata associated with the hit marker.
 
 > **marker**: `object`
 
-Defined in: [api/types.ts:202](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L202)
+Defined in: [api/types.ts:356](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L356)
 
-Lightweight marker snapshot for hover purposes.
+Lightweight marker snapshot for hover purposes
 
 #### data?
 
-> `optional` **data**: `any`
+> `optional` **data**: `null` \| `T`
+
+Custom user data
 
 #### id
 
 > **id**: `string`
 
+Unique marker ID
+
 #### index
 
 > **index**: `number`
+
+Marker index in render batch
 
 #### rotation?
 
 > `optional` **rotation**: `number`
 
+Rotation in degrees
+
 #### size
 
 > **size**: `object`
+
+Icon dimensions
 
 ##### size.h
 
@@ -95,3 +129,5 @@ Lightweight marker snapshot for hover purposes.
 #### world
 
 > **world**: [`Point`](TypeAlias.Point.md)
+
+World position

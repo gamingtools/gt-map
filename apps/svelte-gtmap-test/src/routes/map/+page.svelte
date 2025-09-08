@@ -220,7 +220,7 @@
 			return Math.min(maxScale, Math.max(0.5, scale));
 		});
 
-		// map.events.on('pointerup').each((e) => console.log('pointerup', e));
+		map.events.on('pointerup').each((e) => console.log('pointerup', e));
 
 		// map.events.on('pointerdown').each((e) => console.log('pointerdown', e));
 		// map.events.on('click').each((e) => console.log('click', e));

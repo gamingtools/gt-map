@@ -11,7 +11,7 @@
 - [Properties](#properties)
   - [view](#view)
 
-Defined in: [api/types.ts:208](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L208)
+Defined in: [api/types.ts:390](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L390)
 
 Movement event payload: center changed.
 
@@ -21,6 +21,6 @@ Movement event payload: center changed.
 
 > **view**: [`ViewState`](Interface.ViewState.md)
 
-Defined in: [api/types.ts:210](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L210)
+Defined in: [api/types.ts:392](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L392)
 
 Current view state snapshot.

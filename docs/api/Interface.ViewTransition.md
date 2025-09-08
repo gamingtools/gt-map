@@ -15,9 +15,10 @@
   - [center()](#center)
   - [offset()](#offset)
   - [points()](#points)
+  - [rotate()](#rotate)
   - [zoom()](#zoom)
 
-Defined in: api/map.ts:763
+Defined in: [api/Map.ts:850](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L850)
 
 Chainable view transition builder.
 
@@ -30,7 +31,7 @@ The builder is side‑effect free until `apply()` is called.
 
 > **apply**(`opts?`): `Promise`\<[`ApplyResult`](Interface.ApplyResult.md)\>
 
-Defined in: api/map.ts:832
+Defined in: [api/Map.ts:928](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L928)
 
 Commit the transition.
 
@@ -57,7 +58,7 @@ A promise resolving with the [result](Interface.ApplyResult.md)
 
 > **bounds**(`b`, `padding?`): `this`
 
-Defined in: api/map.ts:813
+Defined in: [api/Map.ts:900](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L900)
 
 Fit the view to a bounding box with optional padding.
 
@@ -111,7 +112,7 @@ await map.transition()
 
 > **cancel**(): `void`
 
-Defined in: api/map.ts:839
+Defined in: [api/Map.ts:935](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L935)
 
 Cancel a pending or running transition.
 
@@ -127,7 +128,7 @@ If already settled, this is a no‑op.
 
 > **center**(`p`): `this`
 
-Defined in: api/map.ts:774
+Defined in: [api/Map.ts:861](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L861)
 
 Target an absolute center position in world pixels.
 
@@ -157,7 +158,7 @@ await map.transition().center({ x: 4096, y: 4096 }).apply();
 
 > **offset**(`dx`, `dy`): `this`
 
-Defined in: api/map.ts:797
+Defined in: [api/Map.ts:884](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L884)
 
 Offset the current or targeted center by a delta in world pixels.
 
@@ -189,7 +190,7 @@ The builder for chaining
 
 > **points**(`list`, `padding?`): `this`
 
-Defined in: api/map.ts:822
+Defined in: [api/Map.ts:909](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L909)
 
 Fit the view to a set of points with optional padding.
 
@@ -215,11 +216,43 @@ The builder for chaining
 
 ***
 
+### rotate()
+
+> **rotate**(`deg`, `opts?`): `this`
+
+Defined in: [api/Map.ts:918](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L918)
+
+Rotate the map to an absolute bearing in degrees (clockwise).
+
+#### Parameters
+
+##### deg
+
+`number`
+
+Target rotation in degrees (CW positive)
+
+##### opts?
+
+Optional entity rotation behavior
+
+###### markerRotationMode?
+
+[`MarkerRotationMode`](TypeAlias.MarkerRotationMode.md)
+
+#### Returns
+
+`this`
+
+The builder for chaining
+
+***
+
 ### zoom()
 
 > **zoom**(`z`): `this`
 
-Defined in: api/map.ts:787
+Defined in: [api/Map.ts:874](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/Map.ts#L874)
 
 Target an absolute zoom level.
 

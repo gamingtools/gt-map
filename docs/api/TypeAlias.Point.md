@@ -8,21 +8,15 @@
 
 ## Contents
 
-- [Remarks](#remarks)
 - [Properties](#properties)
   - [x](#x)
   - [y](#y)
 
 > **Point** = `object`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:14](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L14)
 
-Comprehensive type definitions for GTMap.
-
-## Remarks
-
-This file contains all public‑facing types and interfaces for consumers of the library.
-Prefer these types over duplicating shapes in app code.
+2D point in world pixel coordinates.
 
 ## Properties
 
@@ -30,7 +24,7 @@ Prefer these types over duplicating shapes in app code.
 
 > **x**: `number`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:14](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L14)
 
 ***
 
@@ -38,4 +32,4 @@ Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/a614a9d
 
 > **y**: `number`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:14](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L14)

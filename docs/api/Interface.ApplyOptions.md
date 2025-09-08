@@ -11,7 +11,7 @@
 - [Properties](#properties)
   - [animate?](#animate)
 
-Defined in: [api/types.ts:466](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L466)
+Defined in: [api/types.ts:692](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L692)
 
 Options for committing a transition.
 
@@ -21,6 +21,6 @@ Options for committing a transition.
 
 > `optional` **animate**: [`AnimateOptions`](Interface.AnimateOptions.md)
 
-Defined in: [api/types.ts:468](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L468)
+Defined in: [api/types.ts:694](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L694)
 
 Optional animation parameters; omit for an instant apply.

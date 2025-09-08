@@ -16,7 +16,9 @@
 
 > **IconScaleFunction** = (`zoom`, `minZoom`, `maxZoom`) => `number`
 
-Defined in: [api/types.ts:425](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L425)
+Defined in: [api/types.ts:643](https://github.com/gamingtools/gt-map/blob/670061005a2701ff4986e8986471b4dd55d13ca7/packages/gtmap/src/api/types.ts#L643)
+
+Function to calculate icon scale based on zoom level.
 
 ## Parameters
 
@@ -24,14 +26,22 @@ Defined in: [api/types.ts:425](https://github.com/gamingtools/gt-map/blob/a614a9
 
 `number`
 
+Current zoom level
+
 ### minZoom
 
 `number`
+
+Minimum zoom level
 
 ### maxZoom
 
 `number`
 
+Maximum zoom level
+
 ## Returns
 
 `number`
+
+Scale multiplier where 1.0 = original size

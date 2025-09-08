@@ -2,7 +2,7 @@ import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
 import { Layer } from '../entities/Layer';
 import { Marker } from '../entities/Marker';
-import { Vector } from '../entities/vector';
+import { Vector } from '../entities/Vector';
 import type { VectorGeometry as VectorGeom } from './events/maps';
 
 import type { MapEvents } from './events/public';
@@ -27,7 +27,7 @@ import type {
 // Re-export types from centralized types file
 export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector as VectorLegacy, ActiveOptions } from './types';
 export { Marker } from '../entities/Marker';
-export { Vector } from '../entities/vector';
+export { Vector } from '../entities/Vector';
 export { Layer } from '../entities/Layer';
 export type { MarkerRotationMode } from './types';
 
@@ -63,14 +63,24 @@ export class GTMap<TMarkerData = unknown> {
 	/**
 	 * Marker layer for this map. Use to add/remove markers and subscribe to layer events.
 	 *
+	 * @readonly
 	 * @example
+	 * ```ts
 	 * const m = map.addMarker(100, 200);
 	 * map.markers.events.on('entityadd').each(({ entity }) => console.log('added', entity.id));
+	 * ```
 	 */
 	/** @group Content */
 	readonly markers: Layer<Marker<TMarkerData>>;
 	/**
 	 * Vector layer for this map. Use to add/remove vectors and subscribe to layer events.
+	 * 
+	 * @readonly
+	 * @example
+	 * ```ts
+	 * const v = map.addVector({ type: 'circle', center: { x: 100, y: 100 }, radius: 50 });
+	 * map.vectors.events.on('entityremove').each(({ entity }) => console.log('removed', entity.id));
+	 * ```
 	 */
 	/** @group Content */
 	readonly vectors: Layer<Vector>;
@@ -246,24 +256,35 @@ export class GTMap<TMarkerData = unknown> {
 	/**
 	 * Show or hide the tile grid overlay.
 	 *
-	 * @public
-	 * @param on - `true` to show, `false` to hide
-	 * @returns This map instance for chaining
+	 * @param on - `true` to show grid lines and tile coordinates, `false` to hide
+	 * @returns This map instance for method chaining
+	 * @example
+	 * ```ts
+	 * // Toggle grid for debugging
+	 * map.setGridVisible(true);
+	 * ```
 	 */
-/** @group Tiles & Styling */
-setGridVisible(on: boolean): this {
+	/** @group Tiles & Styling */
+	setGridVisible(on: boolean): this {
 		this._impl.setGridVisible?.(on);
 		return this;
 	}
 	/**
 	 * Set the upscale filtering mode for low‑resolution tiles.
 	 *
-	 * @public
-	 * @param mode - `'auto'` | `'linear'` | `'bicubic'`
-	 * @returns This map instance for chaining
+	 * @param mode - Filtering mode:
+	 *   - `'auto'`: Automatically choose based on zoom level
+	 *   - `'linear'`: Fast bilinear filtering (pixelated when zoomed in)
+	 *   - `'bicubic'`: Smooth bicubic filtering (better quality, more GPU intensive)
+	 * @returns This map instance for method chaining
+	 * @example
+	 * ```ts
+	 * // Use smooth filtering when zoomed in
+	 * map.setUpscaleFilter('bicubic');
+	 * ```
 	 */
-/** @group Tiles & Styling */
-setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
+	/** @group Tiles & Styling */
+	setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 		this._impl.setUpscaleFilter?.(mode);
 		return this;
 	}
@@ -434,23 +455,33 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	}
 
 	/**
-	 * Removes all markers from the map.
+	 * Remove all markers from the map.
 	 *
 	 * @returns This map instance for method chaining
-  */
-  /** @public Remove all markers from the map. */
-  /** @group Content */
+	 * @example
+	 * ```ts
+	 * // Clear all markers and add new ones
+	 * map.clearMarkers();
+	 * data.forEach(d => map.addMarker(d.x, d.y));
+	 * ```
+	 */
+	/** @group Content */
   clearMarkers(): this {
 		this.markers.clear();
 		return this;
 	}
 	/**
-	 * Removes all vector shapes from the map.
+	 * Remove all vector shapes from the map.
 	 *
 	 * @returns This map instance for method chaining
-  */
-  /** @public Remove all vectors from the map. */
-  /** @group Content */
+	 * @example
+	 * ```ts
+	 * // Clear and redraw vectors
+	 * map.clearVectors();
+	 * boundaries.forEach(b => map.addVector(b));
+	 * ```
+	 */
+	/** @group Content */
   clearVectors(): this {
 		this.vectors.clear();
 		this._impl.setVectors?.([]);
@@ -642,27 +673,46 @@ setAutoResize(on: boolean): this {
 	/**
 	 * Recompute canvas sizes after external container changes.
 	 *
-	 * @public
-	 * @returns This map instance for chaining
+	 * @returns This map instance for method chaining
+	 * @remarks
+	 * Call this after programmatically changing the container size
+	 * when auto-resize is disabled.
+	 * @example
+	 * ```ts
+	 * // After resizing the container
+	 * container.style.width = '800px';
+	 * map.invalidateSize();
+	 * ```
 	 */
-/** @group View */
-invalidateSize(): this {
+	/** @group View */
+	invalidateSize(): this {
 		this._impl.resize?.();
 		return this;
 	}
 
 	// Events proxy
 	/**
-	 * Read‑only map events surface (`on`/`once`).
+	 * Read‑only map events surface for subscribing to map events.
 	 *
-	 * @public
+	 * @readonly
+	 * @remarks
+	 * Events return reactive streams that can be consumed with `.each()` for callbacks
+	 * or awaited with `.once()` for promises.
 	 * @example
 	 * ```ts
+	 * // Subscribe to continuous events
 	 * map.events.on('move').each(({ view }) => console.log(view.center, view.zoom));
+	 * 
+	 * // Wait for a single event
 	 * await map.events.once('zoomend');
+	 * 
+	 * // Chain stream operators
+	 * map.events.on('click')
+	 *   .filter(e => e.screen.x > 100)
+	 *   .each(e => console.log('Right side clicked'));
 	 * ```
 	 */
-/** @group Events */
+	/** @group Events */
   get events(): MapEvents<TMarkerData> {
         type EM = import('./types').EventMap<TMarkerData>;
         const on = <K extends keyof EM & string>(event: K, handler?: (value: EM[K]) => void) => {
@@ -685,13 +735,36 @@ invalidateSize(): this {
         return new ViewTransitionImpl<TMarkerData>(this);
   }
 
-  /** Rotate the map instantly (no animation). */
+  /**
+   * Rotate the map instantly (no animation).
+   * 
+   * @param deg - Rotation angle in degrees (clockwise, 0 = north)
+   * @param opts - Optional rotation options
+   * @param opts.markerRotationMode - How markers behave during rotation:
+   *   - `'keep'`: Markers maintain screen orientation (default)
+   *   - `'rotate'`: Markers rotate with the map
+   * @returns This map instance for method chaining
+   * @example
+   * ```ts
+   * // Rotate map 45 degrees with markers staying upright
+   * map.setRotation(45, { markerRotationMode: 'keep' });
+   * ```
+   */
   /** @group View */
   setRotation(deg: number, opts?: { markerRotationMode?: MarkerRotationMode }): this {
     this._impl.setRotation?.(deg, opts?.markerRotationMode);
     return this;
   }
-  /** Get the current map rotation in degrees (clockwise). */
+  /**
+   * Get the current map rotation in degrees.
+   * 
+   * @returns Current rotation angle in degrees (clockwise, 0 = north)
+   * @example
+   * ```ts
+   * const angle = map.getRotation();
+   * console.log(`Map is rotated ${angle}° clockwise`);
+   * ```
+   */
   /** @group View */
   getRotation(): number {
     return (this._impl.getRotation?.() as number) ?? 0;

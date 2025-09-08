@@ -3,7 +3,10 @@ import type { VectorEventMap, VectorGeometry } from '../api/events/maps';
 
 import { EventedEntity } from './base';
 
-/** Vector type discriminator. */
+/**
+ * Vector shape type discriminator.
+ * @public
+ */
 export type VectorType = 'polyline' | 'polygon' | 'circle';
 
 // Use public VectorGeometry (polyline/polygon/circle without style)
@@ -12,6 +15,9 @@ export type VectorType = 'polyline' | 'polygon' | 'circle';
  * Options for creating a {@link Vector}.
  *
  * @public
+ * @remarks
+ * Currently reserved for future styling options.
+ * Vector styles are defined in the geometry itself.
  */
 export interface VectorOptions {
 	// Placeholder for future styling options
@@ -24,11 +30,68 @@ function genVectorId(): string {
 }
 
 /**
- * Vector - a simple geometric overlay (polyline, polygon, or circle).
+ * Vector - a geometric shape overlay (polyline, polygon, or circle).
  *
  * @public
+ * 
  * @remarks
- * Events are minimal for now (`remove`); interaction events can be added later.
+ * Vectors are created via {@link GTMap.addVector} and managed through
+ * the {@link Layer} collection. Each vector has a unique ID and geometry
+ * definition that includes both shape and style properties.
+ * 
+ * Supported shapes:
+ * - `polyline` - Connected line segments
+ * - `polygon` - Closed shape with optional fill
+ * - `circle` - Circle with center and radius
+ * 
+ * Events emitted via {@link Vector.events | vector.events}:
+ * - `remove` - Vector was removed from the map
+ * 
+ * @example
+ * ```ts
+ * // Add a polyline
+ * const line = map.addVector({
+ *   type: 'polyline',
+ *   points: [
+ *     { x: 1000, y: 1000 },
+ *     { x: 2000, y: 1500 },
+ *     { x: 3000, y: 1200 }
+ *   ],
+ *   style: { color: '#1e90ff', weight: 2, opacity: 0.9 }
+ * });
+ * 
+ * // Add a filled polygon
+ * const poly = map.addVector({
+ *   type: 'polygon',
+ *   points: [
+ *     { x: 2000, y: 2000 },
+ *     { x: 2500, y: 2000 },
+ *     { x: 2500, y: 2500 },
+ *     { x: 2000, y: 2500 }
+ *   ],
+ *   style: {
+ *     color: '#10b981',
+ *     weight: 2,
+ *     fill: true,
+ *     fillColor: '#10b981',
+ *     fillOpacity: 0.3
+ *   }
+ * });
+ * 
+ * // Add a circle
+ * const circle = map.addVector({
+ *   type: 'circle',
+ *   center: { x: 4096, y: 4096 },
+ *   radius: 200,
+ *   style: {
+ *     color: '#f59e0b',
+ *     weight: 2,
+ *     fill: true,
+ *     fillColor: '#f59e0b',
+ *     fillOpacity: 0.2
+ *   }
+ * });
+ * ```
  */
 export class Vector extends EventedEntity<VectorEventMap> {
 	readonly id: string;
@@ -51,19 +114,61 @@ export class Vector extends EventedEntity<VectorEventMap> {
 		this._onChange = onChange;
 	}
 
-	/** Get current geometry. */
+	/** 
+	 * Get the current geometry definition.
+	 * @readonly
+	 * 
+	 * @remarks
+	 * The geometry includes both shape data (points/center/radius)
+	 * and style properties (color, weight, fill).
+	 * 
+	 * @example
+	 * ```ts
+	 * const geo = vector.geometry;
+	 * if (geo.type === 'circle') {
+	 *   console.log('Circle at', geo.center, 'radius', geo.radius);
+	 * }
+	 * ```
+	 */
 	get geometry(): VectorGeometry {
 		return this._geometry;
 	}
 
 	/**
-	 * Replace the vector geometry and trigger a renderer sync.
+	 * Replace the vector's geometry definition.
 	 *
-	 * @public
+	 * @param geometry - New geometry with shape and style
+	 * 
+	 * @remarks
+	 * Completely replaces the geometry, including shape type.
+	 * Triggers a renderer sync to update the display.
+	 * 
 	 * @example
 	 * ```ts
-	 * // Turn a polygon into a polyline with two points
-	 * v.setGeometry({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] });
+	 * // Change a polygon to a polyline
+	 * vector.setGeometry({
+	 *   type: 'polyline',
+	 *   points: [
+	 *     { x: 0, y: 0 },
+	 *     { x: 100, y: 50 },
+	 *     { x: 200, y: 25 }
+	 *   ],
+	 *   style: { color: '#ff0000', weight: 3 }
+	 * });
+	 * 
+	 * // Update circle radius and style
+	 * vector.setGeometry({
+	 *   type: 'circle',
+	 *   center: { x: 2000, y: 2000 },
+	 *   radius: 300,
+	 *   style: {
+	 *     color: '#00ff00',
+	 *     weight: 2,
+	 *     fill: true,
+	 *     fillColor: '#00ff00',
+	 *     fillOpacity: 0.2
+	 *   }
+	 * });
 	 * ```
 	 */
 	setGeometry(geometry: VectorGeometry): void {
@@ -72,14 +177,42 @@ export class Vector extends EventedEntity<VectorEventMap> {
 	}
 
 	/**
-	 * Emit a `remove` event (the owning layer clears it from the collection).
+	 * Remove this vector from the map.
 	 *
-	 * @public
+	 * @remarks
+	 * Emits a `remove` event. The owning {@link Layer} will clear it
+	 * from the collection and trigger a renderer sync.
+	 * 
+	 * @example
+	 * ```ts
+	 * // Remove vector directly
+	 * vector.remove();
+	 * 
+	 * // Remove all circles
+	 * map.vectors.getAll()
+	 *   .filter(v => v.geometry.type === 'circle')
+	 *   .forEach(v => v.remove());
+	 * ```
 	 */
 	remove(): void {
 		this.emit('remove', { vector: { id: this.id, geometry: this._geometry } });
 	}
 
-	/** Public events surface for this vector. */
+	/** 
+	 * Public events surface for this vector.
+	 * @readonly
+	 * 
+	 * @remarks
+	 * Currently only emits `remove` events. Future versions may
+	 * add interaction events like `click`, `pointerenter`, etc.
+	 * 
+	 * @example
+	 * ```ts
+	 * // Listen for removal
+	 * vector.events.on('remove').each(({ vector }) => {
+	 *   console.log('Vector removed:', vector.id);
+	 * });
+	 * ```
+	 */
 	declare readonly events: VectorEvents;
 }
