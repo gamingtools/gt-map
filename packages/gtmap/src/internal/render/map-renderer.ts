@@ -14,7 +14,7 @@ export default class MapRenderer {
 	};
 	private iconsUnlocked = false;
   // Hysteresis for level-wide filter decisions to prevent flicker near scale ~= 1
-  private filterState = new Map<number, boolean>(); // level -> useBicubic
+  // private filterState = new Map<number, boolean>(); // level -> useBicubic // Currently unused
   private static readonly FILTER_ENTER = 1.02;
   private static readonly FILTER_EXIT = 0.99;
 

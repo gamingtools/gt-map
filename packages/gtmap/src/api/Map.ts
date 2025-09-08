@@ -1,7 +1,7 @@
 import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
-import { Layer } from '../entities/layer';
-import { Marker } from '../entities/marker';
+import { Layer } from '../entities/Layer';
+import { Marker } from '../entities/Marker';
 import { Vector } from '../entities/vector';
 import type { VectorGeometry as VectorGeom } from './events/maps';
 
@@ -26,9 +26,9 @@ import type {
 
 // Re-export types from centralized types file
 export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector as VectorLegacy, ActiveOptions } from './types';
-export { Marker } from '../entities/marker';
+export { Marker } from '../entities/Marker';
 export { Vector } from '../entities/vector';
-export { Layer } from '../entities/layer';
+export { Layer } from '../entities/Layer';
 export type { MarkerRotationMode } from './types';
 
 /**
@@ -666,8 +666,8 @@ invalidateSize(): this {
   get events(): MapEvents<TMarkerData> {
         type EM = import('./types').EventMap<TMarkerData>;
         const on = <K extends keyof EM & string>(event: K, handler?: (value: EM[K]) => void) => {
-            const stream = this._impl.events.on(event);
-            return handler ? stream.each(handler) : stream;
+            const stream = this._impl.events.on(event as any);
+            return handler ? stream.each(handler as any) : stream;
         };
         const once = <K extends keyof EM & string>(event: K) => this._impl.events.when(event);
         return { on, once } as MapEvents<TMarkerData>;
@@ -682,7 +682,7 @@ invalidateSize(): this {
 	 */
 /** @group View */
   transition(): ViewTransition {
-        return new ViewTransitionImpl(this);
+        return new ViewTransitionImpl<TMarkerData>(this);
   }
 
   /** Rotate the map instantly (no animation). */
@@ -862,13 +862,13 @@ export interface ViewTransition {
   cancel(): void;
 }
 
-class ViewTransitionImpl implements ViewTransition {
+class ViewTransitionImpl<T = unknown> implements ViewTransition {
   // Track at most one active transition per map instance
-  private static _active: WeakMap<GTMap<unknown>, ViewTransitionImpl> = new WeakMap();
-  static _activeFor(map: GTMap<unknown>): ViewTransitionImpl | undefined { return this._active.get(map); }
-  static _setActive(map: GTMap<unknown>, tx: ViewTransitionImpl): void { this._active.set(map, tx); }
-  static _clearActive(map: GTMap<unknown>): void { this._active.delete(map); }
-  private map: GTMap<unknown>;
+  private static _active: WeakMap<GTMap<any>, ViewTransitionImpl<any>> = new WeakMap();
+  static _activeFor<T>(map: GTMap<T>): ViewTransitionImpl<T> | undefined { return this._active.get(map); }
+  static _setActive<T>(map: GTMap<T>, tx: ViewTransitionImpl<T>): void { this._active.set(map, tx); }
+  static _clearActive<T>(map: GTMap<T>): void { this._active.delete(map); }
+  private map: GTMap<T>;
   private targetCenter?: Point;
   private targetZoom?: number;
   private offsetDx = 0;
@@ -885,7 +885,7 @@ class ViewTransitionImpl implements ViewTransition {
   private unsubscribeMoveEnd?: () => void;
   private unsubscribeZoomEnd?: () => void;
 
-  constructor(map: GTMap<unknown>) {
+  constructor(map: GTMap<T>) {
     this.map = map;
   }
 

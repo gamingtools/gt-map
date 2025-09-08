@@ -41,6 +41,9 @@ export class IconRenderer {
 		u_uv0: WebGLUniformLocation | null;
 		u_uv1: WebGLUniformLocation | null;
 		u_iconScale: WebGLUniformLocation | null;
+		u_centerPx: WebGLUniformLocation | null;
+		u_rotSinCos: WebGLUniformLocation | null;
+		u_viewAngle: WebGLUniformLocation | null;
 	} | null = null;
 	private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number; capacityBytes: number }>();
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
@@ -180,7 +183,7 @@ export class IconRenderer {
 				data[j++] = h;
 				data[j++] = anc.ax;
 				data[j++] = anc.ay;
-				data[j++] = (m.rotation || 0) * (Math.PI / 180);
+				data[j++] = degToRad(m.rotation || 0);
 			}
 			const prev = this.typeData.get(type);
 			const version = (prev?.version || 0) + 1;
@@ -233,6 +236,8 @@ export class IconRenderer {
 		project: (x: number, y: number, z: number) => { x: number; y: number };
 		wrapX: boolean;
 		iconScaleFunction?: ((zoom: number, minZoom: number, maxZoom: number) => number) | null;
+		viewRotationDeg?: number;
+		markerRotationMode?: 'keep' | 'rotate';
 	}) {
 		if (this.markers.length === 0) return;
 		const gl = ctx.gl;

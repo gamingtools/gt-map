@@ -30,7 +30,8 @@ import { FrameLoop } from './core/frame-loop';
 import AutoResizeManager from './core/auto-resize-manager';
 import EventBridge from './events/event-bridge';
 import { degToRad, normalizeAngle } from './utils/angles';
-import { HIT_TEST } from './utils/constants';
+import { clamp, clamp01 } from './utils/clamp';
+import { HIT_TEST, INERTIA, RENDERING, LIMITS } from './utils/constants';
 import { alphaMaskHit, unrotatePoint } from './utils/hit-testing';
 import { calculateTileBounds } from './utils/tiles';
 
@@ -147,7 +148,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Home view (initial center) no longer tracked
 	// Leaflet-like inertia options and state
 	private inertia = true;
-	private inertiaDeceleration = 3400; // px/s^2
+	private inertiaDeceleration: number = INERTIA.DECELERATION_DEFAULT; // px/s^2
 	private inertiaMaxSpeed = 2000; // px/s (cap to prevent excessive throw)
 	private easeLinearity = 0.2;
     private _panCtrl!: PanController;
@@ -178,9 +179,9 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (typeof input === 'string') bg = toSolid(input);
 		else if (input && typeof input.r === 'number' && typeof input.g === 'number' && typeof input.b === 'number') {
 			bg = {
-				r: Math.max(0, Math.min(1, input.r / (input.r > 1 ? 255 : 1))),
-				g: Math.max(0, Math.min(1, input.g / (input.g > 1 ? 255 : 1))),
-				b: Math.max(0, Math.min(1, input.b / (input.b > 1 ? 255 : 1))),
+				r: clamp01(input.r / (input.r > 1 ? 255 : 1)),
+				g: clamp01(input.g / (input.g > 1 ? 255 : 1)),
+				b: clamp01(input.b / (input.b > 1 ? 255 : 1)),
 				a: 1,
 			};
 		}
@@ -243,9 +244,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
             mapSize: this.mapSize,
             wrapX: this.wrapX,
             // rotation exposed for renderer
-            // @ts-expect-error: RenderCtx may not yet declare rotation fields
             viewRotationDeg: this._viewRotationDeg,
-            // @ts-expect-error: RenderCtx may not yet declare entity rotation mode
             markerRotationMode: this._markerRotationMode,
             useScreenCache: this.useScreenCache,
             screenCache: this._screenCache,
@@ -283,10 +282,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	}
 	public zoomVelocityTick() {
 		if (Math.abs(this._zoomVel) <= 1e-4) return;
-		const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
+		const dt = clamp(this._dt || 1 / 60, 0.0005, 0.1);
 		const maxStep = Math.max(0.0001, this.maxZoomRate * dt);
 		let step = this._zoomVel * dt;
-		step = Math.max(-maxStep, Math.min(maxStep, step));
+		step = clamp(step, -maxStep, maxStep);
 		const anchor = (this._wheelAnchor?.mode || this.anchorMode) as 'pointer' | 'center';
 		const px = this._wheelAnchor?.px ?? 0;
 		const py = this._wheelAnchor?.py ?? 0;
@@ -356,7 +355,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (typeof options.zoomOutCenterBias === 'boolean') {
 			this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
 		} else if (Number.isFinite(options.zoomOutCenterBias as number)) {
-			const v = Math.max(0, Math.min(1, options.zoomOutCenterBias as number));
+			const v = clamp01(options.zoomOutCenterBias as number);
 			this.outCenterBias = v;
 		}
 		this._initCanvas();
@@ -370,18 +369,18 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (Number.isFinite(options.maxInflightLoads as number)) this._maxInflightLoads = Math.max(0, (options.maxInflightLoads as number) | 0);
 		if (Number.isFinite(options.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (options.interactionIdleMs as number) | 0);
 		if (Number.isFinite(options.fpsCap as number)) {
-			const v = Math.max(15, Math.min(240, (options.fpsCap as number) | 0));
+			const v = clamp((options.fpsCap as number) | 0, RENDERING.MIN_FPS, RENDERING.MAX_FPS);
 			this._targetFps = v;
 		}
 		if (options.prefetch) {
 			if (typeof options.prefetch.enabled === 'boolean') this.prefetchEnabled = options.prefetch.enabled;
 			if (Number.isFinite(options.prefetch.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (options.prefetch.baselineLevel as number) | 0);
-			if (Number.isFinite(options.prefetch.ring as number)) this.prefetchRing = Math.max(0, Math.min(8, (options.prefetch.ring as number) | 0));
+			if (Number.isFinite(options.prefetch.ring as number)) this.prefetchRing = clamp((options.prefetch.ring as number) | 0, 0, LIMITS.MAX_PREFETCH_RING);
 		}
 		if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
-		if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
+		if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = clamp(options.wheelSpeedCtrl as number, LIMITS.MIN_WHEEL_SPEED, LIMITS.MAX_WHEEL_SPEED);
 		if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
-		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
+		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = clamp01(options.maxBoundsViscosity as number);
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
 
 		// Auto-resize setup (attach after first frame to avoid startup jitter)
@@ -581,7 +580,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 
 	public getRotation(): number { return this._viewRotationDeg; }
 	setZoom(zoom: number) {
-		const z = Math.max(this.minZoom, Math.min(this.maxZoom, zoom));
+		const z = clamp(zoom, this.minZoom, this.maxZoom);
 		if (z !== this.zoom) {
 			this.zoom = z;
 			this._state.zoom = this.zoom;
@@ -671,7 +670,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		}
 	}
 	public setRasterOpacity(opacity: number) {
-		const v = Math.max(0, Math.min(1, opacity));
+		const v = clamp01(opacity);
 		if (v !== this._rasterOpacity) {
 			this._rasterOpacity = v;
 			this._needsRender = true;
@@ -846,19 +845,19 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 	}
 	public setWheelSpeed(speed: number) {
 		if (Number.isFinite(speed)) {
-			this.wheelSpeed = Math.max(0.01, Math.min(2, speed));
-			const t = Math.max(0, Math.min(1, this.wheelSpeed / 2));
+			this.wheelSpeed = clamp(speed, LIMITS.MIN_WHEEL_SPEED, LIMITS.MAX_WHEEL_SPEED);
+			const t = clamp01(this.wheelSpeed / 2);
 			// Map speed to immediate step size; velocity gain removed in DI path
 			this.wheelImmediate = 0.05 + t * (1.75 - 0.05);
 		}
 		// Keep ctrl-step in sync if desired
-		const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
+		const t2 = clamp01((this.wheelSpeedCtrl || 0.4) / 2);
 		this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
 	}
 	public setWheelCtrlSpeed(speed: number) {
 		if (Number.isFinite(speed)) {
-			this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, speed));
-			const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
+			this.wheelSpeedCtrl = clamp(speed, LIMITS.MIN_WHEEL_SPEED, LIMITS.MAX_WHEEL_SPEED);
+			const t2 = clamp01((this.wheelSpeedCtrl || 0.4) / 2);
 			this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
 		}
 	}
@@ -875,15 +874,15 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		if (typeof opts.inertia === 'boolean') this.inertia = opts.inertia;
 		if (Number.isFinite(opts.inertiaDeceleration as number)) {
 			// clamp to sensible range (px/s^2)
-			const v = Math.max(100, Math.min(20000, opts.inertiaDeceleration as number));
+			const v = clamp(opts.inertiaDeceleration as number, INERTIA.MIN_DECELERATION, INERTIA.MAX_DECELERATION);
 			this.inertiaDeceleration = v;
 		}
 		if (Number.isFinite(opts.inertiaMaxSpeed as number)) {
-			const v = Math.max(10, Math.min(1e6, opts.inertiaMaxSpeed as number));
+			const v = clamp(opts.inertiaMaxSpeed as number, INERTIA.MIN_MAX_SPEED, INERTIA.MAX_MAX_SPEED);
 			this.inertiaMaxSpeed = v;
 		}
 		if (Number.isFinite(opts.easeLinearity as number)) {
-			const v = Math.max(0.01, Math.min(1.0, opts.easeLinearity as number));
+			const v = clamp(opts.easeLinearity as number, LIMITS.MIN_EASE_LINEARITY, LIMITS.MAX_EASE_LINEARITY);
 			this.easeLinearity = v;
 		}
 	}
@@ -895,7 +894,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			this.outCenterBias = v ? 0.15 : 0.0;
 			return;
 		}
-		if (Number.isFinite(v)) this.outCenterBias = Math.max(0, Math.min(1, v as number));
+		if (Number.isFinite(v)) this.outCenterBias = clamp01(v as number);
 	}
 
 	private _initPrograms() {
@@ -1594,7 +1593,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 					// Radius: specified in native px; convert to CSS using current zInt/scale
 					const { zInt, scale } = Coords.zParts(z);
 					const s = Coords.sFor(imageMaxZ as number, zInt);
-					const rCss = (prim.radius / s) * scale;
+					const rCss = ((prim.radius as number) / s) * scale;
 					begin();
 					ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
 					finishStroke();

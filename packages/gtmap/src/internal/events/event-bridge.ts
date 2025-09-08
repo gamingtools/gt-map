@@ -40,7 +40,7 @@ export default class EventBridge<T = unknown> {
   private pressTarget: { id: string; idx: number } | null = null;
   private lastClick: { x: number; y: number; t: number } | null = null;
 
-  constructor(deps: EventBridgeDeps) {
+  constructor(deps: EventBridgeDeps<T>) {
     this.d = deps;
   }
 
@@ -123,7 +123,7 @@ export default class EventBridge<T = unknown> {
             marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
             icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
             originalEvent: e.originalEvent,
-          } as MarkerEventData;
+          } as MarkerEventData<T>;
           this.d.emitMarker('leave', leavePayload);
           this.d.setLastHover(null);
         }
@@ -134,17 +134,17 @@ export default class EventBridge<T = unknown> {
       if (hit) {
         if (!prev || prev.id !== hit.id) {
           if (prev) {
-            const leavePayload: MarkerEventData = {
+            const leavePayload: MarkerEventData<T> = {
               now,
               view: this.d.getView(),
               screen: { x: e.x, y: e.y },
               marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
               icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
               originalEvent: e.originalEvent,
-            } as MarkerEventData;
+            } as MarkerEventData<T>;
             this.d.emitMarker('leave', leavePayload);
           }
-          const enterPayload: MarkerEventData = {
+          const enterPayload: MarkerEventData<T> = {
             now,
             view: this.d.getView(),
             screen: { x: e.x, y: e.y },
@@ -163,7 +163,7 @@ export default class EventBridge<T = unknown> {
           marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
           icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
           originalEvent: e.originalEvent,
-        } as MarkerEventData;
+        } as MarkerEventData<T>;
         this.d.emitMarker('leave', leavePayload);
         this.d.setLastHover(null);
       }

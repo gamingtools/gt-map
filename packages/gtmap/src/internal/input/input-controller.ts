@@ -2,6 +2,7 @@ import type { InputDeps } from '../types';
 import { DEBUG } from '../../debug';
 import * as Coords from '../coords';
 import { extractTouchPair, touchMidpoint } from '../utils/touch';
+import { INERTIA } from '../utils/constants';
 
 export default class InputController {
 	private deps: InputDeps;
@@ -480,7 +481,7 @@ export default class InputController {
 			speed = Math.hypot(speedVec.x, speedVec.y);
 		}
 		// Cap speeds
-		const localMax = touchRecent ? Math.min(maxSpeed, 1400) : maxSpeed;
+		const localMax = touchRecent ? Math.min(maxSpeed, INERTIA.DECELERATION_TOUCH) : maxSpeed;
 		const limited = Math.min(localMax, speed);
 		if (DEBUG) console.debug('[inertia] speed', { speed, limited, ease, decel, duration, samples: this._positions.length });
 		if (!isFinite(limited) || limited <= 0) return;

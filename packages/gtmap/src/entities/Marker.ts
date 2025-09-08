@@ -52,7 +52,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	private _rotation?: number;
 	private _data?: T;
 	private _onChange?: () => void;
-  private _activeTx?: MarkerTransitionImpl;
+  private _activeTx?: MarkerTransitionImpl<T>;
 
 	/**
 	 * Create a marker at the given world pixel coordinate.
@@ -183,18 +183,18 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
   declare readonly events: MarkerEvents<T>;
 
   /** Start a marker transition (position/rotation/size). */
-  transition(): MarkerTransition { return new MarkerTransitionImpl(this); }
+  transition(): MarkerTransition { return new MarkerTransitionImpl<T>(this); }
   /** Alias. */
   transitions(): MarkerTransition { return this.transition(); }
 
   /** @internal Cancel any active transition for this marker. */
   _cancelActiveTransition(): void { try { this._activeTx?.cancel(); } catch {} this._activeTx = undefined; }
   /** @internal Set the active transition for this marker. */
-  _setActiveTransition(tx: MarkerTransitionImpl): void { this._activeTx = tx; }
+  _setActiveTransition(tx: MarkerTransitionImpl<T>): void { this._activeTx = tx; }
 }
 
-class MarkerTransitionImpl implements MarkerTransition {
-  private marker: Marker<unknown>;
+class MarkerTransitionImpl<T = unknown> implements MarkerTransition {
+  private marker: Marker<T>;
   private targetX?: number;
   private targetY?: number;
   private targetSize?: number;
@@ -204,7 +204,7 @@ class MarkerTransitionImpl implements MarkerTransition {
   private promise?: Promise<ApplyResult>;
   private cancelled = false;
 
-  constructor(marker: Marker<unknown>) { this.marker = marker; }
+  constructor(marker: Marker<T>) { this.marker = marker; }
 
   moveTo(x: number, y: number): this { this.targetX = x; this.targetY = y; return this; }
   setStyle(opts: { size?: number; rotation?: number }): this {
@@ -278,7 +278,7 @@ class MarkerTransitionImpl implements MarkerTransition {
         const cy = sy + (ty - sy) * k;
         if (needsPos) this.marker.moveTo(cx, cy);
         if (needsStyle) {
-          const rot = norm(srN + dR * k);
+          const rot = normalizeAngle(srN + dR * k);
           this.marker.setStyle({ size: ts, rotation: rot });
         }
         if (t >= 1) { this.rafId = null; resolve({ status: 'animated' }); return; }
