@@ -327,6 +327,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Diagnostics: measure time from last zoom end to first subsequent tile load
 	private _lastZoomEndAt: number | null = null;
 	private _zoomLoadLogged = false;
+    private _zoomEndTimer: number | null = null;
+    private _zoomMeasureArmed = false;
 
 	constructor(container: HTMLDivElement, options: MapOptions = {}) {
 		this.container = container;
@@ -405,12 +407,13 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			},
 			startImageLoad: (task: { key: string; url: string; priority?: number }) => {
 				try {
-					if (this._lastZoomEndAt != null && !this._zoomLoadLogged) {
+					if (this._zoomMeasureArmed && this._lastZoomEndAt != null && !this._zoomLoadLogged) {
 						const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 						const dt = Math.max(0, Math.round(now - this._lastZoomEndAt));
-						// Quick trace to assess delay between zoom end and first tile load
-						console.log(`[GTMap] first tile load after zoomend: ${dt} ms`);
+						// Ignore trivial duplicates (< 50ms) and only log the first armed load
+						if (dt >= 50) console.log(`[GTMap] first tile load after zoomend: ${dt} ms`);
 						this._zoomLoadLogged = true;
+						this._zoomMeasureArmed = false;
 					}
 				} catch {}
 				this._loader.start(task);
@@ -483,11 +486,18 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
 			getPublicView: () => this._viewPublic(),
         });
-        // Diagnostics: reset zoom-load timer on zoom end
+        // Diagnostics: reset and debounce zoom-load timer on zoom end
         try {
             this._events.on('zoomend').each(() => {
-                this._lastZoomEndAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-                this._zoomLoadLogged = false;
+                // Disarm and debounce so we consider the final, settled zoom end
+                this._zoomMeasureArmed = false;
+                if (this._zoomEndTimer != null) { try { clearTimeout(this._zoomEndTimer); } catch {} this._zoomEndTimer = null; }
+                const armDelay = Math.max(0, (this.interactionIdleMs | 0) + 32);
+                this._zoomEndTimer = window.setTimeout(() => {
+                    this._lastZoomEndAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+                    this._zoomLoadLogged = false;
+                    this._zoomMeasureArmed = true;
+                }, armDelay);
             });
         } catch {}
         // Initialize pan controller
