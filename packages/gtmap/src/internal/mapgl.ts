@@ -324,6 +324,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Hover hit-testing debounce to avoid churn during interactions
 	private _hitTestDebounceMs = 75;
 
+	// Diagnostics: measure time from last zoom end to first subsequent tile load
+	private _lastZoomEndAt: number | null = null;
+	private _zoomLoadLogged = false;
+
 	constructor(container: HTMLDivElement, options: MapOptions = {}) {
 		this.container = container;
 		this.tileUrl = options.tileUrl ?? '';
@@ -399,7 +403,18 @@ export default class GTMap implements MapImpl, GraphicsHost {
 				const r = this.container.getBoundingClientRect();
 				return { width: Math.max(1, r.width), height: Math.max(1, r.height) };
 			},
-			startImageLoad: (task: { key: string; url: string; priority?: number }) => this._loader.start(task),
+			startImageLoad: (task: { key: string; url: string; priority?: number }) => {
+				try {
+					if (this._lastZoomEndAt != null && !this._zoomLoadLogged) {
+						const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+						const dt = Math.max(0, Math.round(now - this._lastZoomEndAt));
+						// Quick trace to assess delay between zoom end and first tile load
+						console.log(`[GTMap] first tile load after zoomend: ${dt} ms`);
+						this._zoomLoadLogged = true;
+					}
+				} catch {}
+				this._loader.start(task);
+			},
 			addPinned: (key: string) => {
 				this._pinnedKeys.add(key);
 				try {
@@ -468,6 +483,13 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
 			getPublicView: () => this._viewPublic(),
         });
+        // Diagnostics: reset zoom-load timer on zoom end
+        try {
+            this._events.on('zoomend').each(() => {
+                this._lastZoomEndAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+                this._zoomLoadLogged = false;
+            });
+        } catch {}
         // Initialize pan controller
         this._panCtrl = new PanController({
             getZoom: () => this.zoom,
