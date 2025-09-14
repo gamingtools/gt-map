@@ -14,6 +14,8 @@
 	>
 	<nav class="font-semibold">
 		<a href="/map" class="header-link">Map</a>
+		<a href="/leaflet" class="header-link">Leaflet</a>
+		<a href="/worldmap" class="header-link">WorldMap</a>
 	</nav>
 </header>
 {@render children?.()}

@@ -57,3 +57,8 @@ export type {
 
 // Export entity option types
 export type { MarkerOptions, MarkerTransition } from './entities/marker';
+
+// Leaflet compatibility helpers (pixel CRS only)
+export { LeafletCompat, leafletCompat } from './compat/leaflet-compat';
+export { latLng, latLngBounds } from './compat/leaflet-compat';
+export type { LatLngLike, LeafletPadding, LeafletIconOptions } from './compat/leaflet-compat';

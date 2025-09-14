@@ -12,5 +12,8 @@ relevant API types when you need details.
 - Layers: group, show/hide, and observe entities
 - Vectors: add simple geometry overlays
 - Cookbook: small, practical snippets
+ - Migration: Leaflet → GTMap (pixel CRS)
 
 For full signatures and types, open the API reference at `docs/api/` — start with [`docs/api/README.md`](../api/README.md) or jump directly to [`GTMap`](../api/Class.GTMap.md).
+
+See also: [Leaflet → GTMap Migration](./migrate-from-leaflet.md) for a concise, code-focused migration guide.
