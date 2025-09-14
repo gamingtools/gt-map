@@ -520,6 +520,34 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
   }
 
   /**
+   * Set the debounce before starting new tile loads after interaction.
+   *
+   * @public
+   * @group Tiles & Styling
+   * @param ms - Milliseconds to wait after the last pan/zoom before fetching new tiles
+   * @returns This map instance for chaining
+   */
+  setTileLoadDebounce(ms: number): this {
+    const v = Math.max(0, Math.floor(ms));
+    // Internal passthrough; updates loader pacing
+    this._impl.setLoaderOptions?.({ interactionIdleMs: v });
+    return this;
+  }
+
+  /**
+   * Configure tile prefetching around the current view.
+   *
+   * @public
+   * @group Tiles & Styling
+   * @param opts - Prefetch options: enable, baseline level, ring radius
+   * @returns This map instance for chaining
+   */
+  setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number; ring?: number }): this {
+    this._impl.setPrefetchOptions?.(opts);
+    return this;
+  }
+
+  /**
    * Constrain panning to pixel bounds (Leaflet‑like). Pass `null` to clear.
    *
    * @public
