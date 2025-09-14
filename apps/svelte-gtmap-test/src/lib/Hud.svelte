@@ -32,11 +32,6 @@
     let gridEnabled = $state(false);
     let markersEnabled = $state(true);
     let vectorsEnabled = $state(true);
-    // Tile load debounce + prefetch controls
-    let tileDebounceMs = $state(160);
-    let prefetchOn = $state(false);
-    let prefetchBaseline = $state<number | null>(null);
-    let prefetchRing = $state(2);
     // Animate markers (position-only) + optional rotation
     let animateMarkers = $state(false);
     let rotateMarkers = $state(false);
@@ -128,14 +123,6 @@
 	$effect(() => {
 		map?.setGridVisible(gridEnabled);
 	});
-    $effect(() => {
-        try { if (Number.isFinite(tileDebounceMs as number)) map?.setTileLoadDebounce?.(tileDebounceMs as number); } catch {}
-    });
-    $effect(() => {
-        try {
-            map?.setPrefetchOptions?.({ enabled: prefetchOn, baselineLevel: prefetchBaseline ?? undefined, ring: prefetchRing });
-        } catch {}
-    });
 	$effect(() => {
 		try {
 			setMarkersEnabled?.(markersEnabled);
@@ -389,18 +376,6 @@
 					bind:value={fpsCap}
 				/>
 			</div>
-            <div class="flex items-center gap-2">
-                <label class="text-gray-700" for="tile-db">Tile debounce (ms)</label>
-                <input id="tile-db" class="pointer-events-auto w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5" type="number" min="0" max="2000" bind:value={tileDebounceMs} />
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="text-gray-700">Prefetch</label>
-                <input class="pointer-events-auto" type="checkbox" bind:checked={prefetchOn} />
-                <label class="text-gray-700" for="pf-base">baseline</label>
-                <input id="pf-base" class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5" type="number" min="0" max="10" bind:value={prefetchBaseline} />
-                <label class="text-gray-700" for="pf-ring">ring</label>
-                <input id="pf-ring" class="pointer-events-auto w-16 rounded border border-gray-300 bg-white/70 px-2 py-0.5" type="number" min="0" max="8" bind:value={prefetchRing} />
-            </div>
 		</div>
 	</div>
 </div>
