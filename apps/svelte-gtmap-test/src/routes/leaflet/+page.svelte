@@ -8,7 +8,8 @@
   let map: GTMap;
   let Lx: ReturnType<typeof leafletCompat>;
 
-  const HOME = { x: 4096, y: 4096 };
+  const MAP_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 };
+  const HOME = { x: MAP_IMAGE.width / 2, y: MAP_IMAGE.height / 2 };
 
   let markerCount = 500;
   let iconHandles: IconHandle[] | null = null;
@@ -61,8 +62,8 @@
     markerCount = count;
     clearMarkers();
     for (let i = 0; i < markerCount; i++) {
-      const x = rand(0, 8192);
-      const y = rand(0, 8192);
+      const x = rand(0, MAP_IMAGE.width);
+      const y = rand(0, MAP_IMAGE.height);
       const iconHandle = iconHandles && iconHandles.length > 0 ? iconHandles[i % iconHandles.length] : (fallbackIcon ?? null);
       const m = Lx.addMarker([-y, x], iconHandle ? { icon: iconHandle } : undefined);
       // Optional: attach a click handler via compat API
@@ -82,7 +83,7 @@
         color: '#10b981', weight: 2, opacity: 0.9, fill: true, fillColor: '#10b981', fillOpacity: 0.25
       });
       // Circle
-      Lx.addCircle([ -4096, 4096 ], 200, { color: '#f59e0b', weight: 2, opacity: 0.9, fill: true, fillColor: '#f59e0b', fillOpacity: 0.2 });
+      Lx.addCircle([ -HOME.y, HOME.x ], 200, { color: '#f59e0b', weight: 2, opacity: 0.9, fill: true, fillColor: '#f59e0b', fillOpacity: 0.2 });
     } catch {}
   }
 
@@ -95,14 +96,8 @@
   onMount(() => {
     if (!container) return;
     map = new GTMap(container, {
-      tileSource: {
-        url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
-        tileSize: 256,
-        mapSize: { width: 8192, height: 8192 },
-        wrapX: false,
-        sourceMinZoom: 0,
-        sourceMaxZoom: 5,
-      },
+      image: MAP_IMAGE,
+      wrapX: false,
       minZoom: 0,
       maxZoom: 5,
       center: HOME,

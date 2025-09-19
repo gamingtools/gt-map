@@ -19,7 +19,7 @@
   - [remove()](#remove)
   - [setGeometry()](#setgeometry)
 
-Defined in: entities/vector.ts:33
+Defined in: [entities/Vector.ts:33](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Vector.ts#L33)
 
 Vector - a simple geometric overlay (polyline, polygon, or circle).
 
@@ -37,7 +37,7 @@ Events are minimal for now (`remove`); interaction events can be added later.
 
 > `readonly` **events**: [`VectorEvents`](Interface.VectorEvents.md)
 
-Defined in: entities/vector.ts:84
+Defined in: [entities/Vector.ts:84](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Vector.ts#L84)
 
 Public events surface for this vector.
 
@@ -51,7 +51,7 @@ Public events surface for this vector.
 
 > `readonly` **id**: `string`
 
-Defined in: entities/vector.ts:34
+Defined in: [entities/Vector.ts:34](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Vector.ts#L34)
 
 ## Accessors
 
@@ -61,7 +61,7 @@ Defined in: entities/vector.ts:34
 
 > **get** **geometry**(): [`VectorGeometry`](TypeAlias.VectorGeometry.md)
 
-Defined in: entities/vector.ts:55
+Defined in: [entities/Vector.ts:55](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Vector.ts#L55)
 
 Get current geometry.
 
@@ -75,7 +75,7 @@ Get current geometry.
 
 > **remove**(): `void`
 
-Defined in: entities/vector.ts:79
+Defined in: [entities/Vector.ts:79](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Vector.ts#L79)
 
 Emit a `remove` event (the owning layer clears it from the collection).
 
@@ -89,7 +89,7 @@ Emit a `remove` event (the owning layer clears it from the collection).
 
 > **setGeometry**(`geometry`): `void`
 
-Defined in: entities/vector.ts:69
+Defined in: [entities/Vector.ts:69](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Vector.ts#L69)
 
 Replace the vector geometry and trigger a renderer sync.
 

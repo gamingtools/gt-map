@@ -14,7 +14,7 @@
 
 > **isPolyline**(`v`): `v is Polyline`
 
-Defined in: [api/types.ts:144](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L144)
+Defined in: [api/types.ts:133](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L133)
 
 ## Parameters
 

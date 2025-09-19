@@ -11,7 +11,7 @@
 - [Properties](#properties)
   - [status](#status)
 
-Defined in: [api/types.ts:475](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L475)
+Defined in: [api/types.ts:445](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L445)
 
 Result returned by [apply](Interface.ApplyOptions.md) Promises.
 
@@ -21,6 +21,6 @@ Result returned by [apply](Interface.ApplyOptions.md) Promises.
 
 > **status**: [`ApplyStatus`](TypeAlias.ApplyStatus.md)
 
-Defined in: [api/types.ts:477](https://github.com/gamingtools/gt-map/blob/a614a9d52dc2e3002effbc8d9f1a71b2ca6e5b74/packages/gtmap/src/api/types.ts#L477)
+Defined in: [api/types.ts:447](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L447)
 
 Completion status of the transition.

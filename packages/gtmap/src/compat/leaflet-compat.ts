@@ -1,7 +1,7 @@
-import { GTMap } from '../api/map';
+import { GTMap } from '../api/Map';
 import type { ApplyResult, Point, VectorStyle, EventMap as GTEventMap, IconHandle } from '../api/types';
 import type { Unsubscribe } from '../api/events/public';
-import type { Marker as GTMarker } from '../entities/marker';
+import type { Marker as GTMarker } from '../entities/Marker';
 
 // Internal access to private helpers for better fidelity (no `any`/`unknown`).
 interface FitBoundsHost {

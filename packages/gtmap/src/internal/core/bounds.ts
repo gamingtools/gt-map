@@ -1,4 +1,4 @@
-// Bounds utilities using per-instance tile size
+// Bounds utilities using per-instance image dimensions
 import { sFor } from '../coords';
 
 export function clampCenterWorld(
@@ -9,7 +9,6 @@ export function clampCenterWorld(
 	heightCSS: number,
 	_wrapX: boolean,
 	_freePan: boolean,
-	_tileSize: number,
 	_mapSize?: { width: number; height: number },
 	zMax?: number,
 	// Optional Leaflet-like bounds clamp (in image pixels at native resolution)

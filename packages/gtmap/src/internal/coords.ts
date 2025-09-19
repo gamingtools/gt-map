@@ -93,26 +93,6 @@ export function snapLevelToDevice(levelCoord: number, scale: number, dpr: number
 	return Math.round(levelCoord * scale * dpr) / (scale * dpr);
 }
 
-export function tileCounts(mapW: number, mapH: number, tileSize: number, imageMaxZ: number, zInt: number): { NX: number; NY: number } {
-	const lvl = levelSize(mapW, mapH, imageMaxZ, zInt);
-	return { NX: Math.ceil(lvl.x / tileSize), NY: Math.ceil(lvl.y / tileSize) };
-}
-
-export function tileIndex(world: XY, mapW: number, mapH: number, tileSize: number, imageMaxZ: number, zInt: number, wrapX: boolean): { x: number; y: number; NX: number; NY: number } {
-	const s = sFor(imageMaxZ, zInt);
-	const lvl = { x: world.x / s, y: world.y / s };
-	const { NX, NY } = tileCounts(mapW, mapH, tileSize, imageMaxZ, zInt);
-	let tx = Math.floor(lvl.x / tileSize);
-	let ty = Math.floor(lvl.y / tileSize);
-	if (wrapX && NX > 0) {
-		tx = ((tx % NX) + NX) % NX;
-	} else {
-		tx = Math.max(0, Math.min(NX - 1, tx));
-	}
-	ty = Math.max(0, Math.min(NY - 1, ty));
-	return { x: tx, y: ty, NX, NY };
-}
-
 // Relative scale factor between two integer zoom levels (level space)
 export function levelFactor(fromZInt: number, toZInt: number): number {
 	return Math.pow(2, fromZInt - toZInt);

@@ -7,7 +7,7 @@
 Quick links to common tasks using the GTMap API.
 
 - Create a map: see [GTMap](./Class.GTMap.md)
-- Configure tiles: set [tileSource](./Interface.MapOptions.md#tilesource) ([url](./Interface.TileSourceOptions.md#url), [tileSize](./Interface.TileSourceOptions.md#tilesize), [mapSize](./Interface.TileSourceOptions.md#mapsize), [sourceMinZoom](./Interface.TileSourceOptions.md#sourceminzoom), [sourceMaxZoom](./Interface.TileSourceOptions.md#sourcemaxzoom))
+- Configure imagery: set [image](./Interface.MapOptions.md#image) (url/width/height) and optional wrap/bounds options
 - Wrap & bounds: [setWrapX](./Class.GTMap.md#setwrapx), [setMaxBoundsPx](./Class.GTMap.md#setmaxboundspx), [setMaxBoundsViscosity](./Class.GTMap.md#setmaxboundsviscosity)
 - Change the view: [ViewTransition](./Interface.ViewTransition.md), [transition()](./Class.GTMap.md#transition)
 - Add content: [addIcon](./Class.GTMap.md#addicon), [addMarker](./Class.GTMap.md#addmarker), [addVector](./Class.GTMap.md#addvector)
@@ -24,6 +24,7 @@ Use the lists below to jump directly to types and members.
 
 - [GTMap](./Class.GTMap.md)
 - [Layer](./Class.Layer.md)
+- [LeafletCompat](./Class.LeafletCompat.md)
 - [Marker](./Class.Marker.md)
 - [VectorEntity](./Class.VectorEntity.md)
 
@@ -38,8 +39,10 @@ Use the lists below to jump directly to types and members.
 - [FrameEventData](./Interface.FrameEventData.md)
 - [IconDef](./Interface.IconDef.md)
 - [IconHandle](./Interface.IconHandle.md)
+- [ImageSourceOptions](./Interface.ImageSourceOptions.md)
 - [LayerEventMap](./Interface.LayerEventMap.md)
 - [LayerEvents](./Interface.LayerEvents.md)
+- [LeafletIconOptions](./Interface.LeafletIconOptions.md)
 - [LoadEventData](./Interface.LoadEventData.md)
 - [MapEvents](./Interface.MapEvents.md)
 - [MapOptions](./Interface.MapOptions.md)
@@ -49,6 +52,7 @@ Use the lists below to jump directly to types and members.
 - [MarkerEvents](./Interface.MarkerEvents.md)
 - [MarkerHit](./Interface.MarkerHit.md)
 - [MarkerOptions](./Interface.MarkerOptions.md)
+- [MarkerTransition](./Interface.MarkerTransition.md)
 - [MouseEventData](./Interface.MouseEventData.md)
 - [MoveEventData](./Interface.MoveEventData.md)
 - [PointerEventData](./Interface.PointerEventData.md)
@@ -57,7 +61,6 @@ Use the lists below to jump directly to types and members.
 - [PublicEvents](./Interface.PublicEvents.md)
 - [RenderStats](./Interface.RenderStats.md)
 - [ResizeEventData](./Interface.ResizeEventData.md)
-- [TileSourceOptions](./Interface.TileSourceOptions.md)
 - [VectorData](./Interface.VectorData.md)
 - [VectorEventMap](./Interface.VectorEventMap.md)
 - [VectorEvents](./Interface.VectorEvents.md)
@@ -73,6 +76,8 @@ Use the lists below to jump directly to types and members.
 - [Easing](./TypeAlias.Easing.md)
 - [IconScaleFunction](./TypeAlias.IconScaleFunction.md)
 - [InputDevice](./TypeAlias.InputDevice.md)
+- [LatLngLike](./TypeAlias.LatLngLike.md)
+- [LeafletPadding](./TypeAlias.LeafletPadding.md)
 - [Point](./TypeAlias.Point.md)
 - [Polygon](./TypeAlias.Polygon.md)
 - [Polyline](./TypeAlias.Polyline.md)
@@ -85,6 +90,9 @@ Use the lists below to jump directly to types and members.
 - [isCircle](./Function.isCircle.md)
 - [isPolygon](./Function.isPolygon.md)
 - [isPolyline](./Function.isPolyline.md)
+- [latLng](./Function.latLng.md)
+- [latLngBounds](./Function.latLngBounds.md)
+- [leafletCompat](./Function.leafletCompat.md)
 
 ### Namespaces
 

@@ -20,7 +20,7 @@ slider.oninput = () => map.setWheelSpeed(Number(slider.value));
 
 ```ts
 map.events.on('frame').each(({ now, stats }) => {
-  // stats?.fps, stats?.tilesLoaded, etc.
+	// stats?.fps, stats?.frame, etc.
 });
 ```
 

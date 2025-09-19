@@ -9,7 +9,7 @@
 				<span class="rounded bg-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300">/map</span>
 			</div>
 			<p class="mt-2 text-sm text-neutral-400">
-				Leaflet-like WebGL tile map with HUD and controls. Pan, zoom, and inspect performance.
+				Leaflet-like WebGL image map with HUD and controls. Pan, zoom, and inspect performance.
 			</p>
 			<div class="mt-3 text-sm font-medium text-neutral-300 group-hover:text-neutral-100">
 				Open →

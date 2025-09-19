@@ -1,13 +1,13 @@
 // New simplified API (pixel CRS only)
-export { GTMap } from './api/map';
-export { Marker, Vector as VectorEntity, Layer } from './api/map';
-export type { ViewTransition } from './api/map';
+export { GTMap } from './api/Map';
+export { Marker, Vector as VectorEntity, Layer } from './api/Map';
+export type { ViewTransition } from './api/Map';
 export * as easings from './api/easings';
 
 // Export all public types
 export type {
   Point,
-  TileSourceOptions,
+  ImageSourceOptions,
   MapOptions,
   IconDef,
   IconHandle,
@@ -56,7 +56,7 @@ export type {
 } from './api/events/maps';
 
 // Export entity option types
-export type { MarkerOptions, MarkerTransition } from './entities/marker';
+export type { MarkerOptions, MarkerTransition } from './entities/Marker';
 
 // Leaflet compatibility helpers (pixel CRS only)
 export { LeafletCompat, leafletCompat } from './compat/leaflet-compat';

@@ -39,22 +39,22 @@ This is a monorepo WebGL map renderer with a pixel-based coordinate system (not 
 
 2. **GTMap API**: Main public interface with methods:
    - View control: Transition Builder `map.transition().center(...).zoom(...).apply({ animate? })`
-   - Tile source: via constructor `tileSource: { url, tileSize, mapSize, wrapX, sourceMinZoom, sourceMaxZoom }`
+   - Raster image: via constructor `image: { url, width, height }` plus optional `wrapX` and view bounds
    - Content: `addIcon()`, `addMarker()`, `addVectors()`
    - Lifecycle: `setActive()` for suspend/resume with optional GL release
 
 3. **Rendering Pipeline**:
-   - WebGL-based tile rendering with texture caching (LRU eviction)
+   - WebGL-based single-image renderer with texture caching
    - Frame loop with FPS capping and RAF batching
    - Screen cache for optimization
-   - Support for raster tiles, markers/icons, and vector shapes
+   - Support for raster imagery, markers/icons, and vector shapes
 
 4. **Input Handling**: Mouse/touch pan and wheel/pinch zoom via `InputController`
 
-5. **Tile System**:
-   - Default: Hagga Basin tiles at `https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp`
-   - Zoom levels 0-5, 256px tiles
-   - Configurable via constructor `tileSource` (see above)
+5. **Imagery**:
+   - Default: Hagga Basin raster at `https://gtcdn.info/dune/tiles/hb_8k.webp`
+   - 8192×8192 native resolution (set `minZoom`/`maxZoom` as needed)
+   - Configurable via constructor `image` (see above)
 
 ## Code Style
 

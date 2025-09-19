@@ -6,7 +6,6 @@ import type {
 	MarkerInternal,
 	VectorPrimitiveInternal,
 	InertiaOptions,
-	PrefetchOptions,
 	MaxBoundsPx,
 	UpscaleFilterMode,
 	ActiveOptions,
@@ -27,7 +26,6 @@ import type { ProgramLocs } from './render/screen-cache';
 import type { RasterRenderer } from './layers/raster';
 import type { IconRenderer } from './layers/icons';
 import type { ScreenCache } from './render/screen-cache';
-import type { TileCache } from './tiles/cache';
 
 export type ViewState = {
 	center: LngLat;
@@ -36,35 +34,6 @@ export type ViewState = {
 	maxZoom: number;
 	wrapX: boolean;
 };
-
-export type TileTask = {
-	key: string;
-	url: string;
-	z: number;
-	x: number;
-	y: number;
-	priority: number;
-};
-
-export interface TileDeps {
-	hasTile(key: string): boolean;
-	isPending(key: string): boolean;
-	urlFor(z: number, x: number, y: number): string;
-	hasCapacity(): boolean;
-	now(): number;
-	getInteractionIdleMs(): number;
-	getLastInteractAt(): number;
-	getZoom(): number;
-	getMaxZoom(): number;
-	getImageMaxZoom(): number;
-	getCenter(): LngLat;
-	getTileSize(): number;
-	getMapSize(): { width: number; height: number };
-	getWrapX(): boolean;
-	getViewportSizeCSS(): { width: number; height: number };
-	startImageLoad(task: { key: string; url: string }): void;
-	addPinned(key: string): void;
-}
 
 export interface RenderCtx {
 	gl: WebGLRenderingContext;
@@ -78,28 +47,24 @@ export interface RenderCtx {
 	center: LngLat;
 	minZoom: number;
 	maxZoom: number;
+	imageMaxZoom: number;
 	mapSize: { width: number; height: number };
 	wrapX: boolean;
 	useScreenCache: boolean;
 	screenCache: ScreenCache | null;
 	raster: RasterRenderer;
 	icons?: IconRenderer | null;
-	tileCache: TileCache;
-	tileSize: number;
-	sourceMaxZoom?: number;
 	rasterOpacity: number;
-	// Raster rendering options
-	upscaleFilter?: 'auto' | 'linear' | 'bicubic';
-	// Icon scaling
+	upscaleFilter?: UpscaleFilterMode;
 	iconScaleFunction?: IconScaleFunction | null;
-	// Idle detection (true when user is not interacting and no animations are running)
 	isIdle?: () => boolean;
-	// Projection helpers
 	project(x: number, y: number, z: number): { x: number; y: number };
-	enqueueTile(z: number, x: number, y: number, priority?: number): void;
-	// Mark a tile as wanted for this frame (used to avoid pruning from queue)
-	wantTileKey?(key: string): void;
-	// Vectors (optional 2D overlay for early implementation)
+	image: {
+		texture: WebGLTexture | null;
+		width: number;
+		height: number;
+		ready: boolean;
+	};
 	vectorCtx?: CanvasRenderingContext2D | null;
 	drawVectors?: () => void;
 }
@@ -110,7 +75,6 @@ export interface InputDeps {
 	getMaxZoom(): number;
 	getImageMaxZoom(): number;
 	getView(): PublicViewState;
-	getTileSize(): number;
 	setCenter(lng: number, lat: number): void;
 	setZoom(zoom: number): void;
 	clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number, viscous?: boolean): { x: number; y: number };
@@ -136,7 +100,6 @@ export interface ZoomDeps {
 	getMinZoom(): number;
 	getMaxZoom(): number;
 	getImageMaxZoom(): number;
-	getTileSize(): number;
 	shouldAnchorCenterForZoom(targetZoom: number): boolean;
 	getMap(): any;
 	getOutCenterBias(): number;
@@ -153,7 +116,6 @@ export interface PanDeps {
     getContainer(): HTMLElement;
     getWrapX(): boolean;
     getFreePan(): boolean;
-    getTileSize(): number;
     getMapSize(): { width: number; height: number };
     getMaxZoom(): number;
     getMaxBoundsPx(): { minX: number; minY: number; maxX: number; maxY: number } | null;
@@ -177,9 +139,8 @@ export interface MapImpl {
 	// controls
 	setCenter(lng: number, lat: number): void;
 	setZoom(z: number): void;
-	setTileSource(opts: { url?: string; tileSize?: number; sourceMinZoom?: number; sourceMaxZoom?: number; mapSize?: { width: number; height: number }; wrapX?: boolean; clearCache?: boolean }): void;
+	setImageSource(opts: { url: string; width: number; height: number }): void;
 	setRasterOpacity(v: number): void;
-	setPrefetchOptions(opts: PrefetchOptions): void;
 	setGridVisible(on: boolean): void;
 	setInertiaOptions(opts: InertiaOptions): void;
 	setFpsCap(v: number): void;

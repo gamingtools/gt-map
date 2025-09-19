@@ -65,7 +65,6 @@ export default class PanController {
       heightCSS,
       this.deps.getWrapX(),
       this.deps.getFreePan(),
-      this.deps.getTileSize(),
       this.deps.getMapSize(),
       this.deps.getMaxZoom(),
       this.deps.getMaxBoundsPx(),
@@ -85,4 +84,3 @@ export default class PanController {
     return true;
   }
 }
-

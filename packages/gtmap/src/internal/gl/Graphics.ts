@@ -94,7 +94,7 @@ export default class Graphics {
 
       void main(){
         vec2 uv = mix(u_uv0, u_uv1, v_uv);
-        // Avoid bicubic near the tile edges to prevent seams (requires neighbor texels)
+        // Avoid bicubic near the image edges to prevent seams (requires neighbor texels)
         vec2 edge = vec2(2.0) * u_texel;
         bool nearEdge = (uv.x < edge.x) || (uv.x > 1.0 - edge.x) || (uv.y < edge.y) || (uv.y > 1.0 - edge.y);
         vec4 c = (u_filterMode == 1 && !nearEdge) ? texBicubic(u_tex, uv, u_texel) : texture2D(u_tex, uv);

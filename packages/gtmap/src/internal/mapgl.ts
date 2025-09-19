@@ -3,13 +3,9 @@
 import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext } from '../api/types';
 import { DEBUG } from '../debug';
 
-import Graphics, { type GraphicsHost } from './gl/graphics';
+import Graphics, { type GraphicsHost } from './gl/Graphics';
 import { ScreenCache } from './render/screen-cache';
-import { TileCache } from './tiles/cache';
-// import { TileQueue } from './tiles/queue';
-import TilePipeline from './tiles/tile-pipeline';
-import { TileLoader, type TileLoaderDeps } from './tiles/loader';
-import type { TileDeps, RenderCtx, MapImpl } from './types';
+import type { RenderCtx, MapImpl } from './types';
 import * as Coords from './coords';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
@@ -32,31 +28,19 @@ import EventBridge from './events/event-bridge';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
-	tileUrl?: string;
-	tileSize?: number;
+	image?: { url: string; width: number; height: number };
 	minZoom?: number;
 	maxZoom?: number;
-	mapSize?: { width: number; height: number };
 	wrapX?: boolean;
 	freePan?: boolean;
 	center?: LngLat;
 	zoom?: number;
 	zoomOutCenterBias?: number | boolean;
-	// Auto-resize when container or window DPR changes
 	autoResize?: boolean;
-    // Viewport background: either 'transparent' (default when omitted) or a solid color.
-    // Alpha on provided colors is ignored; use hex like '#0a0a0a' or RGB components.
-    backgroundColor?: string | { r: number; g: number; b: number; a?: number };
-	// Render pacing
-	fpsCap?: number; // cap rendering to this FPS (default 60)
-	// Recommended tunables
-	maxTiles?: number;
-	maxInflightLoads?: number;
-	interactionIdleMs?: number;
-	prefetch?: { enabled?: boolean; baselineLevel?: number; ring?: number };
+	backgroundColor?: string | { r: number; g: number; b: number; a?: number };
+	fpsCap?: number;
 	screenCache?: boolean;
 	wheelSpeedCtrl?: number;
-	// Leaflet-like bounds
 	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
 	maxBoundsViscosity?: number;
 	bounceAtZoomLimits?: boolean;
@@ -74,8 +58,6 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	container: HTMLDivElement;
 	canvas!: HTMLCanvasElement;
 	gl!: WebGLRenderingContext;
-	tileUrl: string;
-	tileSize: number;
 	minZoom: number;
 	maxZoom: number;
 	mapSize: { width: number; height: number };
@@ -83,6 +65,17 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	freePan: boolean;
 	center: LngLat;
 	zoom: number;
+	private readonly baseGridSize = 256;
+	private _image: { url: string; width: number; height: number; texture: WebGLTexture | null; ready: boolean; version: number } = {
+		url: '',
+		width: 256,
+		height: 256,
+		texture: null,
+		ready: false,
+		version: 0,
+	};
+	private _imageLoadToken = 0;
+	private _imageMaxZoom = 0;
 
 	private _needsRender = true;
 	private _raf: number | null = null; // deprecated, kept for backward compat in setActive
@@ -93,8 +86,6 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	public _prog: WebGLProgram | null = null;
 	public _quad: WebGLBuffer | null = null;
 	public _loc: ShaderLocations | null = null;
-	private _tileCache!: TileCache;
-	private _maxTiles = 384;
 	private _frame = 0;
 	private _lastTS: number | null = null;
 	private _dt = 0;
@@ -135,8 +126,6 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private _maxBoundsPx: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
 	private _maxBoundsViscosity = 0;
 	_bounceAtZoomLimits = false;
-	// Tile source availability
-	private _sourceMaxZoom: number = 0;
 	// Home view (initial center)
 	// Home view (initial center) no longer tracked
 	// Leaflet-like inertia options and state
@@ -234,6 +223,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
             center: this.center,
             minZoom: this.minZoom,
             maxZoom: this.maxZoom,
+            imageMaxZoom: this._imageMaxZoom,
             mapSize: this.mapSize,
             wrapX: this.wrapX,
             useScreenCache: this.useScreenCache,
@@ -243,9 +233,6 @@ export default class GTMap implements MapImpl, GraphicsHost {
             upscaleFilter: this._upscaleFilter,
             iconScaleFunction: this._iconScaleFunction,
             icons: this._icons,
-            tileCache: this._tileCache,
-            tileSize: this.tileSize,
-            sourceMaxZoom: this._sourceMaxZoom,
             isIdle: () => {
                 const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
                 const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
@@ -254,21 +241,15 @@ export default class GTMap implements MapImpl, GraphicsHost {
             },
             // Project image pixels at native resolution into level-z pixel coords
             project: (x: number, y: number, z: number) => {
-                const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-                return Coords.worldToLevel({ x, y }, imageMaxZ, Math.floor(z));
+                return Coords.worldToLevel({ x, y }, this._imageMaxZoom, Math.floor(z));
             },
-			enqueueTile: (z: number, x: number, y: number, p = 1) => this._enqueueTile(z, x, y, p),
-			wantTileKey: (key: string) => {
-				this._wantedKeys.add(key);
+			image: {
+				texture: this._image.texture,
+				width: this._image.width,
+				height: this._image.height,
+				ready: this._image.ready,
 			},
 		};
-	}
-	// prefetchNeighbors moved below (inline implementation)
-	public cancelUnwantedLoads() {
-		this._cancelUnwantedLoads();
-	}
-	public clearWantedKeys() {
-		this._wantedKeys.clear();
 	}
 	public zoomVelocityTick() {
 		if (Math.abs(this._zoomVel) <= 1e-4) return;
@@ -298,18 +279,6 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Loading pacing/cancel
 	private interactionIdleMs = 160;
 	private _lastInteractAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-	private _maxInflightLoads = 20; // Increased for HTTP/2-3 on Cloudflare
-	private _inflightLoads = 0;
-	private _pendingKeys = new Set<string>();
-	private _tiles!: TilePipeline;
-	private _tileDeps!: TileDeps;
-	private _loader!: TileLoader;
-	private _loaderDeps!: TileLoaderDeps;
-	private _wantedKeys = new Set<string>();
-	private _pinnedKeys = new Set<string>();
-	private prefetchEnabled = false;
-	private prefetchBaselineLevel: number | null = null;
-	private prefetchRing: number = 2;
 	// Wheel coalescing + velocity tail
 	// removed: legacy wheel coalescing fields (handled via easing)
 	private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = {
@@ -324,30 +293,26 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Hover hit-testing debounce to avoid churn during interactions
 	private _hitTestDebounceMs = 75;
 
-	// Diagnostics: measure time from last zoom end to first subsequent tile load
-	private _lastZoomEndAt: number | null = null;
-	private _zoomLoadLogged = false;
-    private _zoomEndTimer: number | null = null;
-    private _zoomMeasureArmed = false;
-
 	constructor(container: HTMLDivElement, options: MapOptions = {}) {
 		this.container = container;
-		this.tileUrl = options.tileUrl ?? '';
-		this.tileSize = Number.isFinite(options.tileSize as number) ? (options.tileSize as number) : 256;
+		const initialImage = options.image;
 		this.minZoom = options.minZoom ?? 0;
-		// Infer maxZoom from mapSize if provided
-		if (options.mapSize && !Number.isFinite(options.maxZoom as number)) {
-			const maxDim = Math.max(options.mapSize.width, options.mapSize.height);
-			this.maxZoom = Math.max(0, Math.floor(Math.log2(Math.max(1, maxDim / this.tileSize))));
+		if (initialImage) {
+			this.mapSize = { width: Math.max(1, initialImage.width), height: Math.max(1, initialImage.height) };
+			this._image = { url: initialImage.url, width: this.mapSize.width, height: this.mapSize.height, texture: null, ready: false, version: this._image.version + 1 };
 		} else {
-			this.maxZoom = options.maxZoom ?? 19;
+			this.mapSize = { width: 512, height: 512 };
 		}
-		this.mapSize = options.mapSize ?? { width: this.tileSize * (1 << this.maxZoom), height: this.tileSize * (1 << this.maxZoom) };
+		this._imageMaxZoom = this._computeImageMaxZoom(this.mapSize.width, this.mapSize.height);
+		const defaultMaxZoom = options.maxZoom ?? this._imageMaxZoom;
+		this.maxZoom = Math.max(this.minZoom, defaultMaxZoom);
 		this.wrapX = options.wrapX ?? false;
 		this.freePan = options.freePan ?? false;
-		this.center = { lng: options.center?.lng ?? this.mapSize.width / 2, lat: options.center?.lat ?? this.mapSize.height / 2 };
-		// Initial center captured by the app as needed
-		this.zoom = options.zoom ?? 2;
+		this.center = {
+			lng: options.center?.lng ?? this.mapSize.width / 2,
+			lat: options.center?.lat ?? this.mapSize.height / 2,
+		};
+		this.zoom = options.zoom ?? Math.min(this.maxZoom, this._imageMaxZoom);
 		if (typeof options.zoomOutCenterBias === 'boolean') {
 			this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
 		} else if (Number.isFinite(options.zoomOutCenterBias as number)) {
@@ -357,172 +322,67 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._initCanvas();
 		this._gfx = new Graphics(this);
 		this._parseBackground(options.backgroundColor);
-		// Always request an alpha-enabled context so viewport transparency works even if toggled later
 		this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
 		this._initPrograms();
-		// Apply recommended options
-		if (Number.isFinite(options.maxTiles as number)) this._maxTiles = Math.max(0, (options.maxTiles as number) | 0);
-		if (Number.isFinite(options.maxInflightLoads as number)) this._maxInflightLoads = Math.max(0, (options.maxInflightLoads as number) | 0);
-		if (Number.isFinite(options.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (options.interactionIdleMs as number) | 0);
 		if (Number.isFinite(options.fpsCap as number)) {
 			const v = Math.max(15, Math.min(240, (options.fpsCap as number) | 0));
 			this._targetFps = v;
-		}
-		if (options.prefetch) {
-			if (typeof options.prefetch.enabled === 'boolean') this.prefetchEnabled = options.prefetch.enabled;
-			if (Number.isFinite(options.prefetch.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (options.prefetch.baselineLevel as number) | 0);
-			if (Number.isFinite(options.prefetch.ring as number)) this.prefetchRing = Math.max(0, Math.min(8, (options.prefetch.ring as number) | 0));
 		}
 		if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
 		if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
 		if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
-
-		// Auto-resize setup (attach after first frame to avoid startup jitter)
 		this._autoResize = options.autoResize !== false;
-
-		// Initialize screen cache module (uses detected format)
 		this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
-		// Initialize tile cache (LRU)
-		this._tileCache = new TileCache(this.gl, this._maxTiles);
-		this._tileDeps = {
-			hasTile: (key: string) => this._tileCache.has(key),
-			isPending: (key: string) => this._pendingKeys.has(key),
-			urlFor: (z: number, x: number, y: number) => this._tileUrl(z, x, y),
-			hasCapacity: () => this._active && this._inflightLoads < this._maxInflightLoads,
-			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
-			getInteractionIdleMs: () => this.interactionIdleMs,
-			getLastInteractAt: () => this._lastInteractAt,
-			getZoom: () => this.zoom,
-			getMaxZoom: () => this.maxZoom,
-			getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
-			getCenter: () => this.center,
-			getTileSize: () => this.tileSize,
-			getMapSize: () => this.mapSize,
-			getWrapX: () => this.wrapX,
-			getViewportSizeCSS: () => {
-				const r = this.container.getBoundingClientRect();
-				return { width: Math.max(1, r.width), height: Math.max(1, r.height) };
-			},
-			startImageLoad: (task: { key: string; url: string; priority?: number }) => {
-				try {
-					if (this._zoomMeasureArmed && this._lastZoomEndAt != null && !this._zoomLoadLogged) {
-						const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-						const dt = Math.max(0, Math.round(now - this._lastZoomEndAt));
-						// Ignore trivial duplicates (< 50ms) and only log the first armed load
-						if (dt >= 50) console.log(`[GTMap] first tile load after zoomend: ${dt} ms`);
-						this._zoomLoadLogged = true;
-						this._zoomMeasureArmed = false;
-					}
-				} catch {}
-				this._loader.start(task);
-			},
-			addPinned: (key: string) => {
-				this._pinnedKeys.add(key);
-				try {
-					this._tileCache.pin(key);
-				} catch {}
-			},
-		};
-		this._loaderDeps = {
-			addPending: (key: string) => this._pendingKeys.add(key),
-			removePending: (key: string) => this._pendingKeys.delete(key),
-			incInflight: () => {
-				this._inflightLoads++;
-			},
-			decInflight: () => {
-				this._inflightLoads = Math.max(0, this._inflightLoads - 1);
-				this._tiles.process();
-			},
-			setLoading: (key: string) => this._tileCache.setLoading(key),
-			setError: (key: string) => this._tileCache.setError(key),
-			setReady: (key: string, tex: WebGLTexture, width: number, height: number, frame: number) => this._tileCache.setReady(key, tex, width, height, frame),
-			getGL: () => this.gl,
-			getFrame: () => this._frame,
-			requestRender: () => {
-				this._needsRender = true;
-			},
-			getUseImageBitmap: () => this.useImageBitmap,
-			setUseImageBitmap: (v: boolean) => {
-				this.useImageBitmap = v;
-			},
-			acquireTexture: () => this._tileCache.acquireTexture(),
-            isIdle: () => {
-                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-                const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
-                const anim = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
-                return idleByTime && !anim;
-            },
-		};
-		this._tiles = new TilePipeline(this._tileDeps);
-		this._loader = new TileLoader(this._loaderDeps);
-		// Raster renderer
 		this._raster = new RasterRenderer(this.gl);
-        this._icons = new IconRenderer(this.gl);
-        this._renderer = new MapRenderer(() => this.getRenderCtx(), {
-            stepAnimation: () => this._zoomCtrl.step(),
-            zoomVelocityTick: () => this.zoomVelocityTick(),
-            panVelocityTick: () => { this._panCtrl.step(); },
-            prefetchNeighbors: (z, tl, scale, w, h) => this.prefetchNeighbors(z, tl, scale, w, h),
-            cancelUnwanted: () => this.cancelUnwantedLoads(),
-            clearWanted: () => this.clearWantedKeys(),
-        });
-        this._zoomCtrl = new ZoomController({
+		this._icons = new IconRenderer(this.gl);
+		this._renderer = new MapRenderer(() => this.getRenderCtx(), {
+			stepAnimation: () => this._zoomCtrl.step(),
+			zoomVelocityTick: () => this.zoomVelocityTick(),
+			panVelocityTick: () => {
+				this._panCtrl.step();
+			},
+		});
+		this._zoomCtrl = new ZoomController({
 			getZoom: () => this.zoom,
 			getMinZoom: () => this.minZoom,
 			getMaxZoom: () => this.maxZoom,
-			getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
-			getTileSize: () => this.tileSize,
+			getImageMaxZoom: () => this._imageMaxZoom,
 			shouldAnchorCenterForZoom: (target) => this._shouldAnchorCenterForZoom(target),
 			getMap: () => this,
 			getOutCenterBias: () => this.outCenterBias,
 			clampCenterWorld: (cw, zInt, s, w, h) =>
-				clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
+				clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
 			emit: (name: any, payload: any) => this._events.emit(name, payload),
 			requestRender: () => {
 				this._needsRender = true;
 			},
 			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
 			getPublicView: () => this._viewPublic(),
-        });
-        // Diagnostics: reset and debounce zoom-load timer on zoom end
-        try {
-            this._events.on('zoomend').each(() => {
-                // Disarm and debounce so we consider the final, settled zoom end
-                this._zoomMeasureArmed = false;
-                if (this._zoomEndTimer != null) { try { clearTimeout(this._zoomEndTimer); } catch {} this._zoomEndTimer = null; }
-                const armDelay = Math.max(0, (this.interactionIdleMs | 0) + 32);
-                this._zoomEndTimer = window.setTimeout(() => {
-                    this._lastZoomEndAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-                    this._zoomLoadLogged = false;
-                    this._zoomMeasureArmed = true;
-                }, armDelay);
-            });
-        } catch {}
-        // Initialize pan controller
-        this._panCtrl = new PanController({
-            getZoom: () => this.zoom,
-            getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
-            getContainer: () => this.container,
-            getWrapX: () => this.wrapX,
-            getFreePan: () => this.freePan,
-            getTileSize: () => this.tileSize,
-            getMapSize: () => this.mapSize,
-            getMaxZoom: () => this.maxZoom,
-            getMaxBoundsPx: () => this._maxBoundsPx,
-            getMaxBoundsViscosity: () => this._maxBoundsViscosity,
-            getCenter: () => ({ x: this.center.lng, y: this.center.lat }),
-            setCenter: (lng: number, lat: number) => {
-                this.center = { lng, lat };
-                this._state.center = this.center;
-            },
-            requestRender: () => { this._needsRender = true; },
-            emit: (name: any, payload: any) => this._events.emit(name, payload),
-            now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
-            getPublicView: () => this._viewPublic(),
-        });
-		// View state
+		});
+		this._panCtrl = new PanController({
+			getZoom: () => this.zoom,
+			getImageMaxZoom: () => this._imageMaxZoom,
+			getContainer: () => this.container,
+			getWrapX: () => this.wrapX,
+			getFreePan: () => this.freePan,
+			getMapSize: () => this.mapSize,
+			getMaxZoom: () => this.maxZoom,
+			getMaxBoundsPx: () => this._maxBoundsPx,
+			getMaxBoundsViscosity: () => this._maxBoundsViscosity,
+			getCenter: () => ({ x: this.center.lng, y: this.center.lat }),
+			setCenter: (lng: number, lat: number) => {
+				this.center = { lng, lat };
+				this._state.center = this.center;
+			},
+			requestRender: () => {
+				this._needsRender = true;
+			},
+			emit: (name: any, payload: any) => this._events.emit(name, payload),
+			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+			getPublicView: () => this._viewPublic(),
+		});
 		this._state = {
 			center: this.center,
 			zoom: this.zoom,
@@ -530,7 +390,6 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			maxZoom: this.maxZoom,
 			wrapX: this.wrapX,
 		};
-		// DI configured; no temporary TS-usage hacks required
 		this._initGridCanvas();
 		this._initVectorCanvas();
 		this.resize();
@@ -540,34 +399,33 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			(now: number, allowRender: boolean) => this._tick(now, allowRender),
 		);
 		this._frameLoop.start();
-		// Fire load event after first frame has been scheduled
 		try {
 			const emitLoad = () => {
 				const rect2 = this.container.getBoundingClientRect();
 				const cssW2 = Math.max(1, Math.round(rect2.width));
 				const cssH2 = Math.max(1, Math.round(rect2.height));
 				const dpr2 = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
-            this._events.emit('load', { view: this._viewPublic(), size: { width: cssW2, height: cssH2, dpr: dpr2 } });
+				this._events.emit('load', { view: this._viewPublic(), size: { width: cssW2, height: cssH2, dpr: dpr2 } });
 			};
 			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(emitLoad);
 			else setTimeout(emitLoad, 0);
 		} catch {}
-		// Attach auto-resize after first stable frame to avoid initial layout interference
-        if (this._autoResize) {
-            const attach = () => {
-                this._resizeMgr = new AutoResizeManager({
-                    getContainer: () => this.container,
-                    onResize: () => this.resize(),
-                    getDebounceMs: () => this._resizeDebounceMs,
-                });
-                this._resizeMgr.attach();
-            };
-            if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(attach));
-            else setTimeout(attach, 0);
-        }
-		// Delay baseline prefetch until a tile source is explicitly set
-		// DI in place for input/tiles/render; no need for TS usage hacks
-	}
+		if (this._autoResize) {
+			const attach = () => {
+				this._resizeMgr = new AutoResizeManager({
+					getContainer: () => this.container,
+					onResize: () => this.resize(),
+					getDebounceMs: () => this._resizeDebounceMs,
+				});
+				this._resizeMgr.attach();
+			};
+			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(attach));
+			else setTimeout(attach, 0);
+		}
+		if (initialImage) {
+			this.setImageSource(initialImage);
+		}
+		}
 
 	setCenter(lng: number, lat: number) {
 		// If bounds are set, strictly clamp center against bounds (Leaflet-like)
@@ -576,10 +434,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			const rect = this.container.getBoundingClientRect();
 			const wCSS = rect.width,
 				hCSS = rect.height;
-			const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+			const imageMaxZ = this._imageMaxZoom;
 			const s0 = Coords.sFor(imageMaxZ, zInt);
 			const cw = { x: lng / s0, y: lat / s0 };
-			const clamped = clampCenterWorldCore(cw, zInt, scale, wCSS, hCSS, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false);
+			const clamped = clampCenterWorldCore(cw, zInt, scale, wCSS, hCSS, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false);
 			this.center.lng = clamped.x * s0;
 			this.center.lat = clamped.y * s0;
 		} else {
@@ -598,87 +456,153 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			this._needsRender = true;
 		}
 	}
-	setTileSource(opts: { url?: string; tileSize?: number; sourceMinZoom?: number; sourceMaxZoom?: number; mapSize?: { width: number; height: number }; wrapX?: boolean; clearCache?: boolean }) {
-		if (typeof opts.url === 'string') this.tileUrl = opts.url;
-		if (Number.isFinite(opts.tileSize as number)) this.tileSize = opts.tileSize as number;
-		if (Number.isFinite(opts.sourceMaxZoom as number)) this._sourceMaxZoom = (opts.sourceMaxZoom as number) | 0;
-		if (opts.mapSize) this.mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
-		if (typeof opts.wrapX === 'boolean') this.wrapX = opts.wrapX;
-		// reflect to view state (min/max zoom remain view constraints, not source constraints)
+	setImageSource(opts: { url: string; width: number; height: number }) {
+		if (!opts || typeof opts.url !== 'string' || !opts.url.trim()) throw new Error('GTMap: image url must be a non-empty string');
+		if (!Number.isFinite(opts.width) || opts.width <= 0) throw new Error('GTMap: image width must be a positive number');
+		if (!Number.isFinite(opts.height) || opts.height <= 0) throw new Error('GTMap: image height must be a positive number');
+		const token = ++this._imageLoadToken;
+		if (this._image.texture) {
+			try {
+				this.gl.deleteTexture(this._image.texture);
+			} catch {}
+		}
+		this.mapSize = { width: Math.max(1, Math.floor(opts.width)), height: Math.max(1, Math.floor(opts.height)) };
+		this._image = { url: opts.url, width: this.mapSize.width, height: this.mapSize.height, texture: null, ready: false, version: this._image.version + 1 };
+		this._imageMaxZoom = this._computeImageMaxZoom(this.mapSize.width, this.mapSize.height);
+		this.maxZoom = Math.max(this.minZoom, this.maxZoom);
+		this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom));
+		this._state.maxZoom = this.maxZoom;
+		this._state.center = this.center;
+		this._state.zoom = this.zoom;
 		this._state.wrapX = this.wrapX;
-		if (opts.clearCache) {
-			// clear GPU textures and cache
-			this._tileCache.clear();
-			this._pendingKeys.clear();
-			this._tiles.clear();
-			// also invalidate the screen cache to avoid ghosting from prior source
-			try {
-				this._screenCache?.clear?.();
-			} catch {}
-		}
-		// Optional baseline prefetch
-		if (this.prefetchEnabled && Number.isFinite(this.prefetchBaselineLevel as number)) {
-			try {
-				this._tiles.scheduleBaselinePrefetch(this.prefetchBaselineLevel as number, this.prefetchRing);
-			} catch {}
-		}
+		this.setCenter(this.center.lng, this.center.lat);
+		try {
+			this._screenCache?.clear?.();
+		} catch {}
 		this._needsRender = true;
+		void this._loadImageTexture(opts.url, token);
 	}
-	// Marker icons API (simple, high-performance batch per type)
+
+	private _computeImageMaxZoom(width: number, height: number): number {
+		const maxDim = Math.max(1, Math.max(width, height));
+		const base = Math.max(1, this.baseGridSize);
+		const ratio = maxDim / base;
+		const value = Math.log2(ratio);
+		if (!Number.isFinite(value)) return 0;
+		return Math.max(0, Math.floor(value));
+	}
+
+	private async _loadImageTexture(url: string, token: number): Promise<void> {
+		let bitmap: ImageBitmap | null = null;
+		let imageEl: HTMLImageElement | null = null;
+		try {
+			if (this.useImageBitmap && typeof fetch === 'function' && typeof createImageBitmap === 'function') {
+				try {
+					const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
+					if (!response.ok) throw new Error(`HTTP ${response.status}`);
+					const blob = await response.blob();
+					bitmap = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+				} catch (err) {
+					this.useImageBitmap = false;
+				}
+			}
+			if (!bitmap) {
+				imageEl = await new Promise<HTMLImageElement>((resolve, reject) => {
+					const img = new Image();
+					img.crossOrigin = 'anonymous';
+					img.onload = () => resolve(img);
+					img.onerror = () => reject(new Error('Failed to load image'));
+					img.src = url;
+				});
+			}
+			if (token !== this._imageLoadToken) return;
+			const gl = this.gl;
+			const tex = gl.createTexture();
+			if (!tex) throw new Error('GTMap: failed to allocate texture');
+			gl.bindTexture(gl.TEXTURE_2D, tex);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+			gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+			gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+			if (bitmap) {
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
+			} else if (imageEl) {
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageEl);
+			} else {
+				throw new Error('GTMap: unable to decode image source');
+			}
+			const canMip = this._isPowerOfTwo(this._image.width) && this._isPowerOfTwo(this._image.height);
+			if (canMip) {
+				gl.generateMipmap(gl.TEXTURE_2D);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+			}
+			if (token === this._imageLoadToken) {
+				this._image.texture = tex;
+				this._image.ready = true;
+				try {
+					this._screenCache?.clear?.();
+				} catch {}
+				this._needsRender = true;
+			}
+		} catch (err) {
+			try {
+				console.error('[GTMap] Failed to load image source', err);
+			} catch {}
+		} finally {
+			try {
+				bitmap?.close?.();
+			} catch {}
+		}
+	}
+
+	private _isPowerOfTwo(value: number): boolean {
+		return (value & (value - 1)) === 0;
+	}
+
 	async setIconDefs(defs: Record<string, IconDefInput>) {
 		if (!this._icons) return;
 		await this._icons.loadIcons(defs);
-		// Icon atlases changed; invalidate screen cache to avoid ghosting
 		try {
 			this._screenCache?.clear?.();
 		} catch {}
 		this._needsRender = true;
 	}
-    setMarkers(markers: MarkerInput[]) {
-        if (!this._icons) return;
-        // Detect removals vs. previous set to emit a leave for hovered marker when removed
-        try {
-            const nextIds = new Set<string>((markers.map((m) => m.id).filter((id): id is string => typeof id === 'string')));
-            if (this._lastHover && this._lastHover.id && !nextIds.has(this._lastHover.id)) {
-                // Hovered marker no longer exists: emit leave and clear
-                const prev = this._lastHover;
-                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-                this._emitMarker('leave', {
-                    now,
-                    view: this._viewPublic(),
-                    screen: { x: -1, y: -1 },
-                    marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-                    icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-                });
-                this._lastHover = null;
-            }
-            // no persistent marker id set required here
-        } catch {}
-        this._icons.setMarkers(markers);
+	setMarkers(markers: MarkerInput[]) {
+		if (!this._icons) return;
 		try {
-			if (DEBUG) console.debug('[map.setMarkers]', { count: markers.length });
+			const nextIds = new Set<string>((markers.map((m) => m.id).filter((id): id is string => typeof id === 'string')));
+			if (this._lastHover && this._lastHover.id && !nextIds.has(this._lastHover.id)) {
+				const prev = this._lastHover;
+				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+				this._emitMarker('leave', {
+					now,
+					view: this._viewPublic(),
+					screen: { x: -1, y: -1 },
+					marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+					icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+				});
+				this._lastHover = null;
+			}
 		} catch {}
-		// Marker set changed; invalidate screen cache so removed markers don't linger
-		try {
-			this._screenCache?.clear?.();
-		} catch {}
+		this._icons.setMarkers(markers);
+		try { if (DEBUG) console.debug('[map.setMarkers]', { count: markers.length }); } catch {}
+		try { this._screenCache?.clear?.(); } catch {}
 		this._needsRender = true;
 	}
 	public setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic') {
 		const next = mode === 'linear' || mode === 'bicubic' ? mode : 'auto';
 		if (next !== this._upscaleFilter) {
 			this._upscaleFilter = next;
-			try {
-				this._screenCache?.clear?.();
-			} catch {}
+			try { this._screenCache?.clear?.(); } catch {}
 			this._needsRender = true;
 		}
 	}
 	setEaseOptions(_opts: EaseOptions) {
 		this._zoomCtrl.setOptions({ easeBaseMs: _opts.easeBaseMs, easePerUnitMs: _opts.easePerUnitMs });
-		if (typeof _opts.easePinch === 'boolean') {
-			/* reserved for future pinch easing */
-		}
+		if (typeof _opts.easePinch === 'boolean') { /* reserved for future pinch easing */ }
 	}
 	public setRasterOpacity(opacity: number) {
 		const v = Math.max(0, Math.min(1, opacity));
@@ -687,36 +611,29 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			this._needsRender = true;
 		}
 	}
-
-	// Pan animation to a specific native center (x=lng,y=lat)
-    public panTo(lng: number, lat: number, durationMs = 500) {
+	public panTo(lng: number, lat: number, durationMs = 500) {
 		const { zInt, scale } = Coords.zParts(this.zoom);
-		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+		const imageMaxZ = this._imageMaxZoom;
 		const s0 = Coords.sFor(imageMaxZ, zInt);
 		const cw = { x: this.center.lng / s0, y: this.center.lat / s0 };
 		const target = { x: lng / s0, y: lat / s0 };
 		const dxPx = (cw.x - target.x) * scale;
 		const dyPx = (cw.y - target.y) * scale;
-        this._startPanBy(dxPx, dyPx, Math.max(0.05, durationMs / 1000));
-    }
-
+		this._startPanBy(dxPx, dyPx, Math.max(0.05, durationMs / 1000));
+	}
 	public flyTo(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }) {
-        const durMs = Math.max(0, (opts.durationMs ?? 600) | 0);
-        if (Number.isFinite(opts.lng as number) && Number.isFinite(opts.lat as number)) this.panTo(opts.lng as number, opts.lat as number, durMs);
-        if (Number.isFinite(opts.zoom as number)) {
-            const rect = this.container.getBoundingClientRect();
-            const dz = (opts.zoom as number) - this.zoom;
-            this._zoomCtrl.startEase(dz, rect.width / 2, rect.height / 2, 'center', opts.easing);
-        }
-    }
-
-    public cancelPanAnim() {
-        this._panCtrl.cancel();
-    }
-
-	public getMinZoom(): number { return this.minZoom; }
-	public getMaxZoom(): number { return this.maxZoom; }
-public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
+		const durMs = Math.max(0, (opts.durationMs ?? 600) | 0);
+		if (Number.isFinite(opts.lng as number) && Number.isFinite(opts.lat as number)) this.panTo(opts.lng as number, opts.lat as number, durMs);
+		if (Number.isFinite(opts.zoom as number)) {
+			const rect = this.container.getBoundingClientRect();
+			const dz = (opts.zoom as number) - this.zoom;
+			this._zoomCtrl.startEase(dz, rect.width / 2, rect.height / 2, 'center', opts.easing);
+		}
+	}
+		public cancelPanAnim() { this._panCtrl.cancel(); }
+		public getMinZoom(): number { return this.minZoom; }
+		public getMaxZoom(): number { return this.maxZoom; }
+		public getImageMaxZoom(): number { return this._imageMaxZoom; }
 
 	public cancelZoomAnim() {
 		try {
@@ -743,7 +660,6 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		this._input?.dispose();
 		this._input = null;
             try { this._renderer?.dispose?.(); } catch {}
-            try { this._tiles?.clear?.(); } catch {}
             try { this._gfx?.dispose?.(); } catch {}
 		this._destroyCache();
 		const gl = this.gl;
@@ -828,31 +744,20 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		this._needsRender = true;
 	}
 	private _clearCache() {
-		// Cancel all pending loads
-		this._loader.cancelAll();
-		// Delete GPU textures in tile cache and reset queues
-		this._tileCache.clear();
-		this._wantedKeys.clear();
-		this._pinnedKeys.clear();
-		this._pendingKeys.clear();
-		this._tiles.clear();
-		this._inflightLoads = 0;
+		if (this._image.texture) {
+			try {
+				this.gl.deleteTexture(this._image.texture);
+			} catch {}
+			this._image.texture = null;
+		}
+		this._image.ready = false;
 	}
-	// Public cache clear for API facades
 	public clearCache() {
 		this._clearCache();
 		this._needsRender = true;
 	}
 	private _destroyCache() {
-		// Cancel all pending loads
-		this._loader.cancelAll();
-		// Fully destroy cache including texture pool
-		this._tileCache.destroy();
-		this._wantedKeys.clear();
-		this._pinnedKeys.clear();
-		this._pendingKeys.clear();
-		this._tiles.clear();
-		this._inflightLoads = 0;
+		this._clearCache();
 	}
 	public setWheelSpeed(speed: number) {
 		if (Number.isFinite(speed)) {
@@ -989,28 +894,12 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		const v = !!on;
 		if (v !== this.wrapX) {
 			this.wrapX = v;
-			this._state.wrapX = v;
+			this._state.wrapX = this.wrapX;
 			this._needsRender = true;
 		}
 	}
-	// Loader/cache options
 	public setLoaderOptions(opts: { maxTiles?: number; maxInflightLoads?: number; interactionIdleMs?: number }) {
-		if (Number.isFinite(opts.maxTiles as number) && (opts.maxTiles as number) !== this._maxTiles) {
-			this._maxTiles = Math.max(0, (opts.maxTiles as number) | 0);
-			// Recreate cache to apply new capacity
-			try {
-				this._tileCache.clear();
-			} catch {}
-			this._tileCache = new TileCache(this.gl, this._maxTiles);
-		}
-		if (Number.isFinite(opts.maxInflightLoads as number)) this._maxInflightLoads = Math.max(0, (opts.maxInflightLoads as number) | 0);
 		if (Number.isFinite(opts.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (opts.interactionIdleMs as number) | 0);
-		this._needsRender = true;
-	}
-	public setPrefetchOptions(opts: { enabled?: boolean; baselineLevel?: number; ring?: number }) {
-		if (typeof opts.enabled === 'boolean') this.prefetchEnabled = opts.enabled;
-		if (Number.isFinite(opts.baselineLevel as number)) this.prefetchBaselineLevel = Math.max(0, (opts.baselineLevel as number) | 0);
-		if (Number.isFinite(opts.ring as number)) this.prefetchRing = Math.max(0, Math.min(8, (opts.ring as number) | 0));
 	}
 	public setMaxBoundsPx(bounds: { minX: number; minY: number; maxX: number; maxY: number } | null) {
 		this._maxBoundsPx = bounds ? { ...bounds } : null;
@@ -1025,13 +914,12 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			getContainer: () => this.container,
 			getCanvas: () => this.canvas,
 			getMaxZoom: () => this.maxZoom,
-			getImageMaxZoom: () => (this._sourceMaxZoom || this.maxZoom) as number,
+			getImageMaxZoom: () => this._imageMaxZoom,
 			getView: () => this._viewPublic(),
-			getTileSize: () => this.tileSize,
 			setCenter: (lng: number, lat: number) => this.setCenter(lng, lat),
 			setZoom: (z: number) => this.setZoom(z),
 			clampCenterWorld: (cw, zInt, scale, w, h, viscous?: boolean) =>
-				clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.tileSize, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, !!viscous),
+				clampCenterWorldCore(cw, zInt, scale, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, !!viscous),
 			updatePointerAbs: (x: number | null, y: number | null) => {
 				if (Number.isFinite(x as number) && Number.isFinite(y as number)) this.pointerAbs = { x: x as number, y: y as number };
 				else this.pointerAbs = null;
@@ -1124,12 +1012,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		// Emit a frame event for HUD/diagnostics
 		try {
 			const t = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-			const stats = {
-				cacheSize: this._tileCache?.size?.() ?? undefined,
-				inflight: this._inflightLoads ?? undefined,
-				pending: this._pendingKeys?.size ?? undefined,
-				frame: this._frame,
-			};
+			const stats = { frame: this._frame };
 			this._events.emit('frame', { now: t, stats });
 		} catch {}
 		if (this.showGrid) {
@@ -1137,7 +1020,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			const { zInt: baseZ, scale } = Coords.zParts(this.zoom);
 			const widthCSS = rect.width;
 			const heightCSS = rect.height;
-			const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+			const imageMaxZ = this._imageMaxZoom;
 			const s = Coords.sFor(imageMaxZ, baseZ);
 			const centerLevel = { x: this.center.lng / s, y: this.center.lat / s };
 			let tlWorld = Coords.tlLevelFor(centerLevel, this.zoom, { x: widthCSS, y: heightCSS });
@@ -1145,7 +1028,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			const snap = (v: number) => Coords.snapLevelToDevice(v, scale, this._dpr);
 			tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 			const pal = this._gridPalette();
-			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, (this._sourceMaxZoom || this.maxZoom) as number, this.tileSize, pal);
+			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, this._imageMaxZoom, this.baseGridSize, pal);
 		}
 		// Draw vector overlay (if any)
 		try {
@@ -1153,28 +1036,11 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		} catch {}
 	}
 
-	// Prefetch a 1-tile border beyond current viewport at the given level
-	// grid drawing via render/grid.drawGrid
-
-	// (moved to the main definition above)
-	// public setGridVisible removed (duplicate)
-
-	private _enqueueTile(z: number, x: number, y: number, priority = 1) {
-		this._tiles.enqueue(z, x, y, priority);
-	}
-
-	private _tileUrl(z: number, x: number, y: number) {
-		if (!this.tileUrl) return '';
-		return this.tileUrl.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y));
-	}
-
-	// wrapX and eviction helpers now provided by tiles/source and TileCache
-
 	// Zoom actions handled by ZoomController
 
 	// Finite-world center anchoring hysteresis
 	private _viewportCoverageRatio(zInt: number, scale: number, widthCSS: number, heightCSS: number) {
-		const zImg = (this._sourceMaxZoom || this.maxZoom) as number;
+		const zImg = this._imageMaxZoom;
 		const s = Coords.sFor(zImg, zInt);
 		const levelW = this.mapSize.width / s;
 		const levelH = this.mapSize.height / s;
@@ -1212,7 +1078,6 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 
 	// Bounds clamping similar to JS version
 
-	// image tile loading handled by TileLoader
 
     // pan velocity handled by PanController
 
@@ -1239,14 +1104,13 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 				this._input?.dispose();
 			} catch {}
 			if (opts?.releaseGL && this.gl) {
-				try {
-					this._screenCache?.dispose();
-					this._screenCache = null;
-					this._tileCache?.clear();
-					const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
-					ext?.loseContext();
-					this._glReleased = true;
-				} catch {}
+			try {
+				this._screenCache?.dispose();
+				this._screenCache = null;
+				const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
+				ext?.loseContext();
+				this._glReleased = true;
+			} catch {}
 			}
 			return;
 		}
@@ -1265,7 +1129,6 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			} catch {}
 			try {
 				this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
-				this._tileCache = new TileCache(this.gl, this._maxTiles);
 			} catch {}
 			this._glReleased = false;
 		}
@@ -1275,50 +1138,12 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		this._active = true;
 		this._needsRender = true;
 		try {
-			this._tiles.process();
-		} catch {}
-		try {
 			this._frameLoop?.start?.();
 		} catch {}
 	}
 
-	public prefetchNeighbors(z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) {
-		if (!this.prefetchEnabled) return;
-		const zClamped = Math.min(z, this._sourceMaxZoom || z);
-		const zInt = Math.floor(zClamped);
-		const TS = this.tileSize;
-		const startX = Math.floor(tl.x / TS) - 1;
-		const startY = Math.floor(tl.y / TS) - 1;
-		const endX = Math.floor((tl.x + w / scale) / TS) + 1;
-		const endY = Math.floor((tl.y + h / scale) / TS) + 1;
-		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
-		const counts = Coords.tileCounts(this.mapSize.width, this.mapSize.height, TS, imageMaxZ, zInt);
-		const NX = counts.NX;
-		const NY = counts.NY;
-		for (let ty = startY; ty <= endY; ty++) {
-			if (ty < 0 || ty >= NY) continue;
-			for (let tx = startX; tx <= endX; tx++) {
-				let tileX = tx;
-				if (this.wrapX) {
-					const n = NX;
-					tileX = ((tx % n) + n) % n;
-				} else if (tx < 0 || tx >= NX) continue;
-				const key = `${zInt}/${tileX}/${ty}`;
-				// mark prefetch tiles as wanted to prevent pruning
-				this._wantedKeys.add(key);
-				if (!this._tileCache.has(key)) this._enqueueTile(zInt, tileX, ty, 1);
-			}
-		}
-	}
-	private _cancelUnwantedLoads() {
-		// Include pinned keys so baseline prefetch isn't pruned
-		const wanted = new Set<string>(this._wantedKeys);
-		for (const key of this._pinnedKeys) wanted.add(key);
-		// Cancel queued and in-flight loads not in the wanted set
-		this._tiles.cancelUnwanted(wanted);
-		try { this._loader.cancelUnwanted(wanted); } catch {}
-		this._wantedKeys.clear();
-		this._tiles.process();
+	public prefetchNeighbors(_z: number, _tl: { x: number; y: number }, _scale: number, _w: number, _h: number) {
+		/* no-op: single image renderer */
 	}
 
 	private _initVectorCanvas() {
@@ -1379,7 +1204,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		const heightCSS = rect.height;
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
-		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+		const imageMaxZ = this._imageMaxZoom;
 		for (let i = info.length - 1; i >= 0; i--) {
 			const it = info[i];
 			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
@@ -1439,7 +1264,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 		const heightCSS = rect.height;
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
-		const imageMaxZ = (this._sourceMaxZoom || this.maxZoom) as number;
+		const imageMaxZ = this._imageMaxZoom;
 		for (let i = info.length - 1; i >= 0; i--) {
 			const it = info[i];
 			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
@@ -1522,7 +1347,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			const z = this.zoom;
 			const rect = this.container.getBoundingClientRect();
 			const viewport = { x: rect.width, y: rect.height };
-            const imageMaxZ = this._sourceMaxZoom || this.maxZoom;
+            const imageMaxZ = this._imageMaxZoom;
 			for (const prim of this._vectors) {
 				const style: any = prim.style || {};
 				ctx.lineWidth = Math.max(1, style.weight ?? 2);
@@ -1575,7 +1400,7 @@ public getImageMaxZoom(): number { return this._sourceMaxZoom || this.maxZoom; }
 			} catch {}
 			const rect = this.container.getBoundingClientRect();
 			const viewport = { x: rect.width, y: rect.height };
-            const imageMaxZ = this._sourceMaxZoom || this.maxZoom;
+            const imageMaxZ = this._imageMaxZoom;
 			const info = this._icons.getMarkerInfo();
 			ctx.lineWidth = 1;
 			ctx.strokeStyle = 'rgba(255,0,0,0.9)';

@@ -18,35 +18,20 @@ export interface ViewState {
 	wrapX: boolean;
 }
 
-// Tile system types
-export interface TileBounds {
-	minX: number;
-	minY: number;
-	maxX: number;
-	maxY: number;
-}
-
-export interface TileSourceOptions {
-  /** URL template for tile loading. Use {z}, {x}, {y} placeholders. */
-  url: string;
-  /** Tile size in pixels (e.g., 256). */
-  tileSize: number;
-  /** Min level provided by the source (usually 0). */
-  sourceMinZoom: number;
-  /** Max level provided by the source (top of the image pyramid). */
-  sourceMaxZoom: number;
-  /** Base image size at native resolution. */
-  mapSize: { width: number; height: number };
-  /** Enable horizontal wrap for infinite panning. */
-  wrapX?: boolean;
-  /** Clear GPU/cache when switching sources. */
-  clearCache?: boolean;
+// Single-image source (pixel CRS)
+export interface ImageSourceOptions {
+	/** URL or data URL for the image. */
+	url: string;
+	/** Native width in pixels. */
+	width: number;
+	/** Native height in pixels. */
+	height: number;
 }
 
 // Map configuration
 export interface MapOptions {
-  /** Tile source configuration (URL template, pyramid, wrap). */
-  tileSource: TileSourceOptions;
+  /** Single raster image to display. */
+  image: ImageSourceOptions;
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;
@@ -59,11 +44,15 @@ export interface MapOptions {
   /**
    * Viewport background: either 'transparent' (default when omitted) or a solid color.
    * Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components.
-   */
+  */
   backgroundColor?: string | { r: number; g: number; b: number; a?: number };
-	prefetch?: { enabled?: boolean; baselineLevel?: number; ring?: number };
 	screenCache?: boolean;
 	fpsCap?: number;
+  wrapX?: boolean;
+  freePan?: boolean;
+  maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
+  maxBoundsViscosity?: number;
+  bounceAtZoomLimits?: boolean;
 }
 
 // Content types
@@ -300,8 +289,6 @@ export interface EventMap<TMarkerData = unknown> {
 // Performance stats
 export interface RenderStats {
 	fps?: number;
-	tilesLoaded?: number;
-	tilesVisible?: number;
 	cacheSize?: number;
 	inflight?: number;
 	pending?: number;
@@ -337,19 +324,9 @@ export interface WebGLLoseContext {
 }
 
 // Branded types for type safety
-export type TileKey = string & { __brand: 'TileKey' };
-export type TileURL = string & { __brand: 'TileURL' };
 export type IconID = string & { __brand: 'IconID' };
 
 // Helper functions to create branded types
-export function tileKey(z: number, x: number, y: number): TileKey {
-	return `${z}/${x}/${y}` as TileKey;
-}
-
-export function tileURL(template: string, z: number, x: number, y: number): TileURL {
-	return template.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y)) as TileURL;
-}
-
 export function iconID(id: string): IconID {
 	return id as IconID;
 }
@@ -400,13 +377,6 @@ export interface InertiaOptions {
 	inertiaDeceleration?: number;
 	inertiaMaxSpeed?: number;
 	easeLinearity?: number;
-}
-
-// Prefetch options
-export interface PrefetchOptions {
-	enabled?: boolean;
-	baselineLevel?: number;
-	ring?: number;
 }
 
 // Max bounds (pixel coordinates)

@@ -17,7 +17,7 @@
   - [points()](#points)
   - [zoom()](#zoom)
 
-Defined in: api/map.ts:763
+Defined in: [api/Map.ts:749](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L749)
 
 Chainable view transition builder.
 
@@ -30,7 +30,7 @@ The builder is side‑effect free until `apply()` is called.
 
 > **apply**(`opts?`): `Promise`\<[`ApplyResult`](Interface.ApplyResult.md)\>
 
-Defined in: api/map.ts:832
+Defined in: [api/Map.ts:818](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L818)
 
 Commit the transition.
 
@@ -57,7 +57,7 @@ A promise resolving with the [result](Interface.ApplyResult.md)
 
 > **bounds**(`b`, `padding?`): `this`
 
-Defined in: api/map.ts:813
+Defined in: [api/Map.ts:799](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L799)
 
 Fit the view to a bounding box with optional padding.
 
@@ -111,7 +111,7 @@ await map.transition()
 
 > **cancel**(): `void`
 
-Defined in: api/map.ts:839
+Defined in: [api/Map.ts:825](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L825)
 
 Cancel a pending or running transition.
 
@@ -127,7 +127,7 @@ If already settled, this is a no‑op.
 
 > **center**(`p`): `this`
 
-Defined in: api/map.ts:774
+Defined in: [api/Map.ts:760](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L760)
 
 Target an absolute center position in world pixels.
 
@@ -157,7 +157,7 @@ await map.transition().center({ x: 4096, y: 4096 }).apply();
 
 > **offset**(`dx`, `dy`): `this`
 
-Defined in: api/map.ts:797
+Defined in: [api/Map.ts:783](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L783)
 
 Offset the current or targeted center by a delta in world pixels.
 
@@ -189,7 +189,7 @@ The builder for chaining
 
 > **points**(`list`, `padding?`): `this`
 
-Defined in: api/map.ts:822
+Defined in: [api/Map.ts:808](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L808)
 
 Fit the view to a set of points with optional padding.
 
@@ -219,7 +219,7 @@ The builder for chaining
 
 > **zoom**(`z`): `this`
 
-Defined in: api/map.ts:787
+Defined in: [api/Map.ts:773](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L773)
 
 Target an absolute zoom level.
 

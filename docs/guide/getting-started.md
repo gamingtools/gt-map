@@ -7,14 +7,12 @@ import { GTMap } from '@gtmap';
 
 const container = document.getElementById('map') as HTMLDivElement;
 const map = new GTMap(container, {
-  tileSource: {
-    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
-    tileSize: 256,
-    mapSize: { width: 8192, height: 8192 },
-    wrapX: false,
-    sourceMinZoom: 0,
-    sourceMaxZoom: 5,
+  image: {
+    url: 'https://example.com/maps/hagga-basin.webp',
+    width: 8192,
+    height: 8192,
   },
+  wrapX: false,
   minZoom: 0,
   maxZoom: 5,
   center: { x: 4096, y: 4096 },
@@ -37,20 +35,18 @@ await map.transition().center({ x: 5000, y: 3000 }).apply({ animate: { durationM
 await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { durationMs: 800 } });
 ```
 
-## Tile source
+## Image source
 
-Provide tile configuration in the constructor via `MapOptions.tileSource`:
+Provide raster configuration in the constructor via `MapOptions.image`:
 
 ```ts
 const map = new GTMap(container, {
-  tileSource: {
-    url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
-    tileSize: 256,
-    mapSize: { width: 8192, height: 8192 },
-    wrapX: false,
-    sourceMinZoom: 0,
-    sourceMaxZoom: 5,
+  image: {
+    url: 'https://cdn.example.com/maps/hagga-basin.webp',
+    width: 8192,
+    height: 8192,
   },
+  wrapX: false,
   minZoom: 0,
   maxZoom: 5,
   center: { x: 4096, y: 4096 },

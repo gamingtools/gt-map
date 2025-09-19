@@ -1,6 +1,6 @@
 WebGL Map (Minimal)
 
-Minimal, dependency-light WebGL map that renders raster tiles with smooth pan and continuous zoom. Pixel CRS only (image pixel coordinates; no Web Mercator).
+Minimal, dependency-light WebGL map that renders a single large raster with smooth pan and continuous zoom. Pixel CRS only (image pixel coordinates; no Web Mercator).
 
 Status
 
@@ -8,11 +8,10 @@ Status
 
 Features
 
-- WebGL tile rendering (256px tiles)
+- WebGL single-image rendering
 - Smooth pan and wheel/pinch zoom
 - Pixel CRS: image pixel coordinates (no geodetic projection)
 - WrapX support (disabled in Hagga Basin demo)
-- LRU tile texture cache
 - Typed events for input, lifecycle, and per-frame HUD
 
 Documentation
@@ -34,13 +33,13 @@ Files
 - `apps/noframework-gtmap-test/index.html`: No‑framework demo (HTML + TS).
 - `apps/noframework-gtmap-test/src/main.ts`: Plain TS usage and HUD wiring.
 - `packages/gtmap/src/api/map.ts`: Public `GTMap` facade (typed API surface).
-- `packages/gtmap/src/internal/mapgl.ts`: Core WebGL implementation (tiles, input, rendering, cache).
+- `packages/gtmap/src/internal/mapgl.ts`: Core WebGL implementation (single-image renderer, input, cache).
 - Pixel CRS only: coordinates are image pixels (x, y) at native resolution.
 
 Public API
 
 - Import `GTMap` via `@gaming.tools/gtmap` (published) or `@gtmap` (Vite alias in demos).
-  - Tiles via `tileSource` in `MapOptions`: `{ url, tileSize, mapSize, wrapX, sourceMinZoom, sourceMaxZoom }`.
+  - Raster via `image` in `MapOptions`: `{ url, width, height }` plus optional `wrapX` and view limits.
   - View with Transition Builder: `map.transition().center(...).zoom(...).apply({ animate? })`.
   - Content: `addIcon`, `addMarker`, `addVector` (or `addVectors` legacy batch).
   - Events: `map.events.on(name).each(h)` and `map.events.once(name)` (typed payloads). Includes pointer/mouse, lifecycle, frame, and map-level marker events (`markerenter/leave/click/down/up/longpress`).
@@ -61,7 +60,7 @@ Visibility Control (suspend/resume)
 If you render multiple maps, suspend offscreen ones to save CPU/network/VRAM:
 
 ```ts
-// Suspend a map (stop RAF, input, and tile processing)
+// Suspend a map (stop RAF, input, and rendering)
 map.setActive(false);
 
 // Suspend and also release the WebGL context and VRAM
@@ -73,25 +72,24 @@ map.setActive(true);
 
 This pairs well with IntersectionObserver or the Page Visibility API.
 
-Tile Source
+Image Source
 Hagga Basin (survival_1)
 
-- URL: `https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp`
-- Source zooms: 0–5 (8k base image → max 5)
-- Wrap: disabled (finite image pyramid; no world wrap)
-- Note: Game tiles (not geo-referenced); renders as a finite image pyramid.
+- URL: `https://gtcdn.info/dune/tiles/hb_8k.webp`
+- Base resolution: 8192 × 8192 (set `minZoom`/`maxZoom` to control view constraints)
+- Wrap: disabled (finite image; no world wrap)
+- Note: Game map (not geo-referenced); renders as a finite raster.
 
 Customization
 
 - Center/zoom: Set when constructing `GTMap` in the demos.
 - Zoom bounds: `minZoom`/`maxZoom`.
-- Tile URL: Provide a different `{z}/{x}/{y}` template via `tileSource.url`.
 - Grid overlay: `setGridVisible(true|false)`.
 - Wheel speed: `setWheelSpeed(number)`.
 
 Notes and Next Steps
 
-- Raster tiles currently; markers and vectors are simple overlays.
+- Single raster currently; markers and vectors are simple overlays.
 - FPS/HUD via `map.events.on('frame')`.
 - Host via a static server for production; dev server is preferred.
 

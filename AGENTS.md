@@ -9,7 +9,7 @@
 - `apps/svelte-gtmap-test`: SvelteKit demo app (visit `/map`).
 - `apps/noframework-gtmap-test/index.html`: No‑framework demo (simple HTML + TS).
 - `packages/gtmap/src/api/map.ts`: Public `GTMap` facade (typed API surface).
-- `packages/gtmap/src/internal/mapgl.ts`: Core WebGL implementation (tiles, input, rendering, cache).
+- `packages/gtmap/src/internal/mapgl.ts`: Core WebGL implementation (single-image renderer, input, cache).
 - Pixel CRS only: use image pixel coordinates (no geodetic CRS).
 - `package.json`: Scripts and dev deps (Vite, TypeScript, ESLint/Prettier).
 
@@ -31,7 +31,7 @@
 
 - Framework: None. Validate changes manually in Chrome/Firefox.
 - Smoke checks: pan, wheel zoom, pinch zoom (touch), grid toggle, zoom speed slider, recenter button, FPS/HUD updates.
-- Regressions to watch: tile seams, flicker on zoom, incorrect anchor behavior, wrapX handling (disabled for Hagga Basin).
+- Regressions to watch: filtering artifacts at high zoom, flicker on zoom, incorrect anchor behavior, wrapX handling (disabled for Hagga Basin).
 
 ## Commit & Pull Request Guidelines
 
@@ -41,7 +41,7 @@
 
 ## Security & Configuration Tips
 
-- Tiles: Use HTTPS tile sources with proper CORS. Don’t commit secrets.
+- Images: Use HTTPS sources with proper CORS. Don’t commit secrets.
 - Caching: Dev server disables cache; be mindful if changing headers.
 - Ports: Default `5173`; override with `PORT=XXXX npm start`.
 

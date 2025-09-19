@@ -22,6 +22,7 @@
 ## Classes
 
 - [Layer](Class.Layer.md)
+- [LeafletCompat](Class.LeafletCompat.md)
 - [Marker](Class.Marker.md)
 - [VectorEntity](Class.VectorEntity.md)
 
@@ -36,8 +37,10 @@
 - [FrameEventData](Interface.FrameEventData.md)
 - [IconDef](Interface.IconDef.md)
 - [IconHandle](Interface.IconHandle.md)
+- [ImageSourceOptions](Interface.ImageSourceOptions.md)
 - [LayerEventMap](Interface.LayerEventMap.md)
 - [LayerEvents](Interface.LayerEvents.md)
+- [LeafletIconOptions](Interface.LeafletIconOptions.md)
 - [LoadEventData](Interface.LoadEventData.md)
 - [MapEvents](Interface.MapEvents.md)
 - [MapOptions](Interface.MapOptions.md)
@@ -47,6 +50,7 @@
 - [MarkerEvents](Interface.MarkerEvents.md)
 - [MarkerHit](Interface.MarkerHit.md)
 - [MarkerOptions](Interface.MarkerOptions.md)
+- [MarkerTransition](Interface.MarkerTransition.md)
 - [MouseEventData](Interface.MouseEventData.md)
 - [MoveEventData](Interface.MoveEventData.md)
 - [PointerEventData](Interface.PointerEventData.md)
@@ -55,7 +59,6 @@
 - [PublicEvents](Interface.PublicEvents.md)
 - [RenderStats](Interface.RenderStats.md)
 - [ResizeEventData](Interface.ResizeEventData.md)
-- [TileSourceOptions](Interface.TileSourceOptions.md)
 - [VectorData](Interface.VectorData.md)
 - [VectorEventMap](Interface.VectorEventMap.md)
 - [VectorEvents](Interface.VectorEvents.md)
@@ -71,6 +74,8 @@
 - [Easing](TypeAlias.Easing.md)
 - [IconScaleFunction](TypeAlias.IconScaleFunction.md)
 - [InputDevice](TypeAlias.InputDevice.md)
+- [LatLngLike](TypeAlias.LatLngLike.md)
+- [LeafletPadding](TypeAlias.LeafletPadding.md)
 - [Point](TypeAlias.Point.md)
 - [Polygon](TypeAlias.Polygon.md)
 - [Polyline](TypeAlias.Polyline.md)
@@ -83,6 +88,9 @@
 - [isCircle](Function.isCircle.md)
 - [isPolygon](Function.isPolygon.md)
 - [isPolyline](Function.isPolyline.md)
+- [latLng](Function.latLng.md)
+- [latLngBounds](Function.latLngBounds.md)
+- [leafletCompat](Function.leafletCompat.md)
 
 ## Overview
 

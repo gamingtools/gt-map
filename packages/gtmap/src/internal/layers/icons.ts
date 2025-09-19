@@ -222,7 +222,6 @@ export class IconRenderer {
 		quad: WebGLBuffer;
 		canvas: HTMLCanvasElement;
 		dpr: number;
-		tileSize: number;
 		zoom: number;
 		center: { lng: number; lat: number };
 		minZoom?: number;
@@ -239,7 +238,7 @@ export class IconRenderer {
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
 		const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
-    // Always snap top-left to device pixels to share the same stable origin as tiles
+    // Always snap top-left to device pixels to share the same stable origin as the raster
     // and quantize icon positions/sizes in device space to eliminate subpixel jitter.
     let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
     const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);

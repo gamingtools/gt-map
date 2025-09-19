@@ -28,8 +28,10 @@
   - [setData()](#setdata)
   - [setStyle()](#setstyle)
   - [toData()](#todata)
+  - [transition()](#transition)
+  - [transitions()](#transitions)
 
-Defined in: entities/marker.ts:32
+Defined in: [entities/Marker.ts:45](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L45)
 
 Marker - an icon anchored at a world pixel coordinate.
 
@@ -54,7 +56,7 @@ Emits typed events via [marker.events](#events) (`click`,
 
 > `readonly` **events**: [`MarkerEvents`](Interface.MarkerEvents.md)\<`T`\>
 
-Defined in: entities/marker.ts:168
+Defined in: [entities/Marker.ts:182](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L182)
 
 Public events surface for this marker (typed event names/payloads).
 
@@ -68,7 +70,7 @@ Public events surface for this marker (typed event names/payloads).
 
 > `readonly` **id**: `string`
 
-Defined in: entities/marker.ts:33
+Defined in: [entities/Marker.ts:46](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L46)
 
 ## Accessors
 
@@ -78,7 +80,7 @@ Defined in: entities/marker.ts:33
 
 > **get** **data**(): `undefined` \| `T`
 
-Defined in: entities/marker.ts:85
+Defined in: [entities/Marker.ts:99](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L99)
 
 Arbitrary user data attached to the marker.
 
@@ -94,7 +96,7 @@ Arbitrary user data attached to the marker.
 
 > **get** **iconType**(): `string`
 
-Defined in: entities/marker.ts:73
+Defined in: [entities/Marker.ts:87](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L87)
 
 Icon id for this marker (or `'default'`).
 
@@ -110,7 +112,7 @@ Icon id for this marker (or `'default'`).
 
 > **get** **rotation**(): `undefined` \| `number`
 
-Defined in: entities/marker.ts:81
+Defined in: [entities/Marker.ts:95](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L95)
 
 Optional clockwise rotation in degrees.
 
@@ -126,7 +128,7 @@ Optional clockwise rotation in degrees.
 
 > **get** **size**(): `undefined` \| `number`
 
-Defined in: entities/marker.ts:77
+Defined in: [entities/Marker.ts:91](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L91)
 
 Optional scale multiplier (renderer treats `undefined` as 1).
 
@@ -142,7 +144,7 @@ Optional scale multiplier (renderer treats `undefined` as 1).
 
 > **get** **x**(): `number`
 
-Defined in: entities/marker.ts:65
+Defined in: [entities/Marker.ts:79](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L79)
 
 Get the current world X (pixels).
 
@@ -158,7 +160,7 @@ Get the current world X (pixels).
 
 > **get** **y**(): `number`
 
-Defined in: entities/marker.ts:69
+Defined in: [entities/Marker.ts:83](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L83)
 
 Get the current world Y (pixels).
 
@@ -172,7 +174,7 @@ Get the current world Y (pixels).
 
 > **moveTo**(`x`, `y`): `void`
 
-Defined in: entities/marker.ts:129
+Defined in: [entities/Marker.ts:143](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L143)
 
 Move the marker to a new world pixel coordinate.
 
@@ -207,7 +209,7 @@ marker.moveTo(marker.x + 10, marker.y);
 
 > **remove**(): `void`
 
-Defined in: entities/marker.ts:145
+Defined in: [entities/Marker.ts:159](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L159)
 
 Emit a `remove` event.
 
@@ -225,7 +227,7 @@ The owning layer will clear it from the collection.
 
 > **setData**(`data`): `void`
 
-Defined in: entities/marker.ts:99
+Defined in: [entities/Marker.ts:113](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L113)
 
 Attach arbitrary user data to this marker and trigger a renderer sync.
 
@@ -252,7 +254,7 @@ marker.setData({ id: 'poi-1', category: 'shop' });
 
 > **setStyle**(`opts`): `void`
 
-Defined in: entities/marker.ts:110
+Defined in: [entities/Marker.ts:124](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L124)
 
 Update the marker style properties and trigger a renderer sync.
 
@@ -284,10 +286,38 @@ Partial style ([MarkerOptions](Interface.MarkerOptions.md))
 
 > **toData**(): [`MarkerData`](Interface.MarkerData.md)\<`T`\>
 
-Defined in: entities/marker.ts:154
+Defined in: [entities/Marker.ts:168](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L168)
 
 Get a snapshot used in event payloads and renderer sync.
 
 #### Returns
 
 [`MarkerData`](Interface.MarkerData.md)\<`T`\>
+
+***
+
+### transition()
+
+> **transition**(): [`MarkerTransition`](Interface.MarkerTransition.md)
+
+Defined in: [entities/Marker.ts:185](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L185)
+
+Start a marker transition (position/rotation/size).
+
+#### Returns
+
+[`MarkerTransition`](Interface.MarkerTransition.md)
+
+***
+
+### transitions()
+
+> **transitions**(): [`MarkerTransition`](Interface.MarkerTransition.md)
+
+Defined in: [entities/Marker.ts:187](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Marker.ts#L187)
+
+Alias.
+
+#### Returns
+
+[`MarkerTransition`](Interface.MarkerTransition.md)

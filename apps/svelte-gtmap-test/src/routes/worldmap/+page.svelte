@@ -8,7 +8,8 @@
   let container: HTMLDivElement | null = null;
   let map: GTMap<{ id: string; camp?: boolean }>;
 
-  const HOME = { x: 4096, y: 4096 };
+  const MAP_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 };
+  const HOME = { x: MAP_IMAGE.width / 2, y: MAP_IMAGE.height / 2 };
 
   type MarkerRec = { m: GTMarker<{ id: string; camp?: boolean }>; camp: boolean };
   let markers: MarkerRec[] = [];
@@ -35,8 +36,8 @@
     markerCount = clampMarkerCount(n);
     clearMarkers();
     for (let i = 0; i < markerCount; i++) {
-      const x = rand(0, 8192);
-      const y = rand(0, 8192);
+      const x = rand(0, MAP_IMAGE.width);
+      const y = rand(0, MAP_IMAGE.height);
       const ih = pickIconHandle(i);
       const isCamp = Boolean(ih && iconHandlesMeta.get(ih.id)?.isCamp);
       const m = map.addMarker(x, y, ih ? { icon: ih, data: { id: `poi-${i}`, camp: isCamp } } : { data: { id: `poi-${i}`, camp: isCamp } });
@@ -128,7 +129,7 @@
 
       // Create markers for survival_1
       const subset = data.filter((m) => (m?.mapId === 'survival_1') && m.location && m.mapIcon);
-      // Use authoritative world extents for survival_1 (Hagga Basin) to align with tiles
+      // Use authoritative world extents for survival_1 (Hagga Basin) to align with the raster
       // From mapInfo.json: min = (-457200, -457200), max = (355600, 355600)
       let minX = -457200, minY = -457200, maxX = 355600, maxY = 355600;
       // Fallback to data extents if needed (in case of mismatch or alternate maps)
@@ -142,7 +143,7 @@
       }
       const widthW = Math.max(1, maxX - minX);
       const heightW = Math.max(1, maxY - minY);
-      const PIX = 8192;
+      const PIX = MAP_IMAGE.width;
       const k = Math.min(PIX / widthW, PIX / heightW);
       const offsetX = (PIX - widthW * k) / 2;
       const offsetY = (PIX - heightW * k) / 2;
@@ -173,14 +174,8 @@
     if (!container) return;
 
     map = new GTMap(container, {
-      tileSource: {
-        url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
-        tileSize: 256,
-        mapSize: { width: 8192, height: 8192 },
-        wrapX: false,
-        sourceMinZoom: 0,
-        sourceMaxZoom: 5,
-      },
+      image: MAP_IMAGE,
+      wrapX: false,
       minZoom: 0,
       maxZoom: 5,
       center: HOME,

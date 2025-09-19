@@ -5,7 +5,7 @@
   "license": "MIT",
   "author": "gaming.tools",
   "homepage": "https://gaming.tools",
-  "description": "Minimal WebGL tile map with Express server",
+  "description": "Minimal WebGL image map with Express server",
   "workspaces": [
     "packages/*",
     "apps/*"

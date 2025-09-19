@@ -8,7 +8,8 @@
 	let container: HTMLDivElement | null = null;
 	let map: GTMap;
 
-	const HOME = { x: 4096, y: 4096 };
+	const MAP_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 };
+	const HOME = { x: MAP_IMAGE.width / 2, y: MAP_IMAGE.height / 2 };
 
 	onMount(() => {
 		if (!container) return;
@@ -20,16 +21,8 @@
 			minZoom: 0,
 			maxZoom: 10,
 			fpsCap: 60,
-			prefetch: { enabled: true, baselineLevel: 2, ring: 0 },
-			// Tile source
-			tileSource: {
-				url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
-				sourceMinZoom: 0,
-				sourceMaxZoom: 5,
-				tileSize: 256,
-				wrapX: false,
-				mapSize: { width: 8192, height: 8192 }
-			}
+			image: MAP_IMAGE,
+			wrapX: false
 		});
 
 		// Add icon and marker

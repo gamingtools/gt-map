@@ -9,7 +9,8 @@
 	let container: HTMLDivElement | null = null;
 	let map: GTMap;
 
-	const HOME = { lng: 4096, lat: 4096 };
+	const MAP_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 };
+	const HOME = { lng: MAP_IMAGE.width / 2, lat: MAP_IMAGE.height / 2 };
 
 	let markerCount = 1000;
 
@@ -61,8 +62,8 @@
 		clearLeafletMarkers();
 
 		for (let i = 0; i < markerCount; i++) {
-			const x = rand(0, 8192);
-			const y = rand(0, 8192);
+			const x = rand(0, MAP_IMAGE.width);
+			const y = rand(0, MAP_IMAGE.height);
 			const iconHandle = iconHandles && iconHandles.length > 0 ? iconHandles[i % iconHandles.length] : (fallbackIcon ?? null);
 			const marker = map.addMarker(
 				x,
@@ -127,7 +128,7 @@
 			});
 			map.addVector({
 				type: 'circle',
-				center: { x: 4096, y: 4096 },
+				center: { x: HOME.lng, y: HOME.lat },
 				radius: 200,
 				style: {
 					color: '#f59e0b',
@@ -168,15 +169,8 @@
 			maxZoom: 5,
 			fpsCap: 60,
 			autoResize: true,
-			// Tile source (initialize via constructor)
-			tileSource: {
-				url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
-				tileSize: 256,
-				mapSize: { width: 8192, height: 8192 },
-				wrapX: false,
-				sourceMinZoom: 0,
-				sourceMaxZoom: 5,
-			},
+			image: MAP_IMAGE,
+			wrapX: false,
 		});
 
 		// Register a custom icon to demonstrate addIcon/addMarker

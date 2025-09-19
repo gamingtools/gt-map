@@ -61,7 +61,7 @@ map.events.on('resize').each(({ size }) => {
 
 // Frame loop hook (stats reported by renderer when available)
 map.events.on('frame').each(({ now, stats }) => {
-  // stats?.fps, stats?.tilesLoaded, etc.
+	// stats?.fps, stats?.frame, etc.
 });
 ```
 

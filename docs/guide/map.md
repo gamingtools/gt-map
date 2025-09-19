@@ -1,6 +1,6 @@
 # Map Object
 
-The `GTMap` instance is the main interface to control the view, configure tiles, add content, and subscribe to events. This page summarizes its properties, methods, and common options.
+The `GTMap` instance is the main interface to control the view, configure the raster image, add content, and subscribe to events. This page summarizes its properties, methods, and common options.
 
 ## Create
 
@@ -9,14 +9,12 @@ import { GTMap } from '@gtmap';
 
 const el = document.getElementById('map') as HTMLDivElement;
 const map = new GTMap(el, {
-  tileSource: {
-    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
-    tileSize: 256,
-    mapSize: { width: 8192, height: 8192 },
-    wrapX: false,
-    sourceMinZoom: 0,
-    sourceMaxZoom: 5,
+  image: {
+    url: 'https://example.com/maps/hagga-basin.webp',
+    width: 8192,
+    height: 8192,
   },
+  wrapX: false,
   minZoom: 0,
   maxZoom: 5,
   center: { x: 4096, y: 4096 },
@@ -48,20 +46,18 @@ await map.transition().center({ x: 2048, y: 2048 }).zoom(4.25).apply();
 await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { durationMs: 800 } });
 ```
 
-## Tile Source
+## Image Source
 
-Pass tile configuration in the constructor via MapOptions:
+Pass image configuration in the constructor via `MapOptions`:
 
 ```ts
 const map = new GTMap(el, {
-  tileSource: {
-    url: 'https://tiles.example.com/{z}/{x}_{y}.webp',
-    tileSize: 256,
-    mapSize: { width: 8192, height: 8192 },
-    wrapX: false,
-    sourceMinZoom: 0,
-    sourceMaxZoom: 5,
+  image: {
+    url: 'https://cdn.example.com/maps/hagga-basin.webp',
+    width: 8192,
+    height: 8192,
   },
+  wrapX: false,
   minZoom: 0,
   maxZoom: 5,
 });
@@ -70,7 +66,7 @@ const map = new GTMap(el, {
 ## Rendering & Behavior
 
 ```ts
-// Grid overlay and tile upscaling
+// Grid overlay and image upscaling
 map.setGridVisible(false);
 map.setUpscaleFilter('auto'); // 'auto' | 'linear' | 'bicubic'
 
@@ -117,16 +113,12 @@ View (Transition Builder)
   - `apply(opts?: { animate?: { durationMs: number; easing?: Easing; delayMs?: number; interrupt?: 'cancel' | 'join' | 'enqueue' } }): Promise<{ status: 'instant' | 'animated' | 'canceled' }>`
   - `cancel(): void` — cancel in‑flight transition (promise resolves `{ status: 'canceled' }`)
 
-Tiles
-
-- Configure via constructor option `tileSource` (URL, tileSize, mapSize, wrapX, sourceMinZoom/sourceMaxZoom) and view constraints (`minZoom`, `maxZoom`).
-
 Rendering & Behavior
 
 - `setGridVisible(on: boolean): this`
   - `on: boolean` — show/hide the grid overlay
 - `setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this`
-  - `mode` — upscaling policy for tiles above source resolution
+  - `mode` — upscaling policy when the image is shown above native resolution
 - `setIconScaleFunction(fn: IconScaleFunction | null): this`
   - `fn: (zoom: number, minZoom: number, maxZoom: number) => number | null` — returns scale multiplier (`1` = screen‑fixed size). Pass `null` to restore default behavior (fixed‑size icons).
 - `setFpsCap(v: number): this`
@@ -210,14 +202,14 @@ See the Events guide for payload shapes and examples.
 
 ## Options Reference (constructor)
 
-- Tiles: `tileSource: { url, tileSize, mapSize, wrapX, sourceMinZoom, sourceMaxZoom }`
-- View: `center`, `zoom`
+- Image: `image: { url, width, height }` (required)
+- View: `center`, `zoom`, `minZoom`, `maxZoom`
+- Interaction: `wrapX`, `freePan`, `wheelSpeed`
 - Sizing & perf: `autoResize`, `fpsCap`, `screenCache` (internal cache control)
 - Background: `backgroundColor` — either `'transparent'` or a solid color; alpha ignored
-- Prefetch: `{ enabled?, baselineLevel?, ring? }`
 
 Notes
 
 - Pixel CRS only: coordinates are world pixels relative to the base image at native resolution.
-- Wrapping: `wrapX` provides infinite horizontal panning for periodic tile sources; keep `false` for finite images.
+- Wrapping: `wrapX` provides infinite horizontal panning when the image seamlessly repeats; keep `false` for finite rasters.
 - Background policy: either fully transparent or solid color; colors ignore alpha.

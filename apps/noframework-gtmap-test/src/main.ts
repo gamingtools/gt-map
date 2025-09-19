@@ -5,14 +5,13 @@ const hud = document.getElementById('hud') as HTMLDivElement;
 const attribution = document.getElementById('attribution') as HTMLDivElement;
 
 const HAGGA = {
-  url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
+  image: { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 },
   minZoom: 0,
   maxZoom: 5,
   wrapX: false,
-  mapSize: { width: 8192, height: 8192 },
 };
 
-const HOME = { x: 4096, y: 4096 };
+const HOME = { x: HAGGA.image.width / 2, y: HAGGA.image.height / 2 };
 const map = new GTMap(container, {
   // Initial view
   center: HOME,
@@ -20,15 +19,8 @@ const map = new GTMap(container, {
   minZoom: HAGGA.minZoom,
   maxZoom: 10,
   fpsCap: 60,
-  // Tile source (constructor)
-  tileSource: {
-    url: HAGGA.url,
-    tileSize: 256,
-    mapSize: HAGGA.mapSize,
-    wrapX: HAGGA.wrapX,
-    sourceMinZoom: 0,
-    sourceMaxZoom: HAGGA.maxZoom,
-  },
+  image: HAGGA.image,
+  wrapX: HAGGA.wrapX,
 });
 
 // HUD updates on actual render frames (engine emits 'frame')
@@ -54,7 +46,7 @@ const map = new GTMap(container, {
   map.events.on('pointermove').each(() => renderHud({ fromFrame: false }));
 })();
 
-attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
+attribution.textContent = 'Hagga Basin imagery © respective owners (game map)';
 
 // Load sample icon definitions and place a few markers using GTMap API
 (async () => {
@@ -72,7 +64,7 @@ attribution.textContent = 'Hagga Basin tiles © respective owners (game map)';
     for (let i = 0; i < COUNT; i++) {
       const iconId = handles[(Math.random() * handles.length) | 0];
       const rotation = Math.random() < 0.3 ? Math.round(rand(0, 360)) : undefined;
-      map.addMarker(rand(0, 8192), rand(0, 8192), { icon: { id: iconId }, rotation });
+      map.addMarker(rand(0, HAGGA.image.width), rand(0, HAGGA.image.height), { icon: { id: iconId }, rotation });
     }
   } catch (err) {
     console.warn('Icon demo load failed:', err);

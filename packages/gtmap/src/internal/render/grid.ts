@@ -1,5 +1,5 @@
-export function chooseGridSpacing(scale: number, tileSize: number): number {
-	const base = tileSize;
+export function chooseGridSpacing(scale: number, baseUnit: number): number {
+	const base = baseUnit;
 	const candidates = [base / 16, base / 8, base / 4, base / 2, base, base * 2, base * 4, base * 8, base * 16, base * 32, base * 64];
 	const targetPx = 100;
 	let best = candidates[0];
@@ -29,15 +29,15 @@ export function drawGrid(
 	tlWorld: { x: number; y: number },
 	dpr: number,
 	maxZoom: number,
-	tileSize: number,
+	baseUnit: number,
 	palette?: GridPalette,
 ): void {
 	if (!ctx || !canvas) return;
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	ctx.save();
 	ctx.scale(dpr || 1, dpr || 1);
-	const spacingWorld = chooseGridSpacing(scale, tileSize);
-	const base = tileSize;
+	const spacingWorld = chooseGridSpacing(scale, baseUnit);
+	const base = baseUnit;
 	const zAbs = Math.floor(maxZoom);
 	const factorAbs = Coords.sFor(zAbs, zInt);
 	ctx.font = '11px system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, sans-serif';

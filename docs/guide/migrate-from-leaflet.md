@@ -1,12 +1,12 @@
 **Leaflet → GTMap Migration**
 
 - Audience: teams moving from Leaflet 1.9.x to GTMap.
-- Scope: pixel CRS maps (game/world images), raster tiles, markers, and basic vectors.
+- Scope: pixel CRS maps (game/world images), single raster, markers, and basic vectors.
 - Assumption: you previously used Leaflet with `L.CRS.Simple` or image-like coordinates.
 
 **Key Differences**
 - Coordinate system: GTMap is pixel CRS only — positions are `{ x, y }` in image pixels with origin at the top‑left. No geodetic CRS.
-- Continuous zoom: GTMap supports fractional zoom; tiles are filtered/resampled smoothly.
+- Continuous zoom: GTMap supports fractional zoom; the image is filtered/resampled smoothly.
 - Typed API: strongly typed events and entities; no implicit `any` usage.
 - Content model: entity-based layers (`map.markers`, `map.vectors`) with typed events per entity and per layer.
 - Built-ins vs ecosystem: GTMap is minimal — no built-in controls, popups/tooltips, clustering, or plugins. Compose in your app.
@@ -20,7 +20,7 @@ To ease migration, import a small wrapper that exposes Leaflet-like methods over
 ```ts
 import { GTMap, leafletCompat } from '@gtmap';
 
-const map = new GTMap(el, { /* tileSource, center, zoom, ... */ });
+const map = new GTMap(el, { /* image, center, zoom, ... */ });
 const Lx = leafletCompat(map);
 
 await Lx.setView([y, x], z);
@@ -37,7 +37,7 @@ The compat layer maps common Leaflet calls (setView, panTo, flyTo, fitBounds, ad
 
 ---
 
-**Map & Tiles**
+**Map & Image**
 
 Leaflet
 
@@ -68,14 +68,12 @@ import { GTMap } from '@gtmap';
 const el = document.getElementById('map')!; // container element
 
 const map = new GTMap(el, {
-  tileSource: {
-    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
-    tileSize: 256,
-    sourceMinZoom: 0,
-    sourceMaxZoom: 5,
-    mapSize: { width: 8192, height: 8192 },
-    wrapX: false,
+  image: {
+    url: 'https://example.com/maps/hagga-basin.webp',
+    width: 8192,
+    height: 8192,
   },
+  wrapX: false,
   minZoom: 0,
   maxZoom: 5,
   center: { x: 4096, y: 4096 },
@@ -85,8 +83,8 @@ const map = new GTMap(el, {
 
 Notes
 
-- Leaflet’s `L.tileLayer` options map to `tileSource` in `GTMap`.
-- `mapSize` is the base image size (at native resolution). It is required by GTMap to compute zooms precisely.
+- Leaflet’s `L.tileLayer` configuration maps to `image` + view constraints in `GTMap`.
+- `width`/`height` are the base image dimensions (native resolution). GTMap uses them to compute zooms precisely.
 - Horizontal world wrap: Leaflet uses `noWrap`; GTMap uses `wrapX` (default `false` for finite images).
 
 ---
@@ -296,14 +294,12 @@ GTMap (after)
 import { GTMap } from '@gtmap';
 
 const map = new GTMap(document.getElementById('map')!, {
-  tileSource: {
-    url: 'https://cdn.example.com/tiles/{z}/{x}_{y}.webp',
-    tileSize: 256,
-    sourceMinZoom: 0,
-    sourceMaxZoom: 5,
-    mapSize: { width: 8192, height: 8192 },
-    wrapX: false,
+  image: {
+    url: 'https://cdn.example.com/maps/hagga-basin.webp',
+    width: 8192,
+    height: 8192,
   },
+  wrapX: false,
   minZoom: 0,
   maxZoom: 5,
   center: { x: 2048, y: 2048 },
@@ -321,7 +317,7 @@ map.addVector({ type: 'polyline', points: [ { x: 2000, y: 2000 }, { x: 2300, y: 
 
 **Troubleshooting**
 
-- Tiles don’t match zoom levels → Verify `sourceMinZoom`, `sourceMaxZoom`, and `mapSize` match your pyramid.
+- Image looks blurry or mis-scaled → Verify `width`/`height` match the native resolution and adjust `minZoom`/`maxZoom` accordingly.
 - Marker positions are flipped vertically → If you used negative `lat` in Leaflet CRS.Simple, remove the minus and pass `{ x, y }` in GTMap.
 - Bounds feel rigid or bouncy → Adjust `setMaxBoundsViscosity(0..1)`.
 - Wheel zoom too fast/slow → Tweak `setWheelSpeed(number)`.
@@ -332,12 +328,12 @@ map.addVector({ type: 'polyline', points: [ { x: 2000, y: 2000 }, { x: 2300, y: 
 
 | Task | Leaflet (1.9.x) | GTMap |
 |---|---|---|
-| Create map | `L.map(el, { crs: L.CRS.Simple, minZoom, maxZoom })` + `L.tileLayer(url, { tileSize, noWrap }).addTo(map)` | `new GTMap(el, { tileSource: { url, tileSize, sourceMinZoom, sourceMaxZoom, mapSize, wrapX }, minZoom, maxZoom, center, zoom })` |
+| Create map | `L.map(el, { crs: L.CRS.Simple, minZoom, maxZoom })` + `L.tileLayer(url, { tileSize, noWrap }).addTo(map)` | `new GTMap(el, { image: { url, width, height }, wrapX, minZoom, maxZoom, center, zoom })` |
 | Set view | `map.setView([y, x], z)` | `await map.transition().center({ x, y }).zoom(z).apply()` |
 | Pan | `map.panTo([y, x])` | `await map.transition().center({ x, y }).apply()` |
 | Fly | `map.flyTo([y, x], z, { duration })` | `await map.transition().center({ x, y }).zoom(z).apply({ animate: { durationMs: duration*1000 } })` |
 | Fit bounds | `map.fitBounds([[y0, x0], [y1, x1]], { padding })` | `await map.transition().bounds({ minX, minY, maxX, maxY }, { top, right, bottom, left }).apply()` |
-| Wrap control | `noWrap: true/false` | `setWrapX(false/true)` or via `tileSource.wrapX` |
+| Wrap control | `noWrap: true/false` | `setWrapX(false/true)` or set `wrapX` in options |
 | Max bounds | `map.setMaxBounds(bounds)` | `map.setMaxBoundsPx({ minX, minY, maxX, maxY })` + `setMaxBoundsViscosity(0..1)` |
 | Wheel zoom speed | `scrollWheelZoom.disable()/enable()` (or options) | `setWheelSpeed(number)` (no hard disable; see notes) |
 | Resize | `map.invalidateSize()` | `map.invalidateSize()` |
@@ -420,7 +416,7 @@ Notes
 
 **World→Screen Helper**
 
-GTMap does not currently expose a public projection helper, but the math is straightforward for pixel CRS. If your tile pyramid’s top level is `sourceMaxZoom` (aka `imageMaxZ`), then CSS pixels per world pixel is `2^(zoom - imageMaxZ)`.
+GTMap does not currently expose a public projection helper, but the math is straightforward for pixel CRS. Let `imageMaxZ = map.getImageMaxZoom()` (the integer zoom where 1 world px equals 1 CSS px); CSS pixels per world pixel is `2^(zoom - imageMaxZ)`.
 
 Typed helpers
 
@@ -472,8 +468,8 @@ overlay.style.position = 'absolute';
 container.appendChild(overlay);
 
 const anchor: Point = { x: 2100, y: 2200 };
-const imageMaxZ = 5; // equals your tileSource.sourceMaxZoom
-const wrap = { enabled: false, periodX: 8192 }; // periodX equals mapSize.width if wrapX is enabled
+const imageMaxZ = map.getImageMaxZoom();
+const wrap = { enabled: false, periodX: 8192 }; // use the image width when wrapX is enabled
 
 function updatePosition() {
   const rect = container.getBoundingClientRect();
@@ -498,7 +494,7 @@ CSS stub
 
 Notes
 
-- `imageMaxZ` is your `tileSource.sourceMaxZoom`. At that zoom, 1 world pixel equals 1 CSS pixel.
+- `imageMaxZ` is `map.getImageMaxZoom()`. At that zoom, 1 world pixel equals 1 CSS pixel.
 - For `wrapX: true`, pass `wrap = { enabled: true, periodX: mapSize.width }` to place the overlay near the current center.
 - This uses CSS pixels and container size; it naturally handles DPR differences.
 

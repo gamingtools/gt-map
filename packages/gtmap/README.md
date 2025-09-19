@@ -1,6 +1,6 @@
 # GTMap
 
-High‑performance, pixel‑CRS WebGL map renderer with a small, typed API. Optimized for image/scan maps (no geodetic lat‑lng). Ships a thin facade (`GTMap`) over a fast WebGL core: tiles, input, rendering, and caches.
+High‑performance, pixel‑CRS WebGL map renderer with a small, typed API. Optimized for image/scan maps (no geodetic lat‑lng). Ships a thin facade (`GTMap`) over a fast WebGL core: input, rendering, and caches.
 
 Status: early-stage, pre-release — everything is subject to change before the initial release (including public APIs and behavior). No heavy runtime deps; pure TypeScript and Web APIs.
 
@@ -30,14 +30,12 @@ import { GTMap, type MapOptions } from '@gaming.tools/gtmap';
 const container = document.getElementById('map') as HTMLDivElement;
 
 const map = new GTMap(container, {
-  tileSource: {
-    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
-    tileSize: 256,
-    mapSize: { width: 8192, height: 8192 },
-    wrapX: false,
-    sourceMinZoom: 0,
-    sourceMaxZoom: 5,
+  image: {
+    url: 'https://example.com/maps/hagga-basin.webp',
+    width: 8192,
+    height: 8192,
   },
+  wrapX: false,
   minZoom: 0,
   maxZoom: 5,
   center: { x: 4096, y: 4096 },
@@ -291,7 +289,7 @@ Frame loop hook (stats or overlays)
 
 ```ts
 map.events.on('frame').each(({ now, stats }) => {
-  // stats?.fps, stats?.tilesLoaded, etc.
+  // stats?.fps, stats?.frame, etc.
 });
 ```
 
