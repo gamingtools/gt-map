@@ -30,8 +30,8 @@ export interface ImageSourceOptions {
 
 // Map configuration
 export interface MapOptions {
-  /** Single raster image to display. */
-  image: ImageSourceOptions;
+  /** Single raster image to display (optionally with a smaller preview for progressive load). */
+  image: ImageSourceOptions & { preview?: ImageSourceOptions; progressiveSwapDelayMs?: number };
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;

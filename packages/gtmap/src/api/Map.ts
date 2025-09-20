@@ -99,11 +99,17 @@ export class GTMap<TMarkerData = unknown> {
 		if (!img.url || typeof img.url !== 'string') throw new Error('GTMap: image.url must be a non-empty string');
 		if (!Number.isFinite(img.width) || img.width <= 0) throw new Error('GTMap: image.width must be a positive number');
 		if (!Number.isFinite(img.height) || img.height <= 0) throw new Error('GTMap: image.height must be a positive number');
+		if (img.preview) {
+			const pv = img.preview;
+			if (!pv.url || typeof pv.url !== 'string') throw new Error('GTMap: image.preview.url must be a non-empty string');
+			if (!Number.isFinite(pv.width) || pv.width <= 0) throw new Error('GTMap: image.preview.width must be a positive number');
+			if (!Number.isFinite(pv.height) || pv.height <= 0) throw new Error('GTMap: image.preview.height must be a positive number');
+		}
 		if (Number.isFinite(options.minZoom as number) && Number.isFinite(options.maxZoom as number) && (options.minZoom as number) > (options.maxZoom as number)) {
 			throw new Error('GTMap: minZoom must be <= maxZoom');
 		}
 		const implOpts: Partial<ImplMapOptions> = {
-			image: { url: img.url, width: img.width, height: img.height },
+			image: { url: img.url, width: img.width, height: img.height, preview: img.preview, progressiveSwapDelayMs: img.progressiveSwapDelayMs },
 			minZoom: options.minZoom,
 			maxZoom: options.maxZoom,
 			center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,

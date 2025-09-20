@@ -156,18 +156,18 @@
   <div class="toolbar">
     <button class="btn" onclick={goHome}>Home</button>
     <button class="btn" onclick={fitSample}>Fit sample</button>
-    <div class="spacer" />
-    <label class="lbl">Markers:</label>
-    <input type="number" min="0" max="20000" value={markerCount} oninput={(e) => setMarkerCount(Number((e.target as HTMLInputElement).value))} class="num" />
+    <div class="spacer"></div>
+    <label class="lbl" for="markerCountInput">Markers:</label>
+    <input id="markerCountInput" type="number" min="0" max="20000" value={markerCount} oninput={(e) => setMarkerCount(Number((e.target as HTMLInputElement).value))} class="num" />
     <button class="btn" onclick={() => setMarkersEnabled(true)}>Enable</button>
     <button class="btn" onclick={() => setMarkersEnabled(false)}>Clear</button>
-    <div class="sep" />
-    <label class="lbl">Vectors:</label>
+    <div class="sep"></div>
+    <span class="lbl">Vectors:</span>
     <button class="btn" onclick={() => setVectorsEnabled(true)}>Add</button>
     <button class="btn" onclick={() => setVectorsEnabled(false)}>Clear</button>
     <div class="hint">Leaflet compat demo — using leafletCompat only</div>
   </div>
-  <div bind:this={container} class="map" />
+  <div bind:this={container} class="map"></div>
 
   <div class="hud">
     <div>Zoom: {hudZoom.toFixed(2)}</div>

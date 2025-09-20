@@ -5,12 +5,16 @@ const hud = document.getElementById('hud') as HTMLDivElement;
 const attribution = document.getElementById('attribution') as HTMLDivElement;
 
 const HAGGA = {
-  image: { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 },
+  image: {
+    url: 'https://gtcdn.info/dune/tiles/hb_8k.webp',
+    width: 8192,
+    height: 8192,
+    preview: { url: 'https://gtcdn.info/dune/tiles/hb_1k.webp', width: 1024, height: 1024 },
+  },
   minZoom: 0,
   maxZoom: 5,
   wrapX: false,
 };
-
 const HOME = { x: HAGGA.image.width / 2, y: HAGGA.image.height / 2 };
 const map = new GTMap(container, {
   // Initial view

@@ -28,7 +28,7 @@ import EventBridge from './events/event-bridge';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
-	image?: { url: string; width: number; height: number };
+	image?: { url: string; width: number; height: number; preview?: { url: string; width: number; height: number }; progressiveSwapDelayMs?: number };
 	minZoom?: number;
 	maxZoom?: number;
 	wrapX?: boolean;
@@ -245,12 +245,13 @@ export default class GTMap implements MapImpl, GraphicsHost {
             },
 			image: {
 				texture: this._image.texture,
+				// width/height here refer to the underlying texture's pixel dimensions
 				width: this._image.width,
 				height: this._image.height,
 				ready: this._image.ready,
 			},
 		};
-	}
+    }
 	public zoomVelocityTick() {
 		if (Math.abs(this._zoomVel) <= 1e-4) return;
 		const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
@@ -293,8 +294,37 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	// Hover hit-testing debounce to avoid churn during interactions
 	private _hitTestDebounceMs = 75;
 
+	// Timing + logging helpers (relative to instance creation)
+	private _t0Ms: number = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+	private _imageReadyAtMs: number | null = null;
+	private _firstRasterDrawAtMs: number | null = null;
+	private _nowMs(): number {
+		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+	}
+	private _log(msg: string): void {
+		try {
+			const allow =
+				(globalThis.DEBUG ?? false) ||
+				DEBUG ||
+				(typeof localStorage !== 'undefined' && localStorage.getItem('GTMAP_DEBUG') === '1');
+			if (allow) {
+				const t = this._nowMs() - this._t0Ms;
+				console.log(`[GTMap t=${t.toFixed(1)}ms] ${msg}`);
+			}
+		} catch {}
+	}
+	private _gpuWaitEnabled(): boolean {
+		try {
+			return typeof localStorage !== 'undefined' && localStorage.getItem('GTMAP_DEBUG_GPUWAIT') === '1';
+		} catch {
+			return false;
+		}
+	}
+
 	constructor(container: HTMLDivElement, options: MapOptions = {}) {
 		this.container = container;
+		this._t0Ms = this._nowMs();
+		this._log('ctor: begin');
 		const initialImage = options.image;
 		this.minZoom = options.minZoom ?? 0;
 		if (initialImage) {
@@ -398,7 +428,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			() => this._targetFps,
 			(now: number, allowRender: boolean) => this._tick(now, allowRender),
 		);
-		this._frameLoop.start();
+        this._frameLoop.start();
 		try {
 			const emitLoad = () => {
 				const rect2 = this.container.getBoundingClientRect();
@@ -423,8 +453,34 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			else setTimeout(attach, 0);
 		}
 		if (initialImage) {
-			this.setImageSource(initialImage);
+			// Progressive flow: if a preview is provided, draw it first, then upgrade to the full image
+			if (initialImage.preview) {
+				const pv = initialImage.preview;
+				// Keep world size and zoom ranges based on the full image, but load a smaller texture first
+				this._log(`image:progressive preview=${pv.url} -> full=${initialImage.url}`);
+				const token = ++this._imageLoadToken;
+				// For correct filtering uniforms while preview is active
+				this._image.width = Math.max(1, pv.width);
+				this._image.height = Math.max(1, pv.height);
+				this._image.url = pv.url;
+				this._image.ready = false;
+				this._needsRender = true;
+				void this._loadImageTexture(pv.url, token);
+				// After a short delay (or immediately), kick off full-resolution load with the same token
+				const delay = Number.isFinite(initialImage.progressiveSwapDelayMs as number)
+					? Math.max(0, Math.min(2000, (initialImage.progressiveSwapDelayMs as number) | 0))
+					: 50;
+				setTimeout(() => {
+					// Only proceed if token still current
+					if (token !== this._imageLoadToken) return;
+					this._log('image:progressive upgrading to full');
+					void this._loadImageTexture(initialImage.url, token);
+				}, delay);
+			} else {
+				this.setImageSource(initialImage);
+			}
 		}
+		this._log('ctor: end');
 		}
 
 	setCenter(lng: number, lat: number) {
@@ -460,6 +516,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (!opts || typeof opts.url !== 'string' || !opts.url.trim()) throw new Error('GTMap: image url must be a non-empty string');
 		if (!Number.isFinite(opts.width) || opts.width <= 0) throw new Error('GTMap: image width must be a positive number');
 		if (!Number.isFinite(opts.height) || opts.height <= 0) throw new Error('GTMap: image height must be a positive number');
+		this._log(`image:set url=${opts.url} size=${opts.width}x${opts.height}`);
 		const token = ++this._imageLoadToken;
 		if (this._image.texture) {
 			try {
@@ -496,17 +553,29 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		let bitmap: ImageBitmap | null = null;
 		let imageEl: HTMLImageElement | null = null;
 		try {
+			const tStart = this._nowMs();
+			this._log(`image:load begin url=${url}`);
 			if (this.useImageBitmap && typeof fetch === 'function' && typeof createImageBitmap === 'function') {
 				try {
+					const tFetch0 = this._nowMs();
+					this._log('image:fetch begin (bitmap path)');
 					const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
 					if (!response.ok) throw new Error(`HTTP ${response.status}`);
 					const blob = await response.blob();
+					const tFetch1 = this._nowMs();
+					this._log(`image:fetch done dt=${(tFetch1 - tFetch0).toFixed(1)}ms bytes=${blob.size}`);
+					const tDecode0 = this._nowMs();
 					bitmap = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+					const tDecode1 = this._nowMs();
+					this._log(`image:decode done path=bitmap dt=${(tDecode1 - tDecode0).toFixed(1)}ms total=${(tDecode1 - tStart).toFixed(1)}ms`);
 				} catch (err) {
 					this.useImageBitmap = false;
+					this._log('image:bitmap path failed; falling back to <img>');
 				}
 			}
 			if (!bitmap) {
+				const tImg0 = this._nowMs();
+				this._log('image:fetch+decode begin (img onload path)');
 				imageEl = await new Promise<HTMLImageElement>((resolve, reject) => {
 					const img = new Image();
 					img.crossOrigin = 'anonymous';
@@ -514,6 +583,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 					img.onerror = () => reject(new Error('Failed to load image'));
 					img.src = url;
 				});
+				const tImg1 = this._nowMs();
+				this._log(`image:decode done path=img onload dt=${(tImg1 - tImg0).toFixed(1)}ms total=${(tImg1 - tStart).toFixed(1)}ms`);
 			}
 			if (token !== this._imageLoadToken) return;
 			const gl = this.gl;
@@ -527,6 +598,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 			gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
 			gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+			const tUpload0 = this._nowMs();
+			this._log('image:upload begin (gl.texImage2D)');
 			if (bitmap) {
 				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
 			} else if (imageEl) {
@@ -534,18 +607,42 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			} else {
 				throw new Error('GTMap: unable to decode image source');
 			}
-			const canMip = this._isPowerOfTwo(this._image.width) && this._isPowerOfTwo(this._image.height);
+			const tUpload1 = this._nowMs();
+			this._log(`image:upload done (CPU) dt=${(tUpload1 - tUpload0).toFixed(1)}ms`);
+			if (this._gpuWaitEnabled()) {
+				const tUF0 = this._nowMs();
+				try { this.gl.finish(); } catch {}
+				const tUF1 = this._nowMs();
+				this._log(`image:upload gpuWait dt=${(tUF1 - tUF0).toFixed(1)}ms`);
+			}
+				const texW = bitmap ? (bitmap as ImageBitmap).width : (imageEl as HTMLImageElement).naturalWidth;
+				const texH = bitmap ? (bitmap as ImageBitmap).height : (imageEl as HTMLImageElement).naturalHeight;
+				const canMip = this._isPowerOfTwo(texW) && this._isPowerOfTwo(texH);
 			if (canMip) {
+				const tMip0 = this._nowMs();
+				this._log('image:mipmap begin');
 				gl.generateMipmap(gl.TEXTURE_2D);
 				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+				const tMip1 = this._nowMs();
+				this._log(`image:mipmap done (CPU) dt=${(tMip1 - tMip0).toFixed(1)}ms`);
+				if (this._gpuWaitEnabled()) {
+					const tMF0 = this._nowMs();
+					try { this.gl.finish(); } catch {}
+					const tMF1 = this._nowMs();
+					this._log(`image:mipmap gpuWait dt=${(tMF1 - tMF0).toFixed(1)}ms`);
+				}
 			}
-			if (token === this._imageLoadToken) {
-				this._image.texture = tex;
-				this._image.ready = true;
+				if (token === this._imageLoadToken) {
+					this._image.texture = tex;
+					this._image.width = Math.max(1, texW | 0);
+					this._image.height = Math.max(1, texH | 0);
+					this._image.ready = true;
+				this._imageReadyAtMs = this._nowMs();
 				try {
 					this._screenCache?.clear?.();
 				} catch {}
 				this._needsRender = true;
+				this._log('image:ready');
 			}
 		} catch (err) {
 			try {
@@ -995,7 +1092,18 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (!this._zoomCtrl.isAnimating() && !this._panCtrl.isAnimating()) this._needsRender = false;
 	}
 	private _render() {
+		const imageReadyAtCall = this._image.ready;
+		const tR0 = this._nowMs();
 		this._renderer.render();
+		if (imageReadyAtCall && this._firstRasterDrawAtMs == null) {
+			if (this._gpuWaitEnabled()) {
+				try { this.gl.finish(); } catch {}
+			}
+			this._firstRasterDrawAtMs = this._nowMs();
+			const dtRender = this._firstRasterDrawAtMs - tR0;
+			const dtSinceReady = this._imageReadyAtMs ? (this._firstRasterDrawAtMs - this._imageReadyAtMs) : NaN;
+			this._log(`first-render done dtRender=${dtRender.toFixed(1)}ms sinceReady=${Number.isFinite(dtSinceReady) ? dtSinceReady.toFixed(1) : 'n/a'}ms`);
+		}
 		// Kick off deferred icon mask build after first render
 		try {
             // Defer icon mask build until after the first render, using requestIdleCallback when available.
