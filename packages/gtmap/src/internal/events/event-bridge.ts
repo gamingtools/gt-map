@@ -1,4 +1,5 @@
 import type { EventMap, MarkerEventData } from '../../api/types';
+
 import { TypedEventBus } from './typed-stream';
 
 type HoverKey = { type: string; idx: number; id?: string };

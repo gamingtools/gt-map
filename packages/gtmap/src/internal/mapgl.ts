@@ -25,6 +25,9 @@ import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 import { FrameLoop } from './core/frame-loop';
 import AutoResizeManager from './core/auto-resize-manager';
 import EventBridge from './events/event-bridge';
+import { ImageManager, type ImageManagerHost, type ImageData } from './core/image-manager';
+import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol, isCircleSymbol } from './core/vector-types';
+import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
@@ -54,7 +57,7 @@ export type EaseOptions = {
 export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
 export type MarkerInput = { id?: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
 
-export default class GTMap implements MapImpl, GraphicsHost {
+export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	container: HTMLDivElement;
 	canvas!: HTMLCanvasElement;
 	gl!: WebGLRenderingContext;
@@ -66,15 +69,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	center: LngLat;
 	zoom: number;
 	private readonly baseGridSize = 256;
-	private _image: { url: string; width: number; height: number; texture: WebGLTexture | null; ready: boolean; version: number } = {
-		url: '',
-		width: 256,
-		height: 256,
-		texture: null,
-		ready: false,
-		version: 0,
-	};
-	private _imageLoadToken = 0;
+	private _imageManager: ImageManager;
+	private _asyncInitManager: AsyncInitManager;
 	private _imageMaxZoom = 0;
 
 	private _needsRender = true;
@@ -244,11 +240,11 @@ export default class GTMap implements MapImpl, GraphicsHost {
                 return Coords.worldToLevel({ x, y }, this._imageMaxZoom, Math.floor(z));
             },
 			image: {
-				texture: this._image.texture,
+				texture: this.getImage().texture,
 				// width/height here refer to the underlying texture's pixel dimensions
-				width: this._image.width,
-				height: this._image.height,
-				ready: this._image.ready,
+				width: this.getImage().width,
+				height: this.getImage().height,
+				ready: this.getImage().ready,
 			},
 		};
     }
@@ -298,10 +294,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 	private _t0Ms: number = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 	private _imageReadyAtMs: number | null = null;
 	private _firstRasterDrawAtMs: number | null = null;
-	private _nowMs(): number {
+	public _nowMs(): number {
 		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	}
-	private _log(msg: string): void {
+	public _log(msg: string): void {
 		try {
 			const allow =
 				(globalThis.DEBUG ?? false) ||
@@ -313,7 +309,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			}
 		} catch {}
 	}
-	private _gpuWaitEnabled(): boolean {
+	public _gpuWaitEnabled(): boolean {
 		try {
 			return typeof localStorage !== 'undefined' && localStorage.getItem('GTMAP_DEBUG_GPUWAIT') === '1';
 		} catch {
@@ -325,13 +321,21 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this.container = container;
 		this._t0Ms = this._nowMs();
 		this._log('ctor: begin');
+
+		// Basic configuration setup (synchronous)
 		const initialImage = options.image;
 		this.minZoom = options.minZoom ?? 0;
 		if (initialImage) {
 			this.mapSize = { width: Math.max(1, initialImage.width), height: Math.max(1, initialImage.height) };
-			this._image = { url: initialImage.url, width: this.mapSize.width, height: this.mapSize.height, texture: null, ready: false, version: this._image.version + 1 };
 		} else {
 			this.mapSize = { width: 512, height: 512 };
+		}
+
+		this._imageManager = new ImageManager(this);
+		this._asyncInitManager = new AsyncInitManager();
+
+		if (initialImage) {
+			this._imageManager.setImage({ url: initialImage.url, width: this.mapSize.width, height: this.mapSize.height });
 		}
 		this._imageMaxZoom = this._computeImageMaxZoom(this.mapSize.width, this.mapSize.height);
 		const defaultMaxZoom = options.maxZoom ?? this._imageMaxZoom;
@@ -343,17 +347,15 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			lat: options.center?.lat ?? this.mapSize.height / 2,
 		};
 		this.zoom = options.zoom ?? Math.min(this.maxZoom, this._imageMaxZoom);
+
 		if (typeof options.zoomOutCenterBias === 'boolean') {
 			this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
 		} else if (Number.isFinite(options.zoomOutCenterBias as number)) {
 			const v = Math.max(0, Math.min(1, options.zoomOutCenterBias as number));
 			this.outCenterBias = v;
 		}
-		this._initCanvas();
-		this._gfx = new Graphics(this);
-		this._parseBackground(options.backgroundColor);
-		this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
-		this._initPrograms();
+
+		// Store options for async initialization
 		if (Number.isFinite(options.fpsCap as number)) {
 			const v = Math.max(15, Math.min(240, (options.fpsCap as number) | 0));
 			this._targetFps = v;
@@ -364,71 +366,161 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
 		this._autoResize = options.autoResize !== false;
-		this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
-		this._raster = new RasterRenderer(this.gl);
-		this._icons = new IconRenderer(this.gl);
-		this._renderer = new MapRenderer(() => this.getRenderCtx(), {
-			stepAnimation: () => this._zoomCtrl.step(),
-			zoomVelocityTick: () => this.zoomVelocityTick(),
-			panVelocityTick: () => {
-				this._panCtrl.step();
+
+		// Start async initialization
+		this._startAsyncInit(options, initialImage);
+	}
+
+	private async _startAsyncInit(options: MapOptions, initialImage: MapOptions['image']): Promise<void> {
+		// Set up initialization steps
+		this._asyncInitManager.addSteps([
+			{
+				name: 'Initialize Canvas',
+				execute: () => this._initCanvas(),
+				weight: 1
 			},
-		});
-		this._zoomCtrl = new ZoomController({
-			getZoom: () => this.zoom,
-			getMinZoom: () => this.minZoom,
-			getMaxZoom: () => this.maxZoom,
-			getImageMaxZoom: () => this._imageMaxZoom,
-			shouldAnchorCenterForZoom: (target) => this._shouldAnchorCenterForZoom(target),
-			getMap: () => this,
-			getOutCenterBias: () => this.outCenterBias,
-			clampCenterWorld: (cw, zInt, s, w, h) =>
-				clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
-			emit: (name: any, payload: any) => this._events.emit(name, payload),
-			requestRender: () => {
-				this._needsRender = true;
+			{
+				name: 'Initialize Graphics',
+				execute: () => {
+					this._gfx = new Graphics(this);
+					this._parseBackground(options.backgroundColor);
+					this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
+				},
+				weight: 3
 			},
-			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
-			getPublicView: () => this._viewPublic(),
-		});
-		this._panCtrl = new PanController({
-			getZoom: () => this.zoom,
-			getImageMaxZoom: () => this._imageMaxZoom,
-			getContainer: () => this.container,
-			getWrapX: () => this.wrapX,
-			getFreePan: () => this.freePan,
-			getMapSize: () => this.mapSize,
-			getMaxZoom: () => this.maxZoom,
-			getMaxBoundsPx: () => this._maxBoundsPx,
-			getMaxBoundsViscosity: () => this._maxBoundsViscosity,
-			getCenter: () => ({ x: this.center.lng, y: this.center.lat }),
-			setCenter: (lng: number, lat: number) => {
-				this.center = { lng, lat };
-				this._state.center = this.center;
+			{
+				name: 'Initialize Programs',
+				execute: () => this._initPrograms(),
+				weight: 2
 			},
-			requestRender: () => {
-				this._needsRender = true;
+			{
+				name: 'Initialize Renderers',
+				execute: () => {
+					this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
+					this._raster = new RasterRenderer(this.gl);
+					this._icons = new IconRenderer(this.gl);
+				},
+				weight: 3
 			},
-			emit: (name: any, payload: any) => this._events.emit(name, payload),
-			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
-			getPublicView: () => this._viewPublic(),
-		});
-		this._state = {
-			center: this.center,
-			zoom: this.zoom,
-			minZoom: this.minZoom,
-			maxZoom: this.maxZoom,
-			wrapX: this.wrapX,
-		};
-		this._initGridCanvas();
-		this._initVectorCanvas();
-		this.resize();
-		this._initEvents();
-		this._frameLoop = new FrameLoop(
-			() => this._targetFps,
-			(now: number, allowRender: boolean) => this._tick(now, allowRender),
-		);
-        this._frameLoop.start();
+			{
+				name: 'Initialize Controllers',
+				execute: () => {
+					this._renderer = new MapRenderer(() => this.getRenderCtx(), {
+						stepAnimation: () => this._zoomCtrl.step(),
+						zoomVelocityTick: () => this.zoomVelocityTick(),
+						panVelocityTick: () => {
+							this._panCtrl.step();
+						},
+					});
+					this._zoomCtrl = new ZoomController({
+						getZoom: () => this.zoom,
+						getMinZoom: () => this.minZoom,
+						getMaxZoom: () => this.maxZoom,
+						getImageMaxZoom: () => this._imageMaxZoom,
+						shouldAnchorCenterForZoom: (target) => this._shouldAnchorCenterForZoom(target),
+						getMap: () => this,
+						getOutCenterBias: () => this.outCenterBias,
+						clampCenterWorld: (cw, zInt, s, w, h) =>
+							clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
+						emit: (name: any, payload: any) => this._events.emit(name, payload),
+						requestRender: () => {
+							this._needsRender = true;
+						},
+						now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+						getPublicView: () => this._viewPublic(),
+					});
+					this._panCtrl = new PanController({
+						getZoom: () => this.zoom,
+						getImageMaxZoom: () => this._imageMaxZoom,
+						getContainer: () => this.container,
+						getWrapX: () => this.wrapX,
+						getFreePan: () => this.freePan,
+						getMapSize: () => this.mapSize,
+						getMaxZoom: () => this.maxZoom,
+						getMaxBoundsPx: () => this._maxBoundsPx,
+						getMaxBoundsViscosity: () => this._maxBoundsViscosity,
+						getCenter: () => ({ x: this.center.lng, y: this.center.lat }),
+						setCenter: (lng: number, lat: number) => {
+							this.center = { lng, lat };
+							this._state.center = this.center;
+						},
+						requestRender: () => {
+							this._needsRender = true;
+						},
+						emit: (name: any, payload: any) => this._events.emit(name, payload),
+						now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+						getPublicView: () => this._viewPublic(),
+					});
+				},
+				weight: 4
+			},
+			{
+				name: 'Initialize State',
+				execute: () => {
+					this._state = {
+						center: this.center,
+						zoom: this.zoom,
+						minZoom: this.minZoom,
+						maxZoom: this.maxZoom,
+						wrapX: this.wrapX,
+					};
+				},
+				weight: 1
+			},
+			{
+				name: 'Initialize Canvas Elements',
+				execute: () => {
+					this._initGridCanvas();
+					this._initVectorCanvas();
+				},
+				weight: 2
+			},
+			{
+				name: 'Initial Resize',
+				execute: () => this.resize(),
+				weight: 1
+			},
+			{
+				name: 'Initialize Events',
+				execute: () => this._initEvents(),
+				weight: 2
+			},
+			{
+				name: 'Start Frame Loop',
+				execute: () => {
+					this._frameLoop = new FrameLoop(
+						() => this._targetFps,
+						(now: number, allowRender: boolean) => this._tick(now, allowRender),
+					);
+					this._frameLoop.start();
+				},
+				weight: 1
+			}
+		]);
+
+		// Run async initialization with progress tracking
+		try {
+			await this._asyncInitManager.initialize({
+				yieldAfterMs: 16, // Yield every 16ms to maintain 60fps
+				onProgress: (progress: InitProgress) => {
+					this._log(`init:progress step=${progress.step} ${progress.percentage}% (${progress.completed}/${progress.total})`);
+				},
+				onComplete: () => {
+					this._log('init:complete - async initialization finished');
+					this._finalizeInit(options, initialImage);
+				},
+				onError: (error: Error) => {
+					this._log(`init:error ${error.message}`);
+					console.error('[GTMap] Async initialization failed:', error);
+				}
+			});
+		} catch (error) {
+			this._log(`init:fatal-error ${error}`);
+			console.error('[GTMap] Fatal initialization error:', error);
+		}
+	}
+
+	private _finalizeInit(_options: MapOptions, initialImage: MapOptions['image']): void {
 		try {
 			const emitLoad = () => {
 				const rect2 = this.container.getBoundingClientRect();
@@ -440,6 +532,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(emitLoad);
 			else setTimeout(emitLoad, 0);
 		} catch {}
+
 		if (this._autoResize) {
 			const attach = () => {
 				this._resizeMgr = new AutoResizeManager({
@@ -452,36 +545,45 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(attach));
 			else setTimeout(attach, 0);
 		}
+
 		if (initialImage) {
 			// Progressive flow: if a preview is provided, draw it first, then upgrade to the full image
 			if (initialImage.preview) {
 				const pv = initialImage.preview;
 				// Keep world size and zoom ranges based on the full image, but load a smaller texture first
 				this._log(`image:progressive preview=${pv.url} -> full=${initialImage.url}`);
-				const token = ++this._imageLoadToken;
 				// For correct filtering uniforms while preview is active
-				this._image.width = Math.max(1, pv.width);
-				this._image.height = Math.max(1, pv.height);
-				this._image.url = pv.url;
-				this._image.ready = false;
+				this._imageManager.setImage({ url: pv.url, width: Math.max(1, pv.width), height: Math.max(1, pv.height) });
 				this._needsRender = true;
-				void this._loadImageTexture(pv.url, token);
-				// After a short delay (or immediately), kick off full-resolution load with the same token
+				void this._imageManager.loadImage(pv.url);
+				// After a short delay (or immediately), kick off full-resolution load
 				const delay = Number.isFinite(initialImage.progressiveSwapDelayMs as number)
 					? Math.max(0, Math.min(2000, (initialImage.progressiveSwapDelayMs as number) | 0))
 					: 50;
 				setTimeout(() => {
-					// Only proceed if token still current
-					if (token !== this._imageLoadToken) return;
 					this._log('image:progressive upgrading to full');
-					void this._loadImageTexture(initialImage.url, token);
+					void this._imageManager.loadImage(initialImage.url);
 				}, delay);
 			} else {
 				this.setImageSource(initialImage);
 			}
 		}
+
 		this._log('ctor: end');
-		}
+	}
+
+	// ImageManagerHost interface implementation
+	onImageReady(): void {
+		this._imageReadyAtMs = this._nowMs();
+		try {
+			this._screenCache?.clear?.();
+		} catch {}
+		this._needsRender = true;
+	}
+
+	getImage(): ImageData {
+		return this._imageManager.getImage();
+	}
 
 	setCenter(lng: number, lat: number) {
 		// If bounds are set, strictly clamp center against bounds (Leaflet-like)
@@ -517,14 +619,14 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (!Number.isFinite(opts.width) || opts.width <= 0) throw new Error('GTMap: image width must be a positive number');
 		if (!Number.isFinite(opts.height) || opts.height <= 0) throw new Error('GTMap: image height must be a positive number');
 		this._log(`image:set url=${opts.url} size=${opts.width}x${opts.height}`);
-		const token = ++this._imageLoadToken;
-		if (this._image.texture) {
+		const currentImage = this.getImage();
+		if (currentImage.texture) {
 			try {
-				this.gl.deleteTexture(this._image.texture);
+				this.gl.deleteTexture(currentImage.texture);
 			} catch {}
 		}
 		this.mapSize = { width: Math.max(1, Math.floor(opts.width)), height: Math.max(1, Math.floor(opts.height)) };
-		this._image = { url: opts.url, width: this.mapSize.width, height: this.mapSize.height, texture: null, ready: false, version: this._image.version + 1 };
+		this._imageManager.setImage({ url: opts.url, width: this.mapSize.width, height: this.mapSize.height });
 		this._imageMaxZoom = this._computeImageMaxZoom(this.mapSize.width, this.mapSize.height);
 		this.maxZoom = Math.max(this.minZoom, this.maxZoom);
 		this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom));
@@ -537,7 +639,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 			this._screenCache?.clear?.();
 		} catch {}
 		this._needsRender = true;
-		void this._loadImageTexture(opts.url, token);
+		void this._imageManager.loadImage(opts.url);
 	}
 
 	private _computeImageMaxZoom(width: number, height: number): number {
@@ -549,115 +651,12 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		return Math.max(0, Math.floor(value));
 	}
 
-	private async _loadImageTexture(url: string, token: number): Promise<void> {
-		let bitmap: ImageBitmap | null = null;
-		let imageEl: HTMLImageElement | null = null;
-		try {
-			const tStart = this._nowMs();
-			this._log(`image:load begin url=${url}`);
-			if (this.useImageBitmap && typeof fetch === 'function' && typeof createImageBitmap === 'function') {
-				try {
-					const tFetch0 = this._nowMs();
-					this._log('image:fetch begin (bitmap path)');
-					const response = await fetch(url, { mode: 'cors', credentials: 'omit' });
-					if (!response.ok) throw new Error(`HTTP ${response.status}`);
-					const blob = await response.blob();
-					const tFetch1 = this._nowMs();
-					this._log(`image:fetch done dt=${(tFetch1 - tFetch0).toFixed(1)}ms bytes=${blob.size}`);
-					const tDecode0 = this._nowMs();
-					bitmap = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
-					const tDecode1 = this._nowMs();
-					this._log(`image:decode done path=bitmap dt=${(tDecode1 - tDecode0).toFixed(1)}ms total=${(tDecode1 - tStart).toFixed(1)}ms`);
-				} catch (err) {
-					this.useImageBitmap = false;
-					this._log('image:bitmap path failed; falling back to <img>');
-				}
-			}
-			if (!bitmap) {
-				const tImg0 = this._nowMs();
-				this._log('image:fetch+decode begin (img onload path)');
-				imageEl = await new Promise<HTMLImageElement>((resolve, reject) => {
-					const img = new Image();
-					img.crossOrigin = 'anonymous';
-					img.onload = () => resolve(img);
-					img.onerror = () => reject(new Error('Failed to load image'));
-					img.src = url;
-				});
-				const tImg1 = this._nowMs();
-				this._log(`image:decode done path=img onload dt=${(tImg1 - tImg0).toFixed(1)}ms total=${(tImg1 - tStart).toFixed(1)}ms`);
-			}
-			if (token !== this._imageLoadToken) return;
-			const gl = this.gl;
-			const tex = gl.createTexture();
-			if (!tex) throw new Error('GTMap: failed to allocate texture');
-			gl.bindTexture(gl.TEXTURE_2D, tex);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-			gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-			gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-			gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-			const tUpload0 = this._nowMs();
-			this._log('image:upload begin (gl.texImage2D)');
-			if (bitmap) {
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
-			} else if (imageEl) {
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageEl);
-			} else {
-				throw new Error('GTMap: unable to decode image source');
-			}
-			const tUpload1 = this._nowMs();
-			this._log(`image:upload done (CPU) dt=${(tUpload1 - tUpload0).toFixed(1)}ms`);
-			if (this._gpuWaitEnabled()) {
-				const tUF0 = this._nowMs();
-				try { this.gl.finish(); } catch {}
-				const tUF1 = this._nowMs();
-				this._log(`image:upload gpuWait dt=${(tUF1 - tUF0).toFixed(1)}ms`);
-			}
-				const texW = bitmap ? (bitmap as ImageBitmap).width : (imageEl as HTMLImageElement).naturalWidth;
-				const texH = bitmap ? (bitmap as ImageBitmap).height : (imageEl as HTMLImageElement).naturalHeight;
-				const canMip = this._isPowerOfTwo(texW) && this._isPowerOfTwo(texH);
-			if (canMip) {
-				const tMip0 = this._nowMs();
-				this._log('image:mipmap begin');
-				gl.generateMipmap(gl.TEXTURE_2D);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-				const tMip1 = this._nowMs();
-				this._log(`image:mipmap done (CPU) dt=${(tMip1 - tMip0).toFixed(1)}ms`);
-				if (this._gpuWaitEnabled()) {
-					const tMF0 = this._nowMs();
-					try { this.gl.finish(); } catch {}
-					const tMF1 = this._nowMs();
-					this._log(`image:mipmap gpuWait dt=${(tMF1 - tMF0).toFixed(1)}ms`);
-				}
-			}
-				if (token === this._imageLoadToken) {
-					this._image.texture = tex;
-					this._image.width = Math.max(1, texW | 0);
-					this._image.height = Math.max(1, texH | 0);
-					this._image.ready = true;
-				this._imageReadyAtMs = this._nowMs();
-				try {
-					this._screenCache?.clear?.();
-				} catch {}
-				this._needsRender = true;
-				this._log('image:ready');
-			}
-		} catch (err) {
-			try {
-				console.error('[GTMap] Failed to load image source', err);
-			} catch {}
-		} finally {
-			try {
-				bitmap?.close?.();
-			} catch {}
-		}
-	}
-
-	private _isPowerOfTwo(value: number): boolean {
+	public _isPowerOfTwo(value: number): boolean {
 		return (value & (value - 1)) === 0;
 	}
+
+
+
 
 	async setIconDefs(defs: Record<string, IconDefInput>) {
 		if (!this._icons) return;
@@ -841,13 +840,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		this._needsRender = true;
 	}
 	private _clearCache() {
-		if (this._image.texture) {
-			try {
-				this.gl.deleteTexture(this._image.texture);
-			} catch {}
-			this._image.texture = null;
-		}
-		this._image.ready = false;
+		this._imageManager.dispose();
 	}
 	public clearCache() {
 		this._clearCache();
@@ -1092,7 +1085,7 @@ export default class GTMap implements MapImpl, GraphicsHost {
 		if (!this._zoomCtrl.isAnimating() && !this._panCtrl.isAnimating()) this._needsRender = false;
 	}
 	private _render() {
-		const imageReadyAtCall = this._image.ready;
+		const imageReadyAtCall = this.getImage().ready;
 		const tR0 = this._nowMs();
 		this._renderer.render();
 		if (imageReadyAtCall && this._firstRasterDrawAtMs == null) {
@@ -1471,7 +1464,8 @@ export default class GTMap implements MapImpl, GraphicsHost {
 						ctx.globalAlpha = style.opacity ?? 1;
 					}
 				};
-				if (prim.type === 'polyline' || prim.type === 'polygon') {
+				const typeSymbol = getVectorTypeSymbol(prim.type);
+				if (typeSymbol && (isPolylineSymbol(typeSymbol) || isPolygonSymbol(typeSymbol))) {
 					const pts = prim.points as Array<{ lng: number; lat: number }>;
 					if (!pts.length) continue;
 					begin();
@@ -1481,10 +1475,10 @@ export default class GTMap implements MapImpl, GraphicsHost {
 						if (i === 0) ctx.moveTo(css.x, css.y);
 						else ctx.lineTo(css.x, css.y);
 					}
-					if (prim.type === 'polygon') ctx.closePath();
+					if (isPolygonSymbol(typeSymbol)) ctx.closePath();
 					finishStroke();
 					finishFill();
-				} else if (prim.type === 'circle') {
+				} else if (typeSymbol && isCircleSymbol(typeSymbol)) {
 					const c = prim.center as { lng: number; lat: number };
 					const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
 					// Radius: specified in native px; convert to CSS using current zInt/scale

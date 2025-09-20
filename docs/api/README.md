@@ -24,7 +24,6 @@ Use the lists below to jump directly to types and members.
 
 - [GTMap](./Class.GTMap.md)
 - [Layer](./Class.Layer.md)
-- [LeafletCompat](./Class.LeafletCompat.md)
 - [Marker](./Class.Marker.md)
 - [VectorEntity](./Class.VectorEntity.md)
 
@@ -42,7 +41,6 @@ Use the lists below to jump directly to types and members.
 - [ImageSourceOptions](./Interface.ImageSourceOptions.md)
 - [LayerEventMap](./Interface.LayerEventMap.md)
 - [LayerEvents](./Interface.LayerEvents.md)
-- [LeafletIconOptions](./Interface.LeafletIconOptions.md)
 - [LoadEventData](./Interface.LoadEventData.md)
 - [MapEvents](./Interface.MapEvents.md)
 - [MapOptions](./Interface.MapOptions.md)
@@ -76,8 +74,6 @@ Use the lists below to jump directly to types and members.
 - [Easing](./TypeAlias.Easing.md)
 - [IconScaleFunction](./TypeAlias.IconScaleFunction.md)
 - [InputDevice](./TypeAlias.InputDevice.md)
-- [LatLngLike](./TypeAlias.LatLngLike.md)
-- [LeafletPadding](./TypeAlias.LeafletPadding.md)
 - [Point](./TypeAlias.Point.md)
 - [Polygon](./TypeAlias.Polygon.md)
 - [Polyline](./TypeAlias.Polyline.md)
@@ -90,9 +86,6 @@ Use the lists below to jump directly to types and members.
 - [isCircle](./Function.isCircle.md)
 - [isPolygon](./Function.isPolygon.md)
 - [isPolyline](./Function.isPolyline.md)
-- [latLng](./Function.latLng.md)
-- [latLngBounds](./Function.latLngBounds.md)
-- [leafletCompat](./Function.leafletCompat.md)
 
 ### Namespaces
 

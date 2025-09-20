@@ -1,8 +1,8 @@
 import type { MarkerEvents } from '../api/events/public';
 import type { MarkerEventMap, MarkerData } from '../api/events/maps';
+import type { ApplyOptions, ApplyResult, Easing } from '../api/types';
 
 import { EventedEntity } from './base';
-import type { ApplyOptions, ApplyResult, Easing } from '../api/types';
 
 /**
  * Options for creating or styling a {@link Marker}.

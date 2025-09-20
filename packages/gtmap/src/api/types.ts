@@ -439,10 +439,12 @@ export interface ApplyOptions {
 }
 
 /** Status describing how a transition completed. */
-export type ApplyStatus = 'instant' | 'animated' | 'canceled';
+export type ApplyStatus = 'instant' | 'animated' | 'canceled' | 'complete' | 'error';
 
 /** Result returned by {@link ApplyOptions | apply} Promises. */
 export interface ApplyResult {
   /** Completion status of the transition. */
   status: ApplyStatus;
+  /** Error details if status is 'error' */
+  error?: Error | unknown;
 }

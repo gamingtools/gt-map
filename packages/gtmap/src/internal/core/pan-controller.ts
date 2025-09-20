@@ -1,6 +1,7 @@
 import * as Coords from '../coords';
-import { clampCenterWorld as clampCenterWorldCore } from './bounds';
 import type { PanDeps } from '../types';
+
+import { clampCenterWorld as clampCenterWorldCore } from './bounds';
 
 export default class PanController {
   private deps: PanDeps;

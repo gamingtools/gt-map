@@ -1,5 +1,6 @@
 import * as Coords from '../coords';
 import type { ANGLEInstancedArrays } from '../../api/types';
+
 import { IconMaskBuilder } from './icons/icon-mask-builder';
 import { createAtlas } from './icons/icon-atlas';
 
@@ -197,7 +198,12 @@ export class IconRenderer {
 				const blob = await r.blob();
 				const bmp = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
 				return bmp;
-			} catch {}
+			} catch (err) {
+				// Fallback to Image element; fetch+createImageBitmap failed
+				if (typeof console !== 'undefined' && console.debug) {
+					console.debug('[icons] fetch+createImageBitmap failed for:', url, err);
+				}
+			}
 		}
 		try {
 			const img = new Image();
@@ -210,7 +216,11 @@ export class IconRenderer {
 				img.src = url;
 			});
 			return img;
-		} catch {
+		} catch (err) {
+			// Both fetch and Image element failed
+			if (typeof console !== 'undefined' && console.warn) {
+				console.warn('[icons] Failed to load icon:', url, err);
+			}
 			return null;
 		}
 	}

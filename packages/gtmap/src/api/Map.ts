@@ -3,8 +3,10 @@ import type { MapImpl } from '../internal/types';
 import { Layer } from '../entities/Layer';
 import { Marker } from '../entities/Marker';
 import { Vector } from '../entities/Vector';
-import type { VectorGeometry as VectorGeom } from './events/maps';
+import { ViewTransitionImpl, type ViewTransition } from '../internal/core/view-transition';
+import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../internal/core/vector-types';
 
+import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
 import type {
 	Point,
@@ -18,7 +20,6 @@ import type {
 	MarkerInternal,
 	VectorPrimitiveInternal,
   IconScaleFunction,
-  ApplyOptions,
   ApplyResult,
   MaxBoundsPx,
 } from './types';
@@ -28,6 +29,9 @@ export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Pol
 export { Marker } from '../entities/Marker';
 export { Vector } from '../entities/Vector';
 export { Layer } from '../entities/Layer';
+
+// Re-export ViewTransition interface from extracted module for public API
+export type { ViewTransition };
 
 /**
  * GTMap - A high‑performance WebGL map renderer with a pixel‑based coordinate system.
@@ -387,8 +391,15 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	addVectors(_vectors: VectorLegacy[]): this {
 		// Legacy pass-through remains for now
 		const internalVectors: VectorPrimitiveInternal[] = _vectors.map((v) => {
-			if (v.type === 'polyline' || v.type === 'polygon') {
-				return { type: v.type, points: v.points.map((p) => ({ lng: p.x, lat: p.y })), style: v.style };
+			const typeSymbol = getVectorTypeSymbol(v.type);
+			if (typeSymbol && (isPolylineSymbol(typeSymbol) || isPolygonSymbol(typeSymbol))) {
+				// TypeScript narrowing: we know it's polyline or polygon
+				const polyVector = v as (VectorLegacy & { type: 'polyline' | 'polygon'; points: Point[] });
+				return {
+					type: polyVector.type,
+					points: polyVector.points.map((p) => ({ lng: p.x, lat: p.y })),
+					style: polyVector.style
+				};
 			}
 			const circle = v as Circle;
 			return { type: 'circle', center: { lng: circle.center.x, lat: circle.center.y }, radius: circle.radius, style: circle.style };
@@ -624,6 +635,18 @@ setAutoResize(on: boolean): this {
         const center: Point = { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 };
         return { center, zoom: z };
     }
+
+    /** @internal */
+    _setView(center: Point, zoom: number, opts?: { animate?: { durationMs: number; delayMs?: number; easing?: (t: number) => number } }): Promise<ApplyResult> {
+        if (opts?.animate) {
+            this._animateView({ center, zoom, durationMs: opts.animate.durationMs, easing: opts.animate.easing });
+            return this.events.once('moveend').then(() => ({ status: 'animated' }));
+        } else {
+            this._applyInstant(center, zoom);
+            return Promise.resolve({ status: 'instant' });
+        }
+    }
+
 	/**
 	 * Recompute canvas sizes after external container changes.
 	 *
@@ -731,301 +754,20 @@ transition(): ViewTransition {
 		const list = this.vectors.getAll();
 		const internalVectors: VectorPrimitiveInternal[] = list.map((v) => {
 			const g = v.geometry;
-			if (g.type === 'polyline' || g.type === 'polygon') {
-				return { type: g.type, points: g.points.map((p) => ({ lng: p.x, lat: p.y })), style: g.style };
+			const typeSymbol = getVectorTypeSymbol(g.type);
+			if (typeSymbol && (isPolylineSymbol(typeSymbol) || isPolygonSymbol(typeSymbol))) {
+				// TypeScript narrowing: we know it's polyline or polygon
+				const polyGeom = g as (VectorGeom & { type: 'polyline' | 'polygon'; points: Point[] });
+				return {
+					type: polyGeom.type,
+					points: polyGeom.points.map((p) => ({ lng: p.x, lat: p.y })),
+					style: polyGeom.style
+				};
 			}
-			return { type: 'circle', center: { lng: g.center.x, lat: g.center.y }, radius: g.radius, style: g.style };
+			// TypeScript narrowing: we know it's a circle
+			const circleGeom = g as (VectorGeom & { type: 'circle'; center: Point; radius: number });
+			return { type: 'circle', center: { lng: circleGeom.center.x, lat: circleGeom.center.y }, radius: circleGeom.radius, style: circleGeom.style };
 		});
 		this._impl.setVectors?.(internalVectors);
 	}
-}
-
-// Transition builder implementation (internal)
-/**
- * Chainable view transition builder.
- *
- * Configure desired changes (center/zoom/bounds/points/offset), then commit with {@link ViewTransition.apply | apply()}.
- * The builder is side‑effect free until `apply()` is called.
- *
- * @public
- */
-export interface ViewTransition {
-  /**
-   * Target an absolute center position in world pixels.
-   *
-   * @param p - Target center `{ x, y }` in world pixels
-   * @returns The builder for chaining
-   * @example
-   * ```ts
-   * await map.transition().center({ x: 4096, y: 4096 }).apply();
-   * ```
-   */
-  center(p: Point): this;
-
-  /**
-   * Target an absolute zoom level.
-   *
-   * Zoom is a continuous number; integers align with image pyramid levels.
-   * @param z - Target zoom
-   * @returns The builder for chaining
-   * @example
-   * ```ts
-   * await map.transition().zoom(4).apply({ animate: { durationMs: 400 } });
-   * ```
-   */
-  zoom(z: number): this;
-
-  /**
-   * Offset the current or targeted center by a delta in world pixels.
-   *
-   * Can be combined with {@link ViewTransition.center | center()}.
-   * @param dx - X delta in pixels
-   * @param dy - Y delta in pixels
-   * @returns The builder for chaining
-   */
-  offset(dx: number, dy: number): this;
-
-  /**
-   * Fit the view to a bounding box with optional padding.
-   *
-   * Padding may be a single number (applied on all sides) or a per‑side object.
-   * @param b - Bounds in world pixels
-   * @param padding - Uniform number or `{ top, right, bottom, left }`
-   * @returns The builder for chaining
-   * @example
-   * ```ts
-   * await map.transition()
-   *   .bounds({ minX: 1000, minY: 1000, maxX: 2000, maxY: 1800 }, 24)
-   *   .apply({ animate: { durationMs: 500 } });
-   * ```
-   */
-  bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
-
-  /**
-   * Fit the view to a set of points with optional padding.
-   *
-   * @param list - Points in world pixels
-   * @param padding - Uniform number or `{ top, right, bottom, left }`
-   * @returns The builder for chaining
-   */
-  points(list: Array<Point>, padding?: number | { top: number; right: number; bottom: number; left: number }): this;
-
-  /**
-   * Commit the transition.
-   *
-   * When `opts.animate` is omitted, the change is applied instantly. With animation,
-   * the returned promise resolves when relevant end events are observed.
-   * @param opts - Apply/animation options
-   * @returns A promise resolving with the {@link ApplyResult | result}
-   */
-  apply(opts?: ApplyOptions): Promise<ApplyResult>;
-
-  /**
-   * Cancel a pending or running transition.
-   *
-   * If already settled, this is a no‑op.
-   */
-  cancel(): void;
-}
-
-class ViewTransitionImpl implements ViewTransition {
-  // Track at most one active transition per map instance
-  private static _active: WeakMap<GTMap<any>, ViewTransitionImpl> = new WeakMap();
-  static _activeFor(map: GTMap<any>): ViewTransitionImpl | undefined { return this._active.get(map); }
-  static _setActive(map: GTMap<any>, tx: ViewTransitionImpl): void { this._active.set(map, tx); }
-  static _clearActive(map: GTMap<any>): void { this._active.delete(map); }
-  private map: GTMap<any>;
-  private targetCenter?: Point;
-  private targetZoom?: number;
-  private offsetDx = 0;
-  private offsetDy = 0;
-  private targetBounds?: { minX: number; minY: number; maxX: number; maxY: number };
-  private boundsPadding?: { top: number; right: number; bottom: number; left: number };
-  // private started flag removed
-  private settled = false;
-  private cancelled = false;
-  private resolveFn?: (r: ApplyResult) => void;
-  private promise?: Promise<ApplyResult>;
-  private unsubscribeMoveEnd?: () => void;
-  private unsubscribeZoomEnd?: () => void;
-
-  constructor(map: GTMap<any>) {
-    this.map = map;
-  }
-
-  center(p: Point): this {
-    this.targetCenter = p;
-    return this;
-  }
-
-  zoom(z: number): this {
-    this.targetZoom = z;
-    return this;
-  }
-
-  offset(dx: number, dy: number): this {
-    this.offsetDx += dx;
-    this.offsetDy += dy;
-    return this;
-  }
-
-  bounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding?: number | { top: number; right: number; bottom: number; left: number }): this {
-    this.targetBounds = b;
-    if (typeof padding === 'number') {
-      const p = Math.max(0, padding);
-      this.boundsPadding = { top: p, right: p, bottom: p, left: p };
-    } else if (padding) {
-      const pad = padding as { top: number; right: number; bottom: number; left: number };
-      this.boundsPadding = {
-        top: Math.max(0, pad.top),
-        right: Math.max(0, pad.right),
-        bottom: Math.max(0, pad.bottom),
-        left: Math.max(0, pad.left),
-      };
-    } else {
-      this.boundsPadding = { top: 0, right: 0, bottom: 0, left: 0 };
-    }
-    return this;
-  }
-
-  points(list: Array<Point>, padding?: number | { top: number; right: number; bottom: number; left: number }): this {
-    if (!list || list.length === 0) return this;
-    let minX = Number.POSITIVE_INFINITY, minY = Number.POSITIVE_INFINITY;
-    let maxX = Number.NEGATIVE_INFINITY, maxY = Number.NEGATIVE_INFINITY;
-    for (const p of list) {
-      if (p.x < minX) minX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y > maxY) maxY = p.y;
-    }
-    return this.bounds({ minX, minY, maxX, maxY }, padding);
-  }
-
-  // markers(...) removed for now; use points(...) with marker positions if needed
-
-  cancel(): void {
-    if (this.settled) return;
-    this.cancelled = true;
-    this._resolve({ status: 'canceled' });
-  }
-
-  async apply(opts?: ApplyOptions): Promise<ApplyResult> {
-    if (this.promise) return this.promise;
-    // Compute final targets
-    const currentCenter = this.map.getCenter();
-    const currentZoom = this.map.getZoom();
-    let finalCenter: Point | undefined;
-    let finalZoom: number | undefined;
-
-    if (this.targetBounds) {
-      const fit = this.map._fitBounds(this.targetBounds, this.boundsPadding || { top: 0, right: 0, bottom: 0, left: 0 });
-      finalCenter = fit.center;
-      finalZoom = fit.zoom;
-    }
-
-    if (!finalCenter && this.targetCenter) {
-      finalCenter = { x: this.targetCenter.x + this.offsetDx, y: this.targetCenter.y + this.offsetDy };
-    } else if (!finalCenter && (this.offsetDx !== 0 || this.offsetDy !== 0)) {
-      finalCenter = { x: currentCenter.x + this.offsetDx, y: currentCenter.y + this.offsetDy };
-    }
-    if (typeof finalZoom !== 'number' && typeof this.targetZoom === 'number') {
-      finalZoom = this.targetZoom;
-    }
-
-    const needsCenter = !!finalCenter && (finalCenter.x !== currentCenter.x || finalCenter.y !== currentCenter.y);
-    const needsZoom = typeof finalZoom === 'number' && finalZoom !== currentZoom;
-
-    const noChange = !needsCenter && !needsZoom;
-    if (noChange) {
-      return this._finalizeImmediate({ status: 'instant' });
-    }
-
-    const animate = opts?.animate;
-    if (!animate) {
-      // Stop any ongoing pan/zoom animations to avoid inertia overriding instant set
-      try { this.map._cancelPanZoom(); } catch {}
-      this.map._applyInstant(needsCenter ? (finalCenter as Point) : undefined, needsZoom ? (finalZoom as number) : undefined);
-      return this._finalizeImmediate({ status: 'instant' });
-    }
-
-    // Interrupt policy handling (phase 1: treat join/enqueue as cancel)
-    const policy = animate.interrupt ?? 'cancel';
-    const prev = ViewTransitionImpl._activeFor(this.map);
-    if (policy === 'enqueue' && prev && prev !== this && !prev.settled) {
-      // Wait for the previous transition to finish before starting
-      if (prev.promise) await prev.promise;
-    }
-    if (policy === 'cancel' && prev && prev !== this && !prev.settled) {
-      prev.cancel();
-    }
-    // For 'join' we do not cancel the previous; both will resolve when the new animation ends
-    ViewTransitionImpl._setActive(this.map, this);
-
-    // Optional delay
-    if (animate.delayMs && animate.delayMs > 0) {
-      await new Promise<void>((res) => setTimeout(res, animate.delayMs));
-      if (this.cancelled) return { status: 'canceled' };
-    }
-
-    // Subscribe to end events according to what changes
-    const needsMoveEnd = needsCenter;
-    const needsZoomEnd = needsZoom;
-    let moveEnded = !needsMoveEnd;
-    let zoomEnded = !needsZoomEnd;
-
-    this.promise = new Promise<ApplyResult>((resolve) => {
-      this.resolveFn = resolve;
-      if (needsMoveEnd) {
-        this.unsubscribeMoveEnd = this.map.events.on('moveend').each(() => {
-          moveEnded = true;
-          this._maybeResolveAnimated(moveEnded, zoomEnded);
-        });
-      }
-      if (needsZoomEnd) {
-        this.unsubscribeZoomEnd = this.map.events.on('zoomend').each(() => {
-          zoomEnded = true;
-          this._maybeResolveAnimated(moveEnded, zoomEnded);
-        });
-      }
-    });
-
-    // For 'cancel', ensure underlying animations are stopped before starting new
-    if (policy === 'cancel') {
-      try { this.map._cancelPanZoom(); } catch {}
-    }
-
-    // Kick off the animation via existing API
-    const durationMs = animate.durationMs;
-    const easing = animate.easing;
-    this.map._animateView({ center: finalCenter, zoom: finalZoom, durationMs, easing });
-
-    return this.promise;
-  }
-
-  private _maybeResolveAnimated(moveEnded: boolean, zoomEnded: boolean) {
-    if (this.settled) return;
-    if (this.cancelled) {
-      this._resolve({ status: 'canceled' });
-      return;
-    }
-    if (moveEnded && zoomEnded) {
-      this._resolve({ status: 'animated' });
-    }
-  }
-
-  private _finalizeImmediate(result: ApplyResult): Promise<ApplyResult> {
-    this.promise = Promise.resolve(result);
-    this.settled = true;
-    return this.promise;
-  }
-
-  private _resolve(result: ApplyResult) {
-    if (this.settled) return;
-    this.settled = true;
-    try { this.unsubscribeMoveEnd?.(); } catch {}
-    try { this.unsubscribeZoomEnd?.(); } catch {}
-    // Clear active if it is me
-    if (ViewTransitionImpl._activeFor(this.map) === this) ViewTransitionImpl._clearActive(this.map);
-    if (this.resolveFn) this.resolveFn(result);
-  }
 }

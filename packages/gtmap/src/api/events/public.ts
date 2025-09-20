@@ -55,8 +55,9 @@ export interface PublicEvents<EventMap> {
 // Typed event surfaces for better IntelliSense on hover
 // These extend PublicEvents but annotate common names for quick reference.
 
-import type { MarkerEventMap, VectorEventMap, LayerEventMap } from './maps';
 import type { EventMap as MapEventMap } from '../types';
+
+import type { MarkerEventMap, VectorEventMap, LayerEventMap } from './maps';
 
 /** Marker events surface with typed names and payloads. */
 export interface MarkerEvents<T = unknown> extends PublicEvents<MarkerEventMap<T>> {

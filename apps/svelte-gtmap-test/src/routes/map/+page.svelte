@@ -64,7 +64,7 @@
 		if (!map) return;
 		const count = clampMarkerCount(n);
 		markerCount = count;
-		clearLeafletMarkers();
+		map?.clearMarkers?.();
 
 		for (let i = 0; i < markerCount; i++) {
 			const x = rand(0, MAP_IMAGE.width);
@@ -93,13 +93,6 @@
 		applyMarkerCount(n);
 	}
 
-	function clearLeafletMarkers(): void {
-		try {
-			map?.clearMarkers?.();
-		} finally {
-			/* no-op */
-		}
-	}
 
 	function addVectors(): void {
 		if (!map) return;
@@ -155,7 +148,7 @@
 
 	function setMarkersEnabled(on: boolean): void {
 		if (on) applyMarkerCount(markerCount);
-		else clearLeafletMarkers();
+		else map?.clearMarkers?.();
 	}
 
 	function setVectorsEnabled(on: boolean): void {
