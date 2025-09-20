@@ -227,6 +227,7 @@ export class IconRenderer {
 		minZoom?: number;
 		maxZoom?: number;
 		container: HTMLElement;
+		viewport: { width: number; height: number };
 		project: (x: number, y: number, z: number) => { x: number; y: number };
 		wrapX: boolean;
 		iconScaleFunction?: ((zoom: number, minZoom: number, maxZoom: number) => number) | null;
@@ -234,18 +235,17 @@ export class IconRenderer {
 		if (this.markers.length === 0) return;
 		const gl = ctx.gl;
 		const { zInt: baseZ, scale: effScale } = Coords.zParts(ctx.zoom);
-		const rect = ctx.container.getBoundingClientRect();
-		const widthCSS = rect.width;
-		const heightCSS = rect.height;
+		const widthCSS = ctx.viewport.width;
+		const heightCSS = ctx.viewport.height;
 		const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
-    // Always snap top-left to device pixels to share the same stable origin as the raster
-    // and quantize icon positions/sizes in device space to eliminate subpixel jitter.
-    let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
-    const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
-    tlWorld = { x: snapTL(tlWorld.x), y: snapTL(tlWorld.y) };
+		// Always snap top-left to device pixels to share the same stable origin as the raster
+		// and quantize icon positions/sizes in device space to eliminate subpixel jitter.
+		let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
+		const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
+		tlWorld = { x: snapTL(tlWorld.x), y: snapTL(tlWorld.y) };
 
-    // Calculate scale factor from icon scale function (screen-space scaling)
-    const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
+		// Calculate scale factor from icon scale function (screen-space scaling)
+		const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
 		// Compute map scissor in device pixels to clip icons outside the finite image
 		// Icons themselves are not clipped here; screen cache draw is clipped to map extent in renderer.
 
@@ -262,10 +262,10 @@ export class IconRenderer {
 			gl.uniform1f(this.instLoc!.u_alpha, 1.0);
 			// UVs set per type when using atlas
 			gl.uniform2f(this.instLoc!.u_tlWorld!, tlWorld.x, tlWorld.y);
-            gl.uniform1f(this.instLoc!.u_scale!, effScale);
-            gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
-            gl.uniform1f(this.instLoc!.u_invS!, invS);
-            gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
+			gl.uniform1f(this.instLoc!.u_scale!, effScale);
+			gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
+			gl.uniform1f(this.instLoc!.u_invS!, invS);
+			gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
 
 			// For each type
 			const isGL2 = 'drawArraysInstanced' in (gl as WebGL2RenderingContext);

@@ -54,3 +54,4 @@ temp/
 .git_base_sha
 .git_head_sha
 /.npm-cache
+/sandbox

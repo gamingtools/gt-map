@@ -75,42 +75,11 @@
   const DATA_URL = 'https://data.gtcdn.info/dev/dune/1.2.0.0/data/en/mapMarkers.json.gz';
   const ICON_PREFIX = 'https://gtcdn.info/dune/1.2.0.0/images';
 
-  async function fetchJsonMaybeGzip<T>(url: string): Promise<T> {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
-    const ctype = res.headers.get('content-type') || '';
-    // If server transparently decompresses, just parse json
-    if (ctype.includes('application/json') || url.endsWith('.json')) {
-      return (await res.json()) as T;
-    }
-    // If it serves gzip as a file, use DecompressionStream when available
-    if (typeof DecompressionStream !== 'undefined' && (ctype.includes('application/gzip') || url.endsWith('.gz'))) {
-      const ds = new DecompressionStream('gzip');
-      const stream = res.body?.pipeThrough(ds);
-      if (!stream) throw new Error('No response body stream');
-      const reader = stream.getReader();
-      const chunks: Uint8Array[] = [];
-      while (true) {
-        const r = await reader.read();
-        if (r.done) break;
-        if (r.value) chunks.push(r.value);
-      }
-      const total = chunks.reduce((acc, c) => acc + c.byteLength, 0);
-      const buf = new Uint8Array(total);
-      let off = 0;
-      for (const c of chunks) { buf.set(c, off); off += c.byteLength; }
-      const text = new TextDecoder('utf-8').decode(buf);
-      return JSON.parse(text) as T;
-    }
-    // Fallback: try text → JSON
-    const txt = await res.text();
-    try { return JSON.parse(txt) as T; } catch { throw new Error('Unsupported encoding and invalid JSON'); }
-  }
-
   async function loadRemoteMarkers(): Promise<void> {
     if (!map) return;
     try {
-      const data = await fetchJsonMaybeGzip<RemoteMarker[]>(DATA_URL);
+      const dataRes = await fetch(DATA_URL);
+      const data = await dataRes.json() as RemoteMarker[];
       // Build icon cache map by path
       const iconCache = new Map<string, IconHandle>();
       const ensureIcon = (ico?: RemoteIcon): IconHandle | null => {
@@ -177,7 +146,7 @@
       image: MAP_IMAGE,
       wrapX: false,
       minZoom: 0,
-      maxZoom: 5,
+      maxZoom: 10,
       center: HOME,
       zoom: 2,
       autoResize: true,
@@ -211,29 +180,19 @@
 </script>
 
 <div class="page">
-  <div class="toolbar">
-    <button class="btn" onclick={() => void map?.transition().center(HOME).zoom(2).apply({ animate: { durationMs: 250 } })}>Home</button>
-    <button class="btn" onclick={panToAll}>Pan to all</button>
-    <button class="btn" onclick={panToRandomCluster}>Pan to cluster</button>
-    <div class="spacer" />
-    <label class="lbl">Markers:</label>
-    <input class="num" type="number" min="0" max="50000" value={markerCount} oninput={(e) => setMarkerCount(Number((e.target as HTMLInputElement).value))} />
-    <button class="btn" onclick={() => applyMarkerCount(markerCount)}>Apply</button>
-    <button class="btn" onclick={clearMarkers}>Clear</button>
-  </div>
+
   <div bind:this={container} class="map">
     <Hud {map} fpsCap={60} wheelSpeed={1.0} home={{ lng: HOME.x, lat: HOME.y }} markerCount={markerCount} setMarkerCount={setMarkerCount} setMarkersEnabled={(on: boolean) => on ? applyMarkerCount(markerCount) : clearMarkers()} setVectorsEnabled={() => {}} />
   </div>
 </div>
 
 <style>
-  .page { display: grid; grid-template-rows: auto 1fr; height: calc(100vh - 32px); }
-  .toolbar { display: flex; gap: 8px; align-items: center; padding: 8px 12px; background: rgba(24,24,27,0.9); border-bottom: 1px solid #3f3f46; }
-  .btn { background: #27272a; border: 1px solid #3f3f46; color: #e5e7eb; padding: 6px 10px; border-radius: 6px; font: 12px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif; cursor: pointer; }
-  .btn:hover { background: #323238; border-color: #52525b; }
-  .lbl { font-size: 12px; color: #d4d4d8; }
-  .num { width: 88px; background: #111827; border: 1px solid #374151; color: #e5e7eb; padding: 4px 6px; border-radius: 6px; }
-  .spacer { flex: 1; }
-  .map { position: relative; user-select: none; -webkit-user-select: none; touch-action: none; width: 100%; height: 100%; }
+  .map { 		position: relative;
+		/* Dark neutral to match app background */
+		user-select: none;
+		-webkit-user-select: none;
+		touch-action: none;
+		width: 100%;
+		height: calc(100vh - 32px); }
   /* Hud component handles its own styles */
 </style>

@@ -100,6 +100,7 @@ export default class MapRenderer {
 				minZoom: ctx.minZoom,
 				maxZoom: ctx.maxZoom,
 				container: ctx.container,
+				viewport: { width: widthCSS, height: heightCSS },
 				project: (x: number, y: number, z: number) => ctx.project(x, y, z),
 				wrapX: ctx.wrapX,
 				iconScaleFunction: ctx.iconScaleFunction ?? undefined,

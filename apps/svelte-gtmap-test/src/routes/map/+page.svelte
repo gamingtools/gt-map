@@ -190,9 +190,9 @@
 		} catch {}
 
 		// Ensure we have a visible, asymmetric icon for rotation if remote icons fail
-		fallbackIcon = createFallbackIcon();
-		applyMarkerCount(markerCount);
-		addVectors();
+		// fallbackIcon = createFallbackIcon();
+		// applyMarkerCount(markerCount);
+		// addVectors();
 
 		// Test icon scaling examples
 		// Example 1: Scale with zoom (like real world objects)
@@ -208,11 +208,11 @@
 		// 	return 1.5;
 		// });
 
-		map.setIconScaleFunction((zoom, minZoom, maxZoom) => {
-			const maxScale = 1;
-			const scale = Math.pow(2, zoom - 3);
-			return Math.min(maxScale, Math.max(0.5, scale));
-		});
+		// map.setIconScaleFunction((zoom, minZoom, maxZoom) => {
+		// 	const maxScale = 1;
+		// 	const scale = Math.pow(2, zoom - 3);
+		// 	return Math.min(maxScale, Math.max(0.5, scale));
+		// });
 
 		// map.events.on('pointerup').each((e) => console.log('up', e));
 		// map.events.on('markerenter').each((e) => console.log('markerenter', e));

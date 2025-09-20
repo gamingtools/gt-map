@@ -120,8 +120,7 @@ export class GTMap<TMarkerData = unknown> {
 		};
 		this._impl = new Impl(container as HTMLDivElement, implOpts);
 		this._ensureDefaultIcon();
-
-		this._impl.setImageSource({ url: img.url, width: img.width, height: img.height });
+		// Impl constructor already kicks off initial image loading.
 
 		// Layers
 		const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
@@ -222,8 +221,6 @@ export class GTMap<TMarkerData = unknown> {
         if (center) this._impl.setCenter(center.x, center.y);
         if (typeof zoom === 'number') this._impl.setZoom(zoom);
     }
-
-
 
 	// Grid + filtering
 	/**
