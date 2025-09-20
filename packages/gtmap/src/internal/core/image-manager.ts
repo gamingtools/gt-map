@@ -89,9 +89,9 @@ export class ImageManager {
 	/**
 	 * Load image from URL
 	 */
-	async loadImage(url: string): Promise<void> {
+	async loadImage(url: string, nextDims?: { width: number; height: number }): Promise<void> {
 		const token = ++this._imageLoadToken;
-		return this._loadImage(url, token);
+		return this._loadImage(url, token, nextDims);
 	}
 
 	/**
@@ -104,7 +104,7 @@ export class ImageManager {
 	/**
 	 * Load and create texture from image URL
 	 */
-	private async _loadImage(url: string, token: number): Promise<void> {
+	private async _loadImage(url: string, token: number, nextDims?: { width: number; height: number }): Promise<void> {
 		const tStart = this.host._nowMs();
 		this.host._log(`image:load begin url=${url}`);
 
@@ -154,11 +154,16 @@ export class ImageManager {
 				}
 			}
 
-			// Check if this load is still current
-			if (token !== this._imageLoadToken) {
-				this.host._log('image:load stale; ignoring');
-				return;
-			}
+            // Check if this load is still current. For progressive flows, allow a stale
+            // (older) preview load to commit if no texture has been committed yet.
+            if (token !== this._imageLoadToken) {
+                if (this._image.texture) {
+                    this.host._log('image:load stale; ignoring');
+                    return;
+                } else {
+                    this.host._log('image:load stale but no texture yet; committing preview');
+                }
+            }
 
 			// Create WebGL texture
 			const gl = this.host.gl;
@@ -178,6 +183,13 @@ export class ImageManager {
 			// Update image state
 			if (this._image.texture) {
 				gl.deleteTexture(this._image.texture);
+			}
+			// If caller provided new intrinsic dimensions (e.g., upgrading preview -> full),
+			// apply them atomically with the texture swap to keep uniforms coherent.
+			if (nextDims && Number.isFinite(nextDims.width) && Number.isFinite(nextDims.height)) {
+				this._image.width = Math.max(1, Math.floor(nextDims.width));
+				this._image.height = Math.max(1, Math.floor(nextDims.height));
+				this._image.url = url;
 			}
 			this._image.texture = texture;
 			this._image.ready = true;

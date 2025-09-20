@@ -109,6 +109,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _screenCache: ScreenCache | null = null;
 	private _raster!: RasterRenderer;
     private _icons: IconRenderer | null = null;
+    private _pendingIconDefs: Record<string, IconDefInput> | null = null;
+    private _pendingMarkers: MarkerInput[] | null = null;
 	private _renderer!: MapRenderer;
 	private _rasterOpacity = 1.0;
 	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'auto';
@@ -393,15 +395,29 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				execute: () => this._initPrograms(),
 				weight: 2
 			},
-			{
-				name: 'Initialize Renderers',
-				execute: () => {
-					this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
-					this._raster = new RasterRenderer(this.gl);
-					this._icons = new IconRenderer(this.gl);
-				},
-				weight: 3
-			},
+            {
+                name: 'Initialize Renderers',
+                execute: () => {
+                    this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
+                    this._raster = new RasterRenderer(this.gl);
+                    this._icons = new IconRenderer(this.gl);
+                    // If icon defs were provided before the renderer was constructed (e.g., from facade ctor),
+                    // apply them now so markers can render immediately.
+                    if (this._pendingIconDefs) {
+                        const defs = this._pendingIconDefs;
+                        this._pendingIconDefs = null;
+                        // Fire and forget; screen cache clearing and re-render will follow in setIconDefs
+                        void this.setIconDefs(defs);
+                    }
+                    // If markers were provided early, apply them once icons are ready
+                    if (this._pendingMarkers && this._pendingMarkers.length) {
+                        const m = this._pendingMarkers.slice();
+                        this._pendingMarkers = null;
+                        this.setMarkers(m);
+                    }
+                },
+                weight: 3
+            },
 			{
 				name: 'Initialize Controllers',
 				execute: () => {
@@ -546,28 +562,28 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			else setTimeout(attach, 0);
 		}
 
-		if (initialImage) {
-			// Progressive flow: if a preview is provided, draw it first, then upgrade to the full image
-			if (initialImage.preview) {
-				const pv = initialImage.preview;
-				// Keep world size and zoom ranges based on the full image, but load a smaller texture first
-				this._log(`image:progressive preview=${pv.url} -> full=${initialImage.url}`);
-				// For correct filtering uniforms while preview is active
-				this._imageManager.setImage({ url: pv.url, width: Math.max(1, pv.width), height: Math.max(1, pv.height) });
-				this._needsRender = true;
-				void this._imageManager.loadImage(pv.url);
-				// After a short delay (or immediately), kick off full-resolution load
-				const delay = Number.isFinite(initialImage.progressiveSwapDelayMs as number)
-					? Math.max(0, Math.min(2000, (initialImage.progressiveSwapDelayMs as number) | 0))
-					: 50;
-				setTimeout(() => {
-					this._log('image:progressive upgrading to full');
-					void this._imageManager.loadImage(initialImage.url);
-				}, delay);
-			} else {
-				this.setImageSource(initialImage);
-			}
-		}
+        if (initialImage) {
+            // Progressive flow: if a preview is provided, draw it first, then upgrade to the full image
+            if (initialImage.preview) {
+                const pv = initialImage.preview;
+                // Keep world size and zoom ranges based on the full image, but load a smaller texture first
+                this._log(`image:progressive preview=${pv.url} -> full=${initialImage.url}`);
+                // For correct filtering uniforms while preview is active
+                this._imageManager.setImage({ url: pv.url, width: Math.max(1, pv.width), height: Math.max(1, pv.height) });
+                this._needsRender = true;
+                // After a short delay (or immediately), kick off full-resolution load
+                const delay = Number.isFinite(initialImage.progressiveSwapDelayMs as number)
+                    ? Math.max(0, Math.min(2000, (initialImage.progressiveSwapDelayMs as number) | 0))
+                    : 50;
+                setTimeout(() => {
+                    this._log('image:progressive upgrading to full');
+                    // Load full-res and atomically update intrinsic dimensions on success
+                    void this._imageManager.loadImage(initialImage.url, { width: this.mapSize.width, height: this.mapSize.height });
+                }, delay);
+            } else {
+                this.setImageSource(initialImage);
+            }
+        }
 
 		this._log('ctor: end');
 	}
@@ -658,16 +674,25 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 
 
 
-	async setIconDefs(defs: Record<string, IconDefInput>) {
-		if (!this._icons) return;
-		await this._icons.loadIcons(defs);
-		try {
-			this._screenCache?.clear?.();
-		} catch {}
-		this._needsRender = true;
-	}
-	setMarkers(markers: MarkerInput[]) {
-		if (!this._icons) return;
+    async setIconDefs(defs: Record<string, IconDefInput>) {
+        if (!this._icons) {
+            // Renderer not ready yet; merge into pending and apply later.
+            if (!this._pendingIconDefs) this._pendingIconDefs = {};
+            for (const k of Object.keys(defs)) this._pendingIconDefs[k] = defs[k];
+            return;
+        }
+        await this._icons.loadIcons(defs);
+        try {
+            this._screenCache?.clear?.();
+        } catch {}
+        this._needsRender = true;
+    }
+    setMarkers(markers: MarkerInput[]) {
+        if (!this._icons) {
+            // Buffer until icon renderer is ready
+            this._pendingMarkers = markers.slice();
+            return;
+        }
 		try {
 			const nextIds = new Set<string>((markers.map((m) => m.id).filter((id): id is string => typeof id === 'string')));
 			if (this._lastHover && this._lastHover.id && !nextIds.has(this._lastHover.id)) {
