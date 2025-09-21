@@ -101,7 +101,11 @@ export interface ZoomDeps {
 	getMaxZoom(): number;
 	getImageMaxZoom(): number;
 	shouldAnchorCenterForZoom(targetZoom: number): boolean;
-	getMap(): any;
+	getContainer(): HTMLElement;
+	getBoundsPx(): { minX: number; minY: number; maxX: number; maxY: number } | null;
+	getBounceAtZoomLimits(): boolean;
+	setCenterLngLat(lng: number, lat: number): void;
+	setZoom(z: number): void;
 	getOutCenterBias(): number;
 	clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number): { x: number; y: number };
 	emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;

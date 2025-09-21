@@ -59,15 +59,7 @@ export class ImageManager {
 		return this._imageReadyAtMs;
 	}
 
-	/**
-	 * Compute maximum zoom level for an image based on its dimensions
-	 */
-	computeImageMaxZoom(width: number, height: number): number {
-		const baseGridSize = 256;
-		const maxDim = Math.max(width, height);
-		if (maxDim <= baseGridSize) return 0;
-		return Math.ceil(Math.log2(maxDim / baseGridSize));
-	}
+    // Note: max zoom computation is owned by MapGL; keep ImageManager focused on I/O
 
 	/**
 	 * Set a new image source and begin loading

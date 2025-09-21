@@ -1,5 +1,6 @@
 import * as Coords from '../coords';
 import type { ANGLEInstancedArrays } from '../../api/types';
+import type { ProgramLocs } from '../render/screen-cache';
 
 import { IconMaskBuilder } from './icons/icon-mask-builder';
 import { createAtlas } from './icons/icon-atlas';
@@ -43,6 +44,35 @@ export class IconRenderer {
 	} | null = null;
 	private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number; capacityBytes: number }>();
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
+
+    dispose() {
+        const gl = this.gl;
+        try {
+            // Deduplicate textures to avoid deleting the same atlas more than once
+            const unique = new Set<WebGLTexture>();
+            for (const t of this.textures.values()) if (t) unique.add(t);
+            for (const t of this.textures2x.values()) if (t) unique.add(t);
+            for (const tex of unique) {
+                try { gl.deleteTexture(tex); } catch {}
+            }
+        } catch {}
+        try {
+            for (const rec of this.instBuffers.values()) {
+                try { gl.deleteBuffer(rec.buf); } catch {}
+            }
+        } catch {}
+        try { if (this.instProg) gl.deleteProgram(this.instProg); } catch {}
+        this.textures.clear();
+        this.textures2x.clear();
+        this.uvRect.clear();
+        this.uvRect2x.clear();
+        this.hasRetina.clear();
+        this.instBuffers.clear();
+        this.typeData.clear();
+        this.instProg = null;
+        this.instLoc = null;
+        this.instExt = null;
+    }
 
 	// Expose resolved marker sizes for debug overlays (hitboxes)
 	getMarkerInfo(scale = 1): Array<{
@@ -228,7 +258,7 @@ export class IconRenderer {
 	draw(ctx: {
 		gl: WebGLRenderingContext;
 		prog: WebGLProgram;
-		loc: any;
+		loc: ProgramLocs;
 		quad: WebGLBuffer;
 		canvas: HTMLCanvasElement;
 		dpr: number;

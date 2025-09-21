@@ -5,7 +5,7 @@ import { DEBUG } from '../debug';
 
 import Graphics, { type GraphicsHost } from './gl/Graphics';
 import { ScreenCache } from './render/screen-cache';
-import type { RenderCtx, MapImpl } from './types';
+import type { RenderCtx, MapImpl, VectorStyle as VectorStyleInternal } from './types';
 import * as Coords from './coords';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
@@ -111,7 +111,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
     private _icons: IconRenderer | null = null;
     private _pendingIconDefs: Record<string, IconDefInput> | null = null;
     private _pendingMarkers: MarkerInput[] | null = null;
-	private _renderer!: MapRenderer;
+    private _renderer!: MapRenderer;
+    private _allIconDefs: Record<string, IconDefInput> = {};
+    private _lastMarkers: MarkerInput[] = [];
 	private _rasterOpacity = 1.0;
 	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'auto';
 	private _iconScaleFunction: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
@@ -434,11 +436,21 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						getMaxZoom: () => this.maxZoom,
 						getImageMaxZoom: () => this._imageMaxZoom,
 						shouldAnchorCenterForZoom: (target) => this._shouldAnchorCenterForZoom(target),
-						getMap: () => this,
+                    getContainer: () => this.container,
+                    getBoundsPx: () => this._maxBoundsPx,
+                    getBounceAtZoomLimits: () => this._bounceAtZoomLimits,
+                    setCenterLngLat: (lng: number, lat: number) => {
+                        this.center = { lng, lat };
+                        this._state.center = this.center;
+                    },
+                    setZoom: (z: number) => {
+                        this.zoom = z;
+                        this._state.zoom = this.zoom;
+                    },
 						getOutCenterBias: () => this.outCenterBias,
 						clampCenterWorld: (cw, zInt, s, w, h) =>
-							clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
-						emit: (name: any, payload: any) => this._events.emit(name, payload),
+                    clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
+                    emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
 						requestRender: () => {
 							this._needsRender = true;
 						},
@@ -463,7 +475,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						requestRender: () => {
 							this._needsRender = true;
 						},
-						emit: (name: any, payload: any) => this._events.emit(name, payload),
+                    emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
 						now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
 						getPublicView: () => this._viewPublic(),
 					});
@@ -655,7 +667,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			this._screenCache?.clear?.();
 		} catch {}
 		this._needsRender = true;
-		void this._imageManager.loadImage(opts.url);
+        // ImageManager.setImage() already begins async loading
 	}
 
 	private _computeImageMaxZoom(width: number, height: number): number {
@@ -675,6 +687,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 
 
     async setIconDefs(defs: Record<string, IconDefInput>) {
+        // Track all icon defs for GL resume
+        for (const k of Object.keys(defs)) this._allIconDefs[k] = defs[k];
         if (!this._icons) {
             // Renderer not ready yet; merge into pending and apply later.
             if (!this._pendingIconDefs) this._pendingIconDefs = {};
@@ -688,6 +702,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
         this._needsRender = true;
     }
     setMarkers(markers: MarkerInput[]) {
+        // Remember last marker set for GL resume
+        try { this._lastMarkers = markers.slice(); } catch { this._lastMarkers = markers as MarkerInput[]; }
         if (!this._icons) {
             // Buffer until icon renderer is ready
             this._pendingMarkers = markers.slice();
@@ -762,8 +778,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		} catch {}
 	}
 	// recenter helper removed from public surface; use setCenter/setView via facade
-	destroy() {
-		// Detach observers and listeners first
+		destroy() {
+			// Detach observers and listeners first
         try {
             this._resizeMgr?.detach();
             this._resizeMgr = null;
@@ -797,6 +813,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			} catch {}
 			this._prog = null;
 		}
+            try { this._icons?.dispose?.(); } catch {}
             try { this._icons = null; } catch {}
 		try {
 			this.canvas.remove();
@@ -1038,9 +1055,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			updatePointerAbs: (x: number | null, y: number | null) => {
 				if (Number.isFinite(x as number) && Number.isFinite(y as number)) this.pointerAbs = { x: x as number, y: y as number };
 				else this.pointerAbs = null;
-			},
-			emit: (name: any, payload: any) => this._events.emit(name, payload),
-			setLastInteractAt: (t: number) => {
+            },
+            emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
+            setLastInteractAt: (t: number) => {
 				this._lastInteractAt = t;
 			},
 			getAnchorMode: () => this.anchorMode,
@@ -1075,6 +1092,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
                 emitMarker: (name, payload) => this._emitMarker(name, payload),
                 getLastHover: () => this._lastHover,
                 setLastHover: (h) => { this._lastHover = h; },
+                getMarkerDataById: (id: string) => this._markerData.get(id),
             });
             bridge.attach();
         } catch {}
@@ -1241,23 +1259,41 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			return;
 		}
 		// Resume
-		if (this._glReleased) {
-			try {
-				const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
-				ext?.restoreContext();
-			} catch {}
-			try {
-				// Reinitialize with alpha enabled so background transparency is supported after resume
-				this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
-			} catch {}
-			try {
-				this._initPrograms();
-			} catch {}
-			try {
-				this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
-			} catch {}
-			this._glReleased = false;
-		}
+        if (this._glReleased) {
+            try {
+                const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
+                ext?.restoreContext();
+            } catch {}
+            try {
+                // Reinitialize with alpha enabled so background transparency is supported after resume
+                this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
+            } catch {}
+            try {
+                this._initPrograms();
+            } catch {}
+            try {
+                this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
+            } catch {}
+            try {
+                // Rebuild icons and reapply markers
+                this._icons = new IconRenderer(this.gl);
+                const defs = this._allIconDefs;
+                if (defs && Object.keys(defs).length) {
+                    void this._icons.loadIcons(defs);
+                }
+                if (this._lastMarkers && this._lastMarkers.length) {
+                    this._icons.setMarkers(this._lastMarkers);
+                }
+            } catch {}
+            try {
+                // Reload base image texture
+                const img = this._imageManager.getImage();
+                if (img && img.url) {
+                    void this._imageManager.loadImage(img.url, { width: img.width, height: img.height });
+                }
+            } catch {}
+            this._glReleased = false;
+        }
 		try {
 			this._input?.attach?.();
 		} catch {}
@@ -1475,7 +1511,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			const viewport = { x: rect.width, y: rect.height };
             const imageMaxZ = this._imageMaxZoom;
 			for (const prim of this._vectors) {
-				const style: any = prim.style || {};
+			const style = (prim.style ?? {}) as VectorStyleInternal;
 				ctx.lineWidth = Math.max(1, style.weight ?? 2);
 				ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
 				ctx.globalAlpha = style.opacity ?? 1;
