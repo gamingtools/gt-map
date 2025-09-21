@@ -52,10 +52,7 @@
     let offLayerRemove: (() => void) | null = null;
     let rafId: number | null = null;
 
-	// Perf stats from frame event
-	let cacheSize = $state<number | null>(null);
-	let inflight = $state<number | null>(null);
-	let pending = $state<number | null>(null);
+	// Perf stats from frame event (frame counter only)
 	let frame = $state<number | null>(null);
 
 	function refresh(fromFrame = false, now?: number) {
@@ -91,9 +88,6 @@
                 try { if (rotateMarkers) rotateMarkersFrame(e.now); } catch {}
             }
 			try {
-				cacheSize = e.stats?.cacheSize ?? cacheSize;
-				inflight = e.stats?.inflight ?? inflight;
-				pending = e.stats?.pending ?? pending;
 				frame = e.stats?.frame ?? frame;
 			} catch {}
 		});
@@ -290,12 +284,6 @@
 			>
 		</div>
 		<div class="flex items-center gap-2">
-			<span class="font-semibold text-gray-700">Cache:</span>
-			<span class="tabular-nums">{cacheSize ?? '—'}</span>
-			<span class="font-semibold text-gray-700">Inflight:</span>
-			<span class="tabular-nums">{inflight ?? '—'}</span>
-			<span class="font-semibold text-gray-700">Pending:</span>
-			<span class="tabular-nums">{pending ?? '—'}</span>
 			<span class="font-semibold text-gray-700">Frame:</span>
 			<span class="tabular-nums">{frame ?? '—'}</span>
 		</div>
