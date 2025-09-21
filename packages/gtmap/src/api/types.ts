@@ -406,8 +406,23 @@ export interface MaxBoundsPx {
 // Filter modes
 export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
 
-// Icon scaling function
-// Returns a scale multiplier where 1.0 = original size
+/**
+ * Icon scaling policy.
+ *
+ * @public
+ * @param zoom - Current map zoom (fractional allowed)
+ * @param minZoom - Effective minimum zoom for the current image/view
+ * @param maxZoom - Effective maximum zoom for the current image/view
+ * @returns A scale multiplier where `1.0` means screen‑fixed size.
+ *
+ * @remarks
+ * The return value multiplies each icon's intrinsic width/height and its anchor.
+ * Use `() => 1` to keep icons screen‑fixed; use a zoom‑based curve (e.g., `Math.pow(2, zoom - 3)`) to
+ * make icons appear to scale with the world.
+ *
+ * The function is evaluated per frame for the current zoom. For stability, prefer continuous curves
+ * or clamp the output to a sensible range.
+ */
 export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number) => number;
 
 // Public event surface: exported via api/events/public

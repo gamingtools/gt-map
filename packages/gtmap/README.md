@@ -91,8 +91,21 @@ await map
 map.setGridVisible(false);
 map.setUpscaleFilter('auto');
 
-// Control icon scale vs. zoom (1 = screen‑fixed size)
-map.setIconScaleFunction((zoom, min, max) => 1);
+// Icon Scaling
+// Control icon size in screen space. The function receives (zoom, minZoom, maxZoom)
+// and returns a multiplier: 1.0 = screen‑fixed size.
+
+// Default: screen‑fixed size
+map.setIconScaleFunction(() => 1);
+
+// World‑like scaling around Z=3
+map.setIconScaleFunction((z) => Math.pow(2, z - 3));
+
+// Step behavior
+map.setIconScaleFunction((z) => (z < 2 ? 0.75 : z < 4 ? 1.0 : 1.25));
+
+// Reset to default
+map.setIconScaleFunction(null);
 
 // Performance knobs
 map.setFpsCap(60);

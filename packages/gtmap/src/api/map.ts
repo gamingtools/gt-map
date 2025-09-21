@@ -260,23 +260,37 @@ export class GTMap<TMarkerData = unknown> {
 		return this;
 	}
 
-	/**
-	 * Set a custom function to control icon scaling vs. zoom.
-	 *
-	 * @public
-	 * @param fn - Returns a scale multiplier, where `1` means screen‑fixed size
-	 * @returns This map instance for chaining
-	 *
-	 * @example
-	 * ```ts
-	 * // Make icons grow/shrink with zoom around Z=3
-	 * map.setIconScaleFunction((z) => Math.pow(2, z - 3));
-	 * ```
-	 */
-	setIconScaleFunction(fn: IconScaleFunction | null): this {
-		this._impl.setIconScaleFunction?.(fn);
-		return this;
-	}
+    /**
+     * Set a custom function to control icon scaling vs. zoom.
+     *
+     * @public
+     * @param fn - Returns a scale multiplier, where `1` means screen‑fixed size. Pass `null` to reset to default (`1`).
+     * @returns This map instance for chaining
+     *
+     * @remarks
+     * The function receives `(zoom, minZoom, maxZoom)` and is evaluated per frame. The resulting multiplier
+     * scales the icon's intrinsic width/height and anchor in screen space. For smoother visuals, use a
+     * continuous curve and clamp extremes.
+     *
+     * @example
+     * ```ts
+     * // Make icons grow/shrink with zoom around Z=3
+     * map.setIconScaleFunction((z) => Math.pow(2, z - 3));
+     *
+     * // Keep icons screen‑fixed regardless of zoom (default)
+     * map.setIconScaleFunction(() => 1);
+     *
+     * // Step-based behavior: small at low zooms, larger at high zooms
+     * map.setIconScaleFunction((z) => z < 2 ? 0.75 : z < 4 ? 1 : 1.25);
+     *
+     * // Reset to default policy
+     * map.setIconScaleFunction(null);
+     * ```
+     */
+    setIconScaleFunction(fn: IconScaleFunction | null): this {
+        this._impl.setIconScaleFunction?.(fn);
+        return this;
+    }
 
 	// Lifecycle
 	/**

@@ -101,6 +101,7 @@ Customization
 - Zoom bounds: `minZoom`/`maxZoom`.
 - Grid overlay: `setGridVisible(true|false)`.
 - Wheel speed: `setWheelSpeed(number)`.
+- Icon scaling: `setIconScaleFunction(fn|null)` where `fn(zoom,min,max) -> scale` (1.0 = screen‑fixed)
 
 Notes and Next Steps
 
