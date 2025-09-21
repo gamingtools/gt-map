@@ -59,7 +59,7 @@ export class ImageManager {
 		return this._imageReadyAtMs;
 	}
 
-    // Note: max zoom computation is owned by MapGL; keep ImageManager focused on I/O
+	// Note: max zoom computation is owned by MapGL; keep ImageManager focused on I/O
 
 	/**
 	 * Set a new image source and begin loading
@@ -146,58 +146,128 @@ export class ImageManager {
 				}
 			}
 
-            // Check if this load is still current. For progressive flows, allow a stale
-            // (older) preview load to commit if no texture has been committed yet.
-            if (token !== this._imageLoadToken) {
-                if (this._image.texture) {
-                    this.host._log('image:load stale; ignoring');
-                    return;
-                } else {
-                    this.host._log('image:load stale but no texture yet; committing preview');
-                }
-            }
+			// Check if this load is still current. For progressive flows, allow a stale
+			// (older) preview load to commit if no texture has been committed yet.
+			if (token !== this._imageLoadToken) {
+				if (this._image.texture) {
+					this.host._log('image:load stale; ignoring');
+					return;
+				} else {
+					this.host._log('image:load stale but no texture yet; committing preview');
+				}
+			}
 
-			// Create WebGL texture
+			// Create WebGL texture and upload. For large images, perform a chunked upload
+			// across animation frames to mitigate long main-thread stalls.
 			const gl = this.host.gl;
-			const texture = gl.createTexture();
-			if (!texture) {
-				throw new Error('Failed to create WebGL texture');
-			}
+			const width = Math.max(1, nextDims?.width ?? this._image.width);
+			const height = Math.max(1, nextDims?.height ?? this._image.height);
 
-			gl.bindTexture(gl.TEXTURE_2D, texture);
-			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-			gl.bindTexture(gl.TEXTURE_2D, null);
+			const isBitmap = (obj: unknown): obj is ImageBitmap => {
+				return !!obj && typeof (obj as ImageBitmap).close === 'function';
+			};
 
-			// Update image state
-			if (this._image.texture) {
-				gl.deleteTexture(this._image.texture);
+			const shouldChunk = typeof createImageBitmap === 'function' && width >= 2048 && height >= 2048 && isBitmap(bitmap);
+
+			if (shouldChunk) {
+				const newTex = gl.createTexture();
+				if (!newTex) throw new Error('Failed to create WebGL texture');
+				gl.bindTexture(gl.TEXTURE_2D, newTex);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+				// Allocate storage first
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, Math.max(1, width), Math.max(1, height), 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+				try {
+					await this._uploadChunked(gl, newTex, bitmap as ImageBitmap, width, height);
+				} catch {
+					// Fallback: single upload if chunked path fails
+					gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap as TexImageSource);
+				} finally {
+					gl.bindTexture(gl.TEXTURE_2D, null);
+				}
+
+				// Swap textures atomically after upload completes
+				const oldTex = this._image.texture;
+				if (nextDims && Number.isFinite(nextDims.width) && Number.isFinite(nextDims.height)) {
+					this._image.width = Math.max(1, Math.floor(nextDims.width));
+					this._image.height = Math.max(1, Math.floor(nextDims.height));
+					this._image.url = url;
+				}
+				this._image.texture = newTex;
+				this._image.ready = true;
+				this._imageReadyAtMs = this.host._nowMs();
+				if (oldTex) {
+					try {
+						gl.deleteTexture(oldTex);
+					} catch {}
+				}
+			} else {
+				// Single upload path
+				const texture = gl.createTexture();
+				if (!texture) throw new Error('Failed to create WebGL texture');
+				gl.bindTexture(gl.TEXTURE_2D, texture);
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap as TexImageSource);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+				gl.bindTexture(gl.TEXTURE_2D, null);
+
+				if (this._image.texture) {
+					gl.deleteTexture(this._image.texture);
+				}
+				if (nextDims && Number.isFinite(nextDims.width) && Number.isFinite(nextDims.height)) {
+					this._image.width = Math.max(1, Math.floor(nextDims.width));
+					this._image.height = Math.max(1, Math.floor(nextDims.height));
+					this._image.url = url;
+				}
+				this._image.texture = texture;
+				this._image.ready = true;
+				this._imageReadyAtMs = this.host._nowMs();
 			}
-			// If caller provided new intrinsic dimensions (e.g., upgrading preview -> full),
-			// apply them atomically with the texture swap to keep uniforms coherent.
-			if (nextDims && Number.isFinite(nextDims.width) && Number.isFinite(nextDims.height)) {
-				this._image.width = Math.max(1, Math.floor(nextDims.width));
-				this._image.height = Math.max(1, Math.floor(nextDims.height));
-				this._image.url = url;
-			}
-			this._image.texture = texture;
-			this._image.ready = true;
-			this._imageReadyAtMs = this.host._nowMs();
 
 			const tEnd = this.host._nowMs();
 			this.host._log(`image:load done dt=${(tEnd - tStart).toFixed(1)}ms ready=${this._image.ready}`);
 
 			// Notify host that image is ready
 			this.host.onImageReady();
-
 		} catch (err) {
 			this.host._log(`image:load error: ${err}`);
 			if (typeof console !== 'undefined' && console.error) {
 				console.error('[ImageManager] Image load failed:', url, err);
 			}
+		}
+	}
+
+	private async _uploadChunked(gl: WebGLRenderingContext, tex: WebGLTexture, source: ImageBitmap, width: number, height: number): Promise<void> {
+		const stripeH = Math.max(128, Math.min(1024, Math.floor(height / 8)));
+		for (let y = 0; y < height; y += stripeH) {
+			const h = Math.min(stripeH, height - y);
+			let sub: ImageBitmap | null = null;
+			try {
+				sub = await createImageBitmap(source, 0, y, width, h, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+			} catch {
+				// If cropping fails, fall back to uploading the full image in one go
+				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+				return;
+			}
+			await new Promise<void>((resolve) => {
+				const step = () => {
+					try {
+						gl.bindTexture(gl.TEXTURE_2D, tex);
+						gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, y, gl.RGBA, gl.UNSIGNED_BYTE, sub);
+					} catch {}
+					try {
+						sub.close?.();
+					} catch {}
+					resolve();
+				};
+				if (typeof requestAnimationFrame === 'function') requestAnimationFrame(step);
+				else setTimeout(step, 0);
+			});
 		}
 	}
 

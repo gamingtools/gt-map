@@ -72,7 +72,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _asyncInitManager: AsyncInitManager;
 	private _imageMaxZoom = 0;
 
-    private _needsRender = true;
+	private _needsRender = true;
 	private _frameLoop: FrameLoop | null = null;
 	private _input: InputController | null = null;
 	private _inputDeps!: InputDeps;
@@ -106,12 +106,12 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	public _screenTexFormat: number = 0;
 	private _screenCache: ScreenCache | null = null;
 	private _raster!: RasterRenderer;
-    private _icons: IconRenderer | null = null;
-    private _pendingIconDefs: Record<string, IconDefInput> | null = null;
-    private _pendingMarkers: MarkerInput[] | null = null;
-    private _renderer!: MapRenderer;
-    private _allIconDefs: Record<string, IconDefInput> = {};
-    private _lastMarkers: MarkerInput[] = [];
+	private _icons: IconRenderer | null = null;
+	private _pendingIconDefs: Record<string, IconDefInput> | null = null;
+	private _pendingMarkers: MarkerInput[] | null = null;
+	private _renderer!: MapRenderer;
+	private _allIconDefs: Record<string, IconDefInput> = {};
+	private _lastMarkers: MarkerInput[] = [];
 	private _rasterOpacity = 1.0;
 	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'auto';
 	private _iconScaleFunction: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
@@ -131,10 +131,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private inertiaDeceleration = 3400; // px/s^2
 	private inertiaMaxSpeed = 2000; // px/s (cap to prevent excessive throw)
 	private easeLinearity = 0.2;
-    private _panCtrl!: PanController;
-    // (moved to EventBridge)
-    // RequestIdleCallback gating for mask build
-    private _maskBuildRequested = false;
+	private _panCtrl!: PanController;
+	// (moved to EventBridge)
+	// RequestIdleCallback gating for mask build
+	private _maskBuildRequested = false;
 
 	// Background color (normalized 0..1). Default: fully transparent.
 	private _bg = { r: 0, g: 0, b: 0, a: 0 };
@@ -169,9 +169,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		try {
 			// For alpha < 1 (only 'transparent' case), keep the element background transparent so the page can show through
 			// and let the WebGL clear color's alpha drive compositing (alpha will be 0 in that case).
-			this.canvas.style.backgroundColor = bg.a < 1
-				? 'transparent'
-				: `rgb(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)})`;
+			this.canvas.style.backgroundColor = bg.a < 1 ? 'transparent' : `rgb(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)})`;
 		} catch {}
 	}
 
@@ -193,10 +191,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._needsRender = true;
 	}
 
-    // Auto-resize
-    private _autoResize = true;
-    private _resizeDebounceMs = 150;
-    private _resizeMgr: AutoResizeManager | null = null;
+	// Auto-resize
+	private _autoResize = true;
+	private _resizeDebounceMs = 150;
+	private _resizeMgr: AutoResizeManager | null = null;
 
 	private _viewPublic(): PublicViewState {
 		return {
@@ -208,39 +206,39 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		};
 	}
 	// Build the rendering context (internal)
-    public getRenderCtx(): RenderCtx {
-        return {
-            gl: this.gl,
-            prog: this._prog!,
-            loc: this._loc!,
-            quad: this._quad!,
-            canvas: this.canvas,
-            dpr: this._dpr,
-            container: this.container,
-            zoom: this.zoom,
-            center: this.center,
-            minZoom: this.minZoom,
-            maxZoom: this.maxZoom,
-            imageMaxZoom: this._imageMaxZoom,
-            mapSize: this.mapSize,
-            wrapX: this.wrapX,
-            useScreenCache: this.useScreenCache,
-            screenCache: this._screenCache,
-            raster: this._raster,
-            rasterOpacity: this._rasterOpacity,
-            upscaleFilter: this._upscaleFilter,
-            iconScaleFunction: this._iconScaleFunction,
-            icons: this._icons,
-            isIdle: () => {
-                const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-                const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
-                const anim = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
-                return idleByTime && !anim;
-            },
-            // Project image pixels at native resolution into level-z pixel coords
-            project: (x: number, y: number, z: number) => {
-                return Coords.worldToLevel({ x, y }, this._imageMaxZoom, Math.floor(z));
-            },
+	public getRenderCtx(): RenderCtx {
+		return {
+			gl: this.gl,
+			prog: this._prog!,
+			loc: this._loc!,
+			quad: this._quad!,
+			canvas: this.canvas,
+			dpr: this._dpr,
+			container: this.container,
+			zoom: this.zoom,
+			center: this.center,
+			minZoom: this.minZoom,
+			maxZoom: this.maxZoom,
+			imageMaxZoom: this._imageMaxZoom,
+			mapSize: this.mapSize,
+			wrapX: this.wrapX,
+			useScreenCache: this.useScreenCache,
+			screenCache: this._screenCache,
+			raster: this._raster,
+			rasterOpacity: this._rasterOpacity,
+			upscaleFilter: this._upscaleFilter,
+			iconScaleFunction: this._iconScaleFunction,
+			icons: this._icons,
+			isIdle: () => {
+				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+				const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
+				const anim = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
+				return idleByTime && !anim;
+			},
+			// Project image pixels at native resolution into level-z pixel coords
+			project: (x: number, y: number, z: number) => {
+				return Coords.worldToLevel({ x, y }, this._imageMaxZoom, Math.floor(z));
+			},
 			image: {
 				texture: this.getImage().texture,
 				// width/height here refer to the underlying texture's pixel dimensions
@@ -249,7 +247,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				ready: this.getImage().ready,
 			},
 		};
-    }
+	}
 	public zoomVelocityTick() {
 		if (Math.abs(this._zoomVel) <= 1e-4) return;
 		const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
@@ -272,8 +270,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _gridCtx: CanvasRenderingContext2D | null = null;
 	// Vector overlay (initially 2D canvas; upgradeable to WebGL later)
 	private vectorCanvas: HTMLCanvasElement | null = null;
-    private _vectorCtx: CanvasRenderingContext2D | null = null;
-    private _vectors: VectorPrimitive[] = [];
+	private _vectorCtx: CanvasRenderingContext2D | null = null;
+	private _vectors: VectorPrimitive[] = [];
 	public pointerAbs: { x: number; y: number } | null = null;
 	// Loading pacing/cancel
 	private interactionIdleMs = 160;
@@ -293,7 +291,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _hitTestDebounceMs = 75;
 
 	// Timing + logging helpers (relative to instance creation)
-	private _t0Ms: number = (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+	private _t0Ms: number = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	private _imageReadyAtMs: number | null = null;
 	private _firstRasterDrawAtMs: number | null = null;
 	public _nowMs(): number {
@@ -301,10 +299,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 	public _log(msg: string): void {
 		try {
-			const allow =
-				(globalThis.DEBUG ?? false) ||
-				DEBUG ||
-				(typeof localStorage !== 'undefined' && localStorage.getItem('GTMAP_DEBUG') === '1');
+			const allow = (globalThis.DEBUG ?? false) || DEBUG || (typeof localStorage !== 'undefined' && localStorage.getItem('GTMAP_DEBUG') === '1');
 			if (allow) {
 				const t = this._nowMs() - this._t0Ms;
 				console.log(`[GTMap t=${t.toFixed(1)}ms] ${msg}`);
@@ -336,9 +331,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._imageManager = new ImageManager(this);
 		this._asyncInitManager = new AsyncInitManager();
 
-		if (initialImage) {
-			this._imageManager.setImage({ url: initialImage.url, width: this.mapSize.width, height: this.mapSize.height });
-		}
+		// Defer image load until async finalize. If a preview is provided,
+		// we avoid kicking off the full-res load here to prevent duplicate requests.
 		this._imageMaxZoom = this._computeImageMaxZoom(this.mapSize.width, this.mapSize.height);
 		const defaultMaxZoom = options.maxZoom ?? this._imageMaxZoom;
 		this.maxZoom = Math.max(this.minZoom, defaultMaxZoom);
@@ -379,7 +373,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			{
 				name: 'Initialize Canvas',
 				execute: () => this._initCanvas(),
-				weight: 1
+				weight: 1,
 			},
 			{
 				name: 'Initialize Graphics',
@@ -388,36 +382,36 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 					this._parseBackground(options.backgroundColor);
 					this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
 				},
-				weight: 3
+				weight: 3,
 			},
 			{
 				name: 'Initialize Programs',
 				execute: () => this._initPrograms(),
-				weight: 2
+				weight: 2,
 			},
-            {
-                name: 'Initialize Renderers',
-                execute: () => {
-                    this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
-                    this._raster = new RasterRenderer(this.gl);
-                    this._icons = new IconRenderer(this.gl);
-                    // If icon defs were provided before the renderer was constructed (e.g., from facade ctor),
-                    // apply them now so markers can render immediately.
-                    if (this._pendingIconDefs) {
-                        const defs = this._pendingIconDefs;
-                        this._pendingIconDefs = null;
-                        // Fire and forget; screen cache clearing and re-render will follow in setIconDefs
-                        void this.setIconDefs(defs);
-                    }
-                    // If markers were provided early, apply them once icons are ready
-                    if (this._pendingMarkers && this._pendingMarkers.length) {
-                        const m = this._pendingMarkers.slice();
-                        this._pendingMarkers = null;
-                        this.setMarkers(m);
-                    }
-                },
-                weight: 3
-            },
+			{
+				name: 'Initialize Renderers',
+				execute: () => {
+					this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
+					this._raster = new RasterRenderer(this.gl);
+					this._icons = new IconRenderer(this.gl);
+					// If icon defs were provided before the renderer was constructed (e.g., from facade ctor),
+					// apply them now so markers can render immediately.
+					if (this._pendingIconDefs) {
+						const defs = this._pendingIconDefs;
+						this._pendingIconDefs = null;
+						// Fire and forget; screen cache clearing and re-render will follow in setIconDefs
+						void this.setIconDefs(defs);
+					}
+					// If markers were provided early, apply them once icons are ready
+					if (this._pendingMarkers && this._pendingMarkers.length) {
+						const m = this._pendingMarkers.slice();
+						this._pendingMarkers = null;
+						this.setMarkers(m);
+					}
+				},
+				weight: 3,
+			},
 			{
 				name: 'Initialize Controllers',
 				execute: () => {
@@ -434,21 +428,21 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						getMaxZoom: () => this.maxZoom,
 						getImageMaxZoom: () => this._imageMaxZoom,
 						shouldAnchorCenterForZoom: (target) => this._shouldAnchorCenterForZoom(target),
-                    getContainer: () => this.container,
-                    getBoundsPx: () => this._maxBoundsPx,
-                    getBounceAtZoomLimits: () => this._bounceAtZoomLimits,
-                    setCenterLngLat: (lng: number, lat: number) => {
-                        this.center = { lng, lat };
-                        this._state.center = this.center;
-                    },
-                    setZoom: (z: number) => {
-                        this.zoom = z;
-                        this._state.zoom = this.zoom;
-                    },
+						getContainer: () => this.container,
+						getBoundsPx: () => this._maxBoundsPx,
+						getBounceAtZoomLimits: () => this._bounceAtZoomLimits,
+						setCenterLngLat: (lng: number, lat: number) => {
+							this.center = { lng, lat };
+							this._state.center = this.center;
+						},
+						setZoom: (z: number) => {
+							this.zoom = z;
+							this._state.zoom = this.zoom;
+						},
 						getOutCenterBias: () => this.outCenterBias,
 						clampCenterWorld: (cw, zInt, s, w, h) =>
-                    clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
-                    emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
+							clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
+						emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
 						requestRender: () => {
 							this._needsRender = true;
 						},
@@ -473,12 +467,12 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						requestRender: () => {
 							this._needsRender = true;
 						},
-                    emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
+						emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
 						now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
 						getPublicView: () => this._viewPublic(),
 					});
 				},
-				weight: 4
+				weight: 4,
 			},
 			{
 				name: 'Initialize State',
@@ -491,7 +485,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						wrapX: this.wrapX,
 					};
 				},
-				weight: 1
+				weight: 1,
 			},
 			{
 				name: 'Initialize Canvas Elements',
@@ -499,17 +493,17 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 					this._initGridCanvas();
 					this._initVectorCanvas();
 				},
-				weight: 2
+				weight: 2,
 			},
 			{
 				name: 'Initial Resize',
 				execute: () => this.resize(),
-				weight: 1
+				weight: 1,
 			},
 			{
 				name: 'Initialize Events',
 				execute: () => this._initEvents(),
-				weight: 2
+				weight: 2,
 			},
 			{
 				name: 'Start Frame Loop',
@@ -520,8 +514,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 					);
 					this._frameLoop.start();
 				},
-				weight: 1
-			}
+				weight: 1,
+			},
 		]);
 
 		// Run async initialization with progress tracking
@@ -538,7 +532,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				onError: (error: Error) => {
 					this._log(`init:error ${error.message}`);
 					console.error('[GTMap] Async initialization failed:', error);
-				}
+				},
 			});
 		} catch (error) {
 			this._log(`init:fatal-error ${error}`);
@@ -572,28 +566,26 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			else setTimeout(attach, 0);
 		}
 
-        if (initialImage) {
-            // Progressive flow: if a preview is provided, draw it first, then upgrade to the full image
-            if (initialImage.preview) {
-                const pv = initialImage.preview;
-                // Keep world size and zoom ranges based on the full image, but load a smaller texture first
-                this._log(`image:progressive preview=${pv.url} -> full=${initialImage.url}`);
-                // For correct filtering uniforms while preview is active
-                this._imageManager.setImage({ url: pv.url, width: Math.max(1, pv.width), height: Math.max(1, pv.height) });
-                this._needsRender = true;
-                // After a short delay (or immediately), kick off full-resolution load
-                const delay = Number.isFinite(initialImage.progressiveSwapDelayMs as number)
-                    ? Math.max(0, Math.min(2000, (initialImage.progressiveSwapDelayMs as number) | 0))
-                    : 50;
-                setTimeout(() => {
-                    this._log('image:progressive upgrading to full');
-                    // Load full-res and atomically update intrinsic dimensions on success
-                    void this._imageManager.loadImage(initialImage.url, { width: this.mapSize.width, height: this.mapSize.height });
-                }, delay);
-            } else {
-                this.setImageSource(initialImage);
-            }
-        }
+		if (initialImage) {
+			// Progressive flow: if a preview is provided, draw it first, then upgrade to the full image
+			if (initialImage.preview) {
+				const pv = initialImage.preview;
+				// Keep world size and zoom ranges based on the full image, but load a smaller texture first
+				this._log(`image:progressive preview=${pv.url} -> full=${initialImage.url}`);
+				// For correct filtering uniforms while preview is active
+				this._imageManager.setImage({ url: pv.url, width: Math.max(1, pv.width), height: Math.max(1, pv.height) });
+				this._needsRender = true;
+				// After a short delay (or immediately), kick off full-resolution load
+				const delay = Number.isFinite(initialImage.progressiveSwapDelayMs as number) ? Math.max(0, Math.min(2000, (initialImage.progressiveSwapDelayMs as number) | 0)) : 50;
+				setTimeout(() => {
+					this._log('image:progressive upgrading to full');
+					// Load full-res and atomically update intrinsic dimensions on success
+					void this._imageManager.loadImage(initialImage.url, { width: this.mapSize.width, height: this.mapSize.height });
+				}, delay);
+			} else {
+				this.setImageSource(initialImage);
+			}
+		}
 
 		this._log('ctor: end');
 	}
@@ -665,7 +657,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			this._screenCache?.clear?.();
 		} catch {}
 		this._needsRender = true;
-        // ImageManager.setImage() already begins async loading
+		// ImageManager.setImage() already begins async loading
 	}
 
 	private _computeImageMaxZoom(width: number, height: number): number {
@@ -681,34 +673,35 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		return (value & (value - 1)) === 0;
 	}
 
-
-
-
-    async setIconDefs(defs: Record<string, IconDefInput>) {
-        // Track all icon defs for GL resume
-        for (const k of Object.keys(defs)) this._allIconDefs[k] = defs[k];
-        if (!this._icons) {
-            // Renderer not ready yet; merge into pending and apply later.
-            if (!this._pendingIconDefs) this._pendingIconDefs = {};
-            for (const k of Object.keys(defs)) this._pendingIconDefs[k] = defs[k];
-            return;
-        }
-        await this._icons.loadIcons(defs);
-        try {
-            this._screenCache?.clear?.();
-        } catch {}
-        this._needsRender = true;
-    }
-    setMarkers(markers: MarkerInput[]) {
-        // Remember last marker set for GL resume
-        try { this._lastMarkers = markers.slice(); } catch { this._lastMarkers = markers as MarkerInput[]; }
-        if (!this._icons) {
-            // Buffer until icon renderer is ready
-            this._pendingMarkers = markers.slice();
-            return;
-        }
+	async setIconDefs(defs: Record<string, IconDefInput>) {
+		// Track all icon defs for GL resume
+		for (const k of Object.keys(defs)) this._allIconDefs[k] = defs[k];
+		if (!this._icons) {
+			// Renderer not ready yet; merge into pending and apply later.
+			if (!this._pendingIconDefs) this._pendingIconDefs = {};
+			for (const k of Object.keys(defs)) this._pendingIconDefs[k] = defs[k];
+			return;
+		}
+		await this._icons.loadIcons(defs);
 		try {
-			const nextIds = new Set<string>((markers.map((m) => m.id).filter((id): id is string => typeof id === 'string')));
+			this._screenCache?.clear?.();
+		} catch {}
+		this._needsRender = true;
+	}
+	setMarkers(markers: MarkerInput[]) {
+		// Remember last marker set for GL resume
+		try {
+			this._lastMarkers = markers.slice();
+		} catch {
+			this._lastMarkers = markers as MarkerInput[];
+		}
+		if (!this._icons) {
+			// Buffer until icon renderer is ready
+			this._pendingMarkers = markers.slice();
+			return;
+		}
+		try {
+			const nextIds = new Set<string>(markers.map((m) => m.id).filter((id): id is string => typeof id === 'string'));
 			if (this._lastHover && this._lastHover.id && !nextIds.has(this._lastHover.id)) {
 				const prev = this._lastHover;
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
@@ -723,21 +716,29 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			}
 		} catch {}
 		this._icons.setMarkers(markers);
-		try { if (DEBUG) console.debug('[map.setMarkers]', { count: markers.length }); } catch {}
-		try { this._screenCache?.clear?.(); } catch {}
+		try {
+			if (DEBUG) console.debug('[map.setMarkers]', { count: markers.length });
+		} catch {}
+		try {
+			this._screenCache?.clear?.();
+		} catch {}
 		this._needsRender = true;
 	}
 	public setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic') {
 		const next = mode === 'linear' || mode === 'bicubic' ? mode : 'auto';
 		if (next !== this._upscaleFilter) {
 			this._upscaleFilter = next;
-			try { this._screenCache?.clear?.(); } catch {}
+			try {
+				this._screenCache?.clear?.();
+			} catch {}
 			this._needsRender = true;
 		}
 	}
 	setEaseOptions(_opts: EaseOptions) {
 		this._zoomCtrl.setOptions({ easeBaseMs: _opts.easeBaseMs, easePerUnitMs: _opts.easePerUnitMs });
-		if (typeof _opts.easePinch === 'boolean') { /* reserved for future pinch easing */ }
+		if (typeof _opts.easePinch === 'boolean') {
+			/* reserved for future pinch easing */
+		}
 	}
 	public setRasterOpacity(opacity: number) {
 		const v = Math.max(0, Math.min(1, opacity));
@@ -765,10 +766,18 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			this._zoomCtrl.startEase(dz, rect.width / 2, rect.height / 2, 'center', opts.easing);
 		}
 	}
-		public cancelPanAnim() { this._panCtrl.cancel(); }
-		public getMinZoom(): number { return this.minZoom; }
-		public getMaxZoom(): number { return this.maxZoom; }
-		public getImageMaxZoom(): number { return this._imageMaxZoom; }
+	public cancelPanAnim() {
+		this._panCtrl.cancel();
+	}
+	public getMinZoom(): number {
+		return this.minZoom;
+	}
+	public getMaxZoom(): number {
+		return this.maxZoom;
+	}
+	public getImageMaxZoom(): number {
+		return this._imageMaxZoom;
+	}
 
 	public cancelZoomAnim() {
 		try {
@@ -776,22 +785,26 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		} catch {}
 	}
 	// recenter helper removed from public surface; use setCenter/setView via facade
-		destroy() {
-			// Detach observers and listeners first
-        try {
-            this._resizeMgr?.detach();
-            this._resizeMgr = null;
-        } catch {}
-        if (this._frameLoop) {
-            try {
-                this._frameLoop.stop();
-            } catch {}
-            this._frameLoop = null;
-        }
-        this._input?.dispose();
-        this._input = null;
-            try { this._renderer?.dispose?.(); } catch {}
-            try { this._gfx?.dispose?.(); } catch {}
+	destroy() {
+		// Detach observers and listeners first
+		try {
+			this._resizeMgr?.detach();
+			this._resizeMgr = null;
+		} catch {}
+		if (this._frameLoop) {
+			try {
+				this._frameLoop.stop();
+			} catch {}
+			this._frameLoop = null;
+		}
+		this._input?.dispose();
+		this._input = null;
+		try {
+			this._renderer?.dispose?.();
+		} catch {}
+		try {
+			this._gfx?.dispose?.();
+		} catch {}
 		this._destroyCache();
 		const gl = this.gl;
 		this._screenCache?.dispose();
@@ -807,8 +820,12 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			} catch {}
 			this._prog = null;
 		}
-            try { this._icons?.dispose?.(); } catch {}
-            try { this._icons = null; } catch {}
+		try {
+			this._icons?.dispose?.();
+		} catch {}
+		try {
+			this._icons = null;
+		} catch {}
 		try {
 			this.canvas.remove();
 		} catch {}
@@ -980,22 +997,22 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 	}
 
-    public setAutoResize(on: boolean) {
-        const v = !!on;
-        if (v === this._autoResize) return;
-        this._autoResize = v;
-        if (v) {
-            this._resizeMgr = new AutoResizeManager({
-                getContainer: () => this.container,
-                onResize: () => this.resize(),
-                getDebounceMs: () => this._resizeDebounceMs,
-            });
-            this._resizeMgr.attach();
-        } else {
-            this._resizeMgr?.detach();
-            this._resizeMgr = null;
-        }
-    }
+	public setAutoResize(on: boolean) {
+		const v = !!on;
+		if (v === this._autoResize) return;
+		this._autoResize = v;
+		if (v) {
+			this._resizeMgr = new AutoResizeManager({
+				getContainer: () => this.container,
+				onResize: () => this.resize(),
+				getDebounceMs: () => this._resizeDebounceMs,
+			});
+			this._resizeMgr.attach();
+		} else {
+			this._resizeMgr?.detach();
+			this._resizeMgr = null;
+		}
+	}
 	// Toggle screen-space cache
 	public setScreenCacheEnabled(enabled: boolean) {
 		this.useScreenCache = !!enabled;
@@ -1049,9 +1066,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			updatePointerAbs: (x: number | null, y: number | null) => {
 				if (Number.isFinite(x as number) && Number.isFinite(y as number)) this.pointerAbs = { x: x as number, y: y as number };
 				else this.pointerAbs = null;
-            },
-            emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
-            setLastInteractAt: (t: number) => {
+			},
+			emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
+			setLastInteractAt: (t: number) => {
 				this._lastInteractAt = t;
 			},
 			getAnchorMode: () => this.anchorMode,
@@ -1065,38 +1082,40 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			getInertiaDecel: () => this.inertiaDeceleration,
 			getInertiaMaxSpeed: () => this.inertiaMaxSpeed,
 			getEaseLinearity: () => this.easeLinearity,
-            startPanBy: (dxPx: number, dyPx: number, durSec: number, _ease?: number) => this._startPanBy(dxPx, dyPx, durSec, undefined),
-            cancelPanAnim: () => {
-                this._panCtrl.cancel();
-            },
+			startPanBy: (dxPx: number, dyPx: number, durSec: number, _ease?: number) => this._startPanBy(dxPx, dyPx, durSec, undefined),
+			cancelPanAnim: () => {
+				this._panCtrl.cancel();
+			},
 		};
-        this._input = new InputController(this._inputDeps);
-        this._input.attach();
-        // Wire marker hover/click and mouse derivations via EventBridge
-        try {
-            const bridge = new EventBridge({
-                events: this._events,
-                getView: () => this._viewPublic(),
-                now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
-                isMoving: () => this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating(),
-                getLastInteractAt: () => this._lastInteractAt,
-                getHitTestDebounceMs: () => this._hitTestDebounceMs,
-                hitTest: (x, y, alpha) => this._hitTestMarker(x, y, alpha),
-                computeHits: (x, y) => this._computeMarkerHits(x, y),
-                emitMarker: (name, payload) => this._emitMarker(name, payload),
-                getLastHover: () => this._lastHover,
-                setLastHover: (h) => { this._lastHover = h; },
-                getMarkerDataById: (id: string) => this._markerData.get(id),
-            });
-            bridge.attach();
-        } catch {}
+		this._input = new InputController(this._inputDeps);
+		this._input.attach();
+		// Wire marker hover/click and mouse derivations via EventBridge
+		try {
+			const bridge = new EventBridge({
+				events: this._events,
+				getView: () => this._viewPublic(),
+				now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+				isMoving: () => this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating(),
+				getLastInteractAt: () => this._lastInteractAt,
+				getHitTestDebounceMs: () => this._hitTestDebounceMs,
+				hitTest: (x, y, alpha) => this._hitTestMarker(x, y, alpha),
+				computeHits: (x, y) => this._computeMarkerHits(x, y),
+				emitMarker: (name, payload) => this._emitMarker(name, payload),
+				getLastHover: () => this._lastHover,
+				setLastHover: (h) => {
+					this._lastHover = h;
+				},
+				getMarkerDataById: (id: string) => this._markerData.get(id),
+			});
+			bridge.attach();
+		} catch {}
 	}
 
-    public setMarkerData(payloads: Record<string, unknown | null | undefined>) {
-        try {
-            for (const k of Object.keys(payloads)) this._markerData.set(k, payloads[k]);
-        } catch {}
-    }
+	public setMarkerData(payloads: Record<string, unknown | null | undefined>) {
+		try {
+			for (const k of Object.keys(payloads)) this._markerData.set(k, payloads[k]);
+		} catch {}
+	}
 	// wheel normalization handled in input/handlers internally
 	private _tick(now: number, allowRender: boolean) {
 		this._frame++;
@@ -1127,25 +1146,31 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._renderer.render();
 		if (imageReadyAtCall && this._firstRasterDrawAtMs == null) {
 			if (this._gpuWaitEnabled()) {
-				try { this.gl.finish(); } catch {}
+				try {
+					this.gl.finish();
+				} catch {}
 			}
 			this._firstRasterDrawAtMs = this._nowMs();
 			const dtRender = this._firstRasterDrawAtMs - tR0;
-			const dtSinceReady = this._imageReadyAtMs ? (this._firstRasterDrawAtMs - this._imageReadyAtMs) : NaN;
+			const dtSinceReady = this._imageReadyAtMs ? this._firstRasterDrawAtMs - this._imageReadyAtMs : NaN;
 			this._log(`first-render done dtRender=${dtRender.toFixed(1)}ms sinceReady=${Number.isFinite(dtSinceReady) ? dtSinceReady.toFixed(1) : 'n/a'}ms`);
 		}
 		// Kick off deferred icon mask build after first render
 		try {
-            // Defer icon mask build until after the first render, using requestIdleCallback when available.
-            if (!this._maskBuildRequested) {
-                this._maskBuildRequested = true;
-                const start = () => { try { this._icons?.startMaskBuild?.(); } catch {} };
-                // Feature-test requestIdleCallback safely
-                const w = window as { requestIdleCallback?: (cb: () => void) => number };
-                if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(start);
-                else setTimeout(start, 0);
-            }
-        } catch {}
+			// Defer icon mask build until after the first render, using requestIdleCallback when available.
+			if (!this._maskBuildRequested) {
+				this._maskBuildRequested = true;
+				const start = () => {
+					try {
+						this._icons?.startMaskBuild?.();
+					} catch {}
+				};
+				// Feature-test requestIdleCallback safely
+				const w = window as { requestIdleCallback?: (cb: () => void) => number };
+				if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(start);
+				else setTimeout(start, 0);
+			}
+		} catch {}
 		// Emit a frame event for HUD/diagnostics
 		try {
 			const t = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
@@ -1215,72 +1240,71 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 
 	// Bounds clamping similar to JS version
 
+	// pan velocity handled by PanController
 
-    // pan velocity handled by PanController
-
-    private _startPanBy(dxPx: number, dyPx: number, durSec: number, easing?: number | ((t: number) => number)) {
-        const ef = typeof easing === 'function' ? easing : undefined;
-        this._panCtrl.startBy(dxPx, dyPx, Math.max(0.05, durSec), ef);
-    }
+	private _startPanBy(dxPx: number, dyPx: number, durSec: number, easing?: number | ((t: number) => number)) {
+		const ef = typeof easing === 'function' ? easing : undefined;
+		this._panCtrl.startBy(dxPx, dyPx, Math.max(0.05, durSec), ef);
+	}
 
 	// Suspend/resume this map instance and optionally release the WebGL context.
 	public setActive(active: boolean, opts?: { releaseGL?: boolean }) {
 		if (active === this._active && !(active && this._glReleased)) return;
-        if (!active) {
-            this._active = false;
-            try {
-                this._frameLoop?.stop?.();
-            } catch {}
-            try {
-                this._input?.dispose();
-            } catch {}
-			if (opts?.releaseGL && this.gl) {
+		if (!active) {
+			this._active = false;
 			try {
-				this._screenCache?.dispose();
-				this._screenCache = null;
-				const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
-				ext?.loseContext();
-				this._glReleased = true;
+				this._frameLoop?.stop?.();
 			} catch {}
+			try {
+				this._input?.dispose();
+			} catch {}
+			if (opts?.releaseGL && this.gl) {
+				try {
+					this._screenCache?.dispose();
+					this._screenCache = null;
+					const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
+					ext?.loseContext();
+					this._glReleased = true;
+				} catch {}
 			}
 			return;
 		}
 		// Resume
-        if (this._glReleased) {
-            try {
-                const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
-                ext?.restoreContext();
-            } catch {}
-            try {
-                // Reinitialize with alpha enabled so background transparency is supported after resume
-                this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
-            } catch {}
-            try {
-                this._initPrograms();
-            } catch {}
-            try {
-                this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
-            } catch {}
-            try {
-                // Rebuild icons and reapply markers
-                this._icons = new IconRenderer(this.gl);
-                const defs = this._allIconDefs;
-                if (defs && Object.keys(defs).length) {
-                    void this._icons.loadIcons(defs);
-                }
-                if (this._lastMarkers && this._lastMarkers.length) {
-                    this._icons.setMarkers(this._lastMarkers);
-                }
-            } catch {}
-            try {
-                // Reload base image texture
-                const img = this._imageManager.getImage();
-                if (img && img.url) {
-                    void this._imageManager.loadImage(img.url, { width: img.width, height: img.height });
-                }
-            } catch {}
-            this._glReleased = false;
-        }
+		if (this._glReleased) {
+			try {
+				const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
+				ext?.restoreContext();
+			} catch {}
+			try {
+				// Reinitialize with alpha enabled so background transparency is supported after resume
+				this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
+			} catch {}
+			try {
+				this._initPrograms();
+			} catch {}
+			try {
+				this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
+			} catch {}
+			try {
+				// Rebuild icons and reapply markers
+				this._icons = new IconRenderer(this.gl);
+				const defs = this._allIconDefs;
+				if (defs && Object.keys(defs).length) {
+					void this._icons.loadIcons(defs);
+				}
+				if (this._lastMarkers && this._lastMarkers.length) {
+					this._icons.setMarkers(this._lastMarkers);
+				}
+			} catch {}
+			try {
+				// Reload base image texture
+				const img = this._imageManager.getImage();
+				if (img && img.url) {
+					void this._imageManager.loadImage(img.url, { width: img.width, height: img.height });
+				}
+			} catch {}
+			this._glReleased = false;
+		}
 		try {
 			this._input?.attach?.();
 		} catch {}
@@ -1311,40 +1335,40 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._vectorCtx = c.getContext('2d');
 	}
 
-    public setVectors(vectors: VectorPrimitive[]) {
-        this._vectors = vectors.slice();
-        this._needsRender = true;
-    }
+	public setVectors(vectors: VectorPrimitive[]) {
+		this._vectors = vectors.slice();
+		this._needsRender = true;
+	}
 
 	// Simple hover/click hit testing on markers (AABB, ignores rotation)
 	private _lastHover: { type: string; idx: number; id?: string } | null = null;
-    // (moved to EventBridge)
-    private _markerData = new Map<string, unknown | null | undefined>();
+	// (moved to EventBridge)
+	private _markerData = new Map<string, unknown | null | undefined>();
 	// Private marker event sinks (not exposed on public bus)
-    private _markerSinks: Record<'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', Set<(e: MarkerEventData) => void>> = {
-        enter: new Set(),
-        leave: new Set(),
-        click: new Set(),
-        down: new Set(),
-        up: new Set(),
-        longpress: new Set(),
-    };
+	private _markerSinks: Record<'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', Set<(e: MarkerEventData) => void>> = {
+		enter: new Set(),
+		leave: new Set(),
+		click: new Set(),
+		down: new Set(),
+		up: new Set(),
+		longpress: new Set(),
+	};
 
-    public onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void {
-        const set = this._markerSinks[name];
-        set.add(handler);
-        return () => set.delete(handler);
-    }
+	public onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void {
+		const set = this._markerSinks[name];
+		set.add(handler);
+		return () => set.delete(handler);
+	}
 
-    private _emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: MarkerEventData) {
-        const set = this._markerSinks[name];
-        if (!set || set.size === 0) return;
-        for (const fn of Array.from(set)) {
-            try {
-                fn(payload);
-            } catch {}
-        }
-    }
+	private _emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: MarkerEventData) {
+		const set = this._markerSinks[name];
+		if (!set || set.size === 0) return;
+		for (const fn of Array.from(set)) {
+			try {
+				fn(payload);
+			} catch {}
+		}
+	}
 	private _hitTestMarker(px: number, py: number, requireAlpha = false) {
 		void requireAlpha;
 		if (!this._icons) return null;
@@ -1361,7 +1385,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			const top = css.y - it.anchor.ay;
 			if (px >= left && px <= left + it.w && py >= top && py <= top + it.h) {
 				// Optional alpha-mask sampling for pixel-accurate hits
-                const mask = this._icons.getMaskInfo?.(it.type) || null;
+				const mask = this._icons.getMaskInfo?.(it.type) || null;
 				if (mask) {
 					// Map pointer to icon local coords (account for rotation around anchor)
 					const ax = it.anchor.ax;
@@ -1420,7 +1444,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			const left = css.x - it.anchor.ax;
 			const top = css.y - it.anchor.ay;
 			if (px < left || px > left + it.w || py < top || py > top + it.h) continue;
-                const mask = this._icons.getMaskInfo?.(it.type) || null;
+			const mask = this._icons.getMaskInfo?.(it.type) || null;
 			if (mask) {
 				const ax = it.anchor.ax;
 				const ay = it.anchor.ay;
@@ -1496,9 +1520,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			const z = this.zoom;
 			const rect = this.container.getBoundingClientRect();
 			const viewport = { x: rect.width, y: rect.height };
-            const imageMaxZ = this._imageMaxZoom;
+			const imageMaxZ = this._imageMaxZoom;
 			for (const prim of this._vectors) {
-			const style = (prim.style ?? {}) as VectorStyleInternal;
+				const style = (prim.style ?? {}) as VectorStyleInternal;
 				ctx.lineWidth = Math.max(1, style.weight ?? 2);
 				ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
 				ctx.globalAlpha = style.opacity ?? 1;
@@ -1512,31 +1536,31 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						ctx.globalAlpha = style.opacity ?? 1;
 					}
 				};
-                if (prim.type === 'polyline' || prim.type === 'polygon') {
-                    const pts = prim.points as Array<{ lng: number; lat: number }>;
-                    if (!pts.length) continue;
-                    begin();
-                    for (let i = 0; i < pts.length; i++) {
-                        const p = pts[i];
-                        const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-                        if (i === 0) ctx.moveTo(css.x, css.y);
-                        else ctx.lineTo(css.x, css.y);
-                    }
-                    if (prim.type === 'polygon') ctx.closePath();
-                    finishStroke();
-                    finishFill();
-                } else if (prim.type === 'circle') {
-                    const c = prim.center as { lng: number; lat: number };
-                    const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-                    // Radius: specified in native px; convert to CSS using current zInt/scale
-                    const { zInt, scale } = Coords.zParts(z);
-                    const s = Coords.sFor(imageMaxZ as number, zInt);
-                    const rCss = ((prim.radius as number) / s) * scale;
-                    begin();
-                    ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
-                    finishStroke();
-                    finishFill();
-                }
+				if (prim.type === 'polyline' || prim.type === 'polygon') {
+					const pts = prim.points as Array<{ lng: number; lat: number }>;
+					if (!pts.length) continue;
+					begin();
+					for (let i = 0; i < pts.length; i++) {
+						const p = pts[i];
+						const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
+						if (i === 0) ctx.moveTo(css.x, css.y);
+						else ctx.lineTo(css.x, css.y);
+					}
+					if (prim.type === 'polygon') ctx.closePath();
+					finishStroke();
+					finishFill();
+				} else if (prim.type === 'circle') {
+					const c = prim.center as { lng: number; lat: number };
+					const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
+					// Radius: specified in native px; convert to CSS using current zInt/scale
+					const { zInt, scale } = Coords.zParts(z);
+					const s = Coords.sFor(imageMaxZ as number, zInt);
+					const rCss = ((prim.radius as number) / s) * scale;
+					begin();
+					ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
+					finishStroke();
+					finishFill();
+				}
 			}
 		}
 		ctx.restore();
@@ -1549,7 +1573,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			} catch {}
 			const rect = this.container.getBoundingClientRect();
 			const viewport = { x: rect.width, y: rect.height };
-            const imageMaxZ = this._imageMaxZoom;
+			const imageMaxZ = this._imageMaxZoom;
 			const info = this._icons.getMarkerInfo();
 			ctx.lineWidth = 1;
 			ctx.strokeStyle = 'rgba(255,0,0,0.9)';

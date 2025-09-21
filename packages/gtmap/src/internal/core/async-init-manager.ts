@@ -77,12 +77,7 @@ export class AsyncInitManager {
 		return this.initPromise;
 	}
 
-	private async _executeSteps(
-		yieldAfterMs: number,
-		onProgress?: (progress: InitProgress) => void,
-		onComplete?: () => void,
-		onError?: (error: Error) => void
-	): Promise<void> {
+	private async _executeSteps(yieldAfterMs: number, onProgress?: (progress: InitProgress) => void, onComplete?: () => void, onError?: (error: Error) => void): Promise<void> {
 		let lastYieldTime = performance.now();
 
 		try {
@@ -114,7 +109,6 @@ export class AsyncInitManager {
 
 			this.isCompleted = true;
 			onComplete?.();
-
 		} catch (error) {
 			const err = error instanceof Error ? error : new Error(String(error));
 			onError?.(err);
@@ -126,7 +120,7 @@ export class AsyncInitManager {
 	 * Yield control to the event loop
 	 */
 	private _yield(): Promise<void> {
-		return new Promise(resolve => {
+		return new Promise((resolve) => {
 			if (typeof MessageChannel !== 'undefined') {
 				// Use MessageChannel for faster yielding when available
 				const channel = new MessageChannel();

@@ -19,9 +19,9 @@ import type {
 	IconDefInternal,
 	MarkerInternal,
 	VectorPrimitiveInternal,
-  IconScaleFunction,
-  ApplyResult,
-  MaxBoundsPx,
+	IconScaleFunction,
+	ApplyResult,
+	MaxBoundsPx,
 } from './types';
 
 // Re-export types from centralized types file
@@ -80,20 +80,20 @@ export class GTMap<TMarkerData = unknown> {
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
 
-    // (active view transition tracking handled via module-level WeakMap in builder)
+	// (active view transition tracking handled via module-level WeakMap in builder)
 
 	/**
 	 * Creates a new GTMap instance.
 	 *
 	 * @param container - The HTML element to render the map into
-     * @param options - Configuration options for the map
-     * @param options.image - Single large raster image metadata
-     * @param options.minZoom - Minimum zoom level (default: 0)
-     * @param options.maxZoom - Maximum zoom level (default: 19)
-     * @param options.center - Initial center position in pixel coordinates
-     * @param options.zoom - Initial zoom level
-     * @param options.screenCache - Enable screen-space caching for better performance (default: true)
-     * @param options.fpsCap - Maximum frames per second (default: 60)
+	 * @param options - Configuration options for the map
+	 * @param options.image - Single large raster image metadata
+	 * @param options.minZoom - Minimum zoom level (default: 0)
+	 * @param options.maxZoom - Maximum zoom level (default: 19)
+	 * @param options.center - Initial center position in pixel coordinates
+	 * @param options.zoom - Initial zoom level
+	 * @param options.screenCache - Enable screen-space caching for better performance (default: true)
+	 * @param options.fpsCap - Maximum frames per second (default: 60)
 	 */
 	/** @group Lifecycle */
 	constructor(container: HTMLElement, options: MapOptions) {
@@ -119,7 +119,7 @@ export class GTMap<TMarkerData = unknown> {
 			center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
 			zoom: options.zoom,
 			autoResize: options.autoResize,
-            backgroundColor: options.backgroundColor,
+			backgroundColor: options.backgroundColor,
 			screenCache: options.screenCache,
 			fpsCap: options.fpsCap,
 			wrapX: options.wrapX,
@@ -139,98 +139,100 @@ export class GTMap<TMarkerData = unknown> {
 		this.vectors = new Layer<Vector>({ id: 'vectors', onChange: onVectorsChanged });
 
 		// Wire internal marker events to per-marker entity events
-        const toPointerMeta = (ev: { originalEvent?: PointerEvent | MouseEvent } | undefined) => {
-            const oe = ev?.originalEvent;
-            if (!oe) return undefined;
-            // Safe field presence check on a PointerEvent/MouseEvent union
-            const has = <K extends keyof (PointerEvent & MouseEvent)>(k: K): boolean => (k in (oe as PointerEvent | MouseEvent));
-            const ptrType = has('pointerType') ? String((oe as PointerEvent).pointerType) : 'mouse';
-            const device: import('./events/maps').InputDevice = (ptrType === 'mouse' || ptrType === 'touch' || ptrType === 'pen') ? (ptrType as import('./events/maps').InputDevice) : 'mouse';
-            const isPrimary = has('isPrimary') ? !!(oe as PointerEvent).isPrimary : true;
-            const buttons = has('buttons') ? (oe as PointerEvent).buttons : 0;
-            const pointerId = has('pointerId') ? (oe as PointerEvent).pointerId : 0;
-            const pressure = has('pressure') ? (oe as PointerEvent).pressure : undefined;
-            const width = has('width') ? (oe as PointerEvent).width : undefined;
-            const height = has('height') ? (oe as PointerEvent).height : undefined;
-            const tiltX = has('tiltX') ? (oe as PointerEvent).tiltX : undefined;
-            const tiltY = has('tiltY') ? (oe as PointerEvent).tiltY : undefined;
-            // twist is not in standard PointerEvent in all browsers; probe safely via optional field
-            const twist = (oe as PointerEvent & { twist?: number }).twist;
-            const mods = {
-                alt: 'altKey' in oe ? !!(oe as MouseEvent).altKey : false,
-                ctrl: 'ctrlKey' in oe ? !!(oe as MouseEvent).ctrlKey : false,
-                meta: 'metaKey' in oe ? !!(oe as MouseEvent).metaKey : false,
-                shift: 'shiftKey' in oe ? !!(oe as MouseEvent).shiftKey : false,
-            };
-            return { device, isPrimary, buttons, pointerId, pressure, width, height, tiltX, tiltY, twist, modifiers: mods };
-        };
+		const toPointerMeta = (ev: { originalEvent?: PointerEvent | MouseEvent } | undefined) => {
+			const oe = ev?.originalEvent;
+			if (!oe) return undefined;
+			// Safe field presence check on a PointerEvent/MouseEvent union
+			const has = <K extends keyof (PointerEvent & MouseEvent)>(k: K): boolean => k in (oe as PointerEvent | MouseEvent);
+			const ptrType = has('pointerType') ? String((oe as PointerEvent).pointerType) : 'mouse';
+			const device: import('./events/maps').InputDevice = ptrType === 'mouse' || ptrType === 'touch' || ptrType === 'pen' ? (ptrType as import('./events/maps').InputDevice) : 'mouse';
+			const isPrimary = has('isPrimary') ? !!(oe as PointerEvent).isPrimary : true;
+			const buttons = has('buttons') ? (oe as PointerEvent).buttons : 0;
+			const pointerId = has('pointerId') ? (oe as PointerEvent).pointerId : 0;
+			const pressure = has('pressure') ? (oe as PointerEvent).pressure : undefined;
+			const width = has('width') ? (oe as PointerEvent).width : undefined;
+			const height = has('height') ? (oe as PointerEvent).height : undefined;
+			const tiltX = has('tiltX') ? (oe as PointerEvent).tiltX : undefined;
+			const tiltY = has('tiltY') ? (oe as PointerEvent).tiltY : undefined;
+			// twist is not in standard PointerEvent in all browsers; probe safely via optional field
+			const twist = (oe as PointerEvent & { twist?: number }).twist;
+			const mods = {
+				alt: 'altKey' in oe ? !!(oe as MouseEvent).altKey : false,
+				ctrl: 'ctrlKey' in oe ? !!(oe as MouseEvent).ctrlKey : false,
+				meta: 'metaKey' in oe ? !!(oe as MouseEvent).metaKey : false,
+				shift: 'shiftKey' in oe ? !!(oe as MouseEvent).shiftKey : false,
+			};
+			return { device, isPrimary, buttons, pointerId, pressure, width, height, tiltX, tiltY, twist, modifiers: mods };
+		};
 
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('enter', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-                if (mk) mk.emitFromMap('pointerenter', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
+				if (mk) mk.emitFromMap('pointerenter', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('leave', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-                if (mk) mk.emitFromMap('pointerleave', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
+				if (mk) mk.emitFromMap('pointerleave', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('click', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-                if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
+				if (mk) mk.emitFromMap('click', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('down', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-                if (mk) mk.emitFromMap('pointerdown', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
+				if (mk) mk.emitFromMap('pointerdown', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('up', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-                if (mk) mk.emitFromMap('pointerup', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
+				if (mk) mk.emitFromMap('pointerup', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('longpress', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-                if (mk) mk.emitFromMap('longpress', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
+				if (mk) mk.emitFromMap('longpress', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: toPointerMeta(e) });
 			});
 		// Synthesize 'tap' alias from 'click' for touch input
 		if (this._impl.onMarkerEvent)
 			this._impl.onMarkerEvent('click', (e: import('./types').MarkerEventData<unknown>) => {
 				const id = e?.marker?.id;
 				const mk = id ? this.markers.get(id) : undefined;
-                const pm = toPointerMeta(e);
+				const pm = toPointerMeta(e);
 				if (mk && pm && pm.device === 'touch') mk.emitFromMap('tap', { x: e.screen.x, y: e.screen.y, marker: mk.toData(), pointer: pm });
 			});
 
 		// Facade-level safety: emit pointerleave when markers are removed or hidden
 		this.markers.events.on('entityremove').each(({ entity }) => {
-                    try {
-                        entity.emitFromMap('pointerleave', { x: -1, y: -1, marker: entity.toData(), pointer: undefined });
-                    } catch {}
+			try {
+				entity.emitFromMap('pointerleave', { x: -1, y: -1, marker: entity.toData(), pointer: undefined });
+			} catch {}
 		});
 		this.markers.events.on('visibilitychange').each(({ visible }) => {
 			if (!visible) {
 				for (const mk of this.markers.getAll()) {
-                        try { mk.emitFromMap('pointerleave', { x: -1, y: -1, marker: mk.toData(), pointer: undefined }); } catch {}
+					try {
+						mk.emitFromMap('pointerleave', { x: -1, y: -1, marker: mk.toData(), pointer: undefined });
+					} catch {}
 				}
 			}
 		});
 	}
 
-    // View control helpers (internal use by transition builder)
-    /** @internal */
-    _applyInstant(center?: Point, zoom?: number): void {
-        if (center) this._impl.setCenter(center.x, center.y);
-        if (typeof zoom === 'number') this._impl.setZoom(zoom);
-    }
+	// View control helpers (internal use by transition builder)
+	/** @internal */
+	_applyInstant(center?: Point, zoom?: number): void {
+		if (center) this._impl.setCenter(center.x, center.y);
+		if (typeof zoom === 'number') this._impl.setZoom(zoom);
+	}
 
 	// Grid + filtering
 	/**
@@ -240,8 +242,8 @@ export class GTMap<TMarkerData = unknown> {
 	 * @param on - `true` to show, `false` to hide
 	 * @returns This map instance for chaining
 	 */
-/** @group Tiles & Styling */
-setGridVisible(on: boolean): this {
+	/** @group Tiles & Styling */
+	setGridVisible(on: boolean): this {
 		this._impl.setGridVisible?.(on);
 		return this;
 	}
@@ -252,8 +254,8 @@ setGridVisible(on: boolean): this {
 	 * @param mode - `'auto'` | `'linear'` | `'bicubic'`
 	 * @returns This map instance for chaining
 	 */
-/** @group Tiles & Styling */
-setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
+	/** @group Tiles & Styling */
+	setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 		this._impl.setUpscaleFilter?.(mode);
 		return this;
 	}
@@ -266,10 +268,10 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * @returns This map instance for chaining
 	 *
 	 * @example
- 	 * ```ts
- 	 * // Make icons grow/shrink with zoom around Z=3
- 	 * map.setIconScaleFunction((z) => Math.pow(2, z - 3));
- 	 * ```
+	 * ```ts
+	 * // Make icons grow/shrink with zoom around Z=3
+	 * map.setIconScaleFunction((z) => Math.pow(2, z - 3));
+	 * ```
 	 */
 	setIconScaleFunction(fn: IconScaleFunction | null): this {
 		this._impl.setIconScaleFunction?.(fn);
@@ -285,11 +287,11 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * @param opts - Optional behavior
 	 * @returns This map instance for chaining
 	 * @example
- 	 * ```ts
- 	 * // Pause rendering and release VRAM, then resume later
- 	 * map.setActive(false, { releaseGL: true });
- 	 * map.setActive(true);
- 	 * ```
+	 * ```ts
+	 * // Pause rendering and release VRAM, then resume later
+	 * map.setActive(false, { releaseGL: true });
+	 * map.setActive(true);
+	 * ```
 	 */
 	setActive(on: boolean, opts?: ActiveOptions): this {
 		this._impl.setActive?.(on, opts);
@@ -334,8 +336,8 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * const m = map.addMarker(2048, 2048, { icon: pin, size: 1.0 });
 	 * ```
 	 */
-  /** @group Content */
-  addIcon(def: IconDef, id?: string): IconHandle {
+	/** @group Content */
+	addIcon(def: IconDef, id?: string): IconHandle {
 		const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
 		this._icons.set(iconId, def);
 		// Push to impl immediately
@@ -370,8 +372,8 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * poi.events.on('click', (e) => console.log('clicked', e.marker.id));
 	 * ```
 	 */
-  /** @group Content */
-  addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: TMarkerData }): Marker<TMarkerData> {
+	/** @group Content */
+	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: TMarkerData }): Marker<TMarkerData> {
 		const mk = new Marker<TMarkerData>(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
 		this.markers.add(mk);
 		return mk;
@@ -394,11 +396,11 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 			const typeSymbol = getVectorTypeSymbol(v.type);
 			if (typeSymbol && (isPolylineSymbol(typeSymbol) || isPolygonSymbol(typeSymbol))) {
 				// TypeScript narrowing: we know it's polyline or polygon
-				const polyVector = v as (VectorLegacy & { type: 'polyline' | 'polygon'; points: Point[] });
+				const polyVector = v as VectorLegacy & { type: 'polyline' | 'polygon'; points: Point[] };
 				return {
 					type: polyVector.type,
 					points: polyVector.points.map((p) => ({ lng: p.x, lat: p.y })),
-					style: polyVector.style
+					style: polyVector.style,
 				};
 			}
 			const circle = v as Circle;
@@ -414,17 +416,17 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * @public
 	 * @param geometry - Vector geometry (polyline, polygon, circle)
 	 * @returns The created {@link Vector}
- 	 *
- 	 * @example
- 	 * ```ts
- 	 * // Add a polyline
- 	 * const v = map.addVector({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] });
- 	 * // Later, update its geometry
- 	 * v.setGeometry({ type: 'circle', center: { x: 200, y: 200 }, radius: 40 });
- 	 * ```
-  */
-  /** @group Content */
-  addVector(geometry: VectorGeom): Vector {
+	 *
+	 * @example
+	 * ```ts
+	 * // Add a polyline
+	 * const v = map.addVector({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] });
+	 * // Later, update its geometry
+	 * v.setGeometry({ type: 'circle', center: { x: 200, y: 200 }, radius: 40 });
+	 * ```
+	 */
+	/** @group Content */
+	addVector(geometry: VectorGeom): Vector {
 		const v = new Vector(geometry, {}, () => this._flushVectors());
 		this.vectors.add(v);
 		return v;
@@ -434,10 +436,10 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * Removes all markers from the map.
 	 *
 	 * @returns This map instance for method chaining
-  */
-  /** @public Remove all markers from the map. */
-  /** @group Content */
-  clearMarkers(): this {
+	 */
+	/** @public Remove all markers from the map. */
+	/** @group Content */
+	clearMarkers(): this {
 		this.markers.clear();
 		return this;
 	}
@@ -445,10 +447,10 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * Removes all vector shapes from the map.
 	 *
 	 * @returns This map instance for method chaining
-  */
-  /** @public Remove all vectors from the map. */
-  /** @group Content */
-  clearVectors(): this {
+	 */
+	/** @public Remove all vectors from the map. */
+	/** @group Content */
+	clearVectors(): this {
 		this.vectors.clear();
 		this._impl.setVectors?.([]);
 		return this;
@@ -461,8 +463,8 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * @public
 	 * @returns The center position
 	 */
-  /** @group View */
-  getCenter(): Point {
+	/** @group View */
+	getCenter(): Point {
 		const c = this._impl.center as { lng: number; lat: number };
 		return { x: c.lng, y: c.lat };
 	}
@@ -472,8 +474,8 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * @public
 	 * @returns The zoom value (fractional allowed)
 	 */
-  /** @group View */
-  getZoom(): number {
+	/** @group View */
+	getZoom(): number {
 		return this._impl.zoom;
 	}
 	/**
@@ -491,161 +493,165 @@ setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 	 * @public
 	 * @param v - Speed multiplier (0.01–2.0)
 	 * @returns This map instance for chaining
- 	 *
- 	 * @example
- 	 * ```ts
- 	 * // Wire to a range input for user control
- 	 * const input = document.querySelector('#wheelSpeed') as HTMLInputElement;
- 	 * input.oninput = () => map.setWheelSpeed(Number(input.value));
- 	 * ```
+	 *
+	 * @example
+	 * ```ts
+	 * // Wire to a range input for user control
+	 * const input = document.querySelector('#wheelSpeed') as HTMLInputElement;
+	 * input.oninput = () => map.setWheelSpeed(Number(input.value));
+	 * ```
 	 */
-  setWheelSpeed(v: number): this {
-    this._impl.setWheelSpeed?.(v);
-    return this;
-  }
+	setWheelSpeed(v: number): this {
+		this._impl.setWheelSpeed?.(v);
+		return this;
+	}
 
-  /**
-   * Enable or disable horizontal world wrap.
-   *
-   * @public
-   * @group Tiles & Styling
-   * @param on - `true` to allow infinite panning across X (wrap), `false` to clamp at image edges
-   * @returns This map instance for chaining
-   * @remarks
-   * Pixel CRS only: when wrapping is enabled, the world repeats seamlessly along X; Y is never wrapped.
-   */
-  setWrapX(on: boolean): this {
-    this._impl.setWrapX(on);
-    return this;
-  }
+	/**
+	 * Enable or disable horizontal world wrap.
+	 *
+	 * @public
+	 * @group Tiles & Styling
+	 * @param on - `true` to allow infinite panning across X (wrap), `false` to clamp at image edges
+	 * @returns This map instance for chaining
+	 * @remarks
+	 * Pixel CRS only: when wrapping is enabled, the world repeats seamlessly along X; Y is never wrapped.
+	 */
+	setWrapX(on: boolean): this {
+		this._impl.setWrapX(on);
+		return this;
+	}
 
-  /**
-   * Constrain panning to pixel bounds (Leaflet‑like). Pass `null` to clear.
-   *
-   * @public
-   * @group Tiles & Styling
-   * @param bounds - `{ minX, minY, maxX, maxY }` in world pixels, or `null` to remove constraints
-   * @returns This map instance for chaining
-   * @remarks
-   * When set, zoom‑out is also clamped so the given bounds always cover the viewport.
-   */
-  setMaxBoundsPx(bounds: MaxBoundsPx | null): this {
-    this._impl.setMaxBoundsPx(bounds);
-    return this;
-  }
+	/**
+	 * Constrain panning to pixel bounds (Leaflet‑like). Pass `null` to clear.
+	 *
+	 * @public
+	 * @group Tiles & Styling
+	 * @param bounds - `{ minX, minY, maxX, maxY }` in world pixels, or `null` to remove constraints
+	 * @returns This map instance for chaining
+	 * @remarks
+	 * When set, zoom‑out is also clamped so the given bounds always cover the viewport.
+	 */
+	setMaxBoundsPx(bounds: MaxBoundsPx | null): this {
+		this._impl.setMaxBoundsPx(bounds);
+		return this;
+	}
 
-  /**
-   * Set bounds viscosity (0..1) for a resistive effect near the edges.
-   *
-   * @public
-   * @group Tiles & Styling
-   * @param v - Viscosity factor in [0..1]; `0` = hard clamp, `1` = very soft
-   * @returns This map instance for chaining
-   */
-  setMaxBoundsViscosity(v: number): this {
-    this._impl.setMaxBoundsViscosity(v);
-    return this;
-  }
-    /**
-     * Set the maximum frames per second.
-     *
-     * @public
-     * @param v - FPS limit (15–240)
-     * @returns This map instance for chaining
-     *
-     * @remarks
-     * Example:
-     * ```ts
-     * // Lower FPS cap to save battery
-     * map.setFpsCap(30);
-     * ```
-     */
-/** @group View */
-setFpsCap(v: number): this {
+	/**
+	 * Set bounds viscosity (0..1) for a resistive effect near the edges.
+	 *
+	 * @public
+	 * @group Tiles & Styling
+	 * @param v - Viscosity factor in [0..1]; `0` = hard clamp, `1` = very soft
+	 * @returns This map instance for chaining
+	 */
+	setMaxBoundsViscosity(v: number): this {
+		this._impl.setMaxBoundsViscosity(v);
+		return this;
+	}
+	/**
+	 * Set the maximum frames per second.
+	 *
+	 * @public
+	 * @param v - FPS limit (15–240)
+	 * @returns This map instance for chaining
+	 *
+	 * @remarks
+	 * Example:
+	 * ```ts
+	 * // Lower FPS cap to save battery
+	 * map.setFpsCap(30);
+	 * ```
+	 */
+	/** @group View */
+	setFpsCap(v: number): this {
 		this._impl.setFpsCap(v);
 		return this;
 	}
 
-    /**
-     * Set the viewport background.
-     *
-     * @public
-     * @remarks
-     * Policy: either `'transparent'` (fully transparent) or a solid color; alpha on colors is ignored.
-     * Example:
-     * ```ts
-     * // Transparent viewport (useful over custom app backgrounds)
-     * map.setBackgroundColor('transparent');
-     * // Switch to a solid dark background
-     * map.setBackgroundColor('#0a0a0a');
-     * ```
-     */
-/** @group Tiles & Styling */
-setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
+	/**
+	 * Set the viewport background.
+	 *
+	 * @public
+	 * @remarks
+	 * Policy: either `'transparent'` (fully transparent) or a solid color; alpha on colors is ignored.
+	 * Example:
+	 * ```ts
+	 * // Transparent viewport (useful over custom app backgrounds)
+	 * map.setBackgroundColor('transparent');
+	 * // Switch to a solid dark background
+	 * map.setBackgroundColor('#0a0a0a');
+	 * ```
+	 */
+	/** @group Tiles & Styling */
+	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
 		this._impl.setBackgroundColor?.(color);
 		return this;
 	}
-    /**
-     * Enable or disable automatic resize handling.
-     *
-     * @public
-     * @remarks
-     * When enabled, a ResizeObserver watches the container (debounced via rAF) and a window
-     * resize listener tracks DPR changes.
-     * Example:
-     * ```ts
-     * // Manage size manually: disable auto and call invalidate on layout changes
-     * map.setAutoResize(false);
-     * map.invalidateSize();
-     * ```
-     */
-/** @group View */
-setAutoResize(on: boolean): this {
+	/**
+	 * Enable or disable automatic resize handling.
+	 *
+	 * @public
+	 * @remarks
+	 * When enabled, a ResizeObserver watches the container (debounced via rAF) and a window
+	 * resize listener tracks DPR changes.
+	 * Example:
+	 * ```ts
+	 * // Manage size manually: disable auto and call invalidate on layout changes
+	 * map.setAutoResize(false);
+	 * map.invalidateSize();
+	 * ```
+	 */
+	/** @group View */
+	setAutoResize(on: boolean): this {
 		this._impl.setAutoResize?.(on);
 		return this;
 	}
-    /** @internal */
-    _animateView(opts: { center?: Point; zoom?: number; durationMs: number; easing?: (t: number) => number }): void {
-        const { center, zoom, durationMs, easing } = opts;
-        const lng = center?.x;
-        const lat = center?.y;
-        this._impl.flyTo?.({ lng, lat, zoom, durationMs, easing });
-    }
+	/** @internal */
+	_animateView(opts: { center?: Point; zoom?: number; durationMs: number; easing?: (t: number) => number }): void {
+		const { center, zoom, durationMs, easing } = opts;
+		const lng = center?.x;
+		const lat = center?.y;
+		this._impl.flyTo?.({ lng, lat, zoom, durationMs, easing });
+	}
 
-    /** @internal */
-    _cancelPanZoom(): void {
-        try { this._impl.cancelPanAnim?.(); } catch {}
-        try { this._impl.cancelZoomAnim?.(); } catch {}
-    }
+	/** @internal */
+	_cancelPanZoom(): void {
+		try {
+			this._impl.cancelPanAnim?.();
+		} catch {}
+		try {
+			this._impl.cancelZoomAnim?.();
+		} catch {}
+	}
 
-    /** @internal */
-    _fitBounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding: { top: number; right: number; bottom: number; left: number }): { center: Point; zoom: number } {
-        const rect = this._impl.container.getBoundingClientRect();
-        const pad = padding || { top: 0, right: 0, bottom: 0, left: 0 };
-        const availW = Math.max(1, rect.width - (pad.left + pad.right));
-        const availH = Math.max(1, rect.height - (pad.top + pad.bottom));
-        const bw = Math.max(1, b.maxX - b.minX);
-        const bh = Math.max(1, b.maxY - b.minY);
-        const k = Math.min(availW / bw, availH / bh);
-        // CSS px per world px is 2^(z - imageMaxZ) => z = imageMaxZ + log2(k)
-        const imageMaxZ = this._impl.getImageMaxZoom();
-        let z = imageMaxZ + Math.log2(Math.max(1e-6, k));
-        // clamp
-        z = Math.max(this._impl.getMinZoom(), Math.min(this._impl.getMaxZoom(), z));
-        const center: Point = { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 };
-        return { center, zoom: z };
-    }
+	/** @internal */
+	_fitBounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding: { top: number; right: number; bottom: number; left: number }): { center: Point; zoom: number } {
+		const rect = this._impl.container.getBoundingClientRect();
+		const pad = padding || { top: 0, right: 0, bottom: 0, left: 0 };
+		const availW = Math.max(1, rect.width - (pad.left + pad.right));
+		const availH = Math.max(1, rect.height - (pad.top + pad.bottom));
+		const bw = Math.max(1, b.maxX - b.minX);
+		const bh = Math.max(1, b.maxY - b.minY);
+		const k = Math.min(availW / bw, availH / bh);
+		// CSS px per world px is 2^(z - imageMaxZ) => z = imageMaxZ + log2(k)
+		const imageMaxZ = this._impl.getImageMaxZoom();
+		let z = imageMaxZ + Math.log2(Math.max(1e-6, k));
+		// clamp
+		z = Math.max(this._impl.getMinZoom(), Math.min(this._impl.getMaxZoom(), z));
+		const center: Point = { x: (b.minX + b.maxX) / 2, y: (b.minY + b.maxY) / 2 };
+		return { center, zoom: z };
+	}
 
-    /** @internal */
-    _setView(center: Point, zoom: number, opts?: { animate?: { durationMs: number; delayMs?: number; easing?: (t: number) => number } }): Promise<ApplyResult> {
-        if (opts?.animate) {
-            this._animateView({ center, zoom, durationMs: opts.animate.durationMs, easing: opts.animate.easing });
-            return this.events.once('moveend').then(() => ({ status: 'animated' }));
-        } else {
-            this._applyInstant(center, zoom);
-            return Promise.resolve({ status: 'instant' });
-        }
-    }
+	/** @internal */
+	_setView(center: Point, zoom: number, opts?: { animate?: { durationMs: number; delayMs?: number; easing?: (t: number) => number } }): Promise<ApplyResult> {
+		if (opts?.animate) {
+			this._animateView({ center, zoom, durationMs: opts.animate.durationMs, easing: opts.animate.easing });
+			return this.events.once('moveend').then(() => ({ status: 'animated' }));
+		} else {
+			this._applyInstant(center, zoom);
+			return Promise.resolve({ status: 'instant' });
+		}
+	}
 
 	/**
 	 * Recompute canvas sizes after external container changes.
@@ -653,8 +659,8 @@ setAutoResize(on: boolean): this {
 	 * @public
 	 * @returns This map instance for chaining
 	 */
-/** @group View */
-invalidateSize(): this {
+	/** @group View */
+	invalidateSize(): this {
 		this._impl.resize?.();
 		return this;
 	}
@@ -670,18 +676,18 @@ invalidateSize(): this {
 	 * await map.events.once('zoomend');
 	 * ```
 	 */
-/** @group Events */
-get events(): MapEvents<TMarkerData> {
-    return {
-      on: (name: any, handler?: any) => {
-        // Bridge overloads: return the stream or subscribe inline. The cast is localized
-        // to preserve precise generic types for callers across the two forms.
-        const stream = this._impl.events.on(name as keyof import('./types').EventMap);
-        return handler ? stream.each(handler) : stream;
-      },
-      once: (name) => this._impl.events.when(name as keyof import('./types').EventMap),
-    } as MapEvents<TMarkerData>;
-  }
+	/** @group Events */
+	get events(): MapEvents<TMarkerData> {
+		return {
+			on: (name: any, handler?: any) => {
+				// Bridge overloads: return the stream or subscribe inline. The cast is localized
+				// to preserve precise generic types for callers across the two forms.
+				const stream = this._impl.events.on(name as keyof import('./types').EventMap);
+				return handler ? stream.each(handler) : stream;
+			},
+			once: (name) => this._impl.events.when(name as keyof import('./types').EventMap),
+		} as MapEvents<TMarkerData>;
+	}
 
 	/**
 	 * Start a chainable view transition.
@@ -690,8 +696,8 @@ get events(): MapEvents<TMarkerData> {
 	 * @remarks
 	 * The builder is side‑effect free until {@link ViewTransition.apply | apply()} is called.
 	 */
-/** @group View */
-transition(): ViewTransition {
+	/** @group View */
+	transition(): ViewTransition {
 		return new ViewTransitionImpl(this);
 	}
 
@@ -757,15 +763,15 @@ transition(): ViewTransition {
 			const typeSymbol = getVectorTypeSymbol(g.type);
 			if (typeSymbol && (isPolylineSymbol(typeSymbol) || isPolygonSymbol(typeSymbol))) {
 				// TypeScript narrowing: we know it's polyline or polygon
-				const polyGeom = g as (VectorGeom & { type: 'polyline' | 'polygon'; points: Point[] });
+				const polyGeom = g as VectorGeom & { type: 'polyline' | 'polygon'; points: Point[] };
 				return {
 					type: polyGeom.type,
 					points: polyGeom.points.map((p) => ({ lng: p.x, lat: p.y })),
-					style: polyGeom.style
+					style: polyGeom.style,
 				};
 			}
 			// TypeScript narrowing: we know it's a circle
-			const circleGeom = g as (VectorGeom & { type: 'circle'; center: Point; radius: number });
+			const circleGeom = g as VectorGeom & { type: 'circle'; center: Point; radius: number };
 			return { type: 'circle', center: { lng: circleGeom.center.x, lat: circleGeom.center.y }, radius: circleGeom.radius, style: circleGeom.style };
 		});
 		this._impl.setVectors?.(internalVectors);

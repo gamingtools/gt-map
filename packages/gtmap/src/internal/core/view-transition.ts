@@ -149,8 +149,10 @@ export class ViewTransitionImpl implements ViewTransition {
 
 	points(list: Array<Point>, padding?: number | { top: number; right: number; bottom: number; left: number }): this {
 		if (!list || list.length === 0) return this;
-		let minX = Number.POSITIVE_INFINITY, minY = Number.POSITIVE_INFINITY;
-		let maxX = Number.NEGATIVE_INFINITY, maxY = Number.NEGATIVE_INFINITY;
+		let minX = Number.POSITIVE_INFINITY,
+			minY = Number.POSITIVE_INFINITY;
+		let maxX = Number.NEGATIVE_INFINITY,
+			maxY = Number.NEGATIVE_INFINITY;
 		for (const p of list) {
 			if (p.x < minX) minX = p.x;
 			if (p.y < minY) minY = p.y;

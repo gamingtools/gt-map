@@ -30,8 +30,8 @@ export interface ImageSourceOptions {
 
 // Map configuration
 export interface MapOptions {
-  /** Single raster image to display (optionally with a smaller preview for progressive load). */
-  image: ImageSourceOptions & { preview?: ImageSourceOptions; progressiveSwapDelayMs?: number };
+	/** Single raster image to display (optionally with a smaller preview for progressive load). */
+	image: ImageSourceOptions & { preview?: ImageSourceOptions; progressiveSwapDelayMs?: number };
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;
@@ -41,18 +41,18 @@ export interface MapOptions {
 	 * Enabled by default.
 	 */
 	autoResize?: boolean;
-  /**
-   * Viewport background: either 'transparent' (default when omitted) or a solid color.
-   * Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components.
-  */
-  backgroundColor?: string | { r: number; g: number; b: number; a?: number };
+	/**
+	 * Viewport background: either 'transparent' (default when omitted) or a solid color.
+	 * Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components.
+	 */
+	backgroundColor?: string | { r: number; g: number; b: number; a?: number };
 	screenCache?: boolean;
 	fpsCap?: number;
-  wrapX?: boolean;
-  freePan?: boolean;
-  maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
-  maxBoundsViscosity?: number;
-  bounceAtZoomLimits?: boolean;
+	wrapX?: boolean;
+	freePan?: boolean;
+	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
+	maxBoundsViscosity?: number;
+	bounceAtZoomLimits?: boolean;
 }
 
 // Content types
@@ -74,18 +74,18 @@ export interface Marker {
  * Provide intrinsic pixel dimensions for the source image and optional 2x asset and anchor.
  */
 export interface IconDef {
-    /** URL or data URL for the 1x icon bitmap. */
-    iconPath: string;
-    /** Optional URL or data URL for a 2x (retina) icon bitmap. */
-    x2IconPath?: string;
-    /** Intrinsic width of the icon in pixels (1x asset). */
-    width: number;
-    /** Intrinsic height of the icon in pixels (1x asset). */
-    height: number;
-    /** Optional anchor X in pixels from the left (defaults to width/2). */
-    anchorX?: number;
-    /** Optional anchor Y in pixels from the top (defaults to height/2). */
-    anchorY?: number;
+	/** URL or data URL for the 1x icon bitmap. */
+	iconPath: string;
+	/** Optional URL or data URL for a 2x (retina) icon bitmap. */
+	x2IconPath?: string;
+	/** Intrinsic width of the icon in pixels (1x asset). */
+	width: number;
+	/** Intrinsic height of the icon in pixels (1x asset). */
+	height: number;
+	/** Optional anchor X in pixels from the left (defaults to width/2). */
+	anchorX?: number;
+	/** Optional anchor Y in pixels from the top (defaults to height/2). */
+	anchorY?: number;
 }
 
 /**
@@ -93,8 +93,8 @@ export interface IconDef {
  * @public
  */
 export interface IconHandle {
-    /** Stable icon id. */
-    id: string;
+	/** Stable icon id. */
+	id: string;
 }
 
 // Vector styling
@@ -151,16 +151,16 @@ export function isCircle(v: Vector): v is Circle {
  * Includes screen coordinates (CSS pixels), best‑effort world position, and the current view.
  */
 export interface PointerEventData {
-    /** Screen X in CSS pixels relative to the container. */
-    x: number;
-    /** Screen Y in CSS pixels relative to the container. */
-    y: number;
-    /** World position in pixels at current zoom, or `null` if the pointer is outside. */
-    world: Point | null;
-    /** Current view state snapshot. */
-    view: ViewState;
-    /** Original DOM pointer event. */
-    originalEvent: PointerEvent;
+	/** Screen X in CSS pixels relative to the container. */
+	x: number;
+	/** Screen Y in CSS pixels relative to the container. */
+	y: number;
+	/** World position in pixels at current zoom, or `null` if the pointer is outside. */
+	world: Point | null;
+	/** Current view state snapshot. */
+	view: ViewState;
+	/** Original DOM pointer event. */
+	originalEvent: PointerEvent;
 }
 
 /**
@@ -171,63 +171,63 @@ export interface PointerEventData {
  * May include `markers?` hover hits for convenience when idle.
  */
 export interface MouseEventData {
-    /** Screen X in CSS pixels relative to the container. */
-    x: number;
-    /** Screen Y in CSS pixels relative to the container. */
-    y: number;
-    /** World position in pixels at current zoom, or `null` if the pointer is outside. */
-    world: Point | null;
-    /** Current view state snapshot. */
-    view: ViewState;
-    /** Original DOM mouse event. */
-    originalEvent: MouseEvent;
-    /** Optional hover hits under the cursor (when enabled). */
-    markers?: MarkerHit[];
+	/** Screen X in CSS pixels relative to the container. */
+	x: number;
+	/** Screen Y in CSS pixels relative to the container. */
+	y: number;
+	/** World position in pixels at current zoom, or `null` if the pointer is outside. */
+	world: Point | null;
+	/** Current view state snapshot. */
+	view: ViewState;
+	/** Original DOM mouse event. */
+	originalEvent: MouseEvent;
+	/** Optional hover hits under the cursor (when enabled). */
+	markers?: MarkerHit[];
 }
 
 /** Marker hover hit on the map surface (mouse only, when enabled). */
 export interface MarkerHit {
-    /** Lightweight marker snapshot for hover purposes. */
-    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: unknown | null };
-    /** Icon metadata associated with the hit marker. */
-    icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+	/** Lightweight marker snapshot for hover purposes. */
+	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: unknown | null };
+	/** Icon metadata associated with the hit marker. */
+	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
 
 /** Movement event payload: center changed. */
 export interface MoveEventData {
-    /** Current view state snapshot. */
-    view: ViewState;
+	/** Current view state snapshot. */
+	view: ViewState;
 }
 
 /** Zoom event payload: zoom changed. */
 export interface ZoomEventData {
-    /** Current view state snapshot. */
-    view: ViewState;
+	/** Current view state snapshot. */
+	view: ViewState;
 }
 
 /** Per‑frame payload for diagnostics/HUD. */
 export interface FrameEventData {
-    /** High‑resolution timestamp for the frame. */
-    now: number;
-    /** Optional renderer stats if enabled. */
-    stats?: RenderStats;
+	/** High‑resolution timestamp for the frame. */
+	now: number;
+	/** Optional renderer stats if enabled. */
+	stats?: RenderStats;
 }
 
 // Lifecycle event payloads
 /** Load event payload: fired once after the first frame is scheduled. */
 export interface LoadEventData {
-    /** Current view state snapshot. */
-    view: ViewState;
-    /** Final container size and device pixel ratio. */
-    size: { width: number; height: number; dpr: number };
+	/** Current view state snapshot. */
+	view: ViewState;
+	/** Final container size and device pixel ratio. */
+	size: { width: number; height: number; dpr: number };
 }
 
 /** Resize event payload: fired after a debounced resize completes. */
 export interface ResizeEventData {
-    /** Current view state snapshot. */
-    view: ViewState;
-    /** Final container size and device pixel ratio. */
-    size: { width: number; height: number; dpr: number };
+	/** Current view state snapshot. */
+	view: ViewState;
+	/** Final container size and device pixel ratio. */
+	size: { width: number; height: number; dpr: number };
 }
 
 // Base event (shared fields for richer payloads)
@@ -412,20 +412,20 @@ export type Easing = (t: number) => number;
  * @public
  */
 export interface AnimateOptions {
-  /** Total animation time in milliseconds. */
-  durationMs: number;
-  /** Optional easing function; defaults to a built‑in ease curve. */
-  easing?: Easing;
-  /** Optional delay before starting, in milliseconds. */
-  delayMs?: number;
-  /**
-   * Policy when another transition targets the same object.
-   *
-   * - `cancel` (default): stop the previous transition
-   * - `join`: retarget the current transition to the new end state
-   * - `enqueue`: start after the current one finishes
-   */
-  interrupt?: 'cancel' | 'join' | 'enqueue';
+	/** Total animation time in milliseconds. */
+	durationMs: number;
+	/** Optional easing function; defaults to a built‑in ease curve. */
+	easing?: Easing;
+	/** Optional delay before starting, in milliseconds. */
+	delayMs?: number;
+	/**
+	 * Policy when another transition targets the same object.
+	 *
+	 * - `cancel` (default): stop the previous transition
+	 * - `join`: retarget the current transition to the new end state
+	 * - `enqueue`: start after the current one finishes
+	 */
+	interrupt?: 'cancel' | 'join' | 'enqueue';
 }
 
 /**
@@ -434,8 +434,8 @@ export interface AnimateOptions {
  * @public
  */
 export interface ApplyOptions {
-  /** Optional animation parameters; omit for an instant apply. */
-  animate?: AnimateOptions;
+	/** Optional animation parameters; omit for an instant apply. */
+	animate?: AnimateOptions;
 }
 
 /** Status describing how a transition completed. */
@@ -443,8 +443,8 @@ export type ApplyStatus = 'instant' | 'animated' | 'canceled' | 'complete' | 'er
 
 /** Result returned by {@link ApplyOptions | apply} Promises. */
 export interface ApplyResult {
-  /** Completion status of the transition. */
-  status: ApplyStatus;
-  /** Error details if status is 'error' */
-  error?: Error | unknown;
+	/** Completion status of the transition. */
+	status: ApplyStatus;
+	/** Error details if status is 'error' */
+	error?: Error | unknown;
 }

@@ -10,9 +10,9 @@ export const VECTOR_CIRCLE = Symbol('circle');
 
 // Type mapping for runtime checks
 export const VECTOR_TYPE_MAP = {
-	'polyline': VECTOR_POLYLINE,
-	'polygon': VECTOR_POLYGON,
-	'circle': VECTOR_CIRCLE,
+	polyline: VECTOR_POLYLINE,
+	polygon: VECTOR_POLYGON,
+	circle: VECTOR_CIRCLE,
 } as const;
 
 // Reverse mapping for debugging/serialization
@@ -30,7 +30,6 @@ export type VectorTypeSymbol = typeof VECTOR_POLYLINE | typeof VECTOR_POLYGON | 
 export function getVectorTypeSymbol(type: string): VectorTypeSymbol | undefined {
 	return VECTOR_TYPE_MAP[type as keyof typeof VECTOR_TYPE_MAP];
 }
-
 
 /**
  * Type guards using symbols for better performance

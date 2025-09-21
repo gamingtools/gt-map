@@ -17,8 +17,11 @@ HTML
 ```html
 <div id="map"></div>
 <style>
-  #map { width: 100%; height: 480px; }
-  /* Ensure the container has a concrete size */
+	#map {
+		width: 100%;
+		height: 480px;
+	}
+	/* Ensure the container has a concrete size */
 </style>
 ```
 
@@ -30,17 +33,17 @@ import { GTMap, type MapOptions } from '@gaming.tools/gtmap';
 const container = document.getElementById('map') as HTMLDivElement;
 
 const map = new GTMap(container, {
-  image: {
-    url: 'https://example.com/maps/hagga-basin.webp',
-    width: 8192,
-    height: 8192,
-  },
-  wrapX: false,
-  minZoom: 0,
-  maxZoom: 5,
-  center: { x: 4096, y: 4096 },
-  zoom: 3,
-  backgroundColor: '#0a0a0a'
+	image: {
+		url: 'https://example.com/maps/hagga-basin.webp',
+		width: 8192,
+		height: 8192,
+	},
+	wrapX: false,
+	minZoom: 0,
+	maxZoom: 5,
+	center: { x: 4096, y: 4096 },
+	zoom: 3,
+	backgroundColor: '#0a0a0a',
 } satisfies MapOptions);
 
 // Optional: grid + filtering
@@ -55,17 +58,30 @@ map.setUpscaleFilter('auto'); // 'auto' | 'linear' | 'bicubic'
 await map.transition().center({ x: 4200, y: 4100 }).zoom(3).apply();
 
 // Animated recenter
-await map.transition().center({ x: 5000, y: 3000 }).apply({ animate: { durationMs: 600 } });
+await map
+	.transition()
+	.center({ x: 5000, y: 3000 })
+	.apply({ animate: { durationMs: 600 } });
 
 // Animated zoom + center
-await map.transition().center({ x: 4096, y: 4096 }).zoom(4).apply({ animate: { durationMs: 800 } });
+await map
+	.transition()
+	.center({ x: 4096, y: 4096 })
+	.zoom(4)
+	.apply({ animate: { durationMs: 800 } });
 
 // Fit bounds
-await map.transition().bounds({ minX: 1000, minY: 1200, maxX: 2400, maxY: 2200 }, 24).apply({ animate: { durationMs: 500 } });
+await map
+	.transition()
+	.bounds({ minX: 1000, minY: 1200, maxX: 2400, maxY: 2200 }, 24)
+	.apply({ animate: { durationMs: 500 } });
 
 // Fit markers (all): gather positions and use points(...)
-const pts = map.markers.getAll().map(m => ({ x: m.x, y: m.y }));
-await map.transition().points(pts, 16).apply({ animate: { durationMs: 500 } });
+const pts = map.markers.getAll().map((m) => ({ x: m.x, y: m.y }));
+await map
+	.transition()
+	.points(pts, 16)
+	.apply({ animate: { durationMs: 500 } });
 ```
 
 ### Rendering & Behavior
@@ -93,12 +109,12 @@ map.setBackgroundColor({ r: 16, g: 16, b: 16 });
 ```ts
 // One‑time map initialization
 map.events.on('load').each(({ size, view }) => {
-  console.log('ready', size.width, size.height, size.dpr, view);
+	console.log('ready', size.width, size.height, size.dpr, view);
 });
 
 // Debounced resize with final size + DPR
 map.events.on('resize').each(({ size }) => {
-  console.log('resized', size.width, size.height, size.dpr);
+	console.log('resized', size.width, size.height, size.dpr);
 });
 
 // Suspend/resume rendering
@@ -117,15 +133,15 @@ Map examples
 
 ```ts
 map.events.on('move').each(({ view }) => {
-  console.log('center', view.center, 'zoom', view.zoom);
+	console.log('center', view.center, 'zoom', view.zoom);
 });
 
 map.events.on('zoomend').each(({ view }) => {
-  console.log('zoomend', view.zoom);
+	console.log('zoomend', view.zoom);
 });
 
 map.events.on('click').each((e) => {
-  console.log('screen', e.x, e.y, 'world', e.world);
+	console.log('screen', e.x, e.y, 'world', e.world);
 });
 ```
 
@@ -136,11 +152,11 @@ Lifecycle
 
 ```ts
 map.events.on('load').each(({ size, view }) => {
-  console.log('map ready', size.width, size.height, size.dpr, view);
+	console.log('map ready', size.width, size.height, size.dpr, view);
 });
 
 map.events.on('resize').each(({ size }) => {
-  console.log('resized to', size.width, size.height, 'dpr', size.dpr);
+	console.log('resized to', size.width, size.height, 'dpr', size.dpr);
 });
 ```
 
@@ -157,10 +173,10 @@ const m = map.addMarker(1024, 1024);
 // With style and user data
 const icon = map.addIcon({ iconPath: '/assets/pin.png', width: 24, height: 24 });
 const poi = map.addMarker(2048, 2048, {
-  icon,             // Icon handle from addIcon()
-  size: 1.25,       // Scale multiplier (1 = source icon size)
-  rotation: 0,      // Degrees clockwise
-  data: { name: 'POI A', category: 'shop' }
+	icon, // Icon handle from addIcon()
+	size: 1.25, // Scale multiplier (1 = source icon size)
+	rotation: 0, // Degrees clockwise
+	data: { name: 'POI A', category: 'shop' },
 });
 ```
 
@@ -253,10 +269,23 @@ Vectors are simple geometry overlays (polyline, polygon, circle). They live in t
 
 ```ts
 // Polyline
-map.addVector({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 200, y: 100 } ] });
+map.addVector({
+	type: 'polyline',
+	points: [
+		{ x: 0, y: 0 },
+		{ x: 200, y: 100 },
+	],
+});
 
 // Polygon
-map.addVector({ type: 'polygon', points: [ { x: 100, y: 100 }, { x: 150, y: 160 }, { x: 80, y: 190 } ] });
+map.addVector({
+	type: 'polygon',
+	points: [
+		{ x: 100, y: 100 },
+		{ x: 150, y: 160 },
+		{ x: 80, y: 190 },
+	],
+});
 
 // Circle
 map.addVector({ type: 'circle', center: { x: 300, y: 300 }, radius: 60 });
@@ -274,7 +303,10 @@ Recenter on marker click
 ```ts
 const m = map.addMarker(1200, 900);
 m.events.on('click').each(async () => {
-  await map.transition().center({ x: m.x, y: m.y }).apply({ animate: { durationMs: 400 } });
+	await map
+		.transition()
+		.center({ x: m.x, y: m.y })
+		.apply({ animate: { durationMs: 400 } });
 });
 ```
 
@@ -289,7 +321,7 @@ Frame loop hook (stats or overlays)
 
 ```ts
 map.events.on('frame').each(({ now, stats }) => {
-  // stats?.fps, stats?.frame, etc.
+	// stats?.fps, stats?.frame, etc.
 });
 ```
 
@@ -299,14 +331,14 @@ Throttle high‑frequency events in your handlers
 let scheduled = false;
 let lastPos = { x: 0, y: 0 };
 map.events.on('pointermove').each(({ x, y }) => {
-  lastPos = { x, y };
-  if (!scheduled) {
-    scheduled = true;
-    requestAnimationFrame(() => {
-      scheduled = false;
-      // do work with lastPos
-    });
-  }
+	lastPos = { x, y };
+	if (!scheduled) {
+		scheduled = true;
+		requestAnimationFrame(() => {
+			scheduled = false;
+			// do work with lastPos
+		});
+	}
 });
 ```
 
@@ -317,10 +349,11 @@ Convenient easing functions are exported under `easings`:
 ```ts
 import { easings } from '@gaming.tools/gtmap';
 
-await map.transition()
-  .center({ x: 4096, y: 4096 })
-  .zoom(4)
-  .apply({ animate: { durationMs: 700, easing: easings.easeInOutCubic } });
+await map
+	.transition()
+	.center({ x: 4096, y: 4096 })
+	.zoom(4)
+	.apply({ animate: { durationMs: 700, easing: easings.easeInOutCubic } });
 ```
 
 ## Types & Bundles

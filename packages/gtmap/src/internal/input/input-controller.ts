@@ -58,9 +58,9 @@ export default class InputController {
 			try {
 				canvas.setPointerCapture(e.pointerId);
 			} catch {}
-                deps.setLastInteractAt(this.lastTouchAt);
-                deps.setLastInteractAt(this.lastTouchAt);
-                const rect = deps.getContainer().getBoundingClientRect();
+			deps.setLastInteractAt(this.lastTouchAt);
+			deps.setLastInteractAt(this.lastTouchAt);
+			const rect = deps.getContainer().getBoundingClientRect();
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
 			const view = deps.getView();
@@ -78,8 +78,8 @@ export default class InputController {
 			// mouse events are derived in mapgl for enrichment
 		};
 
-			const onMove = (e: PointerEvent) => {
-				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+		const onMove = (e: PointerEvent) => {
+			const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 			const view = deps.getView();
 			const { zInt, scale } = Coords.zParts(view.zoom);
 			const rect = deps.getContainer().getBoundingClientRect();
@@ -96,9 +96,9 @@ export default class InputController {
 			const py = e.clientY - rect.top;
 			const inside = px >= 0 && py >= 0 && px <= widthCSS && py <= heightCSS;
 			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
-				if (this.dragging) {
-					deps.setLastInteractAt(now);
-					deps.updatePointerAbs(wNat.x, wNat.y);
+			if (this.dragging) {
+				deps.setLastInteractAt(now);
+				deps.updatePointerAbs(wNat.x, wNat.y);
 				try {
 					deps.emit('pointermove', {
 						x: px,
@@ -180,9 +180,9 @@ export default class InputController {
 			}
 		};
 
-			const onWheel = (e: WheelEvent) => {
-				e.preventDefault();
-				deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+		const onWheel = (e: WheelEvent) => {
+			e.preventDefault();
+			deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 			const lines = InputController.normalizeWheel(e, deps.getCanvas().height);
 			if (!Number.isFinite(lines)) return;
 			const rect = deps.getContainer().getBoundingClientRect();
@@ -203,10 +203,10 @@ export default class InputController {
 
 		const onDblClick = (e: MouseEvent) => {
 			const rect = deps.getContainer().getBoundingClientRect();
-				const px = e.clientX - rect.left;
-				const py = e.clientY - rect.top;
-				deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-				deps.startEase(1.0, px, py, deps.getAnchorMode());
+			const px = e.clientX - rect.left;
+			const py = e.clientY - rect.top;
+			deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+			deps.startEase(1.0, px, py, deps.getAnchorMode());
 			// mouse dblclick derived in mapgl
 		};
 
@@ -217,34 +217,34 @@ export default class InputController {
 		const onKeyDown = (e: KeyboardEvent) => {
 			const key = e.key;
 			if (key === '+' || key === '=') {
-					const rect = deps.getContainer().getBoundingClientRect();
-					deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-					deps.startEase(0.5, rect.width / 2, rect.height / 2, 'center');
+				const rect = deps.getContainer().getBoundingClientRect();
+				deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+				deps.startEase(0.5, rect.width / 2, rect.height / 2, 'center');
 				e.preventDefault();
 				return;
 			}
 			if (key === '-' || key === '_') {
-					const rect = deps.getContainer().getBoundingClientRect();
-					deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-					deps.startEase(-0.5, rect.width / 2, rect.height / 2, 'center');
+				const rect = deps.getContainer().getBoundingClientRect();
+				deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+				deps.startEase(-0.5, rect.width / 2, rect.height / 2, 'center');
 				e.preventDefault();
 				return;
 			}
 			if (key === 'ArrowLeft') {
-					deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-					deps.startPanBy(100, 0, 0.2);
+				deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+				deps.startPanBy(100, 0, 0.2);
 				e.preventDefault();
 			} else if (key === 'ArrowRight') {
-					deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-					deps.startPanBy(-100, 0, 0.2);
+				deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+				deps.startPanBy(-100, 0, 0.2);
 				e.preventDefault();
 			} else if (key === 'ArrowUp') {
-					deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-					deps.startPanBy(0, 100, 0.2);
+				deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+				deps.startPanBy(0, 100, 0.2);
 				e.preventDefault();
 			} else if (key === 'ArrowDown') {
-					deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
-					deps.startPanBy(0, -100, 0.2);
+				deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
+				deps.startPanBy(0, -100, 0.2);
 				e.preventDefault();
 			}
 		};
@@ -335,9 +335,9 @@ export default class InputController {
 				deps.setCenter(nx, ny);
 				deps.emit('move', { view: deps.getView() });
 			} else if (touchState.mode === 'pinch' && e.touches.length === 2) {
-                // Update cooldown on every pinch frame and mark as interaction
-                this.pinchCooldownUntil = Math.max(this.pinchCooldownUntil, this.lastTouchAt + 500);
-                deps.setLastInteractAt(this.lastTouchAt);
+				// Update cooldown on every pinch frame and mark as interaction
+				this.pinchCooldownUntil = Math.max(this.pinchCooldownUntil, this.lastTouchAt + 500);
+				deps.setLastInteractAt(this.lastTouchAt);
 				const t0 = e.touches[0];
 				const t1 = e.touches[1];
 				const dx = t1.clientX - t0.clientX;

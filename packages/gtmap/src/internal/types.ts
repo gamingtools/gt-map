@@ -17,8 +17,8 @@ import type {
 // Minimal internal event bus used by the renderer.
 // It exposes `.on(event).each(handler)` and `.when(event)`.
 type InternalEventBus = {
-  on<K extends keyof EventMap & string>(event: K): { each(handler: (value: EventMap[K]) => void): () => void };
-  when<K extends keyof EventMap & string>(event: K): Promise<EventMap[K]>;
+	on<K extends keyof EventMap & string>(event: K): { each(handler: (value: EventMap[K]) => void): () => void };
+	when<K extends keyof EventMap & string>(event: K): Promise<EventMap[K]>;
 };
 
 import type { LngLat } from './mapgl';
@@ -91,7 +91,7 @@ export interface InputDeps {
 	getInertiaDecel(): number; // px/s^2
 	getInertiaMaxSpeed(): number; // px/s
 	getEaseLinearity(): number;
-    startPanBy(offsetXPx: number, offsetYPx: number, durationSec: number, ease?: number): void;
+	startPanBy(offsetXPx: number, offsetYPx: number, durationSec: number, ease?: number): void;
 	cancelPanAnim(): void;
 }
 
@@ -115,21 +115,21 @@ export interface ZoomDeps {
 }
 
 export interface PanDeps {
-    getZoom(): number;
-    getImageMaxZoom(): number;
-    getContainer(): HTMLElement;
-    getWrapX(): boolean;
-    getFreePan(): boolean;
-    getMapSize(): { width: number; height: number };
-    getMaxZoom(): number;
-    getMaxBoundsPx(): { minX: number; minY: number; maxX: number; maxY: number } | null;
-    getMaxBoundsViscosity(): number;
-    getCenter(): { x: number; y: number }; // native pixels
-    setCenter(lng: number, lat: number): void; // native pixels
-    requestRender(): void;
-    emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
-    now(): number;
-    getPublicView(): PublicViewState;
+	getZoom(): number;
+	getImageMaxZoom(): number;
+	getContainer(): HTMLElement;
+	getWrapX(): boolean;
+	getFreePan(): boolean;
+	getMapSize(): { width: number; height: number };
+	getMaxZoom(): number;
+	getMaxBoundsPx(): { minX: number; minY: number; maxX: number; maxY: number } | null;
+	getMaxBoundsViscosity(): number;
+	getCenter(): { x: number; y: number }; // native pixels
+	setCenter(lng: number, lat: number): void; // native pixels
+	requestRender(): void;
+	emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
+	now(): number;
+	getPublicView(): PublicViewState;
 }
 
 export interface MapImpl {
@@ -162,21 +162,21 @@ export interface MapImpl {
 	setIconScaleFunction?(fn: IconScaleFunction | null): void;
 	setAutoResize?(on: boolean): void;
 	setBackgroundColor?(color: string | { r: number; g: number; b: number; a?: number }): void;
-    // Optional: user payloads per marker id
-    setMarkerData?(payloads: Record<string, unknown | null | undefined>): void;
+	// Optional: user payloads per marker id
+	setMarkerData?(payloads: Record<string, unknown | null | undefined>): void;
 	// Internal marker event sink (facade wires to entity events)
 	onMarkerEvent?(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
 	// Optional animated controls
 	panTo?(lng: number, lat: number, durationMs?: number): void;
-    flyTo?(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }): void;
-    // Optional animation cancellation
-    cancelPanAnim?(): void;
-    cancelZoomAnim?(): void;
-    // Read accessors for zoom ranges used by facade utilities
-    getMinZoom(): number;
-    getMaxZoom(): number;
-    getImageMaxZoom(): number;
-    destroy(): void;
+	flyTo?(opts: { lng?: number; lat?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }): void;
+	// Optional animation cancellation
+	cancelPanAnim?(): void;
+	cancelZoomAnim?(): void;
+	// Read accessors for zoom ranges used by facade utilities
+	getMinZoom(): number;
+	getMaxZoom(): number;
+	getImageMaxZoom(): number;
+	destroy(): void;
 }
 
 export type VectorStyle = VectorStyleAPI;
