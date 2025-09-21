@@ -12,7 +12,7 @@ Features
 - Smooth pan and wheel/pinch zoom
 - Pixel CRS: image pixel coordinates (no geodetic projection)
 - WrapX support (disabled in Hagga Basin demo)
-- Typed events for input, lifecycle, and per-frame HUD
+- Typed events for input, lifecycle, and per‑frame HUD (frame counter)
 
 Documentation
 
@@ -55,6 +55,21 @@ Demo apps
 Svelte Docs
 - Svelte v5 docs are mirrored under `docs/svelte/`. Use them as the source of truth (runes, `onclick={...}`, etc.).
 
+Progressive Imagery
+
+You can supply a smaller `image.preview` to render immediately while the full image decodes and uploads.
+The engine displays the preview first, then upgrades to the full‑res texture in a single swap.
+
+```ts
+const map = new GTMap(container, {
+  image: {
+    url: 'https://example.com/maps/hagga-8k.webp', width: 8192, height: 8192,
+    preview: { url: 'https://example.com/maps/hagga-1k.webp', width: 1024, height: 1024 },
+  },
+  center: { x: 4096, y: 4096 }, zoom: 2,
+});
+```
+
 Visibility Control (suspend/resume)
 
 If you render multiple maps, suspend offscreen ones to save CPU/network/VRAM:
@@ -90,7 +105,12 @@ Customization
 Notes and Next Steps
 
 - Single raster currently; markers and vectors are simple overlays.
-- FPS/HUD via `map.events.on('frame')`.
+- Frame/HUD via `map.events.on('frame')` (frame counter available).
+
+Performance
+
+- With `image.preview`, the engine shows the preview first, then upgrades to the full texture.
+- On large images, full texture upload is done incrementally across animation frames to minimize UI stalls; the map remains interactive until the swap.
 - Host via a static server for production; dev server is preferred.
 
 Monorepo & Package Manager

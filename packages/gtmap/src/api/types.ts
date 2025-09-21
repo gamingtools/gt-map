@@ -30,8 +30,15 @@ export interface ImageSourceOptions {
 
 // Map configuration
 export interface MapOptions {
-	/** Single raster image to display (optionally with a smaller preview for progressive load). */
-	image: ImageSourceOptions & { preview?: ImageSourceOptions; progressiveSwapDelayMs?: number };
+  /**
+   * Single raster image to display.
+   *
+   * Optionally provide `preview` to render a smaller texture immediately while the full‑resolution
+   * image decodes and uploads. The engine displays the preview first and then upgrades to the full
+   * texture atomically. `progressiveSwapDelayMs` can introduce a small delay before starting the
+   * full upgrade (defaults to ~50ms) to avoid contention right after init.
+   */
+  image: ImageSourceOptions & { preview?: ImageSourceOptions; progressiveSwapDelayMs?: number };
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;
@@ -52,7 +59,11 @@ export interface MapOptions {
 	freePan?: boolean;
 	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
 	maxBoundsViscosity?: number;
-	bounceAtZoomLimits?: boolean;
+  /**
+   * When true, allow a small elastic bounce at zoom limits (visual easing only).
+   * Defaults to false.
+   */
+  bounceAtZoomLimits?: boolean;
 }
 
 // Content types
@@ -207,10 +218,15 @@ export interface ZoomEventData {
 
 /** Per‑frame payload for diagnostics/HUD. */
 export interface FrameEventData {
-	/** High‑resolution timestamp for the frame. */
-	now: number;
-	/** Optional renderer stats if enabled. */
-	stats?: RenderStats;
+    /** High‑resolution timestamp for the frame. */
+    now: number;
+    /**
+     * Optional renderer stats if enabled.
+     *
+     * Note: At present only `frame` is populated by the engine. Other fields are reserved for
+     * future diagnostics and may remain `undefined` in current builds.
+     */
+    stats?: RenderStats;
 }
 
 // Lifecycle event payloads
@@ -286,13 +302,13 @@ export interface EventMap<TMarkerData = unknown> {
 	contextmenu: MouseEventData;
 }
 
-// Performance stats
+// Performance stats (optional fields for diagnostics)
 export interface RenderStats {
-	fps?: number;
-	cacheSize?: number;
-	inflight?: number;
-	pending?: number;
-	frame?: number;
+    fps?: number;
+    cacheSize?: number;
+    inflight?: number;
+    pending?: number;
+    frame?: number;
 }
 
 // WebGL types

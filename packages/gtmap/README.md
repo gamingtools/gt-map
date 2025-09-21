@@ -102,6 +102,13 @@ map.setAutoResize(true); // enabled by default
 map.setBackgroundColor('transparent');
 map.setBackgroundColor('#000000');
 map.setBackgroundColor({ r: 16, g: 16, b: 16 });
+
+// Bounds & zoom behavior
+// Constrain panning and (when needed) zoom-out so bounds always cover the viewport
+map.setMaxBoundsPx({ minX: 0, minY: 0, maxX: 8192, maxY: 8192 });
+map.setMaxBoundsViscosity(0.15); // 0..1 soft-clamp near edges
+// Optionally allow a small bounce at zoom limits (enable at construction via MapOptions)
+// new GTMap(el, { image, bounceAtZoomLimits: true, ... })
 ```
 
 ### Lifecycle
@@ -321,9 +328,42 @@ Frame loop hook (stats or overlays)
 
 ```ts
 map.events.on('frame').each(({ now, stats }) => {
-	// stats?.fps, stats?.frame, etc.
+  // Currently, only stats?.frame is populated by the engine.
+  // Other fields are reserved for future diagnostics.
 });
 ```
+
+### Progressive Preview (optional)
+
+You can provide a smaller preview image to display immediately while the full‑resolution
+image decodes and uploads. The engine displays the preview first, then upgrades to the
+full image in a single swap.
+
+```ts
+const map = new GTMap(container, {
+  image: {
+    url: 'https://example.com/maps/hagga-8k.webp',
+    width: 8192,
+    height: 8192,
+    preview: {
+      url: 'https://example.com/maps/hagga-1k.webp',
+      width: 1024,
+      height: 1024,
+    },
+    // Optional delay before starting the full upgrade (ms)
+    progressiveSwapDelayMs: 50,
+  },
+  center: { x: 4096, y: 4096 },
+  zoom: 2,
+});
+```
+
+### Performance
+
+- Large full‑resolution textures are uploaded to the GPU incrementally in small stripes to keep the UI responsive during the preview → full upgrade.
+- Decode and upload still take time depending on the image and device; the preview remains visible and the map stays interactive until the full texture swap completes.
+- Use modern formats (e.g., WebP/AVIF) with proper CORS headers for best results.
+- Tune `fpsCap` if you want to reduce background work on less powerful devices.
 
 Throttle high‑frequency events in your handlers
 
