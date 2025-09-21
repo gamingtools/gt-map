@@ -11,7 +11,8 @@ export interface ViewTransitionHost {
 	_fitBounds(bounds: { minX: number; minY: number; maxX: number; maxY: number }, padding: { top: number; right: number; bottom: number; left: number }): { center: Point; zoom: number };
 	_setView(center: Point, zoom: number, opts?: { animate?: { durationMs: number; delayMs?: number; easing?: (t: number) => number } }): Promise<ApplyResult>;
 	events: {
-		once(event: 'moveend' | 'zoomend'): Promise<any>;
+		once(event: 'moveend'): Promise<import('../../api/types').MoveEventData>;
+		once(event: 'zoomend'): Promise<import('../../api/types').ZoomEventData>;
 	};
 }
 

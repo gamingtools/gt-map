@@ -1,7 +1,7 @@
 // Type-safe event bus with generic event map
 import { EventStream, type Listener, type Unsubscribe } from './stream';
 
-export class TypedEventBus<EventMap = any> {
+export class TypedEventBus<EventMap = Record<string, unknown>> {
 	private listeners = new Map<keyof EventMap, Set<Listener<unknown>>>();
 
 	on<K extends keyof EventMap>(name: K): EventStream<EventMap[K]> {

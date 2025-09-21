@@ -443,7 +443,7 @@ export class IconRenderer {
 
 	private ensureInstanced(gl: WebGLRenderingContext): boolean {
 		// WebGL2 supports instancing natively; WebGL1 requires ANGLE_instanced_arrays
-		const isGL2 = 'drawArraysInstanced' in (gl as unknown as WebGL2RenderingContext);
+        const isGL2 = 'drawArraysInstanced' in (gl as WebGL2RenderingContext);
 		if (!isGL2 && !this.instExt) {
 			try {
 				this.instExt = (gl.getExtension('ANGLE_instanced_arrays') as ANGLEInstancedArrays | null) || null;

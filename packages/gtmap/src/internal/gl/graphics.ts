@@ -4,57 +4,57 @@ import { createProgramFromSources } from './program';
 import { createUnitQuad } from './quad';
 
 export type GraphicsHost = {
-	canvas: HTMLCanvasElement;
-	gl: GLContext;
-	_screenTexFormat: number;
-	_prog: WebGLProgram | null;
-	_loc: ShaderLocations | null;
-	_quad: WebGLBuffer | null;
+  canvas: HTMLCanvasElement;
+  gl: GLContext;
+  _screenTexFormat: number;
+  _prog: WebGLProgram | null;
+  _loc: ShaderLocations | null;
+  _quad: WebGLBuffer | null;
 };
 
 export default class Graphics {
-	private map: GraphicsHost;
-	constructor(map: GraphicsHost) {
-		this.map = map;
-	}
+  private map: GraphicsHost;
+  constructor(map: GraphicsHost) {
+    this.map = map;
+  }
 
-	private static detectScreenFormat(gl: WebGLRenderingContext): number {
-		try {
-			const attrs = gl.getContextAttributes?.();
-			return attrs && attrs.alpha === false ? (gl.RGB as number) : (gl.RGBA as number);
-		} catch {
-			return gl.RGBA as number;
-		}
-	}
+  private static detectScreenFormat(gl: WebGLRenderingContext): number {
+    try {
+      const attrs = gl.getContextAttributes?.();
+      return attrs && attrs.alpha === false ? (gl.RGB as number) : (gl.RGBA as number);
+    } catch {
+      return gl.RGBA as number;
+    }
+  }
 
-	init(alpha: boolean, clear: [number, number, number, number]) {
-		const canvas: HTMLCanvasElement = this.map.canvas;
-		// Prefer WebGL2 (no need for ANGLE_instanced_arrays)
-		const gl2 = canvas.getContext('webgl2', {
-			alpha,
-			antialias: false,
-		}) as WebGL2RenderingContext | null;
-		let gl: WebGLRenderingContext | WebGL2RenderingContext | null = gl2;
-		if (!gl) {
-			// Fallback to WebGL1 if WebGL2 is unavailable
-			gl = canvas.getContext('webgl', {
-				alpha,
-				antialias: false,
-			}) as WebGLRenderingContext | null;
-		}
-		if (!gl) throw new Error('WebGL not supported');
-		this.map.gl = gl;
-		// Set requested clear color
-		gl.clearColor(clear[0], clear[1], clear[2], clear[3]);
-		gl.disable(gl.DEPTH_TEST);
-		gl.enable(gl.BLEND);
-		gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-		this.map._screenTexFormat = Graphics.detectScreenFormat(gl as WebGLRenderingContext);
-	}
+  init(alpha: boolean, clear: [number, number, number, number]) {
+    const canvas: HTMLCanvasElement = this.map.canvas;
+    // Prefer WebGL2 (no need for ANGLE_instanced_arrays)
+    const gl2 = canvas.getContext('webgl2', {
+      alpha,
+      antialias: false,
+    }) as WebGL2RenderingContext | null;
+    let gl: WebGLRenderingContext | WebGL2RenderingContext | null = gl2;
+    if (!gl) {
+      // Fallback to WebGL1 if WebGL2 is unavailable
+      gl = canvas.getContext('webgl', {
+        alpha,
+        antialias: false,
+      }) as WebGLRenderingContext | null;
+    }
+    if (!gl) throw new Error('WebGL not supported');
+    this.map.gl = gl;
+    // Set requested clear color
+    gl.clearColor(clear[0], clear[1], clear[2], clear[3]);
+    gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    this.map._screenTexFormat = Graphics.detectScreenFormat(gl as WebGLRenderingContext);
+  }
 
-	initPrograms() {
-		const gl: WebGLRenderingContext = this.map.gl;
-		const vsSrc = `
+  initPrograms() {
+    const gl: WebGLRenderingContext = this.map.gl as WebGLRenderingContext;
+    const vsSrc = `
       attribute vec2 a_pos;
       uniform vec2 u_translate; uniform vec2 u_size; uniform vec2 u_resolution;
       varying vec2 v_uv;
@@ -64,7 +64,7 @@ export default class Graphics {
         clip.y*=-1.0; gl_Position=vec4(clip,0.0,1.0); v_uv=a_pos;
       }
     `;
-		const fsSrc = `
+    const fsSrc = `
       precision highp float;
       varying vec2 v_uv;
       uniform sampler2D u_tex;
@@ -101,32 +101,33 @@ export default class Graphics {
         gl_FragColor = vec4(c.rgb, c.a * u_alpha);
       }
     `;
-		const prog = createProgramFromSources(gl, vsSrc, fsSrc);
-		const loc: ShaderLocations = {
-			a_pos: gl.getAttribLocation(prog, 'a_pos'),
-			u_translate: gl.getUniformLocation(prog, 'u_translate'),
-			u_size: gl.getUniformLocation(prog, 'u_size'),
-			u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
-			u_tex: gl.getUniformLocation(prog, 'u_tex'),
-			u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
-			u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
-			u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
-			u_texel: gl.getUniformLocation(prog, 'u_texel'),
-			u_filterMode: gl.getUniformLocation(prog, 'u_filterMode'),
-		};
-		const quad = createUnitQuad(gl);
-		this.map._prog = prog;
-		this.map._loc = loc;
-		this.map._quad = quad;
-	}
+    const prog = createProgramFromSources(gl, vsSrc, fsSrc);
+    const loc: ShaderLocations = {
+      a_pos: gl.getAttribLocation(prog, 'a_pos'),
+      u_translate: gl.getUniformLocation(prog, 'u_translate'),
+      u_size: gl.getUniformLocation(prog, 'u_size'),
+      u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
+      u_tex: gl.getUniformLocation(prog, 'u_tex'),
+      u_alpha: gl.getUniformLocation(prog, 'u_alpha'),
+      u_uv0: gl.getUniformLocation(prog, 'u_uv0'),
+      u_uv1: gl.getUniformLocation(prog, 'u_uv1'),
+      u_texel: gl.getUniformLocation(prog, 'u_texel'),
+      u_filterMode: gl.getUniformLocation(prog, 'u_filterMode'),
+    };
+    const quad = createUnitQuad(gl);
+    this.map._prog = prog;
+    this.map._loc = loc;
+    this.map._quad = quad;
+  }
 
-	dispose() {
-		const gl: WebGLRenderingContext = this.map.gl;
-		try {
-			if (this.map._quad) gl.deleteBuffer(this.map._quad);
-		} catch {}
-		try {
-			if (this.map._prog) gl.deleteProgram(this.map._prog);
-		} catch {}
-	}
+  dispose() {
+    const gl: WebGLRenderingContext = this.map.gl as WebGLRenderingContext;
+    try {
+      if (this.map._quad) gl.deleteBuffer(this.map._quad);
+    } catch {}
+    try {
+      if (this.map._prog) gl.deleteProgram(this.map._prog);
+    } catch {}
+  }
 }
+

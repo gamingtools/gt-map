@@ -155,36 +155,4 @@ export class EventStream<T> {
 	}
 }
 
-export type EventName = string;
-
-export class EventBus {
-	private listeners = new Map<EventName, Set<Listener<any>>>();
-
-	on<T = any>(name: EventName): EventStream<T> {
-		return new EventStream<T>((next) => {
-			let set = this.listeners.get(name);
-			if (!set) {
-				set = new Set();
-				this.listeners.set(name, set);
-			}
-			set.add(next as Listener<any>);
-			return () => {
-				set!.delete(next as Listener<any>);
-			};
-		});
-	}
-
-	emit<T = any>(name: EventName, payload: T): void {
-		const set = this.listeners.get(name);
-		if (!set || set.size === 0) return;
-		for (const fn of Array.from(set)) {
-			try {
-				(fn as Listener<T>)(payload);
-			} catch {}
-		}
-	}
-
-	when<T = any>(name: EventName): Promise<T> {
-		return this.on<T>(name).first();
-	}
-}
+// Note: legacy EventBus removed; TypedEventBus provides a typed API used across the codebase.

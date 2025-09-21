@@ -31,12 +31,6 @@ export function getVectorTypeSymbol(type: string): VectorTypeSymbol | undefined 
 	return VECTOR_TYPE_MAP[type as keyof typeof VECTOR_TYPE_MAP];
 }
 
-/**
- * Convert symbol back to string (for debugging or serialization)
- */
-export function getVectorTypeString(symbol: VectorTypeSymbol): string | undefined {
-	return SYMBOL_TO_STRING_MAP.get(symbol);
-}
 
 /**
  * Type guards using symbols for better performance

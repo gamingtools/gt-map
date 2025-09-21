@@ -16,9 +16,8 @@ export class IconMaskBuilder {
   start(): void {
     if (this.started) return;
     this.started = true;
-    const ric: ((cb: () => void) => any) | undefined = typeof (window as unknown as { requestIdleCallback?: (cb: () => void) => any }).requestIdleCallback === 'function'
-      ? (window as unknown as { requestIdleCallback: (cb: () => void) => any }).requestIdleCallback.bind(window)
-      : undefined;
+    const w = window as { requestIdleCallback?: (cb: () => void) => number };
+    const ric: ((cb: () => void) => number) | undefined = typeof w.requestIdleCallback === 'function' ? w.requestIdleCallback.bind(window) : undefined;
     const process = () => {
       let budget = 3;
       while (budget-- > 0 && this.pending.length) {
@@ -57,4 +56,3 @@ export class IconMaskBuilder {
     }
   }
 }
-

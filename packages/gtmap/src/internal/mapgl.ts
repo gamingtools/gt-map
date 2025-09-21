@@ -1,11 +1,11 @@
 // Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
-import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext } from '../api/types';
+import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData } from '../api/types';
 import { DEBUG } from '../debug';
 
-import Graphics, { type GraphicsHost } from './gl/Graphics';
+import Graphics, { type GraphicsHost } from './gl/graphics';
 import { ScreenCache } from './render/screen-cache';
-import type { RenderCtx, MapImpl, VectorStyle as VectorStyleInternal } from './types';
+import type { RenderCtx, MapImpl, VectorStyle as VectorStyleInternal, VectorPrimitive } from './types';
 import * as Coords from './coords';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
@@ -26,7 +26,6 @@ import { FrameLoop } from './core/frame-loop';
 import AutoResizeManager from './core/auto-resize-manager';
 import EventBridge from './events/event-bridge';
 import { ImageManager, type ImageManagerHost, type ImageData } from './core/image-manager';
-import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol, isCircleSymbol } from './core/vector-types';
 import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 
 export type LngLat = { lng: number; lat: number };
@@ -73,8 +72,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _asyncInitManager: AsyncInitManager;
 	private _imageMaxZoom = 0;
 
-	private _needsRender = true;
-	private _raf: number | null = null; // deprecated, kept for backward compat in setActive
+    private _needsRender = true;
 	private _frameLoop: FrameLoop | null = null;
 	private _input: InputController | null = null;
 	private _inputDeps!: InputDeps;
@@ -274,8 +272,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _gridCtx: CanvasRenderingContext2D | null = null;
 	// Vector overlay (initially 2D canvas; upgradeable to WebGL later)
 	private vectorCanvas: HTMLCanvasElement | null = null;
-	private _vectorCtx: CanvasRenderingContext2D | null = null;
-	private _vectors: Array<{ type: string; [k: string]: any }> = [];
+    private _vectorCtx: CanvasRenderingContext2D | null = null;
+    private _vectors: VectorPrimitive[] = [];
 	public pointerAbs: { x: number; y: number } | null = null;
 	// Loading pacing/cancel
 	private interactionIdleMs = 160;
@@ -784,18 +782,14 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
             this._resizeMgr?.detach();
             this._resizeMgr = null;
         } catch {}
-		if (this._frameLoop) {
-			try {
-				this._frameLoop.stop();
-			} catch {}
-			this._frameLoop = null;
-		}
-		if (this._raf != null) {
-			cancelAnimationFrame(this._raf);
-			this._raf = null;
-		}
-		this._input?.dispose();
-		this._input = null;
+        if (this._frameLoop) {
+            try {
+                this._frameLoop.stop();
+            } catch {}
+            this._frameLoop = null;
+        }
+        this._input?.dispose();
+        this._input = null;
             try { this._renderer?.dispose?.(); } catch {}
             try { this._gfx?.dispose?.(); } catch {}
 		this._destroyCache();
@@ -1098,11 +1092,11 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
         } catch {}
 	}
 
-	public setMarkerData(payloads: Record<string, any | null | undefined>) {
-		try {
-			for (const k of Object.keys(payloads)) this._markerData.set(k, payloads[k]);
-		} catch {}
-	}
+    public setMarkerData(payloads: Record<string, unknown | null | undefined>) {
+        try {
+            for (const k of Object.keys(payloads)) this._markerData.set(k, payloads[k]);
+        } catch {}
+    }
 	// wheel normalization handled in input/handlers internally
 	private _tick(now: number, allowRender: boolean) {
 		this._frame++;
@@ -1146,13 +1140,12 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
             if (!this._maskBuildRequested) {
                 this._maskBuildRequested = true;
                 const start = () => { try { this._icons?.startMaskBuild?.(); } catch {} };
-                // requestIdleCallback is not in TS lib in all environments; feature-test and bind if present
-                const idle: ((cb: () => void) => any) | undefined = typeof (window as unknown as { requestIdleCallback?: (cb: () => void) => any }).requestIdleCallback === 'function'
-                    ? (window as unknown as { requestIdleCallback: (cb: () => void) => any }).requestIdleCallback.bind(window)
-                    : undefined;
-				if (idle) idle(start); else setTimeout(start, 0);
-			}
-		} catch {}
+                // Feature-test requestIdleCallback safely
+                const w = window as { requestIdleCallback?: (cb: () => void) => number };
+                if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(start);
+                else setTimeout(start, 0);
+            }
+        } catch {}
 		// Emit a frame event for HUD/diagnostics
 		try {
 			const t = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
@@ -1233,20 +1226,14 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	// Suspend/resume this map instance and optionally release the WebGL context.
 	public setActive(active: boolean, opts?: { releaseGL?: boolean }) {
 		if (active === this._active && !(active && this._glReleased)) return;
-		if (!active) {
-			this._active = false;
-			try {
-				this._frameLoop?.stop?.();
-			} catch {}
-			if (this._raf != null) {
-				try {
-					cancelAnimationFrame(this._raf);
-				} catch {}
-				this._raf = null;
-			}
-			try {
-				this._input?.dispose();
-			} catch {}
+        if (!active) {
+            this._active = false;
+            try {
+                this._frameLoop?.stop?.();
+            } catch {}
+            try {
+                this._input?.dispose();
+            } catch {}
 			if (opts?.releaseGL && this.gl) {
 			try {
 				this._screenCache?.dispose();
@@ -1324,40 +1311,40 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._vectorCtx = c.getContext('2d');
 	}
 
-	public setVectors(vectors: Array<{ type: string; [k: string]: any }>) {
-		this._vectors = vectors.slice();
-		this._needsRender = true;
-	}
+    public setVectors(vectors: VectorPrimitive[]) {
+        this._vectors = vectors.slice();
+        this._needsRender = true;
+    }
 
 	// Simple hover/click hit testing on markers (AABB, ignores rotation)
 	private _lastHover: { type: string; idx: number; id?: string } | null = null;
     // (moved to EventBridge)
-	private _markerData = new Map<string, any | null | undefined>();
+    private _markerData = new Map<string, unknown | null | undefined>();
 	// Private marker event sinks (not exposed on public bus)
-	private _markerSinks: Record<'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', Set<(e: any) => void>> = {
-		enter: new Set(),
-		leave: new Set(),
-		click: new Set(),
-		down: new Set(),
-		up: new Set(),
-		longpress: new Set(),
-	};
+    private _markerSinks: Record<'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', Set<(e: MarkerEventData) => void>> = {
+        enter: new Set(),
+        leave: new Set(),
+        click: new Set(),
+        down: new Set(),
+        up: new Set(),
+        longpress: new Set(),
+    };
 
-	public onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: any) => void): () => void {
-		const set = this._markerSinks[name];
-		set.add(handler);
-		return () => set.delete(handler);
-	}
+    public onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void {
+        const set = this._markerSinks[name];
+        set.add(handler);
+        return () => set.delete(handler);
+    }
 
-	private _emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: any) {
-		const set = this._markerSinks[name];
-		if (!set || set.size === 0) return;
-		for (const fn of Array.from(set)) {
-			try {
-				fn(payload);
-			} catch {}
-		}
-	}
+    private _emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: MarkerEventData) {
+        const set = this._markerSinks[name];
+        if (!set || set.size === 0) return;
+        for (const fn of Array.from(set)) {
+            try {
+                fn(payload);
+            } catch {}
+        }
+    }
 	private _hitTestMarker(px: number, py: number, requireAlpha = false) {
 		void requireAlpha;
 		if (!this._icons) return null;
@@ -1525,32 +1512,31 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						ctx.globalAlpha = style.opacity ?? 1;
 					}
 				};
-				const typeSymbol = getVectorTypeSymbol(prim.type);
-				if (typeSymbol && (isPolylineSymbol(typeSymbol) || isPolygonSymbol(typeSymbol))) {
-					const pts = prim.points as Array<{ lng: number; lat: number }>;
-					if (!pts.length) continue;
-					begin();
-					for (let i = 0; i < pts.length; i++) {
-						const p = pts[i];
-						const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-						if (i === 0) ctx.moveTo(css.x, css.y);
-						else ctx.lineTo(css.x, css.y);
-					}
-					if (isPolygonSymbol(typeSymbol)) ctx.closePath();
-					finishStroke();
-					finishFill();
-				} else if (typeSymbol && isCircleSymbol(typeSymbol)) {
-					const c = prim.center as { lng: number; lat: number };
-					const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-					// Radius: specified in native px; convert to CSS using current zInt/scale
-					const { zInt, scale } = Coords.zParts(z);
-					const s = Coords.sFor(imageMaxZ as number, zInt);
-					const rCss = (prim.radius / s) * scale;
-					begin();
-					ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
-					finishStroke();
-					finishFill();
-				}
+                if (prim.type === 'polyline' || prim.type === 'polygon') {
+                    const pts = prim.points as Array<{ lng: number; lat: number }>;
+                    if (!pts.length) continue;
+                    begin();
+                    for (let i = 0; i < pts.length; i++) {
+                        const p = pts[i];
+                        const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
+                        if (i === 0) ctx.moveTo(css.x, css.y);
+                        else ctx.lineTo(css.x, css.y);
+                    }
+                    if (prim.type === 'polygon') ctx.closePath();
+                    finishStroke();
+                    finishFill();
+                } else if (prim.type === 'circle') {
+                    const c = prim.center as { lng: number; lat: number };
+                    const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
+                    // Radius: specified in native px; convert to CSS using current zInt/scale
+                    const { zInt, scale } = Coords.zParts(z);
+                    const s = Coords.sFor(imageMaxZ as number, zInt);
+                    const rCss = ((prim.radius as number) / s) * scale;
+                    begin();
+                    ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
+                    finishStroke();
+                    finishFill();
+                }
 			}
 		}
 		ctx.restore();

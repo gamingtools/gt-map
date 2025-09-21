@@ -1,4 +1,4 @@
-import type { EventMap, MarkerEventData } from '../../api/types';
+import type { EventMap, MarkerEventData, PointerEventData, MouseEventData } from '../../api/types';
 
 import { TypedEventBus } from './typed-stream';
 
@@ -57,17 +57,16 @@ export default class EventBridge {
       this.movedSinceDown = false;
       const hit = this.d.hitTest(e.x, e.y, false);
       if (hit) {
-        const data = this.d.getMarkerDataById ? this.d.getMarkerDataById(hit.id) : undefined;
         const payload: MarkerEventData = {
           now,
           view: this.d.getView(),
           screen: { x: e.x, y: e.y },
-          marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: data as any },
+          marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
           icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
           originalEvent: e.originalEvent,
         };
         this.d.emitMarker('down', payload);
-        try { this.d.events.emit('markerdown' as any, payload as any); } catch {}
+        try { this.d.events.emit('markerdown', payload); } catch {}
         this.pressTarget = { id: hit.id, idx: hit.idx };
         this.longPressed = false;
         if (ptrType === 'touch') {
@@ -77,17 +76,16 @@ export default class EventBridge {
             this.longPressed = true;
             const lpHit = this.d.hitTest(e.x, e.y, false);
             if (lpHit && this.pressTarget && lpHit.id === this.pressTarget.id) {
-              const data2 = this.d.getMarkerDataById ? this.d.getMarkerDataById(lpHit.id) : undefined;
               const pl: MarkerEventData = {
                 now: this.d.now(),
                 view: this.d.getView(),
                 screen: { x: e.x, y: e.y },
-                marker: { id: lpHit.id, index: lpHit.idx, world: { x: lpHit.world.x, y: lpHit.world.y }, size: lpHit.size, rotation: lpHit.rotation, data: data2 as any },
+                marker: { id: lpHit.id, index: lpHit.idx, world: { x: lpHit.world.x, y: lpHit.world.y }, size: lpHit.size, rotation: lpHit.rotation },
                 icon: { id: lpHit.type, iconPath: lpHit.icon.iconPath, x2IconPath: lpHit.icon.x2IconPath, width: lpHit.icon.width, height: lpHit.icon.height, anchorX: lpHit.icon.anchorX, anchorY: lpHit.icon.anchorY },
                 originalEvent: e.originalEvent,
               };
               this.d.emitMarker('longpress', pl);
-              try { this.d.events.emit('markerlongpress' as any, pl as any); } catch {}
+              try { this.d.events.emit('markerlongpress', pl); } catch {}
             }
           }, 500);
         }
@@ -123,7 +121,7 @@ export default class EventBridge {
             originalEvent: e.originalEvent,
           } as MarkerEventData;
           this.d.emitMarker('leave', leavePayload);
-          try { this.d.events.emit('markerleave' as any, leavePayload as any); } catch {}
+          try { this.d.events.emit('markerleave', leavePayload); } catch {}
           this.d.setLastHover(null);
         }
         return;
@@ -143,17 +141,16 @@ export default class EventBridge {
             } as MarkerEventData;
             this.d.emitMarker('leave', leavePayload);
           }
-          const data = this.d.getMarkerDataById ? this.d.getMarkerDataById(hit.id) : undefined;
           const enterPayload: MarkerEventData = {
             now,
             view: this.d.getView(),
             screen: { x: e.x, y: e.y },
-            marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: data as any },
+            marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
             icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
             originalEvent: e.originalEvent,
           };
           this.d.emitMarker('enter', enterPayload);
-          try { this.d.events.emit('markerenter' as any, enterPayload as any); } catch {}
+          try { this.d.events.emit('markerenter', enterPayload); } catch {}
           this.d.setLastHover({ idx: hit.idx, type: hit.type, id: hit.id });
         }
       } else if (prev) {
@@ -166,7 +163,7 @@ export default class EventBridge {
           originalEvent: e.originalEvent,
         } as MarkerEventData;
         this.d.emitMarker('leave', leavePayload);
-        try { this.d.events.emit('markerleave' as any, leavePayload as any); } catch {}
+        try { this.d.events.emit('markerleave', leavePayload); } catch {}
         this.d.setLastHover(null);
       }
     });
@@ -180,17 +177,16 @@ export default class EventBridge {
       this.downAt = null;
       const upHit = this.d.hitTest(e.x, e.y, true);
       if (upHit) {
-        const data = this.d.getMarkerDataById ? this.d.getMarkerDataById(upHit.id) : undefined;
         const payload: MarkerEventData = {
           now,
           view: this.d.getView(),
           screen: { x: e.x, y: e.y },
-          marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation, data: data as any },
+          marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation },
           icon: { id: upHit.type, iconPath: upHit.icon.iconPath, x2IconPath: upHit.icon.x2IconPath, width: upHit.icon.width, height: upHit.icon.height, anchorX: upHit.icon.anchorX, anchorY: upHit.icon.anchorY },
           originalEvent: e.originalEvent,
         };
         this.d.emitMarker('up', payload);
-        try { this.d.events.emit('markerup' as any, payload as any); } catch {}
+        try { this.d.events.emit('markerup', payload); } catch {}
       }
       if (this.longPressTimer != null) {
         clearTimeout(this.longPressTimer);
@@ -199,32 +195,35 @@ export default class EventBridge {
       if (!isClick) return;
       const hit = this.d.hitTest(e.x, e.y, true);
       if (hit) {
-        const data = this.d.getMarkerDataById ? this.d.getMarkerDataById(hit.id) : undefined;
         const payload: MarkerEventData = {
           now,
           view: this.d.getView(),
           screen: { x: e.x, y: e.y },
-          marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: data as any },
+          marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
           icon: { id: hit.type, iconPath: hit.icon.iconPath, x2IconPath: hit.icon.x2IconPath, width: hit.icon.width, height: hit.icon.height, anchorX: hit.icon.anchorX, anchorY: hit.icon.anchorY },
           originalEvent: e.originalEvent,
         };
         this.d.emitMarker('click', payload);
-        try { this.d.events.emit('markerclick' as any, payload as any); } catch {}
+        try { this.d.events.emit('markerclick', payload); } catch {}
       }
       this.pressTarget = null;
       if (this.longPressed) this.longPressed = false;
     });
 
     // Derive mouse events from pointer events; enrich with marker hits when idle
-    const emitMouseOnce = (name: keyof EventMap, e: EventMap['pointermove'] | EventMap['pointerdown'] | EventMap['pointerup']) => {
-      if (!('x' in e) || e.x == null || e.y == null) {
-        this.d.events.emit(name as any, e as any);
-        return;
-      }
+    const emitMouseOnce = (name: 'mousedown' | 'mousemove' | 'mouseup' | 'click', e: PointerEventData) => {
+      if (e.x == null || e.y == null) return;
       const now = this.d.now();
       const moving = this.d.isMoving();
       const idle = !moving && now - this.d.getLastInteractAt() >= this.d.getHitTestDebounceMs();
-      let payload: any = e;
+      let payload: MouseEventData = {
+        x: e.x,
+        y: e.y,
+        world: e.world,
+        view: e.view,
+        // We forward the originating PointerEvent as MouseEvent for API compatibility.
+        originalEvent: (e.originalEvent as unknown) as MouseEvent,
+      };
       if (idle && name === 'mousemove') {
         try {
           const hits = this.d.computeHits(e.x, e.y);
@@ -233,11 +232,11 @@ export default class EventBridge {
               marker: { id: h.id, index: h.idx, world: { x: h.world.x, y: h.world.y }, size: h.size, rotation: h.rotation },
               icon: { id: h.icon.id, iconPath: h.icon.iconPath, x2IconPath: h.icon.x2IconPath, width: h.icon.width, height: h.icon.height, anchorX: h.icon.anchorX, anchorY: h.icon.anchorY },
             }));
-            payload = { ...(e as any), markers: mapped };
+            payload = { ...payload, markers: mapped } as MouseEventData;
           }
         } catch {}
       }
-      this.d.events.emit(name as any, payload);
+      this.d.events.emit(name, payload);
     };
 
     bus.on('pointerdown').each((e) => {

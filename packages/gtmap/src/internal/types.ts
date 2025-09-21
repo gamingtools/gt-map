@@ -162,8 +162,8 @@ export interface MapImpl {
 	setIconScaleFunction?(fn: IconScaleFunction | null): void;
 	setAutoResize?(on: boolean): void;
 	setBackgroundColor?(color: string | { r: number; g: number; b: number; a?: number }): void;
-	// Optional: user payloads per marker id
-	setMarkerData?(payloads: Record<string, any | null | undefined>): void;
+    // Optional: user payloads per marker id
+    setMarkerData?(payloads: Record<string, unknown | null | undefined>): void;
 	// Internal marker event sink (facade wires to entity events)
 	onMarkerEvent?(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
 	// Optional animated controls

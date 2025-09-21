@@ -63,7 +63,7 @@ export interface Marker {
 	size?: number;
 	rotation?: number; // degrees clockwise (optional)
 	id?: string;
-	data?: any | null;
+	data?: unknown | null;
 }
 
 /**
@@ -188,7 +188,7 @@ export interface MouseEventData {
 /** Marker hover hit on the map surface (mouse only, when enabled). */
 export interface MarkerHit {
     /** Lightweight marker snapshot for hover purposes. */
-    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: any | null };
+    marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: unknown | null };
     /** Icon metadata associated with the hit marker. */
     icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
