@@ -23,19 +23,7 @@
 
   // Authoritative world extents for Hagga Basin (survival_1)
   const HAGGA_EXTENTS = { minX: -457200, minY: -457200, maxX: 355600, maxY: 355600 };
-  const PIX = MAP_IMAGE.width;
-  const HAGGA_K = Math.min(PIX / Math.max(1, HAGGA_EXTENTS.maxX - HAGGA_EXTENTS.minX), PIX / Math.max(1, HAGGA_EXTENTS.maxY - HAGGA_EXTENTS.minY));
-  const HAGGA_OFF = {
-    x: (PIX - (HAGGA_EXTENTS.maxX - HAGGA_EXTENTS.minX) * HAGGA_K) / 2,
-    y: (PIX - (HAGGA_EXTENTS.maxY - HAGGA_EXTENTS.minY) * HAGGA_K) / 2,
-  };
-  const FLIP_Y = false;
-  function toPixel(wx: number, wy: number): { x: number; y: number } {
-    return {
-      x: HAGGA_OFF.x + (wx - HAGGA_EXTENTS.minX) * HAGGA_K,
-      y: HAGGA_OFF.y + (FLIP_Y ? (HAGGA_EXTENTS.maxY - wy) * HAGGA_K : (wy - HAGGA_EXTENTS.minY) * HAGGA_K),
-    };
-  }
+  // Coordinate transform will be handled by map.translate() after setCoordBounds()
 
   // Cache icon handles per iconPath so identical icons reuse atlas entries
   const iconCache = new Map<string, IconHandle>();
@@ -63,7 +51,7 @@
       if (m.mapId !== 'survival_1' || !m.location || !m.mapIcon) continue;
       const ih = ensureIcon(m.mapIcon);
       if (!ih) continue; // only render icons from the source
-      const p = toPixel(m.location.x, m.location.y);
+      const p = map.translate(m.location.x, m.location.y);
       map.addMarker(p.x, p.y, { icon: ih, data: m });
     }
   }
@@ -79,6 +67,8 @@
       zoom: 2,
       autoResize: true,
     });
+    // Initialize coord transformer (Unreal/world → pixel)
+    map.setCoordBounds(HAGGA_EXTENTS);
     // Log the original marker record when an icon is clicked
     map.events.on('markerclick').each((e) => {
       // e.marker.data is the original RemoteMarker

@@ -8,6 +8,7 @@ import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../inter
 
 import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
+import { CoordTransformer, type Bounds as SourceBounds, type TransformType } from './coord-transformer';
 import type {
 	Point,
 	MapOptions,
@@ -79,6 +80,7 @@ export class GTMap<TMarkerData = unknown> {
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
+    private _coordTransformer: CoordTransformer | null = null;
 
 	// (active view transition tracking handled via module-level WeakMap in builder)
 
@@ -226,6 +228,47 @@ export class GTMap<TMarkerData = unknown> {
 			}
 		});
 	}
+
+    /**
+     * Initialize or update the source coordinate bounds used for translating external coordinates
+     * (e.g., Unreal/world coords) into map pixel coordinates.
+     *
+     * @public
+     * @param bounds - Source coordinate rectangle: `{ minX, minY, maxX, maxY }`
+     * @returns This map instance for chaining
+     *
+     * @remarks
+     * The mapping fits the source rectangle into the image pixel space while preserving aspect ratio
+     * (uniform scale) and centering letter/pillarboxing as needed.
+     */
+    setCoordBounds(bounds: SourceBounds): this {
+        const w = this._impl.mapSize.width;
+        const h = this._impl.mapSize.height;
+        if (!this._coordTransformer) this._coordTransformer = new CoordTransformer(w, h, bounds, 'fit');
+        else this._coordTransformer.setSourceBounds(bounds);
+        return this;
+    }
+
+    /**
+     * Translate a point from the configured source coordinate space to map pixel coordinates.
+     *
+     * @public
+     * @param x - Source X
+     * @param y - Source Y
+     * @param type - Optional transform to apply ('original' by default)
+     * @returns Pixel coordinates `{ x, y }` in the image space
+     *
+     * @example
+     * ```ts
+     * map.setCoordBounds({ minX: -500_000, minY: -500_000, maxX: 500_000, maxY: 500_000 });
+     * const p = map.translate(wx, wy, 'flipVertical');
+     * map.addMarker(p.x, p.y);
+     * ```
+     */
+    translate(x: number, y: number, type: TransformType = 'original'): { x: number; y: number } {
+        if (!this._coordTransformer) return { x, y };
+        return this._coordTransformer.translate(x, y, type);
+    }
 
 	// View control helpers (internal use by transition builder)
 	/** @internal */

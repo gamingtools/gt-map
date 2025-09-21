@@ -47,3 +47,4 @@ export type { MarkerData, VectorData, VectorGeometry, MarkerEventMap, VectorEven
 
 // Export entity option types
 export type { MarkerOptions, MarkerTransition } from './entities/marker';
+export type { Bounds as SourceBounds, TransformType } from './api/coord-transformer';

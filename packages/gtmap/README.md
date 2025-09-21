@@ -107,6 +107,39 @@ map.setIconScaleFunction((z) => (z < 2 ? 0.75 : z < 4 ? 1.0 : 1.25));
 // Reset to default
 map.setIconScaleFunction(null);
 
+### Coordinate Transforms (world → pixels)
+
+When your data lives in an external/world coordinate space (e.g., Unreal units), you can map it
+into image pixel coordinates using a uniform fit transform. Initialize with the world bounds and
+then call `translate(x, y)` for each point.
+
+```ts
+// World extents (authoritative bounds in your source CRS)
+const WORLD: { minX: number; minY: number; maxX: number; maxY: number } = {
+  minX: -457200,
+  minY: -457200,
+  maxX: 355600,
+  maxY: 355600,
+};
+
+// Initialize once after creating the map
+map.setCoordBounds(WORLD);
+
+// Convert world → pixel coordinates for markers or vectors
+const p = map.translate(wx, wy); // default 'original' transform
+map.addMarker(p.x, p.y);
+
+// Optional transforms for orientation fixes
+// 'original' | 'flipVertical' | 'flipHorizontal' | 'flipBoth'
+// 'rotate90CW' | 'rotate90CCW' | 'rotate180'
+const q = map.translate(wx, wy, 'flipVertical');
+```
+
+Notes
+
+- The mapping preserves aspect ratio (uniform scale) and centers the world rect in the image — letter/pillarboxing as needed.
+- Not Unreal‑specific: works for any source coordinate ranges.
+
 // Performance knobs
 map.setFpsCap(60);
 map.setAutoResize(true); // enabled by default

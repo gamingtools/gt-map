@@ -11,6 +11,7 @@ relevant API types when you need details.
 - Markers: create, move, style, and listen to events
 - Layers: group, show/hide, and observe entities
 - Vectors: add simple geometry overlays
+- Coordinate Transforms: map external/world coords to image pixels
 - Cookbook: small, practical snippets
  - Migration: Leaflet → GTMap (pixel CRS)
 

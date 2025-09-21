@@ -45,6 +45,13 @@ Public API
   - Events: `map.events.on(name).each(h)` and `map.events.once(name)` (typed payloads). Includes pointer/mouse, lifecycle, frame, and map-level marker events (`markerenter/leave/click/down/up/longpress`).
   - In demos, `@gtmap` is aliased to the local source for fast iteration.
 
+Coordinate Transforms (world → pixels)
+
+- Initialize once with your external/world bounds: `map.setCoordBounds({ minX, minY, maxX, maxY })`.
+- Convert world points to image pixels: `map.translate(x, y, transform?)`.
+- Supported transforms: `'original' | 'flipVertical' | 'flipHorizontal' | 'flipBoth' | 'rotate90CW' | 'rotate90CCW' | 'rotate180'`.
+- Mapping preserves aspect ratio and centers the bounds within the image.
+
 See the full API reference in `docs/api/README.md`.
 
 Demo apps

@@ -9,6 +9,7 @@ Quick links to common tasks using the GTMap API.
 - Add content: [addIcon](api/Class.GTMap.md#addicon), [addMarker](api/Class.GTMap.md#addmarker), [addVector](api/Class.GTMap.md#addvector)
 - Events: [MapEvents](api/Interface.MapEvents.md), [Layer.events](api/Class.Layer.md#events), [Marker.events](api/Class.Marker.md#events)
 - Utilities: [setAutoResize](api/Class.GTMap.md#setautoresize), [invalidateSize](api/Class.GTMap.md#invalidatesize), [setFpsCap](api/Class.GTMap.md#setfpscap), [setBackgroundColor](api/Class.GTMap.md#setbackgroundcolor)
+ - Coordinate Transforms: [setCoordBounds](api/Class.GTMap.md#setcoordbounds), [translate](api/Class.GTMap.md#translate)
 
 Tip: The events pages list supported event names and payloads for IntelliSense.
 
@@ -76,6 +77,8 @@ Use the lists below to jump directly to types and members.
 - [Unsubscribe](api/TypeAlias.Unsubscribe.md)
 - [Vector](api/TypeAlias.Vector.md)
 - [VectorGeometry](api/TypeAlias.VectorGeometry.md)
+ - [SourceBounds](api/TypeAlias.SourceBounds.md)
+ - [TransformType](api/TypeAlias.TransformType.md)
 
 ### Functions
 
