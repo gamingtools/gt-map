@@ -200,17 +200,17 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				pointerEvents: 'none',
 				zIndex: '10',
 			} as CSSStyleDeclaration);
-			const spinner = document.createElement('div');
-			const size = 32;
-			Object.assign(spinner.style, {
-				width: `${size}px`,
-				height: `${size}px`,
-				border: '3px solid rgba(0,0,0,0.2)',
-				borderTopColor: 'rgba(0,0,0,0.6)',
-				borderRadius: '50%',
-				animation: 'gtmap_spin 1s linear infinite',
-			} as CSSStyleDeclaration);
-			wrap.appendChild(spinner);
+            const spinner = document.createElement('div');
+            const { size, thickness, color, trackColor, speedMs } = this._spinner;
+            Object.assign(spinner.style, {
+                width: `${size}px`,
+                height: `${size}px`,
+                border: `${thickness}px solid ${trackColor}`,
+                borderTopColor: color,
+                borderRadius: '50%',
+                animation: `gtmap_spin ${speedMs}ms linear infinite`,
+            } as CSSStyleDeclaration);
+            wrap.appendChild(spinner);
 			// Ensure container is positioned
 			const cs = getComputedStyle(this.container);
 			if (cs.position === 'static' || !cs.position) this.container.style.position = 'relative';
@@ -381,9 +381,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _imageReadyAtMs: number | null = null;
 	private _firstRasterDrawAtMs: number | null = null;
 	private _showLoading = true;
-	private _loadingEl: HTMLDivElement | null = null;
-	private static _spinnerCssInjected = false;
-	private _gateRenderUntilImageReady = false;
+    private _loadingEl: HTMLDivElement | null = null;
+    private static _spinnerCssInjected = false;
+    private _gateRenderUntilImageReady = false;
+    private _spinner = { size: 32, thickness: 3, color: 'rgba(0,0,0,0.6)', trackColor: 'rgba(0,0,0,0.2)', speedMs: 1000 };
 	public _nowMs(): number {
 		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	}
@@ -421,9 +422,20 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._imageManager = new ImageManager(this);
 		this._asyncInitManager = new AsyncInitManager();
 
-		// Spinner mode is always on; gate rendering until image is ready
-		this._showLoading = true;
-		this._gateRenderUntilImageReady = true;
+        // Spinner mode is always on; gate rendering until image is ready
+        this._showLoading = true;
+        this._gateRenderUntilImageReady = true;
+        // Merge spinner options
+        if (options.spinner) {
+            const o = options.spinner;
+            this._spinner = {
+                size: Math.max(4, Math.floor(o.size ?? this._spinner.size)),
+                thickness: Math.max(1, Math.floor(o.thickness ?? this._spinner.thickness)),
+                color: o.color ?? this._spinner.color,
+                trackColor: o.trackColor ?? this._spinner.trackColor,
+                speedMs: Math.max(100, Math.floor(o.speedMs ?? this._spinner.speedMs)),
+            };
+        }
 
 		// Defer image load until async finalize. If a preview is provided,
 		// we avoid kicking off the full-res load here to prevent duplicate requests.

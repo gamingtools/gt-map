@@ -57,6 +57,24 @@ export interface MapOptions {
    * Defaults to false.
   */
   bounceAtZoomLimits?: boolean;
+  /**
+   * Spinner appearance while loading the full image.
+   *
+   * - size: outer diameter in CSS pixels (default 32)
+   * - thickness: ring thickness in CSS pixels (default 3)
+   * - color: active arc color (default 'rgba(0,0,0,0.6)')
+   * - trackColor: background ring color (default 'rgba(0,0,0,0.2)')
+   * - speedMs: rotation period in milliseconds (default 1000)
+   */
+  spinner?: SpinnerOptions;
+}
+
+export interface SpinnerOptions {
+  size?: number;
+  thickness?: number;
+  color?: string;
+  trackColor?: string;
+  speedMs?: number;
 }
 
 // Content types
