@@ -248,6 +248,41 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			},
 		};
 	}
+
+	// ImageManagerHost API: allow background uploads to pause during interaction
+	public isIdle(): boolean {
+		try {
+			const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+			const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
+			const anim = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
+			return idleByTime && !anim;
+		} catch {
+			return true;
+		}
+	}
+
+	public getVisibleYRangePx(): { y0: number; y1: number } {
+		try {
+			const rect = this.container.getBoundingClientRect();
+			const wCSS = Math.max(1, Math.round(rect.width));
+			const hCSS = Math.max(1, Math.round(rect.height));
+			const { zInt, scale } = Coords.zParts(this.zoom);
+			const tlLevel = Coords.tlWorldFor(
+				{ x: this.center.lng, y: this.center.lat },
+				this.zoom,
+				{ x: wCSS, y: hCSS },
+				this._imageMaxZoom,
+			);
+			const tlWorld = Coords.levelToWorld({ x: 0, y: tlLevel.y }, this._imageMaxZoom, zInt);
+			const brLevelY = tlLevel.y + hCSS / scale;
+			const brWorld = Coords.levelToWorld({ x: 0, y: brLevelY }, this._imageMaxZoom, zInt);
+			const y0 = Math.max(0, Math.min(this.mapSize.height, Math.floor(tlWorld.y)));
+			const y1 = Math.max(0, Math.min(this.mapSize.height, Math.ceil(brWorld.y)));
+			return y0 <= y1 ? { y0, y1 } : { y0: y1, y1: y0 };
+		} catch {
+			return { y0: 0, y1: this.mapSize.height };
+		}
+	}
 	public zoomVelocityTick() {
 		if (Math.abs(this._zoomVel) <= 1e-4) return;
 		const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
