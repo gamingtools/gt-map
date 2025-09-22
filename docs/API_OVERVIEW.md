@@ -4,6 +4,7 @@ Quick links to common tasks using the GTMap API.
 
 - Create a map: see [GTMap](api/Class.GTMap.md)
 - Configure imagery: set [image](api/Interface.MapOptions.md#image) (url/width/height) and optional wrap/bounds options
+- Loading spinner: configure [spinner](api/Interface.MapOptions.md#spinner) (size/thickness/color/speed)
 - Wrap & bounds: [setWrapX](api/Class.GTMap.md#setwrapx), [setMaxBoundsPx](api/Class.GTMap.md#setmaxboundspx), [setMaxBoundsViscosity](api/Class.GTMap.md#setmaxboundsviscosity)
 - Change the view: [ViewTransition](api/Interface.ViewTransition.md), [transition()](api/Class.GTMap.md#transition)
 - Add content: [addIcon](api/Class.GTMap.md#addicon), [addMarker](api/Class.GTMap.md#addmarker), [addVector](api/Class.GTMap.md#addvector)

@@ -30,8 +30,8 @@ export interface ImageSourceOptions {
 
 // Map configuration
 export interface MapOptions {
-  /** Single raster image to display. */
-  image: ImageSourceOptions;
+	/** Single raster image to display. */
+	image: ImageSourceOptions;
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;
@@ -52,29 +52,29 @@ export interface MapOptions {
 	freePan?: boolean;
 	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
 	maxBoundsViscosity?: number;
-  /**
-   * When true, allow a small elastic bounce at zoom limits (visual easing only).
-   * Defaults to false.
-  */
-  bounceAtZoomLimits?: boolean;
-  /**
-   * Spinner appearance while loading the full image.
-   *
-   * - size: outer diameter in CSS pixels (default 32)
-   * - thickness: ring thickness in CSS pixels (default 3)
-   * - color: active arc color (default 'rgba(0,0,0,0.6)')
-   * - trackColor: background ring color (default 'rgba(0,0,0,0.2)')
-   * - speedMs: rotation period in milliseconds (default 1000)
-   */
-  spinner?: SpinnerOptions;
+	/**
+	 * When true, allow a small elastic bounce at zoom limits (visual easing only).
+	 * Defaults to false.
+	 */
+	bounceAtZoomLimits?: boolean;
+	/**
+	 * Spinner appearance while loading the full image.
+	 *
+	 * - size: outer diameter in CSS pixels (default 32)
+	 * - thickness: ring thickness in CSS pixels (default 3)
+	 * - color: active arc color (default 'rgba(0,0,0,0.6)')
+	 * - trackColor: background ring color (default 'rgba(0,0,0,0.2)')
+	 * - speedMs: rotation period in milliseconds (default 1000)
+	 */
+	spinner?: SpinnerOptions;
 }
 
 export interface SpinnerOptions {
-  size?: number;
-  thickness?: number;
-  color?: string;
-  trackColor?: string;
-  speedMs?: number;
+	size?: number;
+	thickness?: number;
+	color?: string;
+	trackColor?: string;
+	speedMs?: number;
 }
 
 // Content types
@@ -229,15 +229,15 @@ export interface ZoomEventData {
 
 /** Per‑frame payload for diagnostics/HUD. */
 export interface FrameEventData {
-    /** High‑resolution timestamp for the frame. */
-    now: number;
-    /**
-     * Optional renderer stats if enabled.
-     *
-     * Note: At present only `frame` is populated by the engine. Other fields are reserved for
-     * future diagnostics and may remain `undefined` in current builds.
-     */
-    stats?: RenderStats;
+	/** High‑resolution timestamp for the frame. */
+	now: number;
+	/**
+	 * Optional renderer stats if enabled.
+	 *
+	 * Note: At present only `frame` is populated by the engine. Other fields are reserved for
+	 * future diagnostics and may remain `undefined` in current builds.
+	 */
+	stats?: RenderStats;
 }
 
 // Lifecycle event payloads
@@ -315,11 +315,11 @@ export interface EventMap<TMarkerData = unknown> {
 
 // Performance stats (optional fields for diagnostics)
 export interface RenderStats {
-    fps?: number;
-    cacheSize?: number;
-    inflight?: number;
-    pending?: number;
-    frame?: number;
+	fps?: number;
+	cacheSize?: number;
+	inflight?: number;
+	pending?: number;
+	frame?: number;
 }
 
 // WebGL types

@@ -67,7 +67,8 @@ const map = new GTMap(el, {
 
 ```ts
 // Grid overlay and image upscaling
-map.setGridVisible(false);
+// Note: grid is disabled by default; enable when needed
+map.setGridVisible(true);
 map.setUpscaleFilter('auto'); // 'auto' | 'linear' | 'bicubic'
 
 // Control icon scale vs. zoom (1 = screen‑fixed size)
@@ -81,6 +82,23 @@ map.invalidateSize(); // call if autoResize is off and container size changed
 
 // Input tuning
 map.setWheelSpeed(0.2);
+```
+
+### Loading behavior (spinner)
+
+On initialization, the map shows a small spinner and blocks rendering and input until the full image is decoded and uploaded. You can customize the spinner in the constructor via `spinner`:
+
+```ts
+const map = new GTMap(el, {
+  image: { url: '...', width: 8192, height: 8192 },
+  spinner: {
+    size: 40,            // px, default 32
+    thickness: 4,        // px, default 3
+    color: '#2563eb',    // active arc, default rgba(0,0,0,0.6)
+    trackColor: 'rgba(0,0,0,0.15)', // default rgba(0,0,0,0.2)
+    speedMs: 800         // rotation period, default 1000
+  }
+});
 ```
 
 ## Content
@@ -207,6 +225,7 @@ See the Events guide for payload shapes and examples.
 - Interaction: `wrapX`, `freePan`, `wheelSpeed`
 - Sizing & perf: `autoResize`, `fpsCap`, `screenCache` (internal cache control)
 - Background: `backgroundColor` — either `'transparent'` or a solid color; alpha ignored
+- Loading: `spinner: { size, thickness, color, trackColor, speedMs }`
 
 Notes
 

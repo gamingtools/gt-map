@@ -86,7 +86,7 @@ await map
 
 ### Rendering & Behavior
 
-```ts
+````ts
 // Grid overlay and filtering
 map.setGridVisible(false);
 map.setUpscaleFilter('auto');
@@ -133,7 +133,7 @@ map.addMarker(p.x, p.y);
 // 'original' | 'flipVertical' | 'flipHorizontal' | 'flipBoth'
 // 'rotate90CW' | 'rotate90CCW' | 'rotate180'
 const q = map.translate(wx, wy, 'flipVertical');
-```
+````
 
 Notes
 
@@ -155,7 +155,8 @@ map.setMaxBoundsPx({ minX: 0, minY: 0, maxX: 8192, maxY: 8192 });
 map.setMaxBoundsViscosity(0.15); // 0..1 soft-clamp near edges
 // Optionally allow a small bounce at zoom limits (enable at construction via MapOptions)
 // new GTMap(el, { image, bounceAtZoomLimits: true, ... })
-```
+
+````
 
 ### Lifecycle
 
@@ -176,7 +177,7 @@ map.setActive(true);
 
 // Cleanup when removing the map
 map.destroy();
-```
+````
 
 ## Events
 
@@ -374,18 +375,27 @@ Frame loop hook (stats or overlays)
 
 ```ts
 map.events.on('frame').each(({ now, stats }) => {
-  // Currently, only stats?.frame is populated by the engine.
-  // Other fields are reserved for future diagnostics.
+	// Currently, only stats?.frame is populated by the engine.
+	// Other fields are reserved for future diagnostics.
 });
 ```
 
 ### Loading Behavior
 
-On initialization, a small spinner overlay is shown and the map blocks all rendering and input until the full‑resolution image is decoded and uploaded. This avoids partial rendering and ensures consistent UX across devices. Uploads are chunked and prioritized to minimize stalls during initialization.
+On initialization, a small spinner overlay is shown and the map blocks all rendering and input until the full‑resolution image is decoded and uploaded. This avoids partial rendering and ensures consistent UX across devices. Uploads are chunked, prioritized (viewport‑first), and adaptively budgeted to minimize stalls.
+
+Spinner customization (`MapOptions.spinner`):
+
+- `size` (px): outer diameter (default 32)
+- `thickness` (px): ring width (default 3)
+- `color`: active arc (default `rgba(0,0,0,0.6)`)
+- `trackColor`: background ring (default `rgba(0,0,0,0.2)`)
+- `speedMs`: rotation period (default 1000)
 
 ### Performance
 
 - Full‑resolution textures are uploaded incrementally in small stripes with adaptive time budgeting; uploads pause during interaction and resume when idle.
+- Uses ImageBitmap where available for decode; iOS uses a memory‑safe canvas path for chunking.
 - Use modern formats (e.g., WebP/AVIF) with proper CORS headers for best results.
 - Tune `fpsCap` if you want to reduce background work on less powerful devices.
 

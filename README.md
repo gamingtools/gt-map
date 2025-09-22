@@ -66,6 +66,14 @@ Loading Indicator
 
 On load, the map shows a small spinner and blocks rendering and input until the full‑resolution image is decoded and uploaded to the GPU. No preview image is rendered.
 
+Customize the spinner via `spinner` in `MapOptions`:
+
+- `size` (px): outer diameter (default 32)
+- `thickness` (px): ring width (default 3)
+- `color`: active arc (default `rgba(0,0,0,0.6)`)
+- `trackColor`: background ring (default `rgba(0,0,0,0.2)`)
+- `speedMs`: rotation period (default 1000)
+
 Visibility Control (suspend/resume)
 
 If you render multiple maps, suspend offscreen ones to save CPU/network/VRAM:
@@ -106,8 +114,8 @@ Notes and Next Steps
 
 Performance
 
-- With `image.preview`, the engine shows the preview first, then upgrades to the full texture.
-- On large images, full texture upload is done incrementally across animation frames to minimize UI stalls; the map remains interactive until the swap.
+- Full textures upload incrementally in small stripes with adaptive time budgets; uploads pause during interaction and resume when idle.
+- Uses `createImageBitmap` where available for off‑main‑thread decode; falls back to `<img>`.
 - Host via a static server for production; dev server is preferred.
 
 Monorepo & Package Manager

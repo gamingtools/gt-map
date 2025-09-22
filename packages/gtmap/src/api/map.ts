@@ -80,7 +80,7 @@ export class GTMap<TMarkerData = unknown> {
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
-    private _coordTransformer: CoordTransformer | null = null;
+	private _coordTransformer: CoordTransformer | null = null;
 
 	// (active view transition tracking handled via module-level WeakMap in builder)
 
@@ -124,7 +124,7 @@ export class GTMap<TMarkerData = unknown> {
 			maxBoundsPx: options.maxBoundsPx ?? undefined,
 			maxBoundsViscosity: options.maxBoundsViscosity,
 			bounceAtZoomLimits: options.bounceAtZoomLimits,
-            spinner: options.spinner,
+			spinner: options.spinner,
 		};
 		this._impl = new Impl(container as HTMLDivElement, implOpts);
 		this._ensureDefaultIcon();
@@ -225,46 +225,46 @@ export class GTMap<TMarkerData = unknown> {
 		});
 	}
 
-    /**
-     * Initialize or update the source coordinate bounds used for translating external coordinates
-     * (e.g., Unreal/world coords) into map pixel coordinates.
-     *
-     * @public
-     * @param bounds - Source coordinate rectangle: `{ minX, minY, maxX, maxY }`
-     * @returns This map instance for chaining
-     *
-     * @remarks
-     * The mapping fits the source rectangle into the image pixel space while preserving aspect ratio
-     * (uniform scale) and centering letter/pillarboxing as needed.
-     */
-    setCoordBounds(bounds: SourceBounds): this {
-        const w = this._impl.mapSize.width;
-        const h = this._impl.mapSize.height;
-        if (!this._coordTransformer) this._coordTransformer = new CoordTransformer(w, h, bounds, 'fit');
-        else this._coordTransformer.setSourceBounds(bounds);
-        return this;
-    }
+	/**
+	 * Initialize or update the source coordinate bounds used for translating external coordinates
+	 * (e.g., Unreal/world coords) into map pixel coordinates.
+	 *
+	 * @public
+	 * @param bounds - Source coordinate rectangle: `{ minX, minY, maxX, maxY }`
+	 * @returns This map instance for chaining
+	 *
+	 * @remarks
+	 * The mapping fits the source rectangle into the image pixel space while preserving aspect ratio
+	 * (uniform scale) and centering letter/pillarboxing as needed.
+	 */
+	setCoordBounds(bounds: SourceBounds): this {
+		const w = this._impl.mapSize.width;
+		const h = this._impl.mapSize.height;
+		if (!this._coordTransformer) this._coordTransformer = new CoordTransformer(w, h, bounds, 'fit');
+		else this._coordTransformer.setSourceBounds(bounds);
+		return this;
+	}
 
-    /**
-     * Translate a point from the configured source coordinate space to map pixel coordinates.
-     *
-     * @public
-     * @param x - Source X
-     * @param y - Source Y
-     * @param type - Optional transform to apply ('original' by default)
-     * @returns Pixel coordinates `{ x, y }` in the image space
-     *
-     * @example
-     * ```ts
-     * map.setCoordBounds({ minX: -500_000, minY: -500_000, maxX: 500_000, maxY: 500_000 });
-     * const p = map.translate(wx, wy, 'flipVertical');
-     * map.addMarker(p.x, p.y);
-     * ```
-     */
-    translate(x: number, y: number, type: TransformType = 'original'): { x: number; y: number } {
-        if (!this._coordTransformer) return { x, y };
-        return this._coordTransformer.translate(x, y, type);
-    }
+	/**
+	 * Translate a point from the configured source coordinate space to map pixel coordinates.
+	 *
+	 * @public
+	 * @param x - Source X
+	 * @param y - Source Y
+	 * @param type - Optional transform to apply ('original' by default)
+	 * @returns Pixel coordinates `{ x, y }` in the image space
+	 *
+	 * @example
+	 * ```ts
+	 * map.setCoordBounds({ minX: -500_000, minY: -500_000, maxX: 500_000, maxY: 500_000 });
+	 * const p = map.translate(wx, wy, 'flipVertical');
+	 * map.addMarker(p.x, p.y);
+	 * ```
+	 */
+	translate(x: number, y: number, type: TransformType = 'original'): { x: number; y: number } {
+		if (!this._coordTransformer) return { x, y };
+		return this._coordTransformer.translate(x, y, type);
+	}
 
 	// View control helpers (internal use by transition builder)
 	/** @internal */
@@ -299,37 +299,37 @@ export class GTMap<TMarkerData = unknown> {
 		return this;
 	}
 
-    /**
-     * Set a custom function to control icon scaling vs. zoom.
-     *
-     * @public
-     * @param fn - Returns a scale multiplier, where `1` means screen‑fixed size. Pass `null` to reset to default (`1`).
-     * @returns This map instance for chaining
-     *
-     * @remarks
-     * The function receives `(zoom, minZoom, maxZoom)` and is evaluated per frame. The resulting multiplier
-     * scales the icon's intrinsic width/height and anchor in screen space. For smoother visuals, use a
-     * continuous curve and clamp extremes.
-     *
-     * @example
-     * ```ts
-     * // Make icons grow/shrink with zoom around Z=3
-     * map.setIconScaleFunction((z) => Math.pow(2, z - 3));
-     *
-     * // Keep icons screen‑fixed regardless of zoom (default)
-     * map.setIconScaleFunction(() => 1);
-     *
-     * // Step-based behavior: small at low zooms, larger at high zooms
-     * map.setIconScaleFunction((z) => z < 2 ? 0.75 : z < 4 ? 1 : 1.25);
-     *
-     * // Reset to default policy
-     * map.setIconScaleFunction(null);
-     * ```
-     */
-    setIconScaleFunction(fn: IconScaleFunction | null): this {
-        this._impl.setIconScaleFunction?.(fn);
-        return this;
-    }
+	/**
+	 * Set a custom function to control icon scaling vs. zoom.
+	 *
+	 * @public
+	 * @param fn - Returns a scale multiplier, where `1` means screen‑fixed size. Pass `null` to reset to default (`1`).
+	 * @returns This map instance for chaining
+	 *
+	 * @remarks
+	 * The function receives `(zoom, minZoom, maxZoom)` and is evaluated per frame. The resulting multiplier
+	 * scales the icon's intrinsic width/height and anchor in screen space. For smoother visuals, use a
+	 * continuous curve and clamp extremes.
+	 *
+	 * @example
+	 * ```ts
+	 * // Make icons grow/shrink with zoom around Z=3
+	 * map.setIconScaleFunction((z) => Math.pow(2, z - 3));
+	 *
+	 * // Keep icons screen‑fixed regardless of zoom (default)
+	 * map.setIconScaleFunction(() => 1);
+	 *
+	 * // Step-based behavior: small at low zooms, larger at high zooms
+	 * map.setIconScaleFunction((z) => z < 2 ? 0.75 : z < 4 ? 1 : 1.25);
+	 *
+	 * // Reset to default policy
+	 * map.setIconScaleFunction(null);
+	 * ```
+	 */
+	setIconScaleFunction(fn: IconScaleFunction | null): this {
+		this._impl.setIconScaleFunction?.(fn);
+		return this;
+	}
 
 	// Lifecycle
 	/**

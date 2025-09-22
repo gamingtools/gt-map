@@ -200,17 +200,17 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				pointerEvents: 'none',
 				zIndex: '10',
 			} as CSSStyleDeclaration);
-            const spinner = document.createElement('div');
-            const { size, thickness, color, trackColor, speedMs } = this._spinner;
-            Object.assign(spinner.style, {
-                width: `${size}px`,
-                height: `${size}px`,
-                border: `${thickness}px solid ${trackColor}`,
-                borderTopColor: color,
-                borderRadius: '50%',
-                animation: `gtmap_spin ${speedMs}ms linear infinite`,
-            } as CSSStyleDeclaration);
-            wrap.appendChild(spinner);
+			const spinner = document.createElement('div');
+			const { size, thickness, color, trackColor, speedMs } = this._spinner;
+			Object.assign(spinner.style, {
+				width: `${size}px`,
+				height: `${size}px`,
+				border: `${thickness}px solid ${trackColor}`,
+				borderTopColor: color,
+				borderRadius: '50%',
+				animation: `gtmap_spin ${speedMs}ms linear infinite`,
+			} as CSSStyleDeclaration);
+			wrap.appendChild(spinner);
 			// Ensure container is positioned
 			const cs = getComputedStyle(this.container);
 			if (cs.position === 'static' || !cs.position) this.container.style.position = 'relative';
@@ -318,12 +318,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			const wCSS = Math.max(1, Math.round(rect.width));
 			const hCSS = Math.max(1, Math.round(rect.height));
 			const { zInt, scale } = Coords.zParts(this.zoom);
-			const tlLevel = Coords.tlWorldFor(
-				{ x: this.center.lng, y: this.center.lat },
-				this.zoom,
-				{ x: wCSS, y: hCSS },
-				this._imageMaxZoom,
-			);
+			const tlLevel = Coords.tlWorldFor({ x: this.center.lng, y: this.center.lat }, this.zoom, { x: wCSS, y: hCSS }, this._imageMaxZoom);
 			const tlWorld = Coords.levelToWorld({ x: 0, y: tlLevel.y }, this._imageMaxZoom, zInt);
 			const brLevelY = tlLevel.y + hCSS / scale;
 			const brWorld = Coords.levelToWorld({ x: 0, y: brLevelY }, this._imageMaxZoom, zInt);
@@ -381,10 +376,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _imageReadyAtMs: number | null = null;
 	private _firstRasterDrawAtMs: number | null = null;
 	private _showLoading = true;
-    private _loadingEl: HTMLDivElement | null = null;
-    private static _spinnerCssInjected = false;
-    private _gateRenderUntilImageReady = false;
-    private _spinner = { size: 32, thickness: 3, color: 'rgba(0,0,0,0.6)', trackColor: 'rgba(0,0,0,0.2)', speedMs: 1000 };
+	private _loadingEl: HTMLDivElement | null = null;
+	private static _spinnerCssInjected = false;
+	private _gateRenderUntilImageReady = false;
+	private _spinner = { size: 32, thickness: 3, color: 'rgba(0,0,0,0.6)', trackColor: 'rgba(0,0,0,0.2)', speedMs: 1000 };
 	public _nowMs(): number {
 		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	}
@@ -422,20 +417,20 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._imageManager = new ImageManager(this);
 		this._asyncInitManager = new AsyncInitManager();
 
-        // Spinner mode is always on; gate rendering until image is ready
-        this._showLoading = true;
-        this._gateRenderUntilImageReady = true;
-        // Merge spinner options
-        if (options.spinner) {
-            const o = options.spinner;
-            this._spinner = {
-                size: Math.max(4, Math.floor(o.size ?? this._spinner.size)),
-                thickness: Math.max(1, Math.floor(o.thickness ?? this._spinner.thickness)),
-                color: o.color ?? this._spinner.color,
-                trackColor: o.trackColor ?? this._spinner.trackColor,
-                speedMs: Math.max(100, Math.floor(o.speedMs ?? this._spinner.speedMs)),
-            };
-        }
+		// Spinner mode is always on; gate rendering until image is ready
+		this._showLoading = true;
+		this._gateRenderUntilImageReady = true;
+		// Merge spinner options
+		if (options.spinner) {
+			const o = options.spinner;
+			this._spinner = {
+				size: Math.max(4, Math.floor(o.size ?? this._spinner.size)),
+				thickness: Math.max(1, Math.floor(o.thickness ?? this._spinner.thickness)),
+				color: o.color ?? this._spinner.color,
+				trackColor: o.trackColor ?? this._spinner.trackColor,
+				speedMs: Math.max(100, Math.floor(o.speedMs ?? this._spinner.speedMs)),
+			};
+		}
 
 		// Defer image load until async finalize. If a preview is provided,
 		// we avoid kicking off the full-res load here to prevent duplicate requests.
@@ -685,7 +680,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 
 	// ImageManagerHost interface implementation
-onImageReady(): void {
+	onImageReady(): void {
 		this._imageReadyAtMs = this._nowMs();
 		try {
 			this._screenCache?.clear?.();
@@ -702,7 +697,7 @@ onImageReady(): void {
 				this._inputsAttached = true;
 			} catch {}
 		}
-}
+	}
 
 	getImage(): ImageData {
 		return this._imageManager.getImage();
@@ -1192,11 +1187,11 @@ onImageReady(): void {
 				this._panCtrl.cancel();
 			},
 		};
-			this._input = new InputController(this._inputDeps);
-			if (!this._gateRenderUntilImageReady) {
-				this._input.attach();
-				this._inputsAttached = true;
-			}
+		this._input = new InputController(this._inputDeps);
+		if (!this._gateRenderUntilImageReady) {
+			this._input.attach();
+			this._inputsAttached = true;
+		}
 		// Wire marker hover/click and mouse derivations via EventBridge
 		try {
 			const bridge = new EventBridge({
