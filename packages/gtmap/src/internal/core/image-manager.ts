@@ -182,32 +182,54 @@ export class ImageManager {
             // Create WebGL texture and upload. For large images, perform a chunked upload
             // across animation frames to mitigate long main-thread stalls.
             const gl = this.host.gl;
-            const width = Math.max(1, nextDims?.width ?? this._image.width);
-            const height = Math.max(1, nextDims?.height ?? this._image.height);
+            const reqW = Math.max(1, nextDims?.width ?? this._image.width);
+            const reqH = Math.max(1, nextDims?.height ?? this._image.height);
+            let width = reqW;
+            let height = reqH;
+            // Clamp to MAX_TEXTURE_SIZE while preserving aspect ratio
+            let maxTex = 8192;
+            try { maxTex = Math.max(1, (gl.getParameter(gl.MAX_TEXTURE_SIZE) as number) | 0); } catch {}
+            if (reqW > maxTex || reqH > maxTex) {
+                const scale = Math.max(1e-6, Math.min(maxTex / reqW, maxTex / reqH));
+                const tw = Math.max(1, Math.floor(reqW * scale));
+                const th = Math.max(1, Math.floor(reqH * scale));
+                if (tw !== reqW || th !== reqH) {
+                    this.host._log(`image:downscale due to MAX_TEXTURE_SIZE=${maxTex} requested=${reqW}x${reqH} target=${tw}x${th}`);
+                    width = tw; height = th;
+                }
+            }
 
             const isBitmap = (obj: unknown): obj is ImageBitmap => {
                 return !!obj && typeof (obj as ImageBitmap).close === 'function';
             };
 
 			// Allow chunking either with ImageBitmap (cropped sub-bitmaps) or via a reusable 2D canvas
-			const canUseBitmapChunk = typeof createImageBitmap === 'function' && isBitmap(bitmap);
-			const canUseCanvasChunk = this._preferCanvasChunkUpload();
-			const shouldChunk = (width >= 2048 && height >= 2048) && (canUseBitmapChunk || canUseCanvasChunk);
+                const needsScale = (width !== reqW || height !== reqH);
+                const canUseBitmapChunk = typeof createImageBitmap === 'function' && isBitmap(bitmap);
+                const canUseCanvasChunk = this._preferCanvasChunkUpload() || needsScale;
+                const shouldChunk = (width >= 2048 && height >= 2048) && (canUseBitmapChunk || canUseCanvasChunk);
 
-			if (shouldChunk) {
-				const chunkMode = canUseBitmapChunk && !this._preferCanvasChunkUpload() ? 'chunked-bitmap' : 'chunked-canvas';
-				this.host._log(
-					`image:upload path=${chunkMode} source=${isBitmap(bitmap) ? 'bitmap' : 'img'} size=${width}x${height}`,
-				);
-				const newTex = gl.createTexture();
-				if (!newTex) throw new Error('Failed to create WebGL texture');
-				gl.bindTexture(gl.TEXTURE_2D, newTex);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-				// Allocate storage first
-				gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, Math.max(1, width), Math.max(1, height), 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+                if (shouldChunk) {
+                const chunkMode = (canUseBitmapChunk && !needsScale && !this._preferCanvasChunkUpload()) ? 'chunked-bitmap' : 'chunked-canvas';
+                this.host._log(
+                    `image:upload path=${chunkMode} source=${isBitmap(bitmap) ? 'bitmap' : 'img'} size=${width}x${height}`,
+                );
+                const newTex = gl.createTexture();
+                if (!newTex) throw new Error('Failed to create WebGL texture');
+                gl.bindTexture(gl.TEXTURE_2D, newTex);
+                // Upload defaults optimized for raster
+                try {
+                    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+                    (gl as any).pixelStorei?.((gl as any).UNPACK_COLORSPACE_CONVERSION_WEBGL, (gl as any).NONE);
+                    (gl as any).pixelStorei?.((gl as any).UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+                    (gl as any).pixelStorei?.((gl as any).UNPACK_FLIP_Y_WEBGL, 0);
+                } catch {}
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                // Allocate storage first
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, Math.max(1, width), Math.max(1, height), 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
 				try {
 					await this._uploadChunked(gl, newTex, (bitmap as (ImageBitmap | HTMLImageElement))!, width, height, chunkMode);
@@ -239,13 +261,38 @@ export class ImageManager {
                 }
             } else {
                 // Single upload path
-                this.host._log(
-                    `image:upload path=single source=${isBitmap(bitmap) ? 'bitmap' : 'img'} size=${width}x${height}`,
-                );
+                this.host._log(`image:upload path=single source=${isBitmap(bitmap) ? 'bitmap' : 'img'} size=${width}x${height}`);
                 const texture = gl.createTexture();
                 if (!texture) throw new Error('Failed to create WebGL texture');
                 gl.bindTexture(gl.TEXTURE_2D, texture);
-                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap as TexImageSource);
+                // Upload defaults optimized for raster
+                try {
+                    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+                    (gl as any).pixelStorei?.((gl as any).UNPACK_COLORSPACE_CONVERSION_WEBGL, (gl as any).NONE);
+                    (gl as any).pixelStorei?.((gl as any).UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+                    (gl as any).pixelStorei?.((gl as any).UNPACK_FLIP_Y_WEBGL, 0);
+                } catch {}
+                if ((width !== reqW || height !== reqH)) {
+                    // Scale once via canvas to target size before single upload
+                    try {
+                        const cnv = document.createElement('canvas');
+                        cnv.width = Math.max(1, width); cnv.height = Math.max(1, height);
+                        const ctx = cnv.getContext('2d');
+                        if (ctx) {
+                            ctx.clearRect(0, 0, cnv.width, cnv.height);
+                            const srcW = (bitmap as any).width || reqW;
+                            const srcH = (bitmap as any).height || reqH;
+                            ctx.drawImage(bitmap as CanvasImageSource, 0, 0, srcW, srcH, 0, 0, width, height);
+                            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cnv);
+                        } else {
+                            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap as TexImageSource);
+                        }
+                    } catch {
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap as TexImageSource);
+                    }
+                } else {
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bitmap as TexImageSource);
+                }
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
