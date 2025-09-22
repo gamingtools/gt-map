@@ -387,6 +387,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _showLoading = false;
 	private _loadingEl: HTMLDivElement | null = null;
 	private static _spinnerCssInjected = false;
+	private _gateRenderUntilImageReady = false;
 	public _nowMs(): number {
 		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	}
@@ -427,6 +428,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		// Progressive mode and loading indicator preferences
 		this._useProgressive = options.progressive !== false;
 		this._showLoading = options.showLoadingIndicator ?? (this._useProgressive ? false : true);
+		this._gateRenderUntilImageReady = !this._useProgressive;
 
 		// Defer image load until async finalize. If a preview is provided,
 		// we avoid kicking off the full-res load here to prevent duplicate requests.
@@ -696,6 +698,8 @@ onImageReady(): void {
 		this._needsRender = true;
 		// Hide loading overlay when image becomes ready (full image path)
 		if (this._showLoading) this._setLoadingVisible(false);
+		// Allow rendering now if it was gated
+		this._gateRenderUntilImageReady = false;
 }
 
 	getImage(): ImageData {
@@ -1240,6 +1244,10 @@ onImageReady(): void {
 		if (!this._zoomCtrl.isAnimating() && !this._panCtrl.isAnimating()) this._needsRender = false;
 	}
 	private _render() {
+		// When progressive is disabled, avoid rendering anything until the full image is ready
+		if (this._gateRenderUntilImageReady && !this.getImage().ready) {
+			return;
+		}
 		const imageReadyAtCall = this.getImage().ready;
 		const tR0 = this._nowMs();
 		this._renderer.render();
