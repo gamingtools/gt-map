@@ -125,6 +125,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _showMarkerHitboxes = false;
 	private _active = true;
 	private _glReleased = false;
+	private _inputsAttached = false;
 	private _maxBoundsPx: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
 	private _maxBoundsViscosity = 0;
 	_bounceAtZoomLimits = false;
@@ -700,6 +701,13 @@ onImageReady(): void {
 		if (this._showLoading) this._setLoadingVisible(false);
 		// Allow rendering now if it was gated
 		this._gateRenderUntilImageReady = false;
+		// Attach inputs if they were deferred
+		if (this._input && !this._inputsAttached) {
+			try {
+				this._input.attach();
+				this._inputsAttached = true;
+			} catch {}
+		}
 }
 
 	getImage(): ImageData {
@@ -1190,8 +1198,11 @@ onImageReady(): void {
 				this._panCtrl.cancel();
 			},
 		};
-		this._input = new InputController(this._inputDeps);
-		this._input.attach();
+			this._input = new InputController(this._inputDeps);
+			if (!this._gateRenderUntilImageReady) {
+				this._input.attach();
+				this._inputsAttached = true;
+			}
 		// Wire marker hover/click and mouse derivations via EventBridge
 		try {
 			const bridge = new EventBridge({
