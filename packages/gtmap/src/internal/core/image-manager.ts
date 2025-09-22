@@ -13,15 +13,9 @@ export interface ImageData {
 }
 
 export interface ImageLoadOptions {
-	url: string;
-	width: number;
-	height: number;
-	preview?: {
-		url: string;
-		width: number;
-		height: number;
-	};
-	progressiveSwapDelayMs?: number;
+    url: string;
+    width: number;
+    height: number;
 }
 
 export interface ImageManagerHost {
@@ -168,16 +162,11 @@ export class ImageManager {
 				}
 			}
 
-			// Check if this load is still current. For progressive flows, allow a stale
-			// (older) preview load to commit if no texture has been committed yet.
-			if (token !== this._imageLoadToken) {
-				if (this._image.texture) {
+				// Check if this load is still current. Ignore stale loads.
+				if (token !== this._imageLoadToken) {
 					this.host._log('image:load stale; ignoring');
 					return;
-				} else {
-					this.host._log('image:load stale but no texture yet; committing preview');
 				}
-			}
 
             // Create WebGL texture and upload. For large images, perform a chunked upload
             // across animation frames to mitigate long main-thread stalls.

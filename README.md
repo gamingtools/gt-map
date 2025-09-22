@@ -62,20 +62,9 @@ Demo apps
 Svelte Docs
 - Svelte v5 docs are mirrored under `docs/svelte/`. Use them as the source of truth (runes, `onclick={...}`, etc.).
 
-Progressive Imagery
+Loading Indicator
 
-You can supply a smaller `image.preview` to render immediately while the full image decodes and uploads.
-The engine displays the preview first, then upgrades to the full‑res texture in a single swap.
-
-```ts
-const map = new GTMap(container, {
-  image: {
-    url: 'https://example.com/maps/hagga-8k.webp', width: 8192, height: 8192,
-    preview: { url: 'https://example.com/maps/hagga-1k.webp', width: 1024, height: 1024 },
-  },
-  center: { x: 4096, y: 4096 }, zoom: 2,
-});
-```
+On load, the map shows a small spinner and blocks rendering and input until the full‑resolution image is decoded and uploaded to the GPU. No preview image is rendered.
 
 Visibility Control (suspend/resume)
 

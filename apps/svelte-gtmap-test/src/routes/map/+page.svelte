@@ -9,12 +9,7 @@
 	let container: HTMLDivElement | null = null;
 	let map: GTMap;
 
-	const MAP_IMAGE = {
-		url: 'https://gtcdn.info/dune/tiles/hb_8k.webp',
-		width: 8192,
-		height: 8192,
-		preview: { url: 'https://gtcdn.info/dune/tiles/hb_1k.webp', width: 1024, height: 1024 }
-	};
+	const MAP_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 };
 	const HOME = { lng: MAP_IMAGE.width / 2, lat: MAP_IMAGE.height / 2 };
 
 	let markerCount = 1000;
@@ -168,9 +163,7 @@
 			fpsCap: 60,
 			autoResize: true,
 			image: MAP_IMAGE,
-			wrapX: false,
-			progressive: false,
-			showLoadingIndicator: true
+			wrapX: false
 		});
 
 		// Register a custom icon to demonstrate addIcon/addMarker

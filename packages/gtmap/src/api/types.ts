@@ -30,15 +30,8 @@ export interface ImageSourceOptions {
 
 // Map configuration
 export interface MapOptions {
-  /**
-   * Single raster image to display.
-   *
-   * Optionally provide `preview` to render a smaller texture immediately while the full‑resolution
-   * image decodes and uploads. The engine displays the preview first and then upgrades to the full
-   * texture atomically. `progressiveSwapDelayMs` can introduce a small delay before starting the
-   * full upgrade (defaults to ~50ms) to avoid contention right after init.
-   */
-  image: ImageSourceOptions & { preview?: ImageSourceOptions; progressiveSwapDelayMs?: number };
+  /** Single raster image to display. */
+  image: ImageSourceOptions;
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;
@@ -62,18 +55,8 @@ export interface MapOptions {
   /**
    * When true, allow a small elastic bounce at zoom limits (visual easing only).
    * Defaults to false.
-   */
+  */
   bounceAtZoomLimits?: boolean;
-  /**
-   * When false, disables the preview→full upgrade path and waits for the full image
-   * to be ready before rendering. Defaults to true (progressive enabled).
-   */
-  progressive?: boolean;
-  /**
-   * Show a simple loading indicator overlay while the full image is loading.
-   * Defaults to true when `progressive === false`, otherwise no indicator.
-   */
-  showLoadingIndicator?: boolean;
 }
 
 // Content types

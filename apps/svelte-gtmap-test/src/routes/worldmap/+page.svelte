@@ -5,12 +5,7 @@
   let container: HTMLDivElement | null = null;
   let map: GTMap<RemoteMarker>;
 
-	const MAP_IMAGE = {
-		url: 'https://gtcdn.info/dune/tiles/hb_8k.webp',
-		width: 8192,
-		height: 8192,
-		preview: { url: 'https://gtcdn.info/dune/tiles/hb_1k.webp', width: 1024, height: 1024 }
-	};
+	const MAP_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 };
   const HOME = { x: MAP_IMAGE.width / 2, y: MAP_IMAGE.height / 2 };
 
   // Remote dataset (gzip) for real markers
@@ -66,8 +61,6 @@
       center: HOME,
       zoom: 2,
       autoResize: true,
-      progressive: false,
-      showLoadingIndicator: true,
     });
     // Initialize coord transformer (Unreal/world → pixel)
     map.setCoordBounds(HAGGA_EXTENTS);

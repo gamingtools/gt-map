@@ -379,35 +379,13 @@ map.events.on('frame').each(({ now, stats }) => {
 });
 ```
 
-### Progressive Preview (optional)
+### Loading Behavior
 
-You can provide a smaller preview image to display immediately while the full‑resolution
-image decodes and uploads. The engine displays the preview first, then upgrades to the
-full image in a single swap.
-
-```ts
-const map = new GTMap(container, {
-  image: {
-    url: 'https://example.com/maps/hagga-8k.webp',
-    width: 8192,
-    height: 8192,
-    preview: {
-      url: 'https://example.com/maps/hagga-1k.webp',
-      width: 1024,
-      height: 1024,
-    },
-    // Optional delay before starting the full upgrade (ms)
-    progressiveSwapDelayMs: 50,
-  },
-  center: { x: 4096, y: 4096 },
-  zoom: 2,
-});
-```
+On initialization, a small spinner overlay is shown and the map blocks all rendering and input until the full‑resolution image is decoded and uploaded. This avoids partial rendering and ensures consistent UX across devices. Uploads are chunked and prioritized to minimize stalls during initialization.
 
 ### Performance
 
-- Large full‑resolution textures are uploaded to the GPU incrementally in small stripes to keep the UI responsive during the preview → full upgrade.
-- Decode and upload still take time depending on the image and device; the preview remains visible and the map stays interactive until the full texture swap completes.
+- Full‑resolution textures are uploaded incrementally in small stripes with adaptive time budgeting; uploads pause during interaction and resume when idle.
 - Use modern formats (e.g., WebP/AVIF) with proper CORS headers for best results.
 - Tune `fpsCap` if you want to reduce background work on less powerful devices.
 

@@ -30,7 +30,7 @@ import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
-	image?: { url: string; width: number; height: number; preview?: { url: string; width: number; height: number }; progressiveSwapDelayMs?: number };
+	image?: { url: string; width: number; height: number };
 	minZoom?: number;
 	maxZoom?: number;
 	wrapX?: boolean;
@@ -46,10 +46,6 @@ export type MapOptions = {
 	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
 	maxBoundsViscosity?: number;
 	bounceAtZoomLimits?: boolean;
-    /** Disable preview->full upgrade and wait for full image */
-    progressive?: boolean;
-    /** Show a loading spinner overlay during full image load */
-    showLoadingIndicator?: boolean;
 };
 export type EaseOptions = {
 	easeBaseMs?: number;
@@ -384,8 +380,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _t0Ms: number = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	private _imageReadyAtMs: number | null = null;
 	private _firstRasterDrawAtMs: number | null = null;
-	private _useProgressive = true;
-	private _showLoading = false;
+	private _showLoading = true;
 	private _loadingEl: HTMLDivElement | null = null;
 	private static _spinnerCssInjected = false;
 	private _gateRenderUntilImageReady = false;
@@ -426,10 +421,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._imageManager = new ImageManager(this);
 		this._asyncInitManager = new AsyncInitManager();
 
-		// Progressive mode and loading indicator preferences
-		this._useProgressive = options.progressive !== false;
-		this._showLoading = options.showLoadingIndicator ?? (this._useProgressive ? false : true);
-		this._gateRenderUntilImageReady = !this._useProgressive;
+		// Spinner mode is always on; gate rendering until image is ready
+		this._showLoading = true;
+		this._gateRenderUntilImageReady = true;
 
 		// Defer image load until async finalize. If a preview is provided,
 		// we avoid kicking off the full-res load here to prevent duplicate requests.
@@ -670,21 +664,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 
 		if (initialImage) {
-			if (this._useProgressive && initialImage.preview) {
-				const pv = initialImage.preview;
-				this._log(`image:progressive preview=${pv.url} -> full=${initialImage.url}`);
-				this._imageManager.setImage({ url: pv.url, width: Math.max(1, pv.width), height: Math.max(1, pv.height) });
-				this._needsRender = true;
-				const delay = Number.isFinite(initialImage.progressiveSwapDelayMs as number) ? Math.max(0, Math.min(2000, (initialImage.progressiveSwapDelayMs as number) | 0)) : 50;
-				setTimeout(() => {
-					this._log('image:progressive upgrading to full');
-					void this._imageManager.loadImage(initialImage.url, { width: this.mapSize.width, height: this.mapSize.height });
-				}, delay);
-			} else {
-				// No preview: show loading indicator until full image is ready and start full load
-				if (this._showLoading) this._setLoadingVisible(true);
-				this.setImageSource(initialImage);
-			}
+			// Always show loading indicator until full image is ready and start full load
+			if (this._showLoading) this._setLoadingVisible(true);
+			this.setImageSource(initialImage);
 		}
 
 		this._log('ctor: end');
@@ -1255,7 +1237,7 @@ onImageReady(): void {
 		if (!this._zoomCtrl.isAnimating() && !this._panCtrl.isAnimating()) this._needsRender = false;
 	}
 	private _render() {
-		// When progressive is disabled, avoid rendering anything until the full image is ready
+		// Gate rendering until the full image is ready (spinner shown)
 		if (this._gateRenderUntilImageReady && !this.getImage().ready) {
 			return;
 		}

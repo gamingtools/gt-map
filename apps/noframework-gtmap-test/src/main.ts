@@ -9,7 +9,6 @@ const HAGGA = {
     url: 'https://gtcdn.info/dune/tiles/hb_8k.webp',
     width: 8192,
     height: 8192,
-    preview: { url: 'https://gtcdn.info/dune/tiles/hb_1k.webp', width: 1024, height: 1024 },
   },
   minZoom: 0,
   maxZoom: 5,
@@ -25,8 +24,6 @@ const map = new GTMap(container, {
   fpsCap: 60,
   image: HAGGA.image,
   wrapX: HAGGA.wrapX,
-  progressive: false,
-  showLoadingIndicator: true,
 });
 
 // HUD updates on actual render frames (engine emits 'frame')
