@@ -66,6 +66,8 @@
       center: HOME,
       zoom: 2,
       autoResize: true,
+      progressive: false,
+      showLoadingIndicator: true,
     });
     // Initialize coord transformer (Unreal/world → pixel)
     map.setCoordBounds(HAGGA_EXTENTS);

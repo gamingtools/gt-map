@@ -168,7 +168,9 @@
 			fpsCap: 60,
 			autoResize: true,
 			image: MAP_IMAGE,
-			wrapX: false
+			wrapX: false,
+			progressive: false,
+			showLoadingIndicator: true
 		});
 
 		// Register a custom icon to demonstrate addIcon/addMarker

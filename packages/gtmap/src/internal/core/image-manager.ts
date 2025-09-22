@@ -220,9 +220,17 @@ export class ImageManager {
                 // Upload defaults optimized for raster
                 try {
                     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-                    (gl as any).pixelStorei?.((gl as any).UNPACK_COLORSPACE_CONVERSION_WEBGL, (gl as any).NONE);
-                    (gl as any).pixelStorei?.((gl as any).UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-                    (gl as any).pixelStorei?.((gl as any).UNPACK_FLIP_Y_WEBGL, 0);
+                    const gle = gl as WebGLRenderingContext & {
+                        UNPACK_COLORSPACE_CONVERSION_WEBGL?: number;
+                        UNPACK_PREMULTIPLY_ALPHA_WEBGL?: number;
+                        UNPACK_FLIP_Y_WEBGL?: number;
+                        NONE?: number;
+                    };
+                    if (gle.UNPACK_COLORSPACE_CONVERSION_WEBGL != null && gle.NONE != null) {
+                        gl.pixelStorei(gle.UNPACK_COLORSPACE_CONVERSION_WEBGL, gle.NONE);
+                    }
+                    if (gle.UNPACK_PREMULTIPLY_ALPHA_WEBGL != null) gl.pixelStorei(gle.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+                    if (gle.UNPACK_FLIP_Y_WEBGL != null) gl.pixelStorei(gle.UNPACK_FLIP_Y_WEBGL, 0);
                 } catch {}
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
@@ -268,9 +276,17 @@ export class ImageManager {
                 // Upload defaults optimized for raster
                 try {
                     gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-                    (gl as any).pixelStorei?.((gl as any).UNPACK_COLORSPACE_CONVERSION_WEBGL, (gl as any).NONE);
-                    (gl as any).pixelStorei?.((gl as any).UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-                    (gl as any).pixelStorei?.((gl as any).UNPACK_FLIP_Y_WEBGL, 0);
+                    const gle = gl as WebGLRenderingContext & {
+                        UNPACK_COLORSPACE_CONVERSION_WEBGL?: number;
+                        UNPACK_PREMULTIPLY_ALPHA_WEBGL?: number;
+                        UNPACK_FLIP_Y_WEBGL?: number;
+                        NONE?: number;
+                    };
+                    if (gle.UNPACK_COLORSPACE_CONVERSION_WEBGL != null && gle.NONE != null) {
+                        gl.pixelStorei(gle.UNPACK_COLORSPACE_CONVERSION_WEBGL, gle.NONE);
+                    }
+                    if (gle.UNPACK_PREMULTIPLY_ALPHA_WEBGL != null) gl.pixelStorei(gle.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+                    if (gle.UNPACK_FLIP_Y_WEBGL != null) gl.pixelStorei(gle.UNPACK_FLIP_Y_WEBGL, 0);
                 } catch {}
                 if ((width !== reqW || height !== reqH)) {
                     // Scale once via canvas to target size before single upload
@@ -280,8 +296,8 @@ export class ImageManager {
                         const ctx = cnv.getContext('2d');
                         if (ctx) {
                             ctx.clearRect(0, 0, cnv.width, cnv.height);
-                            const srcW = (bitmap as any).width || reqW;
-                            const srcH = (bitmap as any).height || reqH;
+                            const srcW = 'width' in (bitmap as ImageBitmap | HTMLImageElement) ? (bitmap as ImageBitmap).width : (bitmap as HTMLImageElement).naturalWidth;
+                            const srcH = 'height' in (bitmap as ImageBitmap | HTMLImageElement) ? (bitmap as ImageBitmap).height : (bitmap as HTMLImageElement).naturalHeight;
                             ctx.drawImage(bitmap as CanvasImageSource, 0, 0, srcW, srcH, 0, 0, width, height);
                             gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, cnv);
                         } else {

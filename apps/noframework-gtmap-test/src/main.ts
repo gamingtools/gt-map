@@ -25,6 +25,8 @@ const map = new GTMap(container, {
   fpsCap: 60,
   image: HAGGA.image,
   wrapX: HAGGA.wrapX,
+  progressive: false,
+  showLoadingIndicator: true,
 });
 
 // HUD updates on actual render frames (engine emits 'frame')

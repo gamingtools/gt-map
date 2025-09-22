@@ -22,7 +22,9 @@
 			maxZoom: 10,
 			fpsCap: 60,
 			image: MAP_IMAGE,
-			wrapX: false
+			wrapX: false,
+			progressive: false,
+			showLoadingIndicator: true
 		});
 
 		// Add icon and marker

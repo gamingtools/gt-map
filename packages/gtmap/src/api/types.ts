@@ -64,6 +64,16 @@ export interface MapOptions {
    * Defaults to false.
    */
   bounceAtZoomLimits?: boolean;
+  /**
+   * When false, disables the preview→full upgrade path and waits for the full image
+   * to be ready before rendering. Defaults to true (progressive enabled).
+   */
+  progressive?: boolean;
+  /**
+   * Show a simple loading indicator overlay while the full image is loading.
+   * Defaults to true when `progressive === false`, otherwise no indicator.
+   */
+  showLoadingIndicator?: boolean;
 }
 
 // Content types

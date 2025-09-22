@@ -46,6 +46,10 @@ export type MapOptions = {
 	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
 	maxBoundsViscosity?: number;
 	bounceAtZoomLimits?: boolean;
+    /** Disable preview->full upgrade and wait for full image */
+    progressive?: boolean;
+    /** Show a loading spinner overlay during full image load */
+    showLoadingIndicator?: boolean;
 };
 export type EaseOptions = {
 	easeBaseMs?: number;
@@ -171,6 +175,56 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			// and let the WebGL clear color's alpha drive compositing (alpha will be 0 in that case).
 			this.canvas.style.backgroundColor = bg.a < 1 ? 'transparent' : `rgb(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)})`;
 		} catch {}
+	}
+
+	private _ensureSpinnerCss() {
+		if (GTMap._spinnerCssInjected) return;
+		try {
+			const style = document.createElement('style');
+			style.textContent = `@keyframes gtmap_spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+			document.head.appendChild(style);
+			GTMap._spinnerCssInjected = true;
+		} catch {}
+	}
+
+	private _createLoadingEl() {
+		if (!this._showLoading || this._loadingEl) return;
+		try {
+			const wrap = document.createElement('div');
+			Object.assign(wrap.style, {
+				position: 'absolute',
+				left: '0',
+				top: '0',
+				right: '0',
+				bottom: '0',
+				display: 'flex',
+				alignItems: 'center',
+				justifyContent: 'center',
+				pointerEvents: 'none',
+				zIndex: '10',
+			} as CSSStyleDeclaration);
+			const spinner = document.createElement('div');
+			const size = 32;
+			Object.assign(spinner.style, {
+				width: `${size}px`,
+				height: `${size}px`,
+				border: '3px solid rgba(0,0,0,0.2)',
+				borderTopColor: 'rgba(0,0,0,0.6)',
+				borderRadius: '50%',
+				animation: 'gtmap_spin 1s linear infinite',
+			} as CSSStyleDeclaration);
+			wrap.appendChild(spinner);
+			// Ensure container is positioned
+			const cs = getComputedStyle(this.container);
+			if (cs.position === 'static' || !cs.position) this.container.style.position = 'relative';
+			this.container.appendChild(wrap);
+			this._loadingEl = wrap;
+			this._setLoadingVisible(false);
+		} catch {}
+	}
+
+	private _setLoadingVisible(on: boolean) {
+		this._loadingEl && (this._loadingEl.style.display = on ? 'flex' : 'none');
 	}
 
 	private _gridPalette() {
@@ -329,6 +383,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _t0Ms: number = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	private _imageReadyAtMs: number | null = null;
 	private _firstRasterDrawAtMs: number | null = null;
+	private _useProgressive = true;
+	private _showLoading = false;
+	private _loadingEl: HTMLDivElement | null = null;
+	private static _spinnerCssInjected = false;
 	public _nowMs(): number {
 		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	}
@@ -365,6 +423,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 
 		this._imageManager = new ImageManager(this);
 		this._asyncInitManager = new AsyncInitManager();
+
+		// Progressive mode and loading indicator preferences
+		this._useProgressive = options.progressive !== false;
+		this._showLoading = options.showLoadingIndicator ?? (this._useProgressive ? false : true);
 
 		// Defer image load until async finalize. If a preview is provided,
 		// we avoid kicking off the full-res load here to prevent duplicate requests.
@@ -416,6 +478,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 					this._gfx = new Graphics(this);
 					this._parseBackground(options.backgroundColor);
 					this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
+					// Prepare loading indicator overlay
+					this._ensureSpinnerCss();
+					this._createLoadingEl();
 				},
 				weight: 3,
 			},
@@ -602,22 +667,19 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 
 		if (initialImage) {
-			// Progressive flow: if a preview is provided, draw it first, then upgrade to the full image
-			if (initialImage.preview) {
+			if (this._useProgressive && initialImage.preview) {
 				const pv = initialImage.preview;
-				// Keep world size and zoom ranges based on the full image, but load a smaller texture first
 				this._log(`image:progressive preview=${pv.url} -> full=${initialImage.url}`);
-				// For correct filtering uniforms while preview is active
 				this._imageManager.setImage({ url: pv.url, width: Math.max(1, pv.width), height: Math.max(1, pv.height) });
 				this._needsRender = true;
-				// After a short delay (or immediately), kick off full-resolution load
 				const delay = Number.isFinite(initialImage.progressiveSwapDelayMs as number) ? Math.max(0, Math.min(2000, (initialImage.progressiveSwapDelayMs as number) | 0)) : 50;
 				setTimeout(() => {
 					this._log('image:progressive upgrading to full');
-					// Load full-res and atomically update intrinsic dimensions on success
 					void this._imageManager.loadImage(initialImage.url, { width: this.mapSize.width, height: this.mapSize.height });
 				}, delay);
 			} else {
+				// No preview: show loading indicator until full image is ready and start full load
+				if (this._showLoading) this._setLoadingVisible(true);
 				this.setImageSource(initialImage);
 			}
 		}
@@ -626,13 +688,15 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 
 	// ImageManagerHost interface implementation
-	onImageReady(): void {
+onImageReady(): void {
 		this._imageReadyAtMs = this._nowMs();
 		try {
 			this._screenCache?.clear?.();
 		} catch {}
 		this._needsRender = true;
-	}
+		// Hide loading overlay when image becomes ready (full image path)
+		if (this._showLoading) this._setLoadingVisible(false);
+}
 
 	getImage(): ImageData {
 		return this._imageManager.getImage();
