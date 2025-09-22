@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.2.6 - 2025-09-22
+- Docs: update for spinner-only loading + grid default (b9f6048)
+- Grid: disable by default (start with grid hidden) (
+363118)
+- Spinner options: customizable color/size/thickness/speed via MapOptions.spinner (
+62c8db)
+- Remove progressive preview path: spinner-only loading is now default (
+2ab129)
+- Input gating: block all interactions until full image ready when progressive=false (
+3df80c)
+- Loading UX: gate all rendering until full image ready when progressive=false (
+0db74c)
+- Events: include marker data in map-level marker events (
+7355f9)
+- Loading UX: optional spinner overlay and non-progressive mode (
+090049)
+- Raster upgrade: handle NPOT + oversize textures gracefully (
+1e1fdc)
+- Raster upgrade: viewport-prioritized, adaptive chunked uploads, idle gating (iOS-safe) (
+1c32e0)
+- docs: document coordinate transforms (setCoordBounds/translate) with examples; update overview and guide (
+310c54)
+
+
 ## v0.2.5 - 2025-09-21
 
 - docs(API): document icon scaling function semantics and examples; expand TSDocs for IconScaleFunction and setIconScaleFunction (97256e2)
