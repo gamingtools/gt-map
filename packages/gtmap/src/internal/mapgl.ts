@@ -350,8 +350,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 	private _events: TypedEventBus<EventMap> = new TypedEventBus<EventMap>();
 	public readonly events = this._events; // experimental chainable events API
-	// Grid overlay
-	private showGrid = true;
+	// Grid overlay (disabled by default)
+	private showGrid = false;
 	private gridCanvas: HTMLCanvasElement | null = null;
 	private _gridCtx: CanvasRenderingContext2D | null = null;
 	// Vector overlay (initially 2D canvas; upgradeable to WebGL later)

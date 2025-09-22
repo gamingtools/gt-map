@@ -61,6 +61,7 @@
       center: HOME,
       zoom: 2,
       autoResize: true,
+      spinner: { size: 64, color: '#c2c2c2' },
     });
     // Initialize coord transformer (Unreal/world → pixel)
     map.setCoordBounds(HAGGA_EXTENTS);
