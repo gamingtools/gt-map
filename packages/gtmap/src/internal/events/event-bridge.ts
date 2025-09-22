@@ -65,18 +65,19 @@ export default class EventBridge {
 			const tol = ptrType === 'touch' ? 18 : 8;
 			this.downAt = { x: e.x, y: e.y, t: now, tol };
 			this.movedSinceDown = false;
-			const hit = this.d.hitTest(e.x, e.y, false);
-			if (hit) {
-				const payload: MarkerEventData = {
-					now,
-					view: this.d.getView(),
-					screen: { x: e.x, y: e.y },
-					marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
-					icon: {
-						id: hit.type,
-						iconPath: hit.icon.iconPath,
-						x2IconPath: hit.icon.x2IconPath,
-						width: hit.icon.width,
+            const hit = this.d.hitTest(e.x, e.y, false);
+            if (hit) {
+                const markerData = this.d.getMarkerDataById ? this.d.getMarkerDataById(hit.id) : null;
+                const payload: MarkerEventData = {
+                    now,
+                    view: this.d.getView(),
+                    screen: { x: e.x, y: e.y },
+                    marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: markerData ?? null },
+                    icon: {
+                        id: hit.type,
+                        iconPath: hit.icon.iconPath,
+                        x2IconPath: hit.icon.x2IconPath,
+                        width: hit.icon.width,
 						height: hit.icon.height,
 						anchorX: hit.icon.anchorX,
 						anchorY: hit.icon.anchorY,
@@ -142,14 +143,14 @@ export default class EventBridge {
 			if (!idle) {
 				const prev = this.d.getLastHover();
 				if (prev) {
-					const leavePayload: MarkerEventData = {
-						now,
-						view: this.d.getView(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-						icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-						originalEvent: e.originalEvent,
-					} as MarkerEventData;
+                    const leavePayload: MarkerEventData = {
+                        now,
+                        view: this.d.getView(),
+                        screen: { x: e.x, y: e.y },
+                        marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 }, data: (prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null) },
+                        icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+                        originalEvent: e.originalEvent,
+                    } as MarkerEventData;
 					this.d.emitMarker('leave', leavePayload);
 					try {
 						this.d.events.emit('markerleave', leavePayload);
@@ -163,26 +164,26 @@ export default class EventBridge {
 			if (hit) {
 				if (!prev || prev.id !== hit.id) {
 					if (prev) {
-						const leavePayload: MarkerEventData = {
-							now,
-							view: this.d.getView(),
-							screen: { x: e.x, y: e.y },
-							marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
-							icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
-							originalEvent: e.originalEvent,
-						} as MarkerEventData;
+                    const leavePayload: MarkerEventData = {
+                        now,
+                        view: this.d.getView(),
+                        screen: { x: e.x, y: e.y },
+                        marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 }, data: (prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null) },
+                        icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
+                        originalEvent: e.originalEvent,
+                    } as MarkerEventData;
 						this.d.emitMarker('leave', leavePayload);
 					}
-					const enterPayload: MarkerEventData = {
-						now,
-						view: this.d.getView(),
-						screen: { x: e.x, y: e.y },
-						marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
-						icon: {
-							id: hit.type,
-							iconPath: hit.icon.iconPath,
-							x2IconPath: hit.icon.x2IconPath,
-							width: hit.icon.width,
+                    const enterPayload: MarkerEventData = {
+                        now,
+                        view: this.d.getView(),
+                        screen: { x: e.x, y: e.y },
+                        marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: (this.d.getMarkerDataById?.(hit.id) ?? null) },
+                        icon: {
+                            id: hit.type,
+                            iconPath: hit.icon.iconPath,
+                            x2IconPath: hit.icon.x2IconPath,
+                            width: hit.icon.width,
 							height: hit.icon.height,
 							anchorX: hit.icon.anchorX,
 							anchorY: hit.icon.anchorY,
@@ -219,18 +220,19 @@ export default class EventBridge {
 			const moving = this.d.isMoving();
 			const isClick = !!this.downAt && !this.movedSinceDown && !moving && now - this.downAt.t < 400;
 			this.downAt = null;
-			const upHit = this.d.hitTest(e.x, e.y, true);
-			if (upHit) {
-				const payload: MarkerEventData = {
-					now,
-					view: this.d.getView(),
-					screen: { x: e.x, y: e.y },
-					marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation },
-					icon: {
-						id: upHit.type,
-						iconPath: upHit.icon.iconPath,
-						x2IconPath: upHit.icon.x2IconPath,
-						width: upHit.icon.width,
+            const upHit = this.d.hitTest(e.x, e.y, true);
+            if (upHit) {
+                const dataUp = this.d.getMarkerDataById ? this.d.getMarkerDataById(upHit.id) : null;
+                const payload: MarkerEventData = {
+                    now,
+                    view: this.d.getView(),
+                    screen: { x: e.x, y: e.y },
+                    marker: { id: upHit.id, index: upHit.idx, world: { x: upHit.world.x, y: upHit.world.y }, size: upHit.size, rotation: upHit.rotation, data: dataUp ?? null },
+                    icon: {
+                        id: upHit.type,
+                        iconPath: upHit.icon.iconPath,
+                        x2IconPath: upHit.icon.x2IconPath,
+                        width: upHit.icon.width,
 						height: upHit.icon.height,
 						anchorX: upHit.icon.anchorX,
 						anchorY: upHit.icon.anchorY,
@@ -247,18 +249,19 @@ export default class EventBridge {
 				this.longPressTimer = null;
 			}
 			if (!isClick) return;
-			const hit = this.d.hitTest(e.x, e.y, true);
-			if (hit) {
-				const payload: MarkerEventData = {
-					now,
-					view: this.d.getView(),
-					screen: { x: e.x, y: e.y },
-					marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation },
-					icon: {
-						id: hit.type,
-						iconPath: hit.icon.iconPath,
-						x2IconPath: hit.icon.x2IconPath,
-						width: hit.icon.width,
+            const hit = this.d.hitTest(e.x, e.y, true);
+            if (hit) {
+                const data = this.d.getMarkerDataById ? this.d.getMarkerDataById(hit.id) : null;
+                const payload: MarkerEventData = {
+                    now,
+                    view: this.d.getView(),
+                    screen: { x: e.x, y: e.y },
+                    marker: { id: hit.id, index: hit.idx, world: { x: hit.world.x, y: hit.world.y }, size: hit.size, rotation: hit.rotation, data: data ?? null },
+                    icon: {
+                        id: hit.type,
+                        iconPath: hit.icon.iconPath,
+                        x2IconPath: hit.icon.x2IconPath,
+                        width: hit.icon.width,
 						height: hit.icon.height,
 						anchorX: hit.icon.anchorX,
 						anchorY: hit.icon.anchorY,
