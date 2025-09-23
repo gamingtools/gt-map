@@ -69,7 +69,7 @@ const map = new GTMap(el, {
 // Grid overlay and image upscaling
 // Note: grid is disabled by default; enable when needed
 map.setGridVisible(true);
-map.setUpscaleFilter('auto'); // 'auto' | 'linear' | 'bicubic'
+map.setUpscaleFilter('linear'); // 'auto' | 'linear' | 'bicubic' (default: 'linear')
 
 // Control icon scale vs. zoom (1 = screen‑fixed size)
 map.setIconScaleFunction((zoom, min, max) => 1);

@@ -48,7 +48,7 @@ const map = new GTMap(container, {
 
 // Optional: grid + filtering
 map.setGridVisible(false);
-map.setUpscaleFilter('auto'); // 'auto' | 'linear' | 'bicubic'
+map.setUpscaleFilter('linear'); // 'auto' | 'linear' | 'bicubic' (default: 'linear')
 ```
 
 ### View Controls (Transition Builder)
@@ -89,7 +89,7 @@ await map
 ````ts
 // Grid overlay and filtering
 map.setGridVisible(false);
-map.setUpscaleFilter('auto');
+map.setUpscaleFilter('linear'); // default
 
 // Icon Scaling
 // Control icon size in screen space. The function receives (zoom, minZoom, maxZoom)

@@ -58,7 +58,7 @@ const map = new GTMap(container, {
 
 ```ts
 map.setGridVisible(false);
-map.setUpscaleFilter('auto');
+map.setUpscaleFilter('linear'); // default
 map.setIconScaleFunction((zoom, min, max) => 1);
 map.setFpsCap(60);
 // Control auto-resize behavior (enabled by default)

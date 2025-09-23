@@ -114,7 +114,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _allIconDefs: Record<string, IconDefInput> = {};
 	private _lastMarkers: MarkerInput[] = [];
 	private _rasterOpacity = 1.0;
-	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'auto';
+	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'linear';
 	private _iconScaleFunction: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
 	private _zoomCtrl!: ZoomController;
 	private _gfx!: Graphics;
