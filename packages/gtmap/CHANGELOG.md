@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.7 - 2025-09-23
+- Loading: progressive preview path with seamless swap; zero-jank uploads; fix preview centering (f0189cc)
+- Upscale: default to linear filtering; update docs/examples (
+e03ca9)
+- fixes (
+96ce4a)
+
+
 ## v0.2.6 - 2025-09-22
 - Docs: update for spinner-only loading + grid default (b9f6048)
 - Grid: disable by default (start with grid hidden) (
