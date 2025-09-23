@@ -1,6 +1,6 @@
 // Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
-import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData } from '../api/types';
+import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData, SpinnerOptions } from '../api/types';
 import { DEBUG } from '../debug';
 
 import Graphics, { type GraphicsHost } from './gl/graphics';
@@ -30,10 +30,10 @@ import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
-	image?: { url: string; width: number; height: number };
-	minZoom?: number;
-	maxZoom?: number;
-	wrapX?: boolean;
+    image?: { url: string; width: number; height: number };
+    minZoom?: number;
+    maxZoom?: number;
+    wrapX?: boolean;
 	freePan?: boolean;
 	center?: LngLat;
 	zoom?: number;
@@ -44,8 +44,9 @@ export type MapOptions = {
 	screenCache?: boolean;
 	wheelSpeedCtrl?: number;
 	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
-	maxBoundsViscosity?: number;
-	bounceAtZoomLimits?: boolean;
+    maxBoundsViscosity?: number;
+    bounceAtZoomLimits?: boolean;
+    spinner?: SpinnerOptions;
 };
 export type EaseOptions = {
 	easeBaseMs?: number;
