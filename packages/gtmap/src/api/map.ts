@@ -111,6 +111,7 @@ export class GTMap<TMarkerData = unknown> {
 		}
 		const implOpts: Partial<ImplMapOptions> = {
 			image: { url: img.url, width: img.width, height: img.height },
+			preview: options.preview ? { url: options.preview.url, width: options.preview.width, height: options.preview.height } : undefined,
 			minZoom: options.minZoom,
 			maxZoom: options.maxZoom,
 			center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,

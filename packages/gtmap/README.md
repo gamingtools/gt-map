@@ -382,7 +382,17 @@ map.events.on('frame').each(({ now, stats }) => {
 
 ### Loading Behavior
 
-On initialization, a small spinner overlay is shown and the map blocks all rendering and input until the full‑resolution image is decoded and uploaded. This avoids partial rendering and ensures consistent UX across devices. Uploads are chunked, prioritized (viewport‑first), and adaptively budgeted to minimize stalls.
+Default (spinner‑only): On initialization, a small spinner overlay is shown and the map blocks all rendering and input until the full‑resolution image is decoded and uploaded. This avoids partial rendering and ensures consistent UX across devices. Uploads are chunked, prioritized (viewport‑first), and adaptively budgeted to minimize stalls.
+
+Progressive (optional): Provide a low‑resolution `preview` along with the full `image`. The preview renders first; interaction is enabled immediately after it uploads. The full‑resolution image then loads in the background and swaps in atomically with zero blocking (only quality increases).
+
+```ts
+const map = new GTMap(el, {
+  preview: { url: '/hb_2k.webp', width: 2048, height: 2048 },
+  image:   { url: '/hb_8k.webp', width: 8192, height: 8192 },
+  // other options
+});
+```
 
 Spinner customization (`MapOptions.spinner`):
 

@@ -196,8 +196,23 @@ export class ImageManager {
 			};
 
 			// Allow chunking either with ImageBitmap (cropped sub-bitmaps) or via a reusable 2D canvas
-			const needsScale = width !== reqW || height !== reqH;
-			const canUseBitmapChunk = typeof createImageBitmap === 'function' && isBitmap(bitmap);
+			// Determine if we need to scale source -> target (nextDims)
+			let srcW = 0;
+			let srcH = 0;
+			if (bitmap) {
+				if (isBitmap(bitmap)) {
+					srcW = Math.max(1, bitmap.width);
+					srcH = Math.max(1, bitmap.height);
+				} else {
+					const img = bitmap as HTMLImageElement;
+					srcW = Math.max(1, (img.naturalWidth || img.width || 1));
+					srcH = Math.max(1, (img.naturalHeight || img.height || 1));
+				}
+			}
+			const targetW = width;
+			const targetH = height;
+			const needsScale = srcW > 0 && srcH > 0 && (srcW !== targetW || srcH !== targetH);
+			const canUseBitmapChunk = typeof createImageBitmap === 'function' && isBitmap(bitmap) && !needsScale;
 			const canUseCanvasChunk = this._preferCanvasChunkUpload() || needsScale;
 			const shouldChunk = width >= 2048 && height >= 2048 && (canUseBitmapChunk || canUseCanvasChunk);
 
@@ -340,14 +355,19 @@ export class ImageManager {
 		height: number,
 		mode: 'chunked-bitmap' | 'chunked-canvas',
 	): Promise<void> {
-		// Smaller stripes on iOS to reduce per-frame upload and memory pressure
-		const baseStripe = Math.floor(height / 8) || 1;
-		const targetStripe = mode === 'chunked-canvas' ? Math.min(512, Math.max(64, Math.floor(height / 16))) : Math.min(1024, baseStripe);
-		const minStripe = 64;
-		const maxStripe = mode === 'chunked-canvas' ? 512 : 1024;
+		// Stripe sizing strategy:
+		// - Start conservatively to avoid the first janky frame, then adapt.
+		// - Use smaller initial stripes in bitmap mode as they can be more CPU heavy per line.
+		const initialCanvasStripe = Math.min(384, Math.max(64, Math.floor(height / 16)));
+		const initialBitmapStripe = Math.min(384, Math.max(64, Math.floor(height / 24)));
+		const targetStripe = mode === 'chunked-canvas' ? initialCanvasStripe : initialBitmapStripe;
+		const minStripe = 48;
+		const maxStripe = mode === 'chunked-canvas' ? 512 : 768;
 		let stripeH = Math.max(minStripe, Math.min(maxStripe, targetStripe));
 		const logicalStripe = stripeH; // logical segments for prioritization
 		const budgetMs = this._isIOSWebKit() ? 5 : 8; // target per-frame CPU time for upload call
+		const interactiveBudgetMs = 2; // trickle budget during interaction
+		const trickleStripeMax = 64; // small chunk size while interacting to keep frames smooth
 
 		let tileCnv: HTMLCanvasElement | null = null;
 		let tileCtx: CanvasRenderingContext2D | null = null;
@@ -395,23 +415,21 @@ export class ImageManager {
 			// Upload this segment in adaptive sub-chunks
 			let offset = 0;
 			while (offset < seg.h) {
-				const chunkH = Math.min(stripeH, seg.h - offset);
+				let didH = 0;
 				await new Promise<void>((resolve) => {
 					const step = async () => {
 						try {
-							// Defer uploads while interacting/animating
-							if (!this.host.isIdle()) {
-								if (typeof requestAnimationFrame === 'function') requestAnimationFrame(step);
-								else setTimeout(step, 16);
-								return;
-							}
 							gl.bindTexture(gl.TEXTURE_2D, tex);
 							const yStart = seg.y + offset;
 							const t0 = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+							const interacting = !this.host.isIdle();
+							const localStripe = interacting ? Math.min(stripeH, trickleStripeMax) : stripeH;
+							const remaining = Math.max(0, seg.h - offset);
+							const uploadH = Math.min(localStripe, remaining);
 							if (mode === 'chunked-bitmap') {
 								let sub: ImageBitmap | null = null;
 								try {
-									sub = await createImageBitmap(source as ImageBitmap, 0, yStart, width, chunkH, {
+									sub = await createImageBitmap(source as ImageBitmap, 0, yStart, width, uploadH, {
 										premultiplyAlpha: 'none',
 										colorSpaceConversion: 'none',
 									});
@@ -428,27 +446,36 @@ export class ImageManager {
 								} catch {}
 							} else {
 								if (tileCtx && tileCnv) {
-									if (tileCnv.height !== chunkH) tileCnv.height = chunkH;
+									if (tileCnv.height !== uploadH) tileCnv.height = uploadH;
 									tileCtx.clearRect(0, 0, tileCnv.width, tileCnv.height);
 									try {
-										tileCtx.drawImage(source as CanvasImageSource, 0, yStart, width, chunkH, 0, 0, width, chunkH);
+										// Map target stripe [yStart, yStart+chunkH) to corresponding source stripe.
+										const img = source as CanvasImageSource;
+										const sW = 'width' in (source as ImageBitmap | HTMLImageElement) ? (source as ImageBitmap).width : (source as HTMLImageElement).naturalWidth || (source as HTMLImageElement).width;
+										const sH = 'height' in (source as ImageBitmap | HTMLImageElement) ? (source as ImageBitmap).height : (source as HTMLImageElement).naturalHeight || (source as HTMLImageElement).height;
+										const sY = Math.floor(yStart * (sH / Math.max(1, height)));
+									const sHStripe = Math.max(1, Math.ceil(uploadH * (sH / Math.max(1, height))));
+									// Draw the source stripe stretched to the target stripe size
+									tileCtx.drawImage(img, 0, sY, sW, sHStripe, 0, 0, Math.max(1, width), Math.max(1, uploadH));
 									} catch {}
 									try {
 										gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, yStart, gl.RGBA, gl.UNSIGNED_BYTE, tileCnv);
 									} catch {}
 								}
 							}
+							didH = uploadH;
 							const t1 = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 							const dt = t1 - t0;
 							if (Number.isFinite(dt)) {
-								if (dt > budgetMs && stripeH > minStripe) {
+								const effBudget = interacting ? interactiveBudgetMs : budgetMs;
+								if (dt > effBudget && stripeH > minStripe) {
 									const prev = stripeH;
 									stripeH = Math.max(minStripe, Math.floor(stripeH * 0.75));
-									this.host._log(`image:upload adapt stripeH ${prev}->${stripeH} dt=${dt.toFixed(2)}ms budget=${budgetMs}ms`);
-								} else if (dt < budgetMs * 0.5 && stripeH < maxStripe) {
+									this.host._log(`image:upload adapt stripeH ${prev}->${stripeH} dt=${dt.toFixed(2)}ms budget=${effBudget}ms`);
+								} else if (dt < effBudget * 0.5 && stripeH < maxStripe && !interacting) {
 									const prev = stripeH;
 									stripeH = Math.min(maxStripe, Math.floor(stripeH * 1.25));
-									this.host._log(`image:upload adapt stripeH ${prev}->${stripeH} dt=${dt.toFixed(2)}ms budget=${budgetMs}ms`);
+									this.host._log(`image:upload adapt stripeH ${prev}->${stripeH} dt=${dt.toFixed(2)}ms budget=${effBudget}ms`);
 								}
 							}
 							resolve();
@@ -459,7 +486,7 @@ export class ImageManager {
 					if (typeof requestAnimationFrame === 'function') requestAnimationFrame(step);
 					else setTimeout(step, 0);
 				});
-				offset += chunkH;
+				offset += Math.min(didH, seg.h - offset);
 			}
 			segments[idx].done = true;
 			remaining--;

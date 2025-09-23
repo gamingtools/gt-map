@@ -31,6 +31,7 @@ import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
     image?: { url: string; width: number; height: number };
+    preview?: { url: string; width: number; height: number };
     minZoom?: number;
     maxZoom?: number;
     wrapX?: boolean;
@@ -381,6 +382,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private static _spinnerCssInjected = false;
 	private _gateRenderUntilImageReady = false;
 	private _spinner = { size: 32, thickness: 3, color: 'rgba(0,0,0,0.6)', trackColor: 'rgba(0,0,0,0.2)', speedMs: 1000 };
+	private _pendingFullImage: { url: string; width: number; height: number } | null = null;
 	public _nowMs(): number {
 		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	}
@@ -407,10 +409,14 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._log('ctor: begin');
 
 		// Basic configuration setup (synchronous)
-		const initialImage = options.image;
+		const fullImage = options.image;
+		const previewImage = options.preview;
 		this.minZoom = options.minZoom ?? 0;
-		if (initialImage) {
-			this.mapSize = { width: Math.max(1, initialImage.width), height: Math.max(1, initialImage.height) };
+		if (fullImage) {
+			// Always size the world to the full image for seamless preview->full upgrade
+			this.mapSize = { width: Math.max(1, fullImage.width), height: Math.max(1, fullImage.height) };
+		} else if (previewImage) {
+			this.mapSize = { width: Math.max(1, previewImage.width), height: Math.max(1, previewImage.height) };
 		} else {
 			this.mapSize = { width: 512, height: 512 };
 		}
@@ -466,8 +472,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._autoResize = options.autoResize !== false;
 
 		// Start async initialization
-		this._startAsyncInit(options, initialImage);
-	}
+		this._startAsyncInit(options, fullImage);
+}
 
 	private async _startAsyncInit(options: MapOptions, initialImage: MapOptions['image']): Promise<void> {
 		// Set up initialization steps
@@ -645,7 +651,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 	}
 
-	private _finalizeInit(_options: MapOptions, initialImage: MapOptions['image']): void {
+private _finalizeInit(_options: MapOptions, initialImage: MapOptions['image']): void {
 		try {
 			const emitLoad = () => {
 				const rect2 = this.container.getBoundingClientRect();
@@ -671,10 +677,21 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			else setTimeout(attach, 0);
 		}
 
-		if (initialImage) {
-			// Always show loading indicator until full image is ready and start full load
+		// Start image loading after async init
+		const fullImage = initialImage;
+		const previewImage = _options.preview;
+		if (previewImage && fullImage) {
+			// Progressive path: show preview first, then upgrade to full in background
 			if (this._showLoading) this._setLoadingVisible(true);
-			this.setImageSource(initialImage);
+			this._pendingFullImage = { url: fullImage.url, width: fullImage.width, height: fullImage.height };
+			// Load preview but scale/fit to full image dimensions to avoid any geometry changes on upgrade
+			try {
+				void this._imageManager.loadImage(previewImage.url, { width: this.mapSize.width, height: this.mapSize.height });
+			} catch {}
+		} else if (fullImage) {
+			// Non-progressive path (default): load full image with spinner gating
+			if (this._showLoading) this._setLoadingVisible(true);
+			this.setImageSource(fullImage);
 		}
 
 		this._log('ctor: end');
@@ -697,6 +714,17 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				this._input.attach();
 				this._inputsAttached = true;
 			} catch {}
+		}
+		// If a full image is pending (progressive), kick off the upgrade in the background now.
+		if (this._pendingFullImage) {
+			const cur = this.getImage();
+			const want = this._pendingFullImage;
+			if (cur && cur.url !== want.url) {
+				try {
+					void this._imageManager.loadImage(want.url, { width: this.mapSize.width, height: this.mapSize.height });
+				} catch {}
+			}
+			this._pendingFullImage = null;
 		}
 	}
 

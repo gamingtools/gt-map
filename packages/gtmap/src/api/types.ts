@@ -30,8 +30,16 @@ export interface ImageSourceOptions {
 
 // Map configuration
 export interface MapOptions {
-	/** Single raster image to display. */
+	/** Single raster image to display (full resolution). */
 	image: ImageSourceOptions;
+	/**
+	 * Optional low‑resolution preview to render first, then seamlessly upgrade to {@link MapOptions.image}.
+	 *
+	 * When provided, the map shows the preview as soon as it is decoded and uploaded, then loads the
+	 * full‑resolution image in the background and swaps textures atomically without blocking interaction.
+	 * The preview is scaled to the full image dimensions so the swap is visually seamless (only quality improves).
+	 */
+	preview?: ImageSourceOptions;
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;

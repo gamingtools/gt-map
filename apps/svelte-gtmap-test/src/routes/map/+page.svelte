@@ -10,6 +10,7 @@
 	let map: GTMap;
 
 	const MAP_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 };
+	const PREVIEW_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_1k.webp', width: 1024, height: 1024 };
 	const HOME = { lng: MAP_IMAGE.width / 2, lat: MAP_IMAGE.height / 2 };
 
 	let markerCount = 1000;
@@ -122,14 +123,14 @@
 			map.addVector({
 				type: 'circle',
 				center: { x: HOME.lng, y: HOME.lat },
-				radius: 200,
+				radius: 10,
 				style: {
 					color: '#f59e0b',
 					weight: 2,
 					opacity: 0.9,
 					fill: true,
 					fillColor: '#f59e0b',
-					fillOpacity: 0.2
+					fillOpacity: 0.5
 				}
 			});
 		} catch {}
@@ -159,11 +160,13 @@
 			center: { x: HOME.lng, y: HOME.lat },
 			zoom: 2,
 			minZoom: 0,
-			maxZoom: 5,
+			maxZoom: 6,
 			fpsCap: 60,
 			autoResize: true,
+			preview: PREVIEW_IMAGE,
 			image: MAP_IMAGE,
-			wrapX: false
+			wrapX: false,
+			spinner: { size: 64, color: '#c2c2c2',  },
 		});
 
 		// Register a custom icon to demonstrate addIcon/addMarker
