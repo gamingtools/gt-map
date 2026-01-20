@@ -27,10 +27,10 @@ export interface MarkerTransition {
 	cancel(): void;
 }
 
-let _idSeq = 0;
-function genId(): string {
-	_idSeq = (_idSeq + 1) % Number.MAX_SAFE_INTEGER;
-	return `m_${_idSeq.toString(36)}`;
+let _markerIdSeq = 0;
+function genMarkerId(): string {
+	_markerIdSeq = (_markerIdSeq + 1) % Number.MAX_SAFE_INTEGER;
+	return `m_${_markerIdSeq.toString(36)}`;
 }
 
 /**
@@ -64,7 +64,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 */
 	constructor(x: number, y: number, opts: MarkerOptions<T> = {}, onChange?: () => void) {
 		super();
-		this.id = genId();
+		this.id = genMarkerId();
 		this._x = x;
 		this._y = y;
 		this._iconType = opts.iconType ?? 'default';
@@ -103,15 +103,17 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * Attach arbitrary user data to this marker and trigger a renderer sync.
 	 *
 	 * @public
+	 * @returns This marker for chaining
 	 * @example
 	 * ```ts
 	 * // Tag this marker with a POI payload used elsewhere in the app
 	 * marker.setData({ id: 'poi-1', category: 'shop' });
 	 * ```
 	 */
-	setData(data: T): void {
+	setData(data: T): this {
 		this._data = data;
 		this._onChange?.();
+		return this;
 	}
 
 	/**
@@ -119,12 +121,14 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 *
 	 * @public
 	 * @param opts - Partial style ({@link MarkerOptions})
+	 * @returns This marker for chaining
 	 */
-	setStyle(opts: { iconType?: string; size?: number; rotation?: number }): void {
+	setStyle(opts: { iconType?: string; size?: number; rotation?: number }): this {
 		if (opts.iconType !== undefined) this._iconType = opts.iconType;
 		if (opts.size !== undefined) this._size = opts.size;
 		if (opts.rotation !== undefined) this._rotation = opts.rotation;
 		this._onChange?.();
+		return this;
 	}
 
 	/**
@@ -133,29 +137,28 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * @public
 	 * @remarks
 	 * Emits a `positionchange` event and re‑syncs to the renderer.
+	 * @returns This marker for chaining
 	 * @example
 	 * ```ts
 	 * // Nudge marker 10px to the right
 	 * marker.moveTo(marker.x + 10, marker.y);
 	 * ```
 	 */
-	moveTo(x: number, y: number): void {
+	moveTo(x: number, y: number): this {
 		const dx = x - this._x;
 		const dy = y - this._y;
 		this._x = x;
 		this._y = y;
 		this.emit('positionchange', { x, y, dx, dy, marker: this.toData() });
 		this._onChange?.();
+		return this;
 	}
 
 	/**
-	 * Emit a `remove` event.
-	 *
-	 * @public
-	 * @remarks
-	 * The owning layer will clear it from the collection.
+	 * Emit a `remove` event (called by the owning layer after deletion).
+	 * @internal
 	 */
-	remove(): void {
+	_emitRemove(): void {
 		this.emit('remove', { marker: this.toData() });
 	}
 
@@ -182,10 +185,6 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	/** Start a marker transition (position/rotation/size). */
 	transition(): MarkerTransition {
 		return new MarkerTransitionImpl<T>(this);
-	}
-	/** Alias. */
-	transitions(): MarkerTransition {
-		return this.transition();
 	}
 
 	/** @internal Cancel any active transition for this marker. */

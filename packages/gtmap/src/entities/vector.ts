@@ -1,4 +1,4 @@
-import type { VectorEventMap, VectorGeometry } from '../api/events/maps';
+import type { VectorEventMap, VectorGeometry, VectorData } from '../api/events/maps';
 
 import { EventedEntity } from './base';
 
@@ -59,24 +59,34 @@ export class Vector extends EventedEntity<VectorEventMap> {
 	 * Replace the vector geometry and trigger a renderer sync.
 	 *
 	 * @public
+	 * @returns This vector for chaining
 	 * @example
 	 * ```ts
 	 * // Turn a polygon into a polyline with two points
 	 * v.setGeometry({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] });
 	 * ```
 	 */
-	setGeometry(geometry: VectorGeometry): void {
+	setGeometry(geometry: VectorGeometry): this {
 		this._geometry = geometry;
 		this._onChange?.();
+		return this;
 	}
 
 	/**
-	 * Emit a `remove` event (the owning layer clears it from the collection).
+	 * Get a snapshot used in event payloads.
 	 *
 	 * @public
 	 */
-	remove(): void {
-		this.emit('remove', { vector: { id: this.id, geometry: this._geometry } });
+	toData(): VectorData {
+		return { id: this.id, geometry: this._geometry };
+	}
+
+	/**
+	 * Emit a `remove` event (called by the owning layer after deletion).
+	 * @internal
+	 */
+	_emitRemove(): void {
+		this.emit('remove', { vector: this.toData() });
 	}
 
 	/** Public events surface for this vector. */

@@ -17,12 +17,7 @@
   - [points()](#points)
   - [zoom()](#zoom)
 
-Defined in: [api/Map.ts:749](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L749)
-
-Chainable view transition builder.
-
-Configure desired changes (center/zoom/bounds/points/offset), then commit with [apply()](#apply).
-The builder is side‑effect free until `apply()` is called.
+Defined in: [internal/core/view-transition.ts:19](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L19)
 
 ## Methods
 
@@ -30,7 +25,7 @@ The builder is side‑effect free until `apply()` is called.
 
 > **apply**(`opts?`): `Promise`\<[`ApplyResult`](Interface.ApplyResult.md)\>
 
-Defined in: [api/Map.ts:818](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L818)
+Defined in: [internal/core/view-transition.ts:71](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L71)
 
 Commit the transition.
 
@@ -57,17 +52,15 @@ A promise resolving with the [result](Interface.ApplyResult.md)
 
 > **bounds**(`b`, `padding?`): `this`
 
-Defined in: [api/Map.ts:799](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L799)
+Defined in: [internal/core/view-transition.ts:52](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L52)
 
-Fit the view to a bounding box with optional padding.
-
-Padding may be a single number (applied on all sides) or a per‑side object.
+Fit the view to the specified bounds with optional padding.
 
 #### Parameters
 
 ##### b
 
-Bounds in world pixels
+Bounding box in world pixels
 
 ###### maxX
 
@@ -97,21 +90,13 @@ Uniform number or `{ top, right, bottom, left }`
 
 The builder for chaining
 
-#### Example
-
-```ts
-await map.transition()
-  .bounds({ minX: 1000, minY: 1000, maxX: 2000, maxY: 1800 }, 24)
-  .apply({ animate: { durationMs: 500 } });
-```
-
 ***
 
 ### cancel()
 
 > **cancel**(): `void`
 
-Defined in: [api/Map.ts:825](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L825)
+Defined in: [internal/core/view-transition.ts:78](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L78)
 
 Cancel a pending or running transition.
 
@@ -127,9 +112,9 @@ If already settled, this is a no‑op.
 
 > **center**(`p`): `this`
 
-Defined in: [api/Map.ts:760](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L760)
+Defined in: [internal/core/view-transition.ts:26](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L26)
 
-Target an absolute center position in world pixels.
+Set the target center position in world pixels.
 
 #### Parameters
 
@@ -137,7 +122,7 @@ Target an absolute center position in world pixels.
 
 [`Point`](TypeAlias.Point.md)
 
-Target center `{ x, y }` in world pixels
+Target center point
 
 #### Returns
 
@@ -145,23 +130,15 @@ Target center `{ x, y }` in world pixels
 
 The builder for chaining
 
-#### Example
-
-```ts
-await map.transition().center({ x: 4096, y: 4096 }).apply();
-```
-
 ***
 
 ### offset()
 
 > **offset**(`dx`, `dy`): `this`
 
-Defined in: [api/Map.ts:783](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L783)
+Defined in: [internal/core/view-transition.ts:43](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L43)
 
-Offset the current or targeted center by a delta in world pixels.
-
-Can be combined with [center()](#center).
+Add an offset to the final center position.
 
 #### Parameters
 
@@ -169,13 +146,13 @@ Can be combined with [center()](#center).
 
 `number`
 
-X delta in pixels
+Horizontal offset in world pixels
 
 ##### dy
 
 `number`
 
-Y delta in pixels
+Vertical offset in world pixels
 
 #### Returns
 
@@ -189,7 +166,7 @@ The builder for chaining
 
 > **points**(`list`, `padding?`): `this`
 
-Defined in: [api/Map.ts:808](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L808)
+Defined in: [internal/core/view-transition.ts:61](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L61)
 
 Fit the view to a set of points with optional padding.
 
@@ -219,11 +196,9 @@ The builder for chaining
 
 > **zoom**(`z`): `this`
 
-Defined in: [api/Map.ts:773](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/Map.ts#L773)
+Defined in: [internal/core/view-transition.ts:34](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L34)
 
-Target an absolute zoom level.
-
-Zoom is a continuous number; integers align with image pyramid levels.
+Set the target zoom level.
 
 #### Parameters
 
@@ -231,16 +206,10 @@ Zoom is a continuous number; integers align with image pyramid levels.
 
 `number`
 
-Target zoom
+Target zoom (fractional allowed)
 
 #### Returns
 
 `this`
 
 The builder for chaining
-
-#### Example
-
-```ts
-await map.transition().zoom(4).apply({ animate: { durationMs: 400 } });
-```

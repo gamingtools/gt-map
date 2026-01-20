@@ -8,8 +8,8 @@
 
 ## Contents
 
-> **ApplyStatus** = `"instant"` \| `"animated"` \| `"canceled"`
+> **ApplyStatus** = `"instant"` \| `"animated"` \| `"canceled"` \| `"complete"` \| `"error"`
 
-Defined in: [api/types.ts:442](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L442)
+Defined in: [api/types.ts:475](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/types.ts#L475)
 
 Status describing how a transition completed.

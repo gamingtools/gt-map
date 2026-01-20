@@ -25,11 +25,10 @@ Use the lists below to jump directly to types and members.
 - [GTMap](./Class.GTMap.md)
 - [Layer](./Class.Layer.md)
 - [Marker](./Class.Marker.md)
-- [VectorEntity](./Class.VectorEntity.md)
+- [Vector](./Class.Vector.md)
 
 ### Interfaces
 
-- [ActiveOptions](./Interface.ActiveOptions.md)
 - [AnimateOptions](./Interface.AnimateOptions.md)
 - [ApplyOptions](./Interface.ApplyOptions.md)
 - [ApplyResult](./Interface.ApplyResult.md)
@@ -59,6 +58,7 @@ Use the lists below to jump directly to types and members.
 - [PublicEvents](./Interface.PublicEvents.md)
 - [RenderStats](./Interface.RenderStats.md)
 - [ResizeEventData](./Interface.ResizeEventData.md)
+- [SuspendOptions](./Interface.SuspendOptions.md)
 - [VectorData](./Interface.VectorData.md)
 - [VectorEventMap](./Interface.VectorEventMap.md)
 - [VectorEvents](./Interface.VectorEvents.md)
@@ -77,8 +77,9 @@ Use the lists below to jump directly to types and members.
 - [Point](./TypeAlias.Point.md)
 - [Polygon](./TypeAlias.Polygon.md)
 - [Polyline](./TypeAlias.Polyline.md)
+- [SourceBounds](./TypeAlias.SourceBounds.md)
+- [TransformType](./TypeAlias.TransformType.md)
 - [Unsubscribe](./TypeAlias.Unsubscribe.md)
-- [Vector](./TypeAlias.Vector.md)
 - [VectorGeometry](./TypeAlias.VectorGeometry.md)
 
 ### Functions

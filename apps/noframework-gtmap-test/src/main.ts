@@ -40,7 +40,7 @@ const map = new GTMap(container, {
       state.fps = (1 - alpha) * state.fps + alpha * inst;
     }
     const c = map.getCenter();
-    const p = map.pointerAbs;
+    const p = map.getPointerAbs();
     const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
     const z = map.getZoom();
     hud.textContent = `x ${c.x.toFixed(2)}, y ${c.y.toFixed(2)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;

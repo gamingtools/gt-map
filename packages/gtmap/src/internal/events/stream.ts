@@ -154,5 +154,3 @@ export class EventStream<T> {
 		});
 	}
 }
-
-// Note: legacy EventBus removed; TypedEventBus provides a typed API used across the codebase.

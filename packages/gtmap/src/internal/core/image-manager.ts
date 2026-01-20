@@ -205,8 +205,8 @@ export class ImageManager {
 					srcH = Math.max(1, bitmap.height);
 				} else {
 					const img = bitmap as HTMLImageElement;
-					srcW = Math.max(1, (img.naturalWidth || img.width || 1));
-					srcH = Math.max(1, (img.naturalHeight || img.height || 1));
+					srcW = Math.max(1, img.naturalWidth || img.width || 1);
+					srcH = Math.max(1, img.naturalHeight || img.height || 1);
 				}
 			}
 			const targetW = width;
@@ -451,12 +451,18 @@ export class ImageManager {
 									try {
 										// Map target stripe [yStart, yStart+chunkH) to corresponding source stripe.
 										const img = source as CanvasImageSource;
-										const sW = 'width' in (source as ImageBitmap | HTMLImageElement) ? (source as ImageBitmap).width : (source as HTMLImageElement).naturalWidth || (source as HTMLImageElement).width;
-										const sH = 'height' in (source as ImageBitmap | HTMLImageElement) ? (source as ImageBitmap).height : (source as HTMLImageElement).naturalHeight || (source as HTMLImageElement).height;
+										const sW =
+											'width' in (source as ImageBitmap | HTMLImageElement)
+												? (source as ImageBitmap).width
+												: (source as HTMLImageElement).naturalWidth || (source as HTMLImageElement).width;
+										const sH =
+											'height' in (source as ImageBitmap | HTMLImageElement)
+												? (source as ImageBitmap).height
+												: (source as HTMLImageElement).naturalHeight || (source as HTMLImageElement).height;
 										const sY = Math.floor(yStart * (sH / Math.max(1, height)));
-									const sHStripe = Math.max(1, Math.ceil(uploadH * (sH / Math.max(1, height))));
-									// Draw the source stripe stretched to the target stripe size
-									tileCtx.drawImage(img, 0, sY, sW, sHStripe, 0, 0, Math.max(1, width), Math.max(1, uploadH));
+										const sHStripe = Math.max(1, Math.ceil(uploadH * (sH / Math.max(1, height))));
+										// Draw the source stripe stretched to the target stripe size
+										tileCtx.drawImage(img, 0, sY, sW, sHStripe, 0, 0, Math.max(1, width), Math.max(1, uploadH));
 									} catch {}
 									try {
 										gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, yStart, gl.RGBA, gl.UNSIGNED_BYTE, tileCnv);

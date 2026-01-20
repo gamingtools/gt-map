@@ -21,7 +21,7 @@ function genLayerId(): string {
  * @remarks
  * Emits typed events on add/remove/clear/visibility change.
  */
-export class Layer<T extends { id: string; remove(): void }> {
+export class Layer<T extends { id: string; _emitRemove(): void }> {
 	readonly id: string;
 	private _eventsBus = new TypedEventBus<LayerEventMap<T>>();
 	/** Read‑only typed events for this layer. */
@@ -43,9 +43,6 @@ export class Layer<T extends { id: string; remove(): void }> {
 
 	/**
 	 * Create a new layer.
-	 *
-	 * @public
-	 * @param opts - Optional id and internal change hook
 	 * @internal
 	 */
 	constructor(opts: LayerOptions = {}) {
@@ -68,13 +65,13 @@ export class Layer<T extends { id: string; remove(): void }> {
 		if (!ent) return;
 		this._entities.delete(id);
 		this._eventsBus.emit('entityremove', { entity: ent });
-		ent.remove();
+		ent._emitRemove();
 		this._onChange?.();
 	}
 
 	/** Remove all entities and emit `clear`. */
 	clear(): void {
-		for (const ent of this._entities.values()) ent.remove();
+		for (const ent of this._entities.values()) ent._emitRemove();
 		this._entities.clear();
 		this._eventsBus.emit('clear', {});
 		this._onChange?.();

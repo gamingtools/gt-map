@@ -85,17 +85,6 @@ export interface SpinnerOptions {
 	speedMs?: number;
 }
 
-// Content types
-export interface Marker {
-	x: number;
-	y: number;
-	type?: string;
-	size?: number;
-	rotation?: number; // degrees clockwise (optional)
-	id?: string;
-	data?: unknown | null;
-}
-
 /**
  * Icon bitmap metadata for registering marker icons.
  *
@@ -157,18 +146,19 @@ export type Circle = {
 	style?: VectorStyle;
 };
 
-export type Vector = Polyline | Polygon | Circle;
+// Internal union for type guards (use VectorGeometry for public API)
+type VectorShape = Polyline | Polygon | Circle;
 
-// Type guards for vector types
-export function isPolyline(v: Vector): v is Polyline {
+// Type guards for vector geometry
+export function isPolyline(v: VectorShape): v is Polyline {
 	return v.type === 'polyline';
 }
 
-export function isPolygon(v: Vector): v is Polygon {
+export function isPolygon(v: VectorShape): v is Polygon {
 	return v.type === 'polygon';
 }
 
-export function isCircle(v: Vector): v is Circle {
+export function isCircle(v: VectorShape): v is Circle {
 	return v.type === 'circle';
 }
 
@@ -265,14 +255,6 @@ export interface ResizeEventData {
 	size: { width: number; height: number; dpr: number };
 }
 
-// Base event (shared fields for richer payloads)
-export interface BaseEvent {
-	now: number;
-	view: ViewState;
-	screen?: { x: number; y: number };
-	world?: Point | null;
-}
-
 // Event map for type-safe event handling
 export interface EventMap<TMarkerData = unknown> {
 	/** Fired once after the first frame is scheduled. */
@@ -367,7 +349,8 @@ export function iconID(id: string): IconID {
 }
 
 // Lifecycle options
-export interface ActiveOptions {
+export interface SuspendOptions {
+	/** If true, release WebGL context and textures to free VRAM */
 	releaseGL?: boolean;
 }
 

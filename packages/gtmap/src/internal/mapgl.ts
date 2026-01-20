@@ -1,6 +1,6 @@
 // Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
-import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData, SpinnerOptions } from '../api/types';
+import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData, SpinnerOptions, MarkerInternal } from '../api/types';
 import { DEBUG } from '../debug';
 
 import Graphics, { type GraphicsHost } from './gl/graphics';
@@ -30,11 +30,11 @@ import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 
 export type LngLat = { lng: number; lat: number };
 export type MapOptions = {
-    image?: { url: string; width: number; height: number };
-    preview?: { url: string; width: number; height: number };
-    minZoom?: number;
-    maxZoom?: number;
-    wrapX?: boolean;
+	image?: { url: string; width: number; height: number };
+	preview?: { url: string; width: number; height: number };
+	minZoom?: number;
+	maxZoom?: number;
+	wrapX?: boolean;
 	freePan?: boolean;
 	center?: LngLat;
 	zoom?: number;
@@ -45,9 +45,9 @@ export type MapOptions = {
 	screenCache?: boolean;
 	wheelSpeedCtrl?: number;
 	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
-    maxBoundsViscosity?: number;
-    bounceAtZoomLimits?: boolean;
-    spinner?: SpinnerOptions;
+	maxBoundsViscosity?: number;
+	bounceAtZoomLimits?: boolean;
+	spinner?: SpinnerOptions;
 };
 export type EaseOptions = {
 	easeBaseMs?: number;
@@ -56,7 +56,6 @@ export type EaseOptions = {
 	easePinch?: boolean;
 };
 export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
-export type MarkerInput = { id?: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
 
 export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	container: HTMLDivElement;
@@ -92,10 +91,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private wheelImmediate = 0.9;
 	private wheelSpeedCtrl = 0.4;
 	private wheelImmediateCtrl = 0.24;
-	// removed: wheelGain/wheelGainCtrl (not used after DI)
 	private zoomDamping = 0.09;
 	private maxZoomRate = 12.0;
-	// private _zoomAnim: { from: number; to: number; px: number; py: number; start: number; dur: number; anchor: 'pointer' | 'center' } | null = null;
 	private anchorMode: 'pointer' | 'center' = 'pointer';
 	// Easing options now owned by ZoomController
 	// Zoom-out stability bias toward center
@@ -110,10 +107,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _raster!: RasterRenderer;
 	private _icons: IconRenderer | null = null;
 	private _pendingIconDefs: Record<string, IconDefInput> | null = null;
-	private _pendingMarkers: MarkerInput[] | null = null;
+	private _pendingMarkers: MarkerInternal[] | null = null;
 	private _renderer!: MapRenderer;
 	private _allIconDefs: Record<string, IconDefInput> = {};
-	private _lastMarkers: MarkerInput[] = [];
+	private _lastMarkers: MarkerInternal[] = [];
 	private _rasterOpacity = 1.0;
 	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'linear';
 	private _iconScaleFunction: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
@@ -360,7 +357,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private interactionIdleMs = 160;
 	private _lastInteractAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	// Wheel coalescing + velocity tail
-	// removed: legacy wheel coalescing fields (handled via easing)
 	private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = {
 		px: 0,
 		py: 0,
@@ -369,7 +365,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _zoomVel = 0;
 	// Loader checks this dynamically; no need to track read locally
 	useImageBitmap = typeof createImageBitmap === 'function';
-	// private _movedSinceDown = false; // deprecated; input handled by controller
 	// Hover hit-testing debounce to avoid churn during interactions
 	private _hitTestDebounceMs = 75;
 
@@ -473,7 +468,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 
 		// Start async initialization
 		this._startAsyncInit(options, fullImage);
-}
+	}
 
 	private async _startAsyncInit(options: MapOptions, initialImage: MapOptions['image']): Promise<void> {
 		// Set up initialization steps
@@ -651,7 +646,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 	}
 
-private _finalizeInit(_options: MapOptions, initialImage: MapOptions['image']): void {
+	private _finalizeInit(_options: MapOptions, initialImage: MapOptions['image']): void {
 		try {
 			const emitLoad = () => {
 				const rect2 = this.container.getBoundingClientRect();
@@ -817,12 +812,12 @@ private _finalizeInit(_options: MapOptions, initialImage: MapOptions['image']): 
 		} catch {}
 		this._needsRender = true;
 	}
-	setMarkers(markers: MarkerInput[]) {
+	setMarkers(markers: MarkerInternal[]) {
 		// Remember last marker set for GL resume
 		try {
 			this._lastMarkers = markers.slice();
 		} catch {
-			this._lastMarkers = markers as MarkerInput[];
+			this._lastMarkers = markers as MarkerInternal[];
 		}
 		if (!this._icons) {
 			// Buffer until icon renderer is ready

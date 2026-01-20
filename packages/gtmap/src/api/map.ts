@@ -9,24 +9,10 @@ import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../inter
 import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
 import { CoordTransformer, type Bounds as SourceBounds, type TransformType } from './coord-transformer';
-import type {
-	Point,
-	MapOptions,
-	IconDef,
-	IconHandle,
-	Circle,
-	Vector as VectorLegacy,
-	ActiveOptions,
-	IconDefInternal,
-	MarkerInternal,
-	VectorPrimitiveInternal,
-	IconScaleFunction,
-	ApplyResult,
-	MaxBoundsPx,
-} from './types';
+import type { Point, MapOptions, IconDef, IconHandle, SuspendOptions, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, IconScaleFunction, ApplyResult, MaxBoundsPx } from './types';
 
 // Re-export types from centralized types file
-export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, Vector as VectorLegacy, ActiveOptions } from './types';
+export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, SuspendOptions } from './types';
 export { Marker } from '../entities/marker';
 export { Vector } from '../entities/vector';
 export { Layer } from '../entities/layer';
@@ -65,16 +51,16 @@ export class GTMap<TMarkerData = unknown> {
 	/**
 	 * Marker layer for this map. Use to add/remove markers and subscribe to layer events.
 	 *
+	 * @group Content
 	 * @example
 	 * const m = map.addMarker(100, 200);
 	 * map.markers.events.on('entityadd').each(({ entity }) => console.log('added', entity.id));
 	 */
-	/** @group Content */
 	readonly markers: Layer<Marker<TMarkerData>>;
 	/**
 	 * Vector layer for this map. Use to add/remove vectors and subscribe to layer events.
+	 * @group Content
 	 */
-	/** @group Content */
 	readonly vectors: Layer<Vector>;
 	private _defaultIconReady = false;
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
@@ -87,6 +73,7 @@ export class GTMap<TMarkerData = unknown> {
 	/**
 	 * Creates a new GTMap instance.
 	 *
+	 * @group Lifecycle
 	 * @param container - The HTML element to render the map into
 	 * @param options - Configuration options for the map
 	 * @param options.image - Single large raster image metadata
@@ -97,7 +84,6 @@ export class GTMap<TMarkerData = unknown> {
 	 * @param options.screenCache - Enable screen-space caching for better performance (default: true)
 	 * @param options.fpsCap - Maximum frames per second (default: 60)
 	 */
-	/** @group Lifecycle */
 	constructor(container: HTMLElement, options: MapOptions) {
 		// Validate required image configuration up-front
 		const img = options?.image;
@@ -274,15 +260,14 @@ export class GTMap<TMarkerData = unknown> {
 		if (typeof zoom === 'number') this._impl.setZoom(zoom);
 	}
 
-	// Grid + filtering
 	/**
 	 * Show or hide the pixel grid overlay.
 	 *
 	 * @public
+	 * @group Tiles & Styling
 	 * @param on - `true` to show, `false` to hide
 	 * @returns This map instance for chaining
 	 */
-	/** @group Tiles & Styling */
 	setGridVisible(on: boolean): this {
 		this._impl.setGridVisible?.(on);
 		return this;
@@ -291,10 +276,10 @@ export class GTMap<TMarkerData = unknown> {
 	 * Set the upscale filtering mode for the base image when zoomed in.
 	 *
 	 * @public
+	 * @group Tiles & Styling
 	 * @param mode - `'auto'` | `'linear'` | `'bicubic'`
 	 * @returns This map instance for chaining
 	 */
-	/** @group Tiles & Styling */
 	setUpscaleFilter(mode: 'auto' | 'linear' | 'bicubic'): this {
 		this._impl.setUpscaleFilter?.(mode);
 		return this;
@@ -332,23 +317,57 @@ export class GTMap<TMarkerData = unknown> {
 		return this;
 	}
 
-	// Lifecycle
 	/**
-	 * Suspend or resume the map.
+	 * Reset icon scaling to default (screen-fixed, scale = 1).
 	 *
 	 * @public
-	 * @param on - `true` to activate, `false` to suspend
-	 * @param opts - Optional behavior
+	 * @group View
 	 * @returns This map instance for chaining
 	 * @example
 	 * ```ts
-	 * // Pause rendering and release VRAM, then resume later
-	 * map.setActive(false, { releaseGL: true });
-	 * map.setActive(true);
+	 * map.resetIconScale();
 	 * ```
 	 */
-	setActive(on: boolean, opts?: ActiveOptions): this {
-		this._impl.setActive?.(on, opts);
+	resetIconScale(): this {
+		this._impl.setIconScaleFunction?.(null);
+		return this;
+	}
+
+	// Lifecycle
+	/**
+	 * Suspend the map, pausing rendering and optionally releasing GPU resources.
+	 *
+	 * @public
+	 * @group Lifecycle
+	 * @param opts - Optional behavior
+	 * @param opts.releaseGL - If true, release WebGL context and textures to free VRAM
+	 * @returns This map instance for chaining
+	 * @example
+	 * ```ts
+	 * // Pause rendering and release VRAM
+	 * map.suspend({ releaseGL: true });
+	 * // Later, resume
+	 * map.resume();
+	 * ```
+	 */
+	suspend(opts?: SuspendOptions): this {
+		this._impl.setActive?.(false, opts);
+		return this;
+	}
+
+	/**
+	 * Resume a suspended map, restoring rendering.
+	 *
+	 * @public
+	 * @group Lifecycle
+	 * @returns This map instance for chaining
+	 * @example
+	 * ```ts
+	 * map.resume();
+	 * ```
+	 */
+	resume(): this {
+		this._impl.setActive?.(true);
 		return this;
 	}
 	/**
@@ -360,11 +379,11 @@ export class GTMap<TMarkerData = unknown> {
 		this._impl.destroy?.();
 	}
 
-	// Add content (batched internally)
 	/**
 	 * Register an icon definition for use with markers.
 	 *
 	 * @public
+	 * @group Content
 	 * @param def - Icon bitmap metadata and source paths
 	 * @param def.iconPath - URL or data URL for the 1x icon bitmap
 	 * @param def.x2IconPath - Optional URL or data URL for a 2x (retina) bitmap
@@ -372,12 +391,12 @@ export class GTMap<TMarkerData = unknown> {
 	 * @param def.height - Intrinsic height of the icon (pixels, 1x)
 	 * @param def.anchorX - Optional anchor X in pixels from the left (defaults to width/2)
 	 * @param def.anchorY - Optional anchor Y in pixels from the top (defaults to height/2)
-	 * @param id - Optional stable id (auto‑generated when omitted)
+	 * @param id - Optional stable id (auto-generated when omitted)
 	 * @returns Handle used by {@link GTMap.addMarker}
 	 *
 	 * @example
 	 * ```ts
-	 * // Register a 24x24 pin with a 2x asset and bottom‑center anchor
+	 * // Register a 24x24 pin with a 2x asset and bottom-center anchor
 	 * const pin = map.addIcon({
 	 *   iconPath: '/icons/pin-24.png',
 	 *   x2IconPath: '/icons/pin-48.png',
@@ -390,7 +409,6 @@ export class GTMap<TMarkerData = unknown> {
 	 * const m = map.addMarker(2048, 2048, { icon: pin, size: 1.0 });
 	 * ```
 	 */
-	/** @group Content */
 	addIcon(def: IconDef, id?: string): IconHandle {
 		const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
 		this._icons.set(iconId, def);
@@ -410,10 +428,11 @@ export class GTMap<TMarkerData = unknown> {
 	 * Create and add a marker to the `markers` layer.
 	 *
 	 * @public
+	 * @group Content
 	 * @param x - World X (pixels)
 	 * @param y - World Y (pixels)
 	 * @param opts - Optional style and user data
-	 * @param opts.icon - Handle from {@link GTMap.addIcon} (defaults to built‑in dot)
+	 * @param opts.icon - Handle from {@link GTMap.addIcon} (defaults to built-in dot)
 	 * @param opts.size - Scale multiplier (default 1)
 	 * @param opts.rotation - Rotation in degrees clockwise
 	 * @param opts.data - Arbitrary app data stored on the marker
@@ -426,48 +445,17 @@ export class GTMap<TMarkerData = unknown> {
 	 * poi.events.on('click', (e) => console.log('clicked', e.marker.id));
 	 * ```
 	 */
-	/** @group Content */
 	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: TMarkerData }): Marker<TMarkerData> {
 		const mk = new Marker<TMarkerData>(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
 		this.markers.add(mk);
 		return mk;
-	}
-	// addMarkers removed in favor of per-entity API
-	/**
-	 * Add legacy vector shapes in a single batch.
-	 *
-	 * @public
-	 * @param vectors - Array of vector definitions
-	 * @returns This map instance for chaining
-	 */
-	/**
-	 * Add legacy vector primitives in a single batch (temporary helper).
-	 * Prefer `addVector(geometry)` for the entity-based API.
-	 */
-	addVectors(_vectors: VectorLegacy[]): this {
-		// Legacy pass-through remains for now
-		const internalVectors: VectorPrimitiveInternal[] = _vectors.map((v) => {
-			const typeSymbol = getVectorTypeSymbol(v.type);
-			if (typeSymbol && (isPolylineSymbol(typeSymbol) || isPolygonSymbol(typeSymbol))) {
-				// TypeScript narrowing: we know it's polyline or polygon
-				const polyVector = v as VectorLegacy & { type: 'polyline' | 'polygon'; points: Point[] };
-				return {
-					type: polyVector.type,
-					points: polyVector.points.map((p) => ({ lng: p.x, lat: p.y })),
-					style: polyVector.style,
-				};
-			}
-			const circle = v as Circle;
-			return { type: 'circle', center: { lng: circle.center.x, lat: circle.center.y }, radius: circle.radius, style: circle.style };
-		});
-		this._impl.setVectors?.(internalVectors);
-		return this;
 	}
 
 	/**
 	 * Create and add a {@link Vector} to the `vectors` layer.
 	 *
 	 * @public
+	 * @group Content
 	 * @param geometry - Vector geometry (polyline, polygon, circle)
 	 * @returns The created {@link Vector}
 	 *
@@ -479,7 +467,6 @@ export class GTMap<TMarkerData = unknown> {
 	 * v.setGeometry({ type: 'circle', center: { x: 200, y: 200 }, radius: 40 });
 	 * ```
 	 */
-	/** @group Content */
 	addVector(geometry: VectorGeom): Vector {
 		const v = new Vector(geometry, {}, () => this._flushVectors());
 		this.vectors.add(v);
@@ -487,37 +474,36 @@ export class GTMap<TMarkerData = unknown> {
 	}
 
 	/**
-	 * Removes all markers from the map.
+	 * Remove all markers from the map.
 	 *
+	 * @public
+	 * @group Content
 	 * @returns This map instance for method chaining
 	 */
-	/** @public Remove all markers from the map. */
-	/** @group Content */
 	clearMarkers(): this {
 		this.markers.clear();
 		return this;
 	}
 	/**
-	 * Removes all vector shapes from the map.
+	 * Remove all vector shapes from the map.
 	 *
+	 * @public
+	 * @group Content
 	 * @returns This map instance for method chaining
 	 */
-	/** @public Remove all vectors from the map. */
-	/** @group Content */
 	clearVectors(): this {
 		this.vectors.clear();
 		this._impl.setVectors?.([]);
 		return this;
 	}
 
-	// Compatibility getters used by HUD
 	/**
 	 * Get the current center position in world pixels.
 	 *
 	 * @public
+	 * @group View
 	 * @returns The center position
 	 */
-	/** @group View */
 	getCenter(): Point {
 		const c = this._impl.center as { lng: number; lat: number };
 		return { x: c.lng, y: c.lat };
@@ -526,9 +512,9 @@ export class GTMap<TMarkerData = unknown> {
 	 * Get the current zoom level.
 	 *
 	 * @public
+	 * @group View
 	 * @returns The zoom value (fractional allowed)
 	 */
-	/** @group View */
 	getZoom(): number {
 		return this._impl.zoom;
 	}
@@ -536,9 +522,10 @@ export class GTMap<TMarkerData = unknown> {
 	 * Get the last pointer position in world pixels.
 	 *
 	 * @public
+	 * @group View
 	 * @returns Position or `null` if outside the map
 	 */
-	get pointerAbs(): { x: number; y: number } | null {
+	getPointerAbs(): { x: number; y: number } | null {
 		return this._impl.pointerAbs ?? null;
 	}
 	/**
@@ -606,17 +593,16 @@ export class GTMap<TMarkerData = unknown> {
 	 * Set the maximum frames per second.
 	 *
 	 * @public
-	 * @param v - FPS limit (15–240)
+	 * @group View
+	 * @param v - FPS limit (15-240)
 	 * @returns This map instance for chaining
 	 *
-	 * @remarks
-	 * Example:
+	 * @example
 	 * ```ts
 	 * // Lower FPS cap to save battery
 	 * map.setFpsCap(30);
 	 * ```
 	 */
-	/** @group View */
 	setFpsCap(v: number): this {
 		this._impl.setFpsCap(v);
 		return this;
@@ -626,9 +612,12 @@ export class GTMap<TMarkerData = unknown> {
 	 * Set the viewport background.
 	 *
 	 * @public
+	 * @group Tiles & Styling
+	 * @param color - Color string or RGB object; `'transparent'` for fully transparent
+	 * @returns This map instance for chaining
 	 * @remarks
 	 * Policy: either `'transparent'` (fully transparent) or a solid color; alpha on colors is ignored.
-	 * Example:
+	 * @example
 	 * ```ts
 	 * // Transparent viewport (useful over custom app backgrounds)
 	 * map.setBackgroundColor('transparent');
@@ -636,7 +625,6 @@ export class GTMap<TMarkerData = unknown> {
 	 * map.setBackgroundColor('#0a0a0a');
 	 * ```
 	 */
-	/** @group Tiles & Styling */
 	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
 		this._impl.setBackgroundColor?.(color);
 		return this;
@@ -645,17 +633,19 @@ export class GTMap<TMarkerData = unknown> {
 	 * Enable or disable automatic resize handling.
 	 *
 	 * @public
+	 * @group View
+	 * @param on - `true` to enable, `false` to disable
+	 * @returns This map instance for chaining
 	 * @remarks
 	 * When enabled, a ResizeObserver watches the container (debounced via rAF) and a window
 	 * resize listener tracks DPR changes.
-	 * Example:
+	 * @example
 	 * ```ts
 	 * // Manage size manually: disable auto and call invalidate on layout changes
 	 * map.setAutoResize(false);
 	 * map.invalidateSize();
 	 * ```
 	 */
-	/** @group View */
 	setAutoResize(on: boolean): this {
 		this._impl.setAutoResize?.(on);
 		return this;
@@ -711,35 +701,34 @@ export class GTMap<TMarkerData = unknown> {
 	 * Recompute canvas sizes after external container changes.
 	 *
 	 * @public
+	 * @group View
 	 * @returns This map instance for chaining
 	 */
-	/** @group View */
 	invalidateSize(): this {
 		this._impl.resize?.();
 		return this;
 	}
 
-	// Events proxy
 	/**
-	 * Read‑only map events surface (`on`/`once`).
+	 * Read-only map events surface (`on`/`once`).
 	 *
 	 * @public
+	 * @group Events
 	 * @example
 	 * ```ts
 	 * map.events.on('move').each(({ view }) => console.log(view.center, view.zoom));
 	 * await map.events.once('zoomend');
 	 * ```
 	 */
-	/** @group Events */
 	get events(): MapEvents<TMarkerData> {
 		return {
-			on: (name: any, handler?: any) => {
+			on: (name: string, handler?: (value: unknown) => void) => {
 				// Bridge overloads: return the stream or subscribe inline. The cast is localized
 				// to preserve precise generic types for callers across the two forms.
 				const stream = this._impl.events.on(name as keyof import('./types').EventMap);
 				return handler ? stream.each(handler) : stream;
 			},
-			once: (name) => this._impl.events.when(name as keyof import('./types').EventMap),
+			once: (name: string) => this._impl.events.when(name as keyof import('./types').EventMap),
 		} as MapEvents<TMarkerData>;
 	}
 
@@ -747,10 +736,10 @@ export class GTMap<TMarkerData = unknown> {
 	 * Start a chainable view transition.
 	 *
 	 * @public
+	 * @group View
 	 * @remarks
-	 * The builder is side‑effect free until {@link ViewTransition.apply | apply()} is called.
+	 * The builder is side-effect free until {@link ViewTransition.apply | apply()} is called.
 	 */
-	/** @group View */
 	transition(): ViewTransition {
 		return new ViewTransitionImpl(this);
 	}

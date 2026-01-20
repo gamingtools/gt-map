@@ -6,7 +6,7 @@ import { IconMaskBuilder } from './icons/icon-mask-builder';
 import { createAtlas } from './icons/icon-atlas';
 
 export type IconDef = { id: string; url: string; width: number; height: number; anchorX?: number; anchorY?: number };
-export type Marker = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
+export type MarkerRenderData = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
 
 export class IconRenderer {
 	private gl: WebGLRenderingContext;
@@ -16,7 +16,7 @@ export class IconRenderer {
 	private texAnchor = new Map<string, { ax: number; ay: number }>();
 	private iconMeta = new Map<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number }>();
 	private maskBuilder = new IconMaskBuilder();
-	private markers: Marker[] = [];
+	private markers: MarkerRenderData[] = [];
 	// Texture atlas
 	// Atlas bookkeeping kept local in load; we do not need fields on the class.
 	private uvRect = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();
@@ -180,13 +180,13 @@ export class IconRenderer {
 		this.maskBuilder.start();
 	}
 
-	setMarkers(markers: Array<Marker | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
-		// Normalize to internal Marker list with ids
+	setMarkers(markers: Array<MarkerRenderData | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
+		// Normalize to internal MarkerRenderData list with ids
 		let idx = 0;
-		const norm: Marker[] = [];
+		const norm: MarkerRenderData[] = [];
 		for (const m of markers || []) {
 			if ('id' in (m as Record<string, unknown>)) {
-				norm.push(m as Marker);
+				norm.push(m as MarkerRenderData);
 			} else {
 				const mm = m as { lng: number; lat: number; type: string; size?: number; rotation?: number };
 				norm.push({ id: `m${idx++}`, lng: mm.lng, lat: mm.lat, type: mm.type, size: mm.size, rotation: mm.rotation });
@@ -194,7 +194,7 @@ export class IconRenderer {
 		}
 		this.markers = norm;
 		// Prepare per-type instance data for instanced path
-		const byType = new Map<string, Marker[]>();
+		const byType = new Map<string, MarkerRenderData[]>();
 		for (const m of this.markers) {
 			let arr = byType.get(m.type);
 			if (!arr) {
@@ -403,7 +403,7 @@ export class IconRenderer {
 		// UVs set per type if atlas
 
 		// Group markers by type to minimize texture binds
-		const groups = new Map<string, Marker[]>();
+		const groups = new Map<string, MarkerRenderData[]>();
 		for (const m of this.markers) {
 			if (!groups.has(m.type)) groups.set(m.type, []);
 			groups.get(m.type)!.push(m);

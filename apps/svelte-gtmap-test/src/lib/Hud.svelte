@@ -60,9 +60,8 @@
 		const c = map.getCenter();
 		center = { lng: c.x, lat: c.y };
 		zoom = map.getZoom();
-		mouse = map.pointerAbs
-			? { x: Math.round(map.pointerAbs.x), y: Math.round(map.pointerAbs.y) }
-			: null;
+		const pAbs = map.getPointerAbs();
+		mouse = pAbs ? { x: Math.round(pAbs.x), y: Math.round(pAbs.y) } : null;
 		if (fromFrame) {
 			const t = now ?? (performance.now ? performance.now() : Date.now());
 			if (!_prev) _prev = t;

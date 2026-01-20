@@ -1,6 +1,6 @@
 // New simplified API (pixel CRS only)
 export { GTMap } from './api/map';
-export { Marker, Vector as VectorEntity, Layer } from './api/map';
+export { Marker, Vector, Layer } from './api/map';
 export type { ViewTransition } from './api/map';
 export * as easings from './api/easings';
 
@@ -12,11 +12,10 @@ export type {
 	IconDef,
 	IconHandle,
 	VectorStyle,
-	Vector,
 	Polyline,
 	Polygon,
 	Circle,
-	ActiveOptions,
+	SuspendOptions,
 	IconScaleFunction,
 	Easing,
 	AnimateOptions,

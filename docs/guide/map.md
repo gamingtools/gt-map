@@ -148,9 +148,10 @@ Rendering & Behavior
 
 Lifecycle & Sizing
 
-- `setActive(on: boolean, opts?: ActiveOptions): this`
-  - `on: boolean` — `true` to run, `false` to suspend
+- `suspend(opts?: SuspendOptions): this`
   - `opts.releaseGL?: boolean` — when suspending, release WebGL context (frees GPU memory)
+- `resume(): this`
+  - Resume a suspended map, restoring rendering
 - `setAutoResize(on: boolean): this`
   - `on: boolean` — enable/disable automatic ResizeObserver + DPR handling
 - `invalidateSize(): this`
@@ -181,8 +182,6 @@ Content
   - `geometry.type: 'polyline'|'polygon'|'circle'`
   - `geometry.points: Point[]` (polyline/polygon) or `geometry.center: Point`, `geometry.radius: number` (circle)
   - Returns: `Vector` entity (`setGeometry/remove`)
-- `addVectors(vectors: Vector[]) : this` (legacy batch helper)
-  - Accepts the same geometries as `addVector` in an array; prefer entity‑based API
 - `clearMarkers(): this` — remove all markers
 - `clearVectors(): this` — remove all vectors
 
@@ -190,15 +189,15 @@ Queries & Properties
 
 - `getCenter(): Point` — current center in world pixels
 - `getZoom(): number` — current zoom
-- `pointerAbs: { x: number; y: number } | null` — last pointer world position, or `null` when outside
+- `getPointerAbs(): { x: number; y: number } | null` — last pointer world position, or `null` when outside
 - `events: PublicEvents<EventMap>` — `on(name)` and `once(name)` accessors for map events
 
 ## Lifecycle
 
 ```ts
-// Activate/suspend (optionally release GL/VRAM)
-map.setActive(false, { releaseGL: true });
-map.setActive(true);
+// Suspend/resume (optionally release GL/VRAM)
+map.suspend({ releaseGL: true });
+map.resume();
 
 // Cleanup when removing the map
 map.destroy();

@@ -8,7 +8,7 @@ import type {
 	InertiaOptions,
 	MaxBoundsPx,
 	UpscaleFilterMode,
-	ActiveOptions,
+	SuspendOptions,
 	IconScaleFunction,
 	MarkerEventData,
 } from '../api/types';
@@ -158,7 +158,7 @@ export interface MapImpl {
 	setWheelSpeed?(v: number): void;
 	resize?(): void;
 	setMarkerHitboxesVisible?(on: boolean): void;
-	setActive?(on: boolean, opts?: ActiveOptions): void;
+	setActive?(on: boolean, opts?: SuspendOptions): void;
 	setIconScaleFunction?(fn: IconScaleFunction | null): void;
 	setAutoResize?(on: boolean): void;
 	setBackgroundColor?(color: string | { r: number; g: number; b: number; a?: number }): void;

@@ -1,5 +1,5 @@
 // Type-safe event bus with generic event map
-import { EventStream, type Listener, type Unsubscribe } from './stream';
+import { EventStream, type Listener } from './stream';
 
 export class TypedEventBus<EventMap = Record<string, unknown>> {
 	private listeners = new Map<keyof EventMap, Set<Listener<unknown>>>();
@@ -30,20 +30,5 @@ export class TypedEventBus<EventMap = Record<string, unknown>> {
 
 	when<K extends keyof EventMap>(name: K): Promise<EventMap[K]> {
 		return this.on<K>(name).first();
-	}
-
-	// Legacy compatibility methods
-	addListener<K extends keyof EventMap>(name: K, handler: (data: EventMap[K]) => void): Unsubscribe {
-		return this.on(name).each(handler);
-	}
-
-	removeListener<K extends keyof EventMap>(_name: K, _handler: (data: EventMap[K]) => void): void {
-		// Note: This doesn't actually remove the specific handler due to stream API design
-		// but is provided for compatibility
-	}
-
-	// Alias for backward compatibility
-	stream<K extends keyof EventMap>(name: K): EventStream<EventMap[K]> {
-		return this.on(name);
 	}
 }

@@ -4,13 +4,11 @@ Quick links to common tasks using the GTMap API.
 
 - Create a map: see [GTMap](api/Class.GTMap.md)
 - Configure imagery: set [image](api/Interface.MapOptions.md#image) (url/width/height) and optional wrap/bounds options
-- Loading spinner: configure [spinner](api/Interface.MapOptions.md#spinner) (size/thickness/color/speed)
 - Wrap & bounds: [setWrapX](api/Class.GTMap.md#setwrapx), [setMaxBoundsPx](api/Class.GTMap.md#setmaxboundspx), [setMaxBoundsViscosity](api/Class.GTMap.md#setmaxboundsviscosity)
 - Change the view: [ViewTransition](api/Interface.ViewTransition.md), [transition()](api/Class.GTMap.md#transition)
 - Add content: [addIcon](api/Class.GTMap.md#addicon), [addMarker](api/Class.GTMap.md#addmarker), [addVector](api/Class.GTMap.md#addvector)
 - Events: [MapEvents](api/Interface.MapEvents.md), [Layer.events](api/Class.Layer.md#events), [Marker.events](api/Class.Marker.md#events)
 - Utilities: [setAutoResize](api/Class.GTMap.md#setautoresize), [invalidateSize](api/Class.GTMap.md#invalidatesize), [setFpsCap](api/Class.GTMap.md#setfpscap), [setBackgroundColor](api/Class.GTMap.md#setbackgroundcolor)
- - Coordinate Transforms: [setCoordBounds](api/Class.GTMap.md#setcoordbounds), [translate](api/Class.GTMap.md#translate)
 
 Tip: The events pages list supported event names and payloads for IntelliSense.
 
@@ -23,11 +21,10 @@ Use the lists below to jump directly to types and members.
 - [GTMap](api/Class.GTMap.md)
 - [Layer](api/Class.Layer.md)
 - [Marker](api/Class.Marker.md)
-- [VectorEntity](api/Class.VectorEntity.md)
+- [Vector](api/Class.Vector.md)
 
 ### Interfaces
 
-- [ActiveOptions](api/Interface.ActiveOptions.md)
 - [AnimateOptions](api/Interface.AnimateOptions.md)
 - [ApplyOptions](api/Interface.ApplyOptions.md)
 - [ApplyResult](api/Interface.ApplyResult.md)
@@ -57,6 +54,7 @@ Use the lists below to jump directly to types and members.
 - [PublicEvents](api/Interface.PublicEvents.md)
 - [RenderStats](api/Interface.RenderStats.md)
 - [ResizeEventData](api/Interface.ResizeEventData.md)
+- [SuspendOptions](api/Interface.SuspendOptions.md)
 - [VectorData](api/Interface.VectorData.md)
 - [VectorEventMap](api/Interface.VectorEventMap.md)
 - [VectorEvents](api/Interface.VectorEvents.md)
@@ -75,11 +73,10 @@ Use the lists below to jump directly to types and members.
 - [Point](api/TypeAlias.Point.md)
 - [Polygon](api/TypeAlias.Polygon.md)
 - [Polyline](api/TypeAlias.Polyline.md)
+- [SourceBounds](api/TypeAlias.SourceBounds.md)
+- [TransformType](api/TypeAlias.TransformType.md)
 - [Unsubscribe](api/TypeAlias.Unsubscribe.md)
-- [Vector](api/TypeAlias.Vector.md)
 - [VectorGeometry](api/TypeAlias.VectorGeometry.md)
- - [SourceBounds](api/TypeAlias.SourceBounds.md)
- - [TransformType](api/TypeAlias.TransformType.md)
 
 ### Functions
 

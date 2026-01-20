@@ -82,8 +82,8 @@ map.events.on('load').each(({ size }) => console.log('loaded', size));
 // Debounced resize event with final size and DPR
 map.events.on('resize').each(({ size }) => console.log('resized', size));
 
-map.setActive(false, { releaseGL: true });
-map.setActive(true);
+map.suspend({ releaseGL: true });
+map.resume();
 // When done
 map.destroy();
 

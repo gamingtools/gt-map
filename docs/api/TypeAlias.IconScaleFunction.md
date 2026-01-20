@@ -13,10 +13,13 @@
   - [minZoom](#minzoom)
   - [maxZoom](#maxzoom)
 - [Returns](#returns)
+- [Remarks](#remarks)
 
 > **IconScaleFunction** = (`zoom`, `minZoom`, `maxZoom`) => `number`
 
-Defined in: [api/types.ts:395](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L395)
+Defined in: [api/types.ts:428](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/types.ts#L428)
+
+Icon scaling policy.
 
 ## Parameters
 
@@ -24,14 +27,31 @@ Defined in: [api/types.ts:395](https://github.com/gamingtools/gt-map/blob/02ad96
 
 `number`
 
+Current map zoom (fractional allowed)
+
 ### minZoom
 
 `number`
+
+Effective minimum zoom for the current image/view
 
 ### maxZoom
 
 `number`
 
+Effective maximum zoom for the current image/view
+
 ## Returns
 
 `number`
+
+A scale multiplier where `1.0` means screen‑fixed size.
+
+## Remarks
+
+The return value multiplies each icon's intrinsic width/height and its anchor.
+Use `() => 1` to keep icons screen‑fixed; use a zoom‑based curve (e.g., `Math.pow(2, zoom - 3)`) to
+make icons appear to scale with the world.
+
+The function is evaluated per frame for the current zoom. For stability, prefer continuous curves
+or clamp the output to a sensible range.

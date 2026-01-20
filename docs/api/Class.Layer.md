@@ -12,9 +12,9 @@
 - [Type Parameters](#type-parameters)
   - [T](#t)
 - [Properties](#properties)
-  - [events](#events)
   - [id](#id)
 - [Accessors](#accessors)
+  - [events](#events)
   - [visible](#visible)
 - [Methods](#methods)
   - [add()](#add)
@@ -24,7 +24,7 @@
   - [remove()](#remove)
   - [setVisible()](#setvisible)
 
-Defined in: [entities/Layer.ts:24](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L24)
+Defined in: [entities/layer.ts:24](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L24)
 
 Layer<T> - a collection of entities with lifecycle and visibility.
 
@@ -40,23 +40,29 @@ Emits typed events on add/remove/clear/visibility change.
 
 ## Properties
 
-### events
-
-> `readonly` **events**: [`LayerEvents`](Interface.LayerEvents.md)\<`T`\>
-
-Defined in: [entities/Layer.ts:28](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L28)
-
-Read‑only typed events for this layer.
-
-***
-
 ### id
 
 > `readonly` **id**: `string`
 
-Defined in: [entities/Layer.ts:25](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L25)
+Defined in: [entities/layer.ts:25](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L25)
 
 ## Accessors
+
+### events
+
+#### Get Signature
+
+> **get** **events**(): [`LayerEvents`](Interface.LayerEvents.md)\<`T`\>
+
+Defined in: [entities/layer.ts:28](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L28)
+
+Read‑only typed events for this layer.
+
+##### Returns
+
+[`LayerEvents`](Interface.LayerEvents.md)\<`T`\>
+
+***
 
 ### visible
 
@@ -64,7 +70,7 @@ Defined in: [entities/Layer.ts:25](https://github.com/gamingtools/gt-map/blob/02
 
 > **get** **visible**(): `boolean`
 
-Defined in: [entities/Layer.ts:95](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L95)
+Defined in: [entities/layer.ts:97](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L97)
 
 Current visibility state.
 
@@ -78,7 +84,7 @@ Current visibility state.
 
 > **add**(`entity`): `T`
 
-Defined in: [entities/Layer.ts:52](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L52)
+Defined in: [entities/layer.ts:54](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L54)
 
 Add an entity and emit `entityadd`.
 
@@ -98,7 +104,7 @@ Add an entity and emit `entityadd`.
 
 > **clear**(): `void`
 
-Defined in: [entities/Layer.ts:71](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L71)
+Defined in: [entities/layer.ts:73](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L73)
 
 Remove all entities and emit `clear`.
 
@@ -112,7 +118,7 @@ Remove all entities and emit `clear`.
 
 > **get**(`id`): `undefined` \| `T`
 
-Defined in: [entities/Layer.ts:87](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L87)
+Defined in: [entities/layer.ts:89](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L89)
 
 Get an entity by id.
 
@@ -132,7 +138,7 @@ Get an entity by id.
 
 > **getAll**(): `T`[]
 
-Defined in: [entities/Layer.ts:91](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L91)
+Defined in: [entities/layer.ts:93](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L93)
 
 Get a snapshot array of all entities.
 
@@ -146,7 +152,7 @@ Get a snapshot array of all entities.
 
 > **remove**(`entityOrId`): `void`
 
-Defined in: [entities/Layer.ts:60](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L60)
+Defined in: [entities/layer.ts:62](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L62)
 
 Remove an entity (by instance or id) and emit `entityremove`.
 
@@ -166,7 +172,7 @@ Remove an entity (by instance or id) and emit `entityremove`.
 
 > **setVisible**(`visible`): `void`
 
-Defined in: [entities/Layer.ts:79](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/entities/Layer.ts#L79)
+Defined in: [entities/layer.ts:81](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/layer.ts#L81)
 
 Set layer visibility and emit `visibilitychange` when it changes.
 

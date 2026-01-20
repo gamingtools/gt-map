@@ -172,8 +172,8 @@ map.events.on('resize').each(({ size }) => {
 });
 
 // Suspend/resume rendering
-map.setActive(false, { releaseGL: true });
-map.setActive(true);
+map.suspend({ releaseGL: true });
+map.resume();
 
 // Cleanup when removing the map
 map.destroy();
@@ -388,9 +388,9 @@ Progressive (optional): Provide a low‑resolution `preview` along with the full
 
 ```ts
 const map = new GTMap(el, {
-  preview: { url: '/hb_2k.webp', width: 2048, height: 2048 },
-  image:   { url: '/hb_8k.webp', width: 8192, height: 8192 },
-  // other options
+	preview: { url: '/hb_2k.webp', width: 2048, height: 2048 },
+	image: { url: '/hb_8k.webp', width: 8192, height: 8192 },
+	// other options
 });
 ```
 

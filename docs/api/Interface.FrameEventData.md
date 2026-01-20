@@ -12,7 +12,7 @@
   - [now](#now)
   - [stats?](#stats)
 
-Defined in: [api/types.ts:209](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L209)
+Defined in: [api/types.ts:229](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/types.ts#L229)
 
 Per‑frame payload for diagnostics/HUD.
 
@@ -22,7 +22,7 @@ Per‑frame payload for diagnostics/HUD.
 
 > **now**: `number`
 
-Defined in: [api/types.ts:211](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L211)
+Defined in: [api/types.ts:231](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/types.ts#L231)
 
 High‑resolution timestamp for the frame.
 
@@ -32,6 +32,9 @@ High‑resolution timestamp for the frame.
 
 > `optional` **stats**: [`RenderStats`](Interface.RenderStats.md)
 
-Defined in: [api/types.ts:213](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L213)
+Defined in: [api/types.ts:238](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/types.ts#L238)
 
 Optional renderer stats if enabled.
+
+Note: At present only `frame` is populated by the engine. Other fields are reserved for
+future diagnostics and may remain `undefined` in current builds.

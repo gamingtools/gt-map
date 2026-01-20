@@ -12,7 +12,7 @@
   - [size](#size)
   - [view](#view)
 
-Defined in: [api/types.ts:226](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L226)
+Defined in: [api/types.ts:251](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/types.ts#L251)
 
 Resize event payload: fired after a debounced resize completes.
 
@@ -22,7 +22,7 @@ Resize event payload: fired after a debounced resize completes.
 
 > **size**: `object`
 
-Defined in: [api/types.ts:230](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L230)
+Defined in: [api/types.ts:255](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/types.ts#L255)
 
 Final container size and device pixel ratio.
 
@@ -44,6 +44,6 @@ Final container size and device pixel ratio.
 
 > **view**: [`ViewState`](Interface.ViewState.md)
 
-Defined in: [api/types.ts:228](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/types.ts#L228)
+Defined in: [api/types.ts:253](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/types.ts#L253)
 
 Current view state snapshot.

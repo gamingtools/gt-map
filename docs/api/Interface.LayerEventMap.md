@@ -16,7 +16,7 @@
   - [entityremove](#entityremove)
   - [visibilitychange](#visibilitychange)
 
-Defined in: [api/events/maps.ts:79](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/events/maps.ts#L79)
+Defined in: [api/events/maps.ts:79](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L79)
 
 Events emitted by a Layer for entity management and visibility.
 
@@ -32,7 +32,7 @@ Events emitted by a Layer for entity management and visibility.
 
 > **clear**: `object`
 
-Defined in: [api/events/maps.ts:85](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/events/maps.ts#L85)
+Defined in: [api/events/maps.ts:85](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L85)
 
 All entities were removed.
 
@@ -42,7 +42,7 @@ All entities were removed.
 
 > **entityadd**: `object`
 
-Defined in: [api/events/maps.ts:81](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/events/maps.ts#L81)
+Defined in: [api/events/maps.ts:81](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L81)
 
 A new entity was added to the layer.
 
@@ -56,7 +56,7 @@ A new entity was added to the layer.
 
 > **entityremove**: `object`
 
-Defined in: [api/events/maps.ts:83](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/events/maps.ts#L83)
+Defined in: [api/events/maps.ts:83](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L83)
 
 An entity was removed from the layer.
 
@@ -70,7 +70,7 @@ An entity was removed from the layer.
 
 > **visibilitychange**: `object`
 
-Defined in: [api/events/maps.ts:87](https://github.com/gamingtools/gt-map/blob/02ad961dd733041f2c6c39034ee7c302a553f45a/packages/gtmap/src/api/events/maps.ts#L87)
+Defined in: [api/events/maps.ts:87](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L87)
 
 Visibility of the layer changed.
 
