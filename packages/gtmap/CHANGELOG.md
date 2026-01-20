@@ -1,36 +1,40 @@
 # Changelog
 
 ## v0.2.7 - 2025-09-23
+
 - Loading: progressive preview path with seamless swap; zero-jank uploads; fix preview centering (f0189cc)
 - Upscale: default to linear filtering; update docs/examples (
-e03ca9)
+  e03ca9)
 - fixes (
-96ce4a)
-
+  96ce4a)
 
 ## v0.2.6 - 2025-09-22
+
 - Docs: update for spinner-only loading + grid default (b9f6048)
 - Grid: disable by default (start with grid hidden) (
-363118)
-- Spinner options: customizable color/size/thickness/speed via MapOptions.spinner (
-62c8db)
-- Remove progressive preview path: spinner-only loading is now default (
-2ab129)
-- Input gating: block all interactions until full image ready when progressive=false (
-3df80c)
-- Loading UX: gate all rendering until full image ready when progressive=false (
-0db74c)
-- Events: include marker data in map-level marker events (
-7355f9)
-- Loading UX: optional spinner overlay and non-progressive mode (
-090049)
-- Raster upgrade: handle NPOT + oversize textures gracefully (
-1e1fdc)
-- Raster upgrade: viewport-prioritized, adaptive chunked uploads, idle gating (iOS-safe) (
-1c32e0)
-- docs: document coordinate transforms (setCoordBounds/translate) with examples; update overview and guide (
-310c54)
 
+363118.
+
+- Spinner options: customizable color/size/thickness/speed via MapOptions.spinner (
+  62c8db)
+- Remove progressive preview path: spinner-only loading is now default (
+  2ab129)
+- Input gating: block all interactions until full image ready when progressive=false (
+  3df80c)
+- Loading UX: gate all rendering until full image ready when progressive=false (
+  0db74c)
+- Events: include marker data in map-level marker events (
+  7355f9)
+- Loading UX: optional spinner overlay and non-progressive mode (
+
+90049.
+
+- Raster upgrade: handle NPOT + oversize textures gracefully (
+  1e1fdc)
+- Raster upgrade: viewport-prioritized, adaptive chunked uploads, idle gating (iOS-safe) (
+  1c32e0)
+- docs: document coordinate transforms (setCoordBounds/translate) with examples; update overview and guide (
+  310c54)
 
 ## v0.2.5 - 2025-09-21
 
