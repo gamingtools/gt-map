@@ -376,6 +376,7 @@ export interface MarkerInternal {
 	type: string;
 	size?: number;
 	rotation?: number;
+	zIndex?: number;
 	id: string;
 }
 

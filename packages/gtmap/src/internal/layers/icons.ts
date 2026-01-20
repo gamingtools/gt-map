@@ -6,7 +6,7 @@ import { IconMaskBuilder } from './icons/icon-mask-builder';
 import { createAtlas } from './icons/icon-atlas';
 
 export type IconDef = { id: string; url: string; width: number; height: number; anchorX?: number; anchorY?: number };
-export type MarkerRenderData = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
+export type MarkerRenderData = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number; zIndex?: number };
 
 /**
  * IconRenderer handles efficient WebGL rendering of map markers and decals.
@@ -273,7 +273,7 @@ export class IconRenderer {
 		this.maskBuilder.start();
 	}
 
-	setMarkers(markers: Array<MarkerRenderData | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
+	setMarkers(markers: Array<MarkerRenderData | { lng: number; lat: number; type: string; size?: number; rotation?: number; zIndex?: number }>) {
 		// Normalize to internal MarkerRenderData list with ids
 		let idx = 0;
 		const norm: MarkerRenderData[] = [];
@@ -281,8 +281,8 @@ export class IconRenderer {
 			if ('id' in (m as Record<string, unknown>)) {
 				norm.push(m as MarkerRenderData);
 			} else {
-				const mm = m as { lng: number; lat: number; type: string; size?: number; rotation?: number };
-				norm.push({ id: `m${idx++}`, lng: mm.lng, lat: mm.lat, type: mm.type, size: mm.size, rotation: mm.rotation });
+				const mm = m as { lng: number; lat: number; type: string; size?: number; rotation?: number; zIndex?: number };
+				norm.push({ id: `m${idx++}`, lng: mm.lng, lat: mm.lat, type: mm.type, size: mm.size, rotation: mm.rotation, zIndex: mm.zIndex });
 			}
 		}
 		this.markers = norm;
@@ -290,7 +290,7 @@ export class IconRenderer {
 		this.rebuildTypeData();
 	}
 
-	setDecals(decals: Array<MarkerRenderData | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
+	setDecals(decals: Array<MarkerRenderData | { lng: number; lat: number; type: string; size?: number; rotation?: number; zIndex?: number }>) {
 		// Normalize to internal MarkerRenderData list with ids
 		let idx = 0;
 		const norm: MarkerRenderData[] = [];
@@ -298,8 +298,8 @@ export class IconRenderer {
 			if ('id' in (d as Record<string, unknown>)) {
 				norm.push(d as MarkerRenderData);
 			} else {
-				const dd = d as { lng: number; lat: number; type: string; size?: number; rotation?: number };
-				norm.push({ id: `d${idx++}`, lng: dd.lng, lat: dd.lat, type: dd.type, size: dd.size, rotation: dd.rotation });
+				const dd = d as { lng: number; lat: number; type: string; size?: number; rotation?: number; zIndex?: number };
+				norm.push({ id: `d${idx++}`, lng: dd.lng, lat: dd.lat, type: dd.type, size: dd.size, rotation: dd.rotation, zIndex: dd.zIndex });
 			}
 		}
 		this.decals = norm;
@@ -335,6 +335,10 @@ export class IconRenderer {
 	private rebuildTypeData() {
 		// Combine markers and decals for rendering
 		const all = [...this.markers, ...this.decals];
+
+		// Sort by zIndex (lower values render first, appear behind higher values)
+		all.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+
 		const byType = new Map<string, MarkerRenderData[]>();
 		for (const m of all) {
 			let arr = byType.get(m.type);

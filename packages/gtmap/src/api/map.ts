@@ -976,6 +976,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				type: this._getVisualIconId(m.visual),
 				size: this._getScaledSize(m.visual, m.scale),
 				rotation: m.rotation,
+				zIndex: m.zIndex,
 				id: m.id,
 			}));
 			this._impl.setMarkers(internalMarkers);
@@ -1006,6 +1007,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				type: this._getVisualIconId(d.visual),
 				size: this._getScaledSize(d.visual, d.scale),
 				rotation: d.rotation,
+				zIndex: d.zIndex,
 				id: d.id,
 			}));
 			// Decals use same renderer as markers for now

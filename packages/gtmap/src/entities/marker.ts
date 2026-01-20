@@ -18,6 +18,8 @@ export interface MarkerOptions<T = unknown> {
 	rotation?: number;
 	/** Opacity (0-1). */
 	opacity?: number;
+	/** Z-index for stacking order (higher values render on top). */
+	zIndex?: number;
 	/** Arbitrary user data attached to the marker. */
 	data?: T;
 }
@@ -56,6 +58,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	private _scale: number;
 	private _rotation: number;
 	private _opacity: number;
+	private _zIndex: number;
 	private _data?: T;
 	private _onChange?: () => void;
 	private _activeTx?: MarkerTransitionImpl<T>;
@@ -79,6 +82,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		this._scale = opts.scale ?? 1;
 		this._rotation = opts.rotation ?? 0;
 		this._opacity = opts.opacity ?? 1;
+		this._zIndex = opts.zIndex ?? 0;
 		this._data = opts.data;
 		this._onChange = onChange;
 	}
@@ -106,6 +110,10 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	/** Opacity (0-1). */
 	get opacity(): number {
 		return this._opacity;
+	}
+	/** Z-index for stacking order (higher values render on top). */
+	get zIndex(): number {
+		return this._zIndex;
 	}
 	/** Arbitrary user data attached to the marker. */
 	get data(): T | undefined {
@@ -136,11 +144,12 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * @param opts - Partial style options
 	 * @returns This marker for chaining
 	 */
-	setStyle(opts: { visual?: Visual; scale?: number; rotation?: number; opacity?: number }): this {
+	setStyle(opts: { visual?: Visual; scale?: number; rotation?: number; opacity?: number; zIndex?: number }): this {
 		if (opts.visual !== undefined) this._visual = opts.visual;
 		if (opts.scale !== undefined) this._scale = opts.scale;
 		if (opts.rotation !== undefined) this._rotation = opts.rotation;
 		if (opts.opacity !== undefined) this._opacity = opts.opacity;
+		if (opts.zIndex !== undefined) this._zIndex = opts.zIndex;
 		this._onChange?.();
 		return this;
 	}
