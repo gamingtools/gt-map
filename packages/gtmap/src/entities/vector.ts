@@ -12,8 +12,9 @@ export type VectorType = 'polyline' | 'polygon' | 'circle';
  *
  * @public
  */
-export interface VectorOptions {
-	// Placeholder for future styling options
+export interface VectorOptions<T = unknown> {
+	/** User data attached to the vector. */
+	data?: T;
 }
 
 let _vidSeq = 0;
@@ -29,9 +30,10 @@ function genVectorId(): string {
  * @remarks
  * Events are minimal for now (`remove`); interaction events can be added later.
  */
-export class Vector extends EventedEntity<VectorEventMap> {
+export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
 	readonly id: string;
 	private _geometry: VectorGeometry;
+	private _data?: T;
 	private _onChange?: () => void;
 
 	/**
@@ -39,20 +41,26 @@ export class Vector extends EventedEntity<VectorEventMap> {
 	 *
 	 * @public
 	 * @param geometry - Discriminated union of vector shapes
-	 * @param _opts - Reserved for future styling options
+	 * @param opts - Options including user data
 	 * @param onChange - Internal callback for renderer sync
 	 * @internal
 	 */
-	constructor(geometry: VectorGeometry, _opts: VectorOptions = {}, onChange?: () => void) {
+	constructor(geometry: VectorGeometry, opts: VectorOptions<T> = {}, onChange?: () => void) {
 		super();
 		this.id = genVectorId();
 		this._geometry = geometry;
+		this._data = opts.data;
 		this._onChange = onChange;
 	}
 
 	/** Get current geometry. */
 	get geometry(): VectorGeometry {
 		return this._geometry;
+	}
+
+	/** Get user data attached to this vector. */
+	get data(): T | undefined {
+		return this._data;
 	}
 
 	/**
@@ -73,12 +81,28 @@ export class Vector extends EventedEntity<VectorEventMap> {
 	}
 
 	/**
+	 * Update user data attached to this vector.
+	 *
+	 * @public
+	 * @param data - Arbitrary user data
+	 * @returns This vector for chaining
+	 * @example
+	 * ```ts
+	 * vector.setData({ region: 'north', level: 5 });
+	 * ```
+	 */
+	setData(data: T): this {
+		this._data = data;
+		return this;
+	}
+
+	/**
 	 * Get a snapshot used in event payloads.
 	 *
 	 * @public
 	 */
-	toData(): VectorData {
-		return { id: this.id, geometry: this._geometry };
+	toData(): VectorData<T> {
+		return { id: this.id, geometry: this._geometry, data: this._data };
 	}
 
 	/**

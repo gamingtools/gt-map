@@ -71,10 +71,10 @@ export interface MarkerEvents<T = unknown> extends PublicEvents<MarkerEventMap<T
 }
 
 /** Vector events surface with typed names and payloads. */
-export interface VectorEvents extends PublicEvents<VectorEventMap> {
+export interface VectorEvents<T = unknown> extends PublicEvents<VectorEventMap<T>> {
 	/** Supported names: 'remove' */
-	on<K extends keyof VectorEventMap & string>(event: K): EventSubscription<VectorEventMap[K]>;
-	on<K extends keyof VectorEventMap & string>(event: K, handler: (value: VectorEventMap[K]) => void): Unsubscribe;
+	on<K extends keyof VectorEventMap<T> & string>(event: K): EventSubscription<VectorEventMap<T>[K]>;
+	on<K extends keyof VectorEventMap<T> & string>(event: K, handler: (value: VectorEventMap<T>[K]) => void): Unsubscribe;
 }
 
 /** EntityCollection events surface with typed names and payloads. */

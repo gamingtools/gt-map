@@ -46,10 +46,10 @@ export type { ViewTransition };
 /**
  * @group Overview
  */
-export class GTMap<TMarkerData = unknown> {
+export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	private _impl: MapImpl;
 	/**
-	 * Marker layer for this map. Use to add/remove markers and subscribe to layer events.
+	 * Marker collection for this map. Use to add/remove markers and subscribe to collection events.
 	 *
 	 * @group Content
 	 * @example
@@ -61,7 +61,7 @@ export class GTMap<TMarkerData = unknown> {
 	 * Vector collection for this map. Use to add/remove vectors and subscribe to collection events.
 	 * @group Content
 	 */
-	readonly vectors: EntityCollection<Vector>;
+	readonly vectors: EntityCollection<Vector<TVectorData>>;
 	private _defaultIconReady = false;
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
 	private _markersDirty = false;
@@ -121,7 +121,7 @@ export class GTMap<TMarkerData = unknown> {
 		const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
 		const onVectorsChanged = () => this._flushVectors();
 		this.markers = new EntityCollection<Marker<TMarkerData>>({ id: 'markers', onChange: onMarkersChanged });
-		this.vectors = new EntityCollection<Vector>({ id: 'vectors', onChange: onVectorsChanged });
+		this.vectors = new EntityCollection<Vector<TVectorData>>({ id: 'vectors', onChange: onVectorsChanged });
 
 		// Wire internal marker events to per-marker entity events
 		const toPointerMeta = (ev: { originalEvent?: PointerEvent | MouseEvent } | undefined) => {
@@ -463,12 +463,15 @@ export class GTMap<TMarkerData = unknown> {
 	 * ```ts
 	 * // Add a polyline
 	 * const v = map.addVector({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] });
-	 * // Later, update its geometry
-	 * v.setGeometry({ type: 'circle', center: { x: 200, y: 200 }, radius: 40 });
+	 * // Add a region with data
+	 * const region = map.addVector(
+	 *   { type: 'polygon', points: [...] },
+	 *   { data: { name: 'North Zone', level: 5 } }
+	 * );
 	 * ```
 	 */
-	addVector(geometry: VectorGeom): Vector {
-		const v = new Vector(geometry, {}, () => this._flushVectors());
+	addVector(geometry: VectorGeom, opts?: { data?: TVectorData }): Vector<TVectorData> {
+		const v = new Vector<TVectorData>(geometry, { data: opts?.data }, () => this._flushVectors());
 		this.vectors.add(v);
 		return v;
 	}

@@ -17,9 +17,10 @@ export type VectorGeometry = PolylineT | PolygonT | CircleT;
 /**
  * Lightweight snapshot of a vector used in event payloads.
  */
-export interface VectorData {
+export interface VectorData<T = unknown> {
 	id: string;
 	geometry: VectorGeometry;
+	data?: T;
 }
 
 // Pointer metadata for device-specific behavior
@@ -70,9 +71,9 @@ export interface MarkerEventMap<T = unknown> {
 }
 
 /** Events emitted by a Vector instance. */
-export interface VectorEventMap {
+export interface VectorEventMap<T = unknown> {
 	/** Vector was removed. */
-	remove: { vector: VectorData };
+	remove: { vector: VectorData<T> };
 }
 
 /** Events emitted by an EntityCollection for entity management and visibility. */
