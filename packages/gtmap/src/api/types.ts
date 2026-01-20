@@ -146,19 +146,16 @@ export type Circle = {
 	style?: VectorStyle;
 };
 
-// Internal union for type guards (use VectorGeometry for public API)
-type VectorShape = Polyline | Polygon | Circle;
-
 // Type guards for vector geometry
-export function isPolyline(v: VectorShape): v is Polyline {
+export function isPolyline(v: Polyline | Polygon | Circle): v is Polyline {
 	return v.type === 'polyline';
 }
 
-export function isPolygon(v: VectorShape): v is Polygon {
+export function isPolygon(v: Polyline | Polygon | Circle): v is Polygon {
 	return v.type === 'polygon';
 }
 
-export function isCircle(v: VectorShape): v is Circle {
+export function isCircle(v: Polyline | Polygon | Circle): v is Circle {
 	return v.type === 'circle';
 }
 

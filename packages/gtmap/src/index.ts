@@ -9,6 +9,8 @@ export type {
 	Point,
 	ImageSourceOptions,
 	MapOptions,
+	SpinnerOptions,
+	MaxBoundsPx,
 	IconDef,
 	IconHandle,
 	VectorStyle,

@@ -2,18 +2,26 @@
 
 ***
 
-# Interface: VectorEventMap
+# Interface: VectorEventMap\<T\>
 
 [← Back to API index](./README.md)
 
 ## Contents
 
+- [Type Parameters](#type-parameters)
+  - [T](#t)
 - [Properties](#properties)
   - [remove](#remove)
 
-Defined in: [api/events/maps.ts:73](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L73)
+Defined in: [api/events/maps.ts:74](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L74)
 
 Events emitted by a Vector instance.
+
+## Type Parameters
+
+### T
+
+`T` = `unknown`
 
 ## Properties
 
@@ -21,10 +29,10 @@ Events emitted by a Vector instance.
 
 > **remove**: `object`
 
-Defined in: [api/events/maps.ts:75](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L75)
+Defined in: [api/events/maps.ts:76](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L76)
 
 Vector was removed.
 
 #### vector
 
-> **vector**: [`VectorData`](Interface.VectorData.md)
+> **vector**: [`VectorData`](Interface.VectorData.md)\<`T`\>

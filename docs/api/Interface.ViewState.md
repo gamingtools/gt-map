@@ -15,7 +15,7 @@
   - [wrapX](#wrapx)
   - [zoom](#zoom)
 
-Defined in: [api/types.ts:13](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L13)
+Defined in: [api/types.ts:13](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L13)
 
 ## Properties
 
@@ -23,7 +23,7 @@ Defined in: [api/types.ts:13](https://github.com/gamingtools/gt-map/blob/83eed0a
 
 > **center**: [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:14](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L14)
+Defined in: [api/types.ts:14](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L14)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [api/types.ts:14](https://github.com/gamingtools/gt-map/blob/83eed0a
 
 > **maxZoom**: `number`
 
-Defined in: [api/types.ts:17](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L17)
+Defined in: [api/types.ts:17](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L17)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [api/types.ts:17](https://github.com/gamingtools/gt-map/blob/83eed0a
 
 > **minZoom**: `number`
 
-Defined in: [api/types.ts:16](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L16)
+Defined in: [api/types.ts:16](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L16)
 
 ***
 
@@ -47,7 +47,7 @@ Defined in: [api/types.ts:16](https://github.com/gamingtools/gt-map/blob/83eed0a
 
 > **wrapX**: `boolean`
 
-Defined in: [api/types.ts:18](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L18)
+Defined in: [api/types.ts:18](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L18)
 
 ***
 
@@ -55,4 +55,4 @@ Defined in: [api/types.ts:18](https://github.com/gamingtools/gt-map/blob/83eed0a
 
 > **zoom**: `number`
 
-Defined in: [api/types.ts:15](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L15)
+Defined in: [api/types.ts:15](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L15)

@@ -15,7 +15,7 @@
   - [on()](#on)
   - [once()](#once)
 
-Defined in: [api/events/public.ts:63](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/public.ts#L63)
+Defined in: [api/events/public.ts:63](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/public.ts#L63)
 
 Marker events surface with typed names and payloads.
 
@@ -37,7 +37,7 @@ Marker events surface with typed names and payloads.
 
 > **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`MarkerEventMap`](Interface.MarkerEventMap.md)\<`T`\>\[`K`\]\>
 
-Defined in: [api/events/public.ts:69](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/public.ts#L69)
+Defined in: [api/events/public.ts:69](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/public.ts#L69)
 
 Subscribe to a marker event.
 
@@ -67,7 +67,7 @@ Supported names: 'click' | 'tap' | 'longpress' | 'pointerdown' | 'pointerup' | '
 
 > **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:70](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/public.ts#L70)
+Defined in: [api/events/public.ts:70](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/public.ts#L70)
 
 Subscribe to a named event.
 
@@ -113,7 +113,7 @@ marker.events.on('click').each((e) => {
 
 > **once**\<`K`\>(`event`): `Promise`\<[`MarkerEventMap`](Interface.MarkerEventMap.md)\<`T`\>\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 

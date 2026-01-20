@@ -2,7 +2,7 @@
 
 ***
 
-# Class: Vector
+# Class: Vector\<T\>
 
 [← Back to API index](./README.md)
 
@@ -10,16 +10,20 @@
 
 - [Remarks](#remarks)
 - [Extends](#extends)
+- [Type Parameters](#type-parameters)
+  - [T](#t)
 - [Properties](#properties)
   - [id](#id)
 - [Accessors](#accessors)
+  - [data](#data)
   - [events](#events)
   - [geometry](#geometry)
 - [Methods](#methods)
+  - [setData()](#setdata)
   - [setGeometry()](#setgeometry)
   - [toData()](#todata)
 
-Defined in: [entities/vector.ts:32](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L32)
+Defined in: [entities/vector.ts:33](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L33)
 
 Vector - a simple geometric overlay (polyline, polygon, or circle).
 
@@ -29,7 +33,13 @@ Events are minimal for now (`remove`); interaction events can be added later.
 
 ## Extends
 
-- `EventedEntity`\<[`VectorEventMap`](Interface.VectorEventMap.md)\>
+- `EventedEntity`\<[`VectorEventMap`](Interface.VectorEventMap.md)\<`T`\>\>
+
+## Type Parameters
+
+### T
+
+`T` = `unknown`
 
 ## Properties
 
@@ -37,9 +47,25 @@ Events are minimal for now (`remove`); interaction events can be added later.
 
 > `readonly` **id**: `string`
 
-Defined in: [entities/vector.ts:33](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L33)
+Defined in: [entities/vector.ts:34](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L34)
 
 ## Accessors
+
+### data
+
+#### Get Signature
+
+> **get** **data**(): `undefined` \| `T`
+
+Defined in: [entities/vector.ts:62](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L62)
+
+Get user data attached to this vector.
+
+##### Returns
+
+`undefined` \| `T`
+
+***
 
 ### events
 
@@ -47,7 +73,7 @@ Defined in: [entities/vector.ts:33](https://github.com/gamingtools/gt-map/blob/8
 
 > **get** **events**(): [`PublicEvents`](Interface.PublicEvents.md)\<`EventMap`\>
 
-Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/base.ts#L7)
+Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/base.ts#L7)
 
 ##### Returns
 
@@ -65,7 +91,7 @@ Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/83ee
 
 > **get** **geometry**(): [`VectorGeometry`](TypeAlias.VectorGeometry.md)
 
-Defined in: [entities/vector.ts:54](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L54)
+Defined in: [entities/vector.ts:57](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L57)
 
 Get current geometry.
 
@@ -75,11 +101,41 @@ Get current geometry.
 
 ## Methods
 
+### setData()
+
+> **setData**(`data`): `this`
+
+Defined in: [entities/vector.ts:94](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L94)
+
+Update user data attached to this vector.
+
+#### Parameters
+
+##### data
+
+`T`
+
+Arbitrary user data
+
+#### Returns
+
+`this`
+
+This vector for chaining
+
+#### Example
+
+```ts
+vector.setData({ region: 'north', level: 5 });
+```
+
+***
+
 ### setGeometry()
 
 > **setGeometry**(`geometry`): `this`
 
-Defined in: [entities/vector.ts:69](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L69)
+Defined in: [entities/vector.ts:77](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L77)
 
 Replace the vector geometry and trigger a renderer sync.
 
@@ -106,12 +162,12 @@ v.setGeometry({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] 
 
 ### toData()
 
-> **toData**(): [`VectorData`](Interface.VectorData.md)
+> **toData**(): [`VectorData`](Interface.VectorData.md)\<`T`\>
 
-Defined in: [entities/vector.ts:80](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L80)
+Defined in: [entities/vector.ts:104](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L104)
 
 Get a snapshot used in event payloads.
 
 #### Returns
 
-[`VectorData`](Interface.VectorData.md)
+[`VectorData`](Interface.VectorData.md)\<`T`\>

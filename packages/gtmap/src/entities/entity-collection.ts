@@ -39,6 +39,7 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	}
 	private _entities: Map<string, T> = new Map();
 	private _visible = true;
+	private _filter: ((entity: T) => boolean) | null = null;
 	private _onChange?: () => void;
 
 	/**
@@ -96,5 +97,77 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	/** Current visibility state. */
 	get visible(): boolean {
 		return this._visible;
+	}
+
+	/**
+	 * Set a filter predicate to control entity visibility.
+	 * Entities not matching the predicate will be hidden from rendering.
+	 * Pass `null` to clear the filter and show all entities.
+	 *
+	 * @public
+	 * @param predicate - Filter function or null to clear
+	 * @returns This collection for chaining
+	 * @example
+	 * ```ts
+	 * // Show only resources
+	 * map.markers.setFilter(m => m.data.category === 'resource');
+	 * // Clear filter
+	 * map.markers.setFilter(null);
+	 * ```
+	 */
+	setFilter(predicate: ((entity: T) => boolean) | null): this {
+		this._filter = predicate;
+		this._onChange?.();
+		return this;
+	}
+
+	/** Get the current filter predicate, or null if none. */
+	get filter(): ((entity: T) => boolean) | null {
+		return this._filter;
+	}
+
+	/**
+	 * Get entities that pass the current filter (or all if no filter).
+	 * Used internally by the renderer.
+	 */
+	getFiltered(): T[] {
+		const all = Array.from(this._entities.values());
+		return this._filter ? all.filter(this._filter) : all;
+	}
+
+	/**
+	 * Find entities matching a predicate.
+	 *
+	 * @public
+	 * @param predicate - Filter function
+	 * @returns Array of matching entities
+	 * @example
+	 * ```ts
+	 * const rareItems = map.markers.find(m => m.data.tier === 'rare');
+	 * ```
+	 */
+	find(predicate: (entity: T) => boolean): T[] {
+		return Array.from(this._entities.values()).filter(predicate);
+	}
+
+	/**
+	 * Count entities, optionally matching a predicate.
+	 *
+	 * @public
+	 * @param predicate - Optional filter function
+	 * @returns Count of matching entities (or total if no predicate)
+	 * @example
+	 * ```ts
+	 * const total = map.markers.count();
+	 * const resourceCount = map.markers.count(m => m.data.category === 'resource');
+	 * ```
+	 */
+	count(predicate?: (entity: T) => boolean): number {
+		if (!predicate) return this._entities.size;
+		let n = 0;
+		for (const ent of this._entities.values()) {
+			if (predicate(ent)) n++;
+		}
+		return n;
 	}
 }

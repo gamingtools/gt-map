@@ -782,7 +782,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			this._markersFlushScheduled = false;
 			if (!this._markersDirty) return;
 			this._markersDirty = false;
-			const list = this.markers.getAll();
+			const list = this.markers.getFiltered();
 			const internalMarkers: MarkerInternal[] = list.map((m) => ({
 				lng: m.x,
 				lat: m.y,
@@ -803,7 +803,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	}
 
 	private _flushVectors() {
-		const list = this.vectors.getAll();
+		const list = this.vectors.getFiltered();
 		const internalVectors: VectorPrimitiveInternal[] = list.map((v) => {
 			const g = v.geometry;
 			const typeSymbol = getVectorTypeSymbol(g.type);

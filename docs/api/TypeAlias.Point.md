@@ -15,7 +15,7 @@
 
 > **Point** = `object`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L10)
 
 Comprehensive type definitions for GTMap.
 
@@ -30,7 +30,7 @@ Prefer these types over duplicating shapes in app code.
 
 > **x**: `number`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L10)
 
 ***
 
@@ -38,4 +38,4 @@ Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/83eed0a
 
 > **y**: `number`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L10)

@@ -16,7 +16,7 @@
   - [entityremove](#entityremove)
   - [visibilitychange](#visibilitychange)
 
-Defined in: [api/events/maps.ts:79](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L79)
+Defined in: [api/events/maps.ts:80](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L80)
 
 Events emitted by an EntityCollection for entity management and visibility.
 
@@ -32,7 +32,7 @@ Events emitted by an EntityCollection for entity management and visibility.
 
 > **clear**: `object`
 
-Defined in: [api/events/maps.ts:85](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L85)
+Defined in: [api/events/maps.ts:86](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L86)
 
 All entities were removed.
 
@@ -42,7 +42,7 @@ All entities were removed.
 
 > **entityadd**: `object`
 
-Defined in: [api/events/maps.ts:81](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L81)
+Defined in: [api/events/maps.ts:82](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L82)
 
 A new entity was added to the collection.
 
@@ -56,7 +56,7 @@ A new entity was added to the collection.
 
 > **entityremove**: `object`
 
-Defined in: [api/events/maps.ts:83](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L83)
+Defined in: [api/events/maps.ts:84](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L84)
 
 An entity was removed from the collection.
 
@@ -70,7 +70,7 @@ An entity was removed from the collection.
 
 > **visibilitychange**: `object`
 
-Defined in: [api/events/maps.ts:87](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L87)
+Defined in: [api/events/maps.ts:88](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L88)
 
 Visibility of the collection changed.
 

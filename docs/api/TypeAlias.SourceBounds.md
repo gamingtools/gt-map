@@ -16,7 +16,7 @@
 
 > **SourceBounds** = `object`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/coord-transformer.ts#L1)
 
 ## Properties
 
@@ -24,7 +24,7 @@ Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/b
 
 > **maxX**: `number`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/coord-transformer.ts#L1)
 
 ***
 
@@ -32,7 +32,7 @@ Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/b
 
 > **maxY**: `number`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/coord-transformer.ts#L1)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/b
 
 > **minX**: `number`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/coord-transformer.ts#L1)
 
 ***
 
@@ -48,4 +48,4 @@ Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/b
 
 > **minY**: `number`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/coord-transformer.ts#L1)

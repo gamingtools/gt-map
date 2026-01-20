@@ -14,7 +14,7 @@
   - [easing?](#easing)
   - [interrupt?](#interrupt)
 
-Defined in: [api/types.ts:447](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L447)
+Defined in: [api/types.ts:444](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L444)
 
 Options for animating a transition.
 
@@ -24,7 +24,7 @@ Options for animating a transition.
 
 > `optional` **delayMs**: `number`
 
-Defined in: [api/types.ts:453](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L453)
+Defined in: [api/types.ts:450](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L450)
 
 Optional delay before starting, in milliseconds.
 
@@ -34,7 +34,7 @@ Optional delay before starting, in milliseconds.
 
 > **durationMs**: `number`
 
-Defined in: [api/types.ts:449](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L449)
+Defined in: [api/types.ts:446](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L446)
 
 Total animation time in milliseconds.
 
@@ -44,7 +44,7 @@ Total animation time in milliseconds.
 
 > `optional` **easing**: [`Easing`](TypeAlias.Easing.md)
 
-Defined in: [api/types.ts:451](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L451)
+Defined in: [api/types.ts:448](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L448)
 
 Optional easing function; defaults to a built‑in ease curve.
 
@@ -54,7 +54,7 @@ Optional easing function; defaults to a built‑in ease curve.
 
 > `optional` **interrupt**: `"cancel"` \| `"join"` \| `"enqueue"`
 
-Defined in: [api/types.ts:461](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/types.ts#L461)
+Defined in: [api/types.ts:458](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L458)
 
 Policy when another transition targets the same object.
 
