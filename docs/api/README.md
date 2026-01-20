@@ -22,8 +22,8 @@ Use the lists below to jump directly to types and members.
 
 ### Classes
 
+- [EntityCollection](./Class.EntityCollection.md)
 - [GTMap](./Class.GTMap.md)
-- [Layer](./Class.Layer.md)
 - [Marker](./Class.Marker.md)
 - [Vector](./Class.Vector.md)
 
@@ -32,14 +32,14 @@ Use the lists below to jump directly to types and members.
 - [AnimateOptions](./Interface.AnimateOptions.md)
 - [ApplyOptions](./Interface.ApplyOptions.md)
 - [ApplyResult](./Interface.ApplyResult.md)
+- [EntityCollectionEventMap](./Interface.EntityCollectionEventMap.md)
+- [EntityCollectionEvents](./Interface.EntityCollectionEvents.md)
 - [EventMap](./Interface.EventMap.md)
 - [EventSubscription](./Interface.EventSubscription.md)
 - [FrameEventData](./Interface.FrameEventData.md)
 - [IconDef](./Interface.IconDef.md)
 - [IconHandle](./Interface.IconHandle.md)
 - [ImageSourceOptions](./Interface.ImageSourceOptions.md)
-- [LayerEventMap](./Interface.LayerEventMap.md)
-- [LayerEvents](./Interface.LayerEvents.md)
 - [LoadEventData](./Interface.LoadEventData.md)
 - [MapEvents](./Interface.MapEvents.md)
 - [MapOptions](./Interface.MapOptions.md)

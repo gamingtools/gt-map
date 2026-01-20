@@ -106,7 +106,7 @@ Marker events (per marker via `m.events`)
 | `positionchange` | `x`, `y`, `dx`, `dy`, `marker`             | Emitted by `moveTo` |
 | `remove`         | `marker`                                   | Emitted on removal |
 
-Layer events (via `map.markers.events` or `map.vectors.events`)
+Collection events (via `map.markers.events` or `map.vectors.events`)
 
 | Event             | Payload keys              |
 |-------------------|---------------------------|
@@ -135,9 +135,9 @@ m.events.on('click').each(({ x, y }) => console.log('clicked', x, y));
 m.events.on('positionchange').each(({ dx, dy }) => console.log('moved', dx, dy));
 ```
 
-## Layer events
+## Collection events
 
-Layers emit lifecycle and visibility changes:
+Entity collections emit lifecycle and visibility changes:
 
 - `entityadd`: `{ entity }`
 - `entityremove`: `{ entity }`

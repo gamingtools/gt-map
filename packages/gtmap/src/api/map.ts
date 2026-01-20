@@ -1,6 +1,6 @@
 import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
-import { Layer } from '../entities/layer';
+import { EntityCollection } from '../entities/entity-collection';
 import { Marker } from '../entities/marker';
 import { Vector } from '../entities/vector';
 import { ViewTransitionImpl, type ViewTransition } from '../internal/core/view-transition';
@@ -15,7 +15,7 @@ import type { Point, MapOptions, IconDef, IconHandle, SuspendOptions, IconDefInt
 export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, SuspendOptions } from './types';
 export { Marker } from '../entities/marker';
 export { Vector } from '../entities/vector';
-export { Layer } from '../entities/layer';
+export { EntityCollection } from '../entities/entity-collection';
 
 // Re-export ViewTransition interface from extracted module for public API
 export type { ViewTransition };
@@ -56,12 +56,12 @@ export class GTMap<TMarkerData = unknown> {
 	 * const m = map.addMarker(100, 200);
 	 * map.markers.events.on('entityadd').each(({ entity }) => console.log('added', entity.id));
 	 */
-	readonly markers: Layer<Marker<TMarkerData>>;
+	readonly markers: EntityCollection<Marker<TMarkerData>>;
 	/**
-	 * Vector layer for this map. Use to add/remove vectors and subscribe to layer events.
+	 * Vector collection for this map. Use to add/remove vectors and subscribe to collection events.
 	 * @group Content
 	 */
-	readonly vectors: Layer<Vector>;
+	readonly vectors: EntityCollection<Vector>;
 	private _defaultIconReady = false;
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
 	private _markersDirty = false;
@@ -117,11 +117,11 @@ export class GTMap<TMarkerData = unknown> {
 		this._ensureDefaultIcon();
 		// Impl constructor already kicks off initial image loading.
 
-		// Layers
+		// Entity collections
 		const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
 		const onVectorsChanged = () => this._flushVectors();
-		this.markers = new Layer<Marker<TMarkerData>>({ id: 'markers', onChange: onMarkersChanged });
-		this.vectors = new Layer<Vector>({ id: 'vectors', onChange: onVectorsChanged });
+		this.markers = new EntityCollection<Marker<TMarkerData>>({ id: 'markers', onChange: onMarkersChanged });
+		this.vectors = new EntityCollection<Vector>({ id: 'vectors', onChange: onVectorsChanged });
 
 		// Wire internal marker events to per-marker entity events
 		const toPointerMeta = (ev: { originalEvent?: PointerEvent | MouseEvent } | undefined) => {

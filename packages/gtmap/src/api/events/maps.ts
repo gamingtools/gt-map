@@ -75,14 +75,14 @@ export interface VectorEventMap {
 	remove: { vector: VectorData };
 }
 
-/** Events emitted by a Layer for entity management and visibility. */
-export interface LayerEventMap<T> {
-	/** A new entity was added to the layer. */
+/** Events emitted by an EntityCollection for entity management and visibility. */
+export interface EntityCollectionEventMap<T> {
+	/** A new entity was added to the collection. */
 	entityadd: { entity: T };
-	/** An entity was removed from the layer. */
+	/** An entity was removed from the collection. */
 	entityremove: { entity: T };
 	/** All entities were removed. */
 	clear: {};
-	/** Visibility of the layer changed. */
+	/** Visibility of the collection changed. */
 	visibilitychange: { visible: boolean };
 }

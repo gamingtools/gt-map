@@ -27,12 +27,12 @@ const map = new GTMap(el, {
 
 ## Properties
 
-- `markers: Layer<Marker>` — collection for marker entities; add/remove/clear and observe layer events.
-- `vectors: Layer<Vector>` — collection for simple geometry overlays.
+- `markers: EntityCollection<Marker>` — collection for marker entities; add/remove/clear and observe collection events.
+- `vectors: EntityCollection<Vector>` — collection for simple geometry overlays.
 - `events` — read‑only event surface: `events.on(name).each(h)` and `events.once(name)`; see the Events guide for payloads.
 - `getCenter(): { x: number; y: number }` — current center in world pixels.
 - `getZoom(): number` — current zoom level (can be fractional).
-- `pointerAbs: { x: number; y: number } | null` — last pointer world position or `null` if outside.
+- `getPointerAbs(): { x: number; y: number } | null` — last pointer world position or `null` if outside.
 
 ## View Controls
 

@@ -57,7 +57,7 @@ export interface PublicEvents<EventMap> {
 
 import type { EventMap as MapEventMap } from '../types';
 
-import type { MarkerEventMap, VectorEventMap, LayerEventMap } from './maps';
+import type { MarkerEventMap, VectorEventMap, EntityCollectionEventMap } from './maps';
 
 /** Marker events surface with typed names and payloads. */
 export interface MarkerEvents<T = unknown> extends PublicEvents<MarkerEventMap<T>> {
@@ -77,11 +77,11 @@ export interface VectorEvents extends PublicEvents<VectorEventMap> {
 	on<K extends keyof VectorEventMap & string>(event: K, handler: (value: VectorEventMap[K]) => void): Unsubscribe;
 }
 
-/** Layer events surface with typed names and payloads. */
-export interface LayerEvents<T> extends PublicEvents<LayerEventMap<T>> {
+/** EntityCollection events surface with typed names and payloads. */
+export interface EntityCollectionEvents<T> extends PublicEvents<EntityCollectionEventMap<T>> {
 	/** Supported names: 'entityadd' | 'entityremove' | 'clear' | 'visibilitychange' */
-	on<K extends keyof LayerEventMap<T> & string>(event: K): EventSubscription<LayerEventMap<T>[K]>;
-	on<K extends keyof LayerEventMap<T> & string>(event: K, handler: (value: LayerEventMap<T>[K]) => void): Unsubscribe;
+	on<K extends keyof EntityCollectionEventMap<T> & string>(event: K): EventSubscription<EntityCollectionEventMap<T>[K]>;
+	on<K extends keyof EntityCollectionEventMap<T> & string>(event: K, handler: (value: EntityCollectionEventMap<T>[K]) => void): Unsubscribe;
 }
 
 /** Map events surface with typed names and payloads. */

@@ -17,7 +17,7 @@
   - [points()](#points)
   - [zoom()](#zoom)
 
-Defined in: [internal/core/view-transition.ts:19](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L19)
+Defined in: [internal/core/view-transition.ts:19](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/internal/core/view-transition.ts#L19)
 
 ## Methods
 
@@ -25,7 +25,7 @@ Defined in: [internal/core/view-transition.ts:19](https://github.com/gamingtools
 
 > **apply**(`opts?`): `Promise`\<[`ApplyResult`](Interface.ApplyResult.md)\>
 
-Defined in: [internal/core/view-transition.ts:71](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L71)
+Defined in: [internal/core/view-transition.ts:71](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/internal/core/view-transition.ts#L71)
 
 Commit the transition.
 
@@ -52,7 +52,7 @@ A promise resolving with the [result](Interface.ApplyResult.md)
 
 > **bounds**(`b`, `padding?`): `this`
 
-Defined in: [internal/core/view-transition.ts:52](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L52)
+Defined in: [internal/core/view-transition.ts:52](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/internal/core/view-transition.ts#L52)
 
 Fit the view to the specified bounds with optional padding.
 
@@ -96,7 +96,7 @@ The builder for chaining
 
 > **cancel**(): `void`
 
-Defined in: [internal/core/view-transition.ts:78](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L78)
+Defined in: [internal/core/view-transition.ts:78](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/internal/core/view-transition.ts#L78)
 
 Cancel a pending or running transition.
 
@@ -112,7 +112,7 @@ If already settled, this is a no‑op.
 
 > **center**(`p`): `this`
 
-Defined in: [internal/core/view-transition.ts:26](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L26)
+Defined in: [internal/core/view-transition.ts:26](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/internal/core/view-transition.ts#L26)
 
 Set the target center position in world pixels.
 
@@ -136,7 +136,7 @@ The builder for chaining
 
 > **offset**(`dx`, `dy`): `this`
 
-Defined in: [internal/core/view-transition.ts:43](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L43)
+Defined in: [internal/core/view-transition.ts:43](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/internal/core/view-transition.ts#L43)
 
 Add an offset to the final center position.
 
@@ -166,7 +166,7 @@ The builder for chaining
 
 > **points**(`list`, `padding?`): `this`
 
-Defined in: [internal/core/view-transition.ts:61](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L61)
+Defined in: [internal/core/view-transition.ts:61](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/internal/core/view-transition.ts#L61)
 
 Fit the view to a set of points with optional padding.
 
@@ -196,7 +196,7 @@ The builder for chaining
 
 > **zoom**(`z`): `this`
 
-Defined in: [internal/core/view-transition.ts:34](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/internal/core/view-transition.ts#L34)
+Defined in: [internal/core/view-transition.ts:34](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/internal/core/view-transition.ts#L34)
 
 Set the target zoom level.
 

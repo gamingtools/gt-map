@@ -14,7 +14,7 @@
   - [meta](#meta)
   - [shift](#shift)
 
-Defined in: [api/events/maps.ts:28](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L28)
+Defined in: [api/events/maps.ts:28](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L28)
 
 ## Properties
 
@@ -22,7 +22,7 @@ Defined in: [api/events/maps.ts:28](https://github.com/gamingtools/gt-map/blob/3
 
 > **alt**: `boolean`
 
-Defined in: [api/events/maps.ts:29](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L29)
+Defined in: [api/events/maps.ts:29](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L29)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [api/events/maps.ts:29](https://github.com/gamingtools/gt-map/blob/3
 
 > **ctrl**: `boolean`
 
-Defined in: [api/events/maps.ts:30](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L30)
+Defined in: [api/events/maps.ts:30](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L30)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [api/events/maps.ts:30](https://github.com/gamingtools/gt-map/blob/3
 
 > **meta**: `boolean`
 
-Defined in: [api/events/maps.ts:31](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L31)
+Defined in: [api/events/maps.ts:31](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L31)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [api/events/maps.ts:31](https://github.com/gamingtools/gt-map/blob/3
 
 > **shift**: `boolean`
 
-Defined in: [api/events/maps.ts:32](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/api/events/maps.ts#L32)
+Defined in: [api/events/maps.ts:32](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/api/events/maps.ts#L32)

@@ -21,7 +21,7 @@
 
 ## Classes
 
-- [Layer](Class.Layer.md)
+- [EntityCollection](Class.EntityCollection.md)
 - [Marker](Class.Marker.md)
 - [Vector](Class.Vector.md)
 
@@ -30,14 +30,14 @@
 - [AnimateOptions](Interface.AnimateOptions.md)
 - [ApplyOptions](Interface.ApplyOptions.md)
 - [ApplyResult](Interface.ApplyResult.md)
+- [EntityCollectionEventMap](Interface.EntityCollectionEventMap.md)
+- [EntityCollectionEvents](Interface.EntityCollectionEvents.md)
 - [EventMap](Interface.EventMap.md)
 - [EventSubscription](Interface.EventSubscription.md)
 - [FrameEventData](Interface.FrameEventData.md)
 - [IconDef](Interface.IconDef.md)
 - [IconHandle](Interface.IconHandle.md)
 - [ImageSourceOptions](Interface.ImageSourceOptions.md)
-- [LayerEventMap](Interface.LayerEventMap.md)
-- [LayerEvents](Interface.LayerEvents.md)
 - [LoadEventData](Interface.LoadEventData.md)
 - [MapEvents](Interface.MapEvents.md)
 - [MapOptions](Interface.MapOptions.md)

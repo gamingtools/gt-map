@@ -16,7 +16,7 @@
   - [rotation?](#rotation)
   - [size?](#size)
 
-Defined in: [entities/marker.ts:11](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/marker.ts#L11)
+Defined in: [entities/marker.ts:11](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/marker.ts#L11)
 
 Options for creating or styling a [Marker](Class.Marker.md).
 
@@ -32,7 +32,7 @@ Options for creating or styling a [Marker](Class.Marker.md).
 
 > `optional` **data**: `T`
 
-Defined in: [entities/marker.ts:15](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/marker.ts#L15)
+Defined in: [entities/marker.ts:15](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/marker.ts#L15)
 
 ***
 
@@ -40,7 +40,7 @@ Defined in: [entities/marker.ts:15](https://github.com/gamingtools/gt-map/blob/3
 
 > `optional` **iconType**: `string`
 
-Defined in: [entities/marker.ts:12](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/marker.ts#L12)
+Defined in: [entities/marker.ts:12](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/marker.ts#L12)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [entities/marker.ts:12](https://github.com/gamingtools/gt-map/blob/3
 
 > `optional` **rotation**: `number`
 
-Defined in: [entities/marker.ts:14](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/marker.ts#L14)
+Defined in: [entities/marker.ts:14](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/marker.ts#L14)
 
 ***
 
@@ -56,4 +56,4 @@ Defined in: [entities/marker.ts:14](https://github.com/gamingtools/gt-map/blob/3
 
 > `optional` **size**: `number`
 
-Defined in: [entities/marker.ts:13](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/marker.ts#L13)
+Defined in: [entities/marker.ts:13](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/marker.ts#L13)

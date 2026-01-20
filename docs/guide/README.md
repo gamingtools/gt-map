@@ -9,7 +9,7 @@ relevant API types when you need details.
 - Map Object: properties, methods, and options
 - Events: how to subscribe and what payloads look like (including load/resize)
 - Markers: create, move, style, and listen to events
-- Layers: group, show/hide, and observe entities
+- Entity Collections: group, show/hide, and observe entities
 - Vectors: add simple geometry overlays
 - Coordinate Transforms: map external/world coords to image pixels
 - Cookbook: small, practical snippets

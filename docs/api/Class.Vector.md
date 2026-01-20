@@ -19,7 +19,7 @@
   - [setGeometry()](#setgeometry)
   - [toData()](#todata)
 
-Defined in: [entities/vector.ts:32](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/vector.ts#L32)
+Defined in: [entities/vector.ts:32](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L32)
 
 Vector - a simple geometric overlay (polyline, polygon, or circle).
 
@@ -37,7 +37,7 @@ Events are minimal for now (`remove`); interaction events can be added later.
 
 > `readonly` **id**: `string`
 
-Defined in: [entities/vector.ts:33](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/vector.ts#L33)
+Defined in: [entities/vector.ts:33](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L33)
 
 ## Accessors
 
@@ -47,7 +47,7 @@ Defined in: [entities/vector.ts:33](https://github.com/gamingtools/gt-map/blob/3
 
 > **get** **events**(): [`PublicEvents`](Interface.PublicEvents.md)\<`EventMap`\>
 
-Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/base.ts#L7)
+Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/base.ts#L7)
 
 ##### Returns
 
@@ -65,7 +65,7 @@ Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/35ac
 
 > **get** **geometry**(): [`VectorGeometry`](TypeAlias.VectorGeometry.md)
 
-Defined in: [entities/vector.ts:54](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/vector.ts#L54)
+Defined in: [entities/vector.ts:54](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L54)
 
 Get current geometry.
 
@@ -79,7 +79,7 @@ Get current geometry.
 
 > **setGeometry**(`geometry`): `this`
 
-Defined in: [entities/vector.ts:69](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/vector.ts#L69)
+Defined in: [entities/vector.ts:69](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L69)
 
 Replace the vector geometry and trigger a renderer sync.
 
@@ -108,7 +108,7 @@ v.setGeometry({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] 
 
 > **toData**(): [`VectorData`](Interface.VectorData.md)
 
-Defined in: [entities/vector.ts:80](https://github.com/gamingtools/gt-map/blob/35acd9478b1c1a453a247be3fa176a9fab8133e5/packages/gtmap/src/entities/vector.ts#L80)
+Defined in: [entities/vector.ts:80](https://github.com/gamingtools/gt-map/blob/83eed0a31c8285593128578c674ef7d7858d10a3/packages/gtmap/src/entities/vector.ts#L80)
 
 Get a snapshot used in event payloads.
 

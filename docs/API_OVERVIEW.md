@@ -7,7 +7,7 @@ Quick links to common tasks using the GTMap API.
 - Wrap & bounds: [setWrapX](api/Class.GTMap.md#setwrapx), [setMaxBoundsPx](api/Class.GTMap.md#setmaxboundspx), [setMaxBoundsViscosity](api/Class.GTMap.md#setmaxboundsviscosity)
 - Change the view: [ViewTransition](api/Interface.ViewTransition.md), [transition()](api/Class.GTMap.md#transition)
 - Add content: [addIcon](api/Class.GTMap.md#addicon), [addMarker](api/Class.GTMap.md#addmarker), [addVector](api/Class.GTMap.md#addvector)
-- Events: [MapEvents](api/Interface.MapEvents.md), [Layer.events](api/Class.Layer.md#events), [Marker.events](api/Class.Marker.md#events)
+- Events: [MapEvents](api/Interface.MapEvents.md), [EntityCollection.events](api/Class.EntityCollection.md#events), [Marker.events](api/Class.Marker.md#events)
 - Utilities: [setAutoResize](api/Class.GTMap.md#setautoresize), [invalidateSize](api/Class.GTMap.md#invalidatesize), [setFpsCap](api/Class.GTMap.md#setfpscap), [setBackgroundColor](api/Class.GTMap.md#setbackgroundcolor)
 
 Tip: The events pages list supported event names and payloads for IntelliSense.
@@ -18,8 +18,8 @@ Use the lists below to jump directly to types and members.
 
 ### Classes
 
+- [EntityCollection](api/Class.EntityCollection.md)
 - [GTMap](api/Class.GTMap.md)
-- [Layer](api/Class.Layer.md)
 - [Marker](api/Class.Marker.md)
 - [Vector](api/Class.Vector.md)
 
@@ -28,14 +28,14 @@ Use the lists below to jump directly to types and members.
 - [AnimateOptions](api/Interface.AnimateOptions.md)
 - [ApplyOptions](api/Interface.ApplyOptions.md)
 - [ApplyResult](api/Interface.ApplyResult.md)
+- [EntityCollectionEventMap](api/Interface.EntityCollectionEventMap.md)
+- [EntityCollectionEvents](api/Interface.EntityCollectionEvents.md)
 - [EventMap](api/Interface.EventMap.md)
 - [EventSubscription](api/Interface.EventSubscription.md)
 - [FrameEventData](api/Interface.FrameEventData.md)
 - [IconDef](api/Interface.IconDef.md)
 - [IconHandle](api/Interface.IconHandle.md)
 - [ImageSourceOptions](api/Interface.ImageSourceOptions.md)
-- [LayerEventMap](api/Interface.LayerEventMap.md)
-- [LayerEvents](api/Interface.LayerEvents.md)
 - [LoadEventData](api/Interface.LoadEventData.md)
 - [MapEvents](api/Interface.MapEvents.md)
 - [MapOptions](api/Interface.MapOptions.md)

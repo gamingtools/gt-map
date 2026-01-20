@@ -1,52 +1,52 @@
 import { TypedEventBus } from '../internal/events/typed-stream';
-import type { LayerEvents } from '../api/events/public';
-import type { LayerEventMap } from '../api/events/maps';
+import type { EntityCollectionEvents } from '../api/events/public';
+import type { EntityCollectionEventMap } from '../api/events/maps';
 
-/** Options for creating a {@link Layer}. */
-export interface LayerOptions {
+/** Options for creating an {@link EntityCollection}. */
+export interface EntityCollectionOptions {
 	id?: string;
 	onChange?: () => void;
 }
 
-let _lidSeq = 0;
-function genLayerId(): string {
-	_lidSeq = (_lidSeq + 1) % Number.MAX_SAFE_INTEGER;
-	return `layer_${_lidSeq.toString(36)}`;
+let _ecSeq = 0;
+function genCollectionId(): string {
+	_ecSeq = (_ecSeq + 1) % Number.MAX_SAFE_INTEGER;
+	return `ec_${_ecSeq.toString(36)}`;
 }
 
 /**
- * Layer<T> - a collection of entities with lifecycle and visibility.
+ * EntityCollection<T> - a collection of entities with lifecycle and visibility.
  *
  * @public
  * @remarks
  * Emits typed events on add/remove/clear/visibility change.
  */
-export class Layer<T extends { id: string; _emitRemove(): void }> {
+export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	readonly id: string;
-	private _eventsBus = new TypedEventBus<LayerEventMap<T>>();
-	/** Read‑only typed events for this layer. */
-	get events(): LayerEvents<T> {
+	private _eventsBus = new TypedEventBus<EntityCollectionEventMap<T>>();
+	/** Read-only typed events for this collection. */
+	get events(): EntityCollectionEvents<T> {
 		const bus = this._eventsBus;
 		return {
-			on<K extends keyof LayerEventMap<T> & string>(event: K, handler?: (value: LayerEventMap<T>[K]) => void) {
+			on<K extends keyof EntityCollectionEventMap<T> & string>(event: K, handler?: (value: EntityCollectionEventMap<T>[K]) => void) {
 				const stream = bus.on(event);
 				return handler ? stream.each(handler) : stream;
 			},
-			once<K extends keyof LayerEventMap<T> & string>(event: K) {
+			once<K extends keyof EntityCollectionEventMap<T> & string>(event: K) {
 				return bus.when(event);
 			},
-		} as LayerEvents<T>;
+		} as EntityCollectionEvents<T>;
 	}
 	private _entities: Map<string, T> = new Map();
 	private _visible = true;
 	private _onChange?: () => void;
 
 	/**
-	 * Create a new layer.
+	 * Create a new entity collection.
 	 * @internal
 	 */
-	constructor(opts: LayerOptions = {}) {
-		this.id = opts.id ?? genLayerId();
+	constructor(opts: EntityCollectionOptions = {}) {
+		this.id = opts.id ?? genCollectionId();
 		this._onChange = opts.onChange;
 	}
 
@@ -77,7 +77,7 @@ export class Layer<T extends { id: string; _emitRemove(): void }> {
 		this._onChange?.();
 	}
 
-	/** Set layer visibility and emit `visibilitychange` when it changes. */
+	/** Set collection visibility and emit `visibilitychange` when it changes. */
 	setVisible(visible: boolean): void {
 		if (this._visible === visible) return;
 		this._visible = visible;

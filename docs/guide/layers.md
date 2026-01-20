@@ -1,9 +1,9 @@
-# Layers
+# Entity Collections
 
-Layers group entities and expose lifecycle + visibility events.
+Entity collections group entities and expose lifecycle + visibility events.
 
 ```ts
-// Access the built-in layers
+// Access the built-in collections
 const { markers, vectors } = map;
 
 // Observe adds/removes

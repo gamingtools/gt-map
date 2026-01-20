@@ -77,7 +77,7 @@ Behavior
 - `moveTo(x, y)`: updates position and emits `positionchange` with `{ x, y, dx, dy, marker }`.
 - `setStyle(...)`: updates visual style and schedules a re-render.
 - `setData(data)`: stores arbitrary data and makes it available via events and hit payloads.
-- `remove()`: emits `remove` on the marker; `Layer.remove(...)` will also call this internally.
+- `remove()`: emits `remove` on the marker; `EntityCollection.remove(...)` will also call this internally.
 
 ## Events
 
@@ -151,12 +151,12 @@ const off = m.events.on('pointerenter').each(() => highlight(m));
 off();
 ```
 
-## Layer interactions
+## Collection interactions
 
 - Add: `map.markers.add(m)` is called internally when you use `map.addMarker(...)`.
-- Remove: `map.markers.remove(mOrId)` removes and emits `entityremove` on the layer.
+- Remove: `map.markers.remove(mOrId)` removes and emits `entityremove` on the collection.
 - Visibility: `map.markers.setVisible(false)` hides all markers; `map.markers.visible` reflects state.
-- Layer events: `entityadd`, `entityremove`, `clear`, `visibilitychange` (see the Events guide).
+- Collection events: `entityadd`, `entityremove`, `clear`, `visibilitychange` (see the Events guide).
 
 ## Tips & best practices
 
