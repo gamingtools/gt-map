@@ -50,6 +50,8 @@ export default class EventBridge {
 	private longPressTimer: number | null = null;
 	private longPressed = false;
 	private pressTarget: { id: string; idx: number } | null = null;
+	// Cache isClick result for mouse click derivation (downAt is cleared before second handler runs)
+	private lastPointerUpWasClick = false;
 
 	constructor(deps: EventBridgeDeps) {
 		this.d = deps;
@@ -219,6 +221,8 @@ export default class EventBridge {
 			const now = this.d.now();
 			const moving = this.d.isMoving();
 			const isClick = !!this.downAt && !this.movedSinceDown && !moving && now - this.downAt.t < 400;
+			// Save for mouse click derivation (downAt is cleared below before second handler runs)
+			this.lastPointerUpWasClick = isClick;
 			this.downAt = null;
 			const upHit = this.d.hitTest(e.x, e.y, true);
 			if (upHit) {
@@ -325,10 +329,8 @@ export default class EventBridge {
 		});
 		bus.on('pointerup').each((e) => {
 			if ((e.originalEvent?.pointerType || '') !== 'mouse') return;
-			const now = this.d.now();
-			const moving = this.d.isMoving();
-			const isClick = !!this.downAt && !this.movedSinceDown && !moving && now - (this.downAt?.t || 0) < 400;
-			if (!isClick) return;
+			// Use cached isClick result since downAt was cleared by the earlier pointerup handler
+			if (!this.lastPointerUpWasClick) return;
 			emitMouseOnce('click', e);
 		});
 	}

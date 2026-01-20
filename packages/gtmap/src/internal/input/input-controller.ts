@@ -58,8 +58,9 @@ export default class InputController {
 			try {
 				canvas.setPointerCapture(e.pointerId);
 			} catch {}
-			deps.setLastInteractAt(this.lastTouchAt);
-			deps.setLastInteractAt(this.lastTouchAt);
+			// Use current time instead of lastTouchAt (which is only set for touch events)
+			const downTime = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+			deps.setLastInteractAt(downTime);
 			const rect = deps.getContainer().getBoundingClientRect();
 			const px = e.clientX - rect.left;
 			const py = e.clientY - rect.top;
@@ -207,11 +208,37 @@ export default class InputController {
 			const py = e.clientY - rect.top;
 			deps.setLastInteractAt(typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now());
 			deps.startEase(1.0, px, py, deps.getAnchorMode());
-			// mouse dblclick derived in mapgl
+			// Emit dblclick event
+			const view = deps.getView();
+			const widthCSS = rect.width,
+				heightCSS = rect.height;
+			const zImg = deps.getImageMaxZoom();
+			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
+			deps.emit('dblclick', {
+				x: px,
+				y: py,
+				world: { x: wNat.x, y: wNat.y },
+				view: deps.getView(),
+				originalEvent: e,
+			});
 		};
 
-		const onContextMenu = (_e: MouseEvent) => {
-			/* derived in mapgl */
+		const onContextMenu = (e: MouseEvent) => {
+			const rect = deps.getContainer().getBoundingClientRect();
+			const px = e.clientX - rect.left;
+			const py = e.clientY - rect.top;
+			const view = deps.getView();
+			const widthCSS = rect.width,
+				heightCSS = rect.height;
+			const zImg = deps.getImageMaxZoom();
+			const wNat = Coords.cssToWorld({ x: px, y: py }, view.zoom, { x: view.center.x, y: view.center.y }, { x: widthCSS, y: heightCSS }, zImg);
+			deps.emit('contextmenu', {
+				x: px,
+				y: py,
+				world: { x: wNat.x, y: wNat.y },
+				view: deps.getView(),
+				originalEvent: e,
+			});
 		};
 
 		const onKeyDown = (e: KeyboardEvent) => {
@@ -380,15 +407,24 @@ export default class InputController {
 		const onTouchEnd = (e: TouchEvent) => {
 			const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 			this.lastTouchAt = now;
+			const wasPinch = this.touchState?.mode === 'pinch';
 			// If pinch was active or just ended, suppress inertia longer
-			if (this.touchState?.mode === 'pinch' || (e.touches && e.touches.length === 0)) {
+			if (wasPinch || (e.touches && e.touches.length === 0)) {
 				this.suppressInertiaUntil = Math.max(this.suppressInertiaUntil, now + 500);
 				this.pinchCooldownUntil = Math.max(this.pinchCooldownUntil, now + 700);
 			}
+			// Check if inertia will start (similar to pointer up handler)
+			this.inertiaActive = false;
 			if (this.touchState?.mode === 'pan') this._maybeStartInertia();
 			this.touchState = null;
-			deps.emit('moveend', { view: deps.getView() });
-			deps.emit('zoomend', { view: deps.getView() });
+			// Only emit end events if inertia is NOT active (inertia will emit when done)
+			if (!this.inertiaActive) {
+				deps.emit('moveend', { view: deps.getView() });
+			}
+			// zoomend only if pinch was active
+			if (wasPinch) {
+				deps.emit('zoomend', { view: deps.getView() });
+			}
 		};
 
 		// Wire listeners
@@ -446,7 +482,8 @@ export default class InputController {
 		const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 		if (now < this.suppressInertiaUntil) return;
 		if (now < this.pinchCooldownUntil) return;
-		if (!deps.getInertia() || this._times.length < 2) return;
+		// Ensure both arrays have at least 2 samples to avoid out-of-bounds access
+		if (!deps.getInertia() || this._times.length < 2 || this._positions.length < 2) return;
 		const ease = deps.getEaseLinearity();
 		const maxSpeed = deps.getInertiaMaxSpeed();
 		const decel = deps.getInertiaDecel();

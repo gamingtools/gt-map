@@ -5,6 +5,13 @@ export class IconMaskBuilder {
 	private pending: Array<{ key: string; src: MaskSource; w: number; h: number }> = [];
 	private started = false;
 
+	/** Reset all state to allow fresh mask building after a full icon reload. */
+	reset(): void {
+		this.maskAlpha.clear();
+		this.pending = [];
+		this.started = false;
+	}
+
 	enqueue(key: string, src: MaskSource, w: number, h: number): void {
 		this.pending.push({ key, src, w, h });
 	}

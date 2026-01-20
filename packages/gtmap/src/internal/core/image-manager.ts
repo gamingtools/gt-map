@@ -319,10 +319,9 @@ export class ImageManager {
 				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 				gl.bindTexture(gl.TEXTURE_2D, null);
 
-				if (this._image.texture) {
-					gl.deleteTexture(this._image.texture);
-				}
-				const upgradingFromPreview = !!this._image.texture && this._image.url !== url;
+				// Swap textures atomically: save old reference before deletion to check upgrade status
+				const oldTex = this._image.texture;
+				const upgradingFromPreview = !!oldTex && this._image.url !== url;
 				if (nextDims && Number.isFinite(nextDims.width) && Number.isFinite(nextDims.height)) {
 					this._image.width = Math.max(1, Math.floor(nextDims.width));
 					this._image.height = Math.max(1, Math.floor(nextDims.height));
@@ -332,6 +331,12 @@ export class ImageManager {
 				this._image.ready = true;
 				this._imageReadyAtMs = this.host._nowMs();
 				this.host._log(`image:swap committed upgrade=${upgradingFromPreview ? 'preview->full' : 'replace'} url=${url}`);
+				// Delete old texture after new one is assigned to avoid race conditions
+				if (oldTex) {
+					try {
+						gl.deleteTexture(oldTex);
+					} catch {}
+				}
 			}
 
 			const tEnd = this.host._nowMs();

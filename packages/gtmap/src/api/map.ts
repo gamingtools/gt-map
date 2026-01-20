@@ -8,8 +8,8 @@ import type { DecalOptions } from '../entities/decal';
 import { Vector } from '../entities/vector';
 import { ViewTransitionImpl, type ViewTransition } from '../internal/core/view-transition';
 import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../internal/core/vector-types';
-import { Visual, isImageVisual, resolveAnchor } from './visual';
 
+import { Visual, isImageVisual, resolveAnchor } from './visual';
 import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
 import { CoordTransformer, type Bounds as SourceBounds, type TransformType } from './coord-transformer';
@@ -81,6 +81,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
 	private _visualToIconId: WeakMap<Visual, string> = new WeakMap();
 	private _visualIdSeq = 0;
+	private _iconIdSeq = 0;
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
 	private _decalsDirty = false;
@@ -431,7 +432,9 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	 * ```
 	 */
 	addIcon(def: IconDef, id?: string): IconHandle {
-		const iconId = id || `icon_${Math.random().toString(36).slice(2, 10)}`;
+		// Use sequential counter for collision-free ID generation
+		this._iconIdSeq = (this._iconIdSeq + 1) % Number.MAX_SAFE_INTEGER;
+		const iconId = id || `icon_${this._iconIdSeq.toString(36)}`;
 		this._icons.set(iconId, def);
 		// Push to impl immediately
 		const iconDefInternal: IconDefInternal = {

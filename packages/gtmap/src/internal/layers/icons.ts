@@ -125,8 +125,41 @@ export class IconRenderer {
 		this.gl = gl;
 	}
 
-	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>) {
+	/**
+	 * Load icon definitions into the renderer.
+	 * @param defs - Icon definitions keyed by icon ID
+	 * @param opts - Options
+	 * @param opts.replaceAll - If true, clears ALL existing icons and atlases before loading.
+	 *                          Use this for full theme reloads to prevent memory accumulation.
+	 *                          If false (default), new icons are added/updated incrementally
+	 *                          but old atlases may accumulate until dispose().
+	 */
+	async loadIcons(
+		defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>,
+		opts?: { replaceAll?: boolean },
+	) {
 		const entries = Object.entries(defs);
+		const gl = this.gl;
+
+		// Collect old atlas textures for cleanup if doing a full replace
+		let oldAtlases: Set<WebGLTexture> | null = null;
+		if (opts?.replaceAll) {
+			oldAtlases = new Set<WebGLTexture>();
+			for (const t of this.textures.values()) if (t) oldAtlases.add(t);
+			for (const t of this.textures2x.values()) if (t) oldAtlases.add(t);
+			// Clear all mappings - safe because we're replacing everything
+			this.textures.clear();
+			this.textures2x.clear();
+			this.uvRect.clear();
+			this.uvRect2x.clear();
+			this.texSize.clear();
+			this.texAnchor.clear();
+			this.iconMeta.clear();
+			this.hasRetina.clear();
+			// Reset mask builder to allow fresh mask generation for reloaded icons
+			this.maskBuilder.reset();
+		}
+
 		// Load both 1x and 2x images for each icon (in parallel)
 		const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
 		const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
@@ -174,7 +207,20 @@ export class IconRenderer {
 			}
 		}
 
-		// Do not start mask build here; allow map to trigger after first frame
+		// Delete old atlases after new ones are created (only for full replace)
+		if (oldAtlases) {
+			for (const tex of oldAtlases) {
+				try {
+					gl.deleteTexture(tex);
+				} catch {}
+			}
+			// Trigger mask building for newly loaded icons (since we reset the builder).
+			// This is needed even if oldAtlases was empty because mapgl's _maskBuildRequested
+			// is a one-time flag that won't retrigger after the first render.
+			this.maskBuilder.start();
+		}
+
+		// Do not start mask build here for incremental loads; allow map to trigger after first frame
 	}
 
 	startMaskBuild() {

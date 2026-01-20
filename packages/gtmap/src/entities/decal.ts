@@ -1,5 +1,6 @@
 import type { DecalEventMap, DecalData } from '../api/events/maps';
 import type { Visual } from '../api/visual';
+
 import { EventedEntity } from './base';
 
 /**

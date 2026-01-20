@@ -1,6 +1,7 @@
 // Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
 import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData, MarkerInternal } from '../api/types';
+import type { MapOptions as PublicMapOptions, Point } from '../api/types';
 
 import Graphics, { type GraphicsHost } from './gl/graphics';
 import { ScreenCache } from './render/screen-cache';
@@ -27,7 +28,6 @@ import EventBridge from './events/event-bridge';
 import { ImageManager, type ImageManagerHost, type ImageData } from './core/image-manager';
 import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 
-import type { MapOptions as PublicMapOptions, Point } from '../api/types';
 
 export type LngLat = { lng: number; lat: number };
 
@@ -807,7 +807,14 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			for (const k of Object.keys(defs)) this._pendingIconDefs[k] = defs[k];
 			return;
 		}
-		await this._icons.loadIcons(defs);
+		try {
+			await this._icons.loadIcons(defs);
+		} catch (err) {
+			// Log error but don't propagate - icon loading failures shouldn't crash the map
+			if (typeof console !== 'undefined' && console.warn) {
+				console.warn('[GTMap] Icon loading failed:', err);
+			}
+		}
 		try {
 			this._screenCache?.clear?.();
 		} catch {}
@@ -826,7 +833,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			return;
 		}
 		try {
-			const nextIds = new Set<string>(markers.map((m) => m.id).filter((id): id is string => typeof id === 'string'));
+			// Filter out empty strings in addition to non-strings to avoid false matches
+			const nextIds = new Set<string>(markers.map((m) => m.id).filter((id): id is string => typeof id === 'string' && id.length > 0));
 			if (this._lastHover && this._lastHover.id && !nextIds.has(this._lastHover.id)) {
 				const prev = this._lastHover;
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
