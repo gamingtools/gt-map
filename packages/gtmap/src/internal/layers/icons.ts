@@ -17,6 +17,7 @@ export class IconRenderer {
 	private iconMeta = new Map<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number }>();
 	private maskBuilder = new IconMaskBuilder();
 	private markers: MarkerRenderData[] = [];
+	private decals: MarkerRenderData[] = [];
 	// Texture atlas
 	// Atlas bookkeeping kept local in load; we do not need fields on the class.
 	private uvRect = new Map<string, { u0: number; v0: number; u1: number; v1: number }>();
@@ -193,9 +194,33 @@ export class IconRenderer {
 			}
 		}
 		this.markers = norm;
-		// Prepare per-type instance data for instanced path
+		// Rebuild combined type data for markers and decals
+		this.rebuildTypeData();
+	}
+
+	setDecals(decals: Array<MarkerRenderData | { lng: number; lat: number; type: string; size?: number; rotation?: number }>) {
+		// Normalize to internal MarkerRenderData list with ids
+		let idx = 0;
+		const norm: MarkerRenderData[] = [];
+		for (const d of decals || []) {
+			if ('id' in (d as Record<string, unknown>)) {
+				norm.push(d as MarkerRenderData);
+			} else {
+				const dd = d as { lng: number; lat: number; type: string; size?: number; rotation?: number };
+				norm.push({ id: `d${idx++}`, lng: dd.lng, lat: dd.lat, type: dd.type, size: dd.size, rotation: dd.rotation });
+			}
+		}
+		this.decals = norm;
+		// Prepare per-type instance data for decals (merge with marker data by type)
+		// For simplicity, we'll rebuild typeData to include both markers and decals
+		this.rebuildTypeData();
+	}
+
+	private rebuildTypeData() {
+		// Combine markers and decals for rendering
+		const all = [...this.markers, ...this.decals];
 		const byType = new Map<string, MarkerRenderData[]>();
-		for (const m of this.markers) {
+		for (const m of all) {
 			let arr = byType.get(m.type);
 			if (!arr) {
 				arr = [];
@@ -282,7 +307,7 @@ export class IconRenderer {
 		wrapX: boolean;
 		iconScaleFunction?: ((zoom: number, minZoom: number, maxZoom: number) => number) | null;
 	}) {
-		if (this.markers.length === 0) return;
+		if (this.markers.length === 0 && this.decals.length === 0) return;
 		const gl = ctx.gl;
 		const { zInt: baseZ, scale: effScale } = Coords.zParts(ctx.zoom);
 		const widthCSS = ctx.viewport.width;
@@ -322,6 +347,9 @@ export class IconRenderer {
 			const seen = new Set<string>();
 			for (const m of this.markers) {
 				seen.add(m.type);
+			}
+			for (const d of this.decals) {
+				seen.add(d.type);
 			}
 			for (const type of Array.from(seen)) {
 				// Use retina if available, otherwise fallback to regular
@@ -402,11 +430,15 @@ export class IconRenderer {
 		gl.uniform1f(ctx.loc.u_alpha, 1.0);
 		// UVs set per type if atlas
 
-		// Group markers by type to minimize texture binds
+		// Group markers and decals by type to minimize texture binds
 		const groups = new Map<string, MarkerRenderData[]>();
 		for (const m of this.markers) {
 			if (!groups.has(m.type)) groups.set(m.type, []);
 			groups.get(m.type)!.push(m);
+		}
+		for (const d of this.decals) {
+			if (!groups.has(d.type)) groups.set(d.type, []);
+			groups.get(d.type)!.push(d);
 		}
 
 		for (const [type, list] of groups) {

@@ -153,6 +153,7 @@ export interface MapImpl {
 	setMaxBoundsViscosity(v: number): void;
 	setIconDefs(defs: Record<string, IconDefInternal>): Promise<void>;
 	setMarkers(markers: MarkerInternal[]): void;
+	setDecals?(markers: MarkerInternal[]): void;
 	setVectors?(vectors: VectorPrimitiveInternal[]): void;
 	setUpscaleFilter?(mode: UpscaleFilterMode): void;
 	setWheelSpeed?(v: number): void;

@@ -2,9 +2,13 @@ import Impl, { type MapOptions as ImplMapOptions } from '../internal/mapgl';
 import type { MapImpl } from '../internal/types';
 import { EntityCollection } from '../entities/entity-collection';
 import { Marker } from '../entities/marker';
+import type { MarkerOptions } from '../entities/marker';
+import { Decal } from '../entities/decal';
+import type { DecalOptions } from '../entities/decal';
 import { Vector } from '../entities/vector';
 import { ViewTransitionImpl, type ViewTransition } from '../internal/core/view-transition';
 import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../internal/core/vector-types';
+import { Visual, isImageVisual, resolveAnchor } from './visual';
 
 import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
@@ -14,8 +18,14 @@ import type { Point, MapOptions, IconDef, IconHandle, SuspendOptions, IconDefInt
 // Re-export types from centralized types file
 export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, SuspendOptions } from './types';
 export { Marker } from '../entities/marker';
+export { Decal } from '../entities/decal';
 export { Vector } from '../entities/vector';
 export { EntityCollection } from '../entities/entity-collection';
+
+// Re-export Visual classes and types
+export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual } from './visual';
+export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual } from './visual';
+export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize } from './visual';
 
 // Re-export ViewTransition interface from extracted module for public API
 export type { ViewTransition };
@@ -53,10 +63,15 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	 *
 	 * @group Content
 	 * @example
-	 * const m = map.addMarker(100, 200);
+	 * const m = map.addMarker(100, 200, { visual: new ImageVisual('/icon.png', 32) });
 	 * map.markers.events.on('entityadd').each(({ entity }) => console.log('added', entity.id));
 	 */
 	readonly markers: EntityCollection<Marker<TMarkerData>>;
+	/**
+	 * Decal collection for this map. Use to add/remove non-interactive visuals.
+	 * @group Content
+	 */
+	readonly decals: EntityCollection<Decal>;
 	/**
 	 * Vector collection for this map. Use to add/remove vectors and subscribe to collection events.
 	 * @group Content
@@ -64,8 +79,12 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	readonly vectors: EntityCollection<Vector<TVectorData>>;
 	private _defaultIconReady = false;
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
+	private _visualToIconId: WeakMap<Visual, string> = new WeakMap();
+	private _visualIdSeq = 0;
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
+	private _decalsDirty = false;
+	private _decalsFlushScheduled = false;
 	private _coordTransformer: CoordTransformer | null = null;
 
 	// (active view transition tracking handled via module-level WeakMap in builder)
@@ -100,7 +119,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			preview: options.preview ? { url: options.preview.url, width: options.preview.width, height: options.preview.height } : undefined,
 			minZoom: options.minZoom,
 			maxZoom: options.maxZoom,
-			center: options.center ? { lng: options.center.x, lat: options.center.y } : undefined,
+			center: options.center,
 			zoom: options.zoom,
 			autoResize: options.autoResize,
 			backgroundColor: options.backgroundColor,
@@ -119,8 +138,10 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 
 		// Entity collections
 		const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
+		const onDecalsChanged = () => this._markDecalsDirtyAndSchedule();
 		const onVectorsChanged = () => this._flushVectors();
 		this.markers = new EntityCollection<Marker<TMarkerData>>({ id: 'markers', onChange: onMarkersChanged });
+		this.decals = new EntityCollection<Decal>({ id: 'decals', onChange: onDecalsChanged });
 		this.vectors = new EntityCollection<Vector<TVectorData>>({ id: 'vectors', onChange: onVectorsChanged });
 
 		// Wire internal marker events to per-marker entity events
@@ -425,30 +446,62 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		return { id: iconId };
 	}
 	/**
-	 * Create and add a marker to the `markers` layer.
+	 * Create and add a marker to the `markers` collection.
 	 *
 	 * @public
 	 * @group Content
 	 * @param x - World X (pixels)
 	 * @param y - World Y (pixels)
-	 * @param opts - Optional style and user data
-	 * @param opts.icon - Handle from {@link GTMap.addIcon} (defaults to built-in dot)
-	 * @param opts.size - Scale multiplier (default 1)
+	 * @param opts - Visual, style, and user data
+	 * @param opts.visual - Visual template for rendering
+	 * @param opts.scale - Scale multiplier (default 1)
 	 * @param opts.rotation - Rotation in degrees clockwise
+	 * @param opts.opacity - Opacity 0-1 (default 1)
 	 * @param opts.data - Arbitrary app data stored on the marker
 	 * @returns The created {@link Marker}
 	 *
 	 * @example
 	 * ```ts
-	 * // Add a POI marker using a registered icon
-	 * const poi = map.addMarker(1200, 900, { icon: pin, size: 1.25, rotation: 0, data: { id: 'poi-7' } });
+	 * // Add a POI marker using an image visual
+	 * const icon = new ImageVisual('/icons/pin.png', 32);
+	 * icon.anchor = 'bottom-center';
+	 * const poi = map.addMarker(1200, 900, { visual: icon, scale: 1.25, data: { id: 'poi-7' } });
 	 * poi.events.on('click', (e) => console.log('clicked', e.marker.id));
 	 * ```
 	 */
-	addMarker(x: number, y: number, opts?: { icon?: IconHandle; size?: number; rotation?: number; data?: TMarkerData }): Marker<TMarkerData> {
-		const mk = new Marker<TMarkerData>(x, y, { iconType: opts?.icon?.id, size: opts?.size, rotation: opts?.rotation, data: opts?.data }, () => this._markMarkersDirtyAndSchedule());
+	addMarker(x: number, y: number, opts: MarkerOptions<TMarkerData>): Marker<TMarkerData> {
+		this._ensureVisualRegistered(opts.visual);
+		const mk = new Marker<TMarkerData>(x, y, opts, () => this._markMarkersDirtyAndSchedule());
 		this.markers.add(mk);
 		return mk;
+	}
+
+	/**
+	 * Create and add a decal (non-interactive visual) to the `decals` collection.
+	 *
+	 * @public
+	 * @group Content
+	 * @param x - World X (pixels)
+	 * @param y - World Y (pixels)
+	 * @param opts - Visual and style options
+	 * @param opts.visual - Visual template for rendering
+	 * @param opts.scale - Scale multiplier (default 1)
+	 * @param opts.rotation - Rotation in degrees clockwise
+	 * @param opts.opacity - Opacity 0-1 (default 1)
+	 * @returns The created {@link Decal}
+	 *
+	 * @example
+	 * ```ts
+	 * // Add a decoration that doesn't respond to clicks
+	 * const effect = new ImageVisual('/effects/glow.png', 64);
+	 * const decal = map.addDecal(500, 500, { visual: effect, opacity: 0.5 });
+	 * ```
+	 */
+	addDecal(x: number, y: number, opts: DecalOptions): Decal {
+		this._ensureVisualRegistered(opts.visual);
+		const d = new Decal(x, y, opts, () => this._markDecalsDirtyAndSchedule());
+		this.decals.add(d);
+		return d;
 	}
 
 	/**
@@ -485,6 +538,18 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	 */
 	clearMarkers(): this {
 		this.markers.clear();
+		return this;
+	}
+	/**
+	 * Remove all decals from the map.
+	 *
+	 * @public
+	 * @group Content
+	 * @returns This map instance for method chaining
+	 */
+	clearDecals(): this {
+		this.decals.clear();
+		this._impl.setDecals?.([]);
 		return this;
 	}
 	/**
@@ -774,6 +839,66 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		} catch {}
 	}
 
+	/**
+	 * Register a Visual with the internal renderer if not already registered.
+	 * Returns the internal icon id for the visual.
+	 */
+	private _ensureVisualRegistered(visual: Visual): string {
+		// Check cache first
+		const cached = this._visualToIconId.get(visual);
+		if (cached) return cached;
+
+		// Generate a new id
+		this._visualIdSeq = (this._visualIdSeq + 1) % Number.MAX_SAFE_INTEGER;
+		const iconId = `v_${this._visualIdSeq.toString(36)}`;
+
+		// Currently only ImageVisual is supported by the renderer
+		if (isImageVisual(visual)) {
+			const size = visual.getSize();
+			const anchor = resolveAnchor(visual.anchor);
+			const iconDef: IconDefInternal = {
+				iconPath: visual.icon,
+				x2IconPath: visual.icon2x,
+				width: size.w,
+				height: size.h,
+				anchorX: anchor.x * size.w,
+				anchorY: anchor.y * size.h,
+			};
+			this._impl.setIconDefs?.(Object.fromEntries([[iconId, iconDef]]));
+		} else {
+			// For non-image visuals, create a placeholder
+			// TODO: Implement rendering for other visual types
+			console.warn(`GTMap: Visual type '${visual.type}' is not yet supported for rendering. Using default icon.`);
+			return 'default';
+		}
+
+		this._visualToIconId.set(visual, iconId);
+		return iconId;
+	}
+
+	/**
+	 * Get the internal icon id for a Visual.
+	 */
+	private _getVisualIconId(visual: Visual): string {
+		return this._visualToIconId.get(visual) ?? 'default';
+	}
+
+	/**
+	 * Calculate internal size value for a marker/decal.
+	 * Returns undefined if scale is 1 (use native size), otherwise returns scaled size.
+	 */
+	private _getScaledSize(visual: Visual, scale: number): number | undefined {
+		if (scale === 1) return undefined; // Let renderer use native icon size
+		// For non-1 scales, we need to calculate the actual size
+		// The internal renderer uses size as the width (assuming square or aspect-preserving)
+		if (isImageVisual(visual)) {
+			const sz = visual.getSize();
+			// Use the larger dimension as the base size
+			return Math.max(sz.w, sz.h) * scale;
+		}
+		return undefined;
+	}
+
 	private _markMarkersDirtyAndSchedule() {
 		this._markersDirty = true;
 		if (this._markersFlushScheduled) return;
@@ -786,8 +911,8 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			const internalMarkers: MarkerInternal[] = list.map((m) => ({
 				lng: m.x,
 				lat: m.y,
-				type: m.iconType ?? 'default',
-				size: m.size,
+				type: this._getVisualIconId(m.visual),
+				size: this._getScaledSize(m.visual, m.scale),
 				rotation: m.rotation,
 				id: m.id,
 			}));
@@ -797,6 +922,33 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				for (const mk of list) payloads[mk.id] = mk.data;
 				this._impl.setMarkerData?.(payloads);
 			} catch {}
+		};
+		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
+		else setTimeout(flush, 0);
+	}
+
+	private _markDecalsDirtyAndSchedule() {
+		this._decalsDirty = true;
+		if (this._decalsFlushScheduled) return;
+		this._decalsFlushScheduled = true;
+		const flush = () => {
+			this._decalsFlushScheduled = false;
+			if (!this._decalsDirty) return;
+			this._decalsDirty = false;
+			// For now, decals are rendered as markers without interactivity
+			// TODO: Implement separate decal rendering layer
+			const list = this.decals.getFiltered();
+			const internalDecals: MarkerInternal[] = list.map((d) => ({
+				lng: d.x,
+				lat: d.y,
+				type: this._getVisualIconId(d.visual),
+				size: this._getScaledSize(d.visual, d.scale),
+				rotation: d.rotation,
+				id: d.id,
+			}));
+			// Decals use same renderer as markers for now
+			// They're distinguished by being in a separate collection
+			this._impl.setDecals?.(internalDecals);
 		};
 		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
 		else setTimeout(flush, 0);

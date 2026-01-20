@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { GTMap, type IconHandle } from '@gtmap';
+  import { GTMap, ImageVisual } from '@gtmap';
 
   let container: HTMLDivElement | null = null;
   let map: GTMap<RemoteMarker>;
@@ -20,23 +20,24 @@
   const HAGGA_EXTENTS = { minX: -457200, minY: -457200, maxX: 355600, maxY: 355600 };
   // Coordinate transform will be handled by map.translate() after setCoordBounds()
 
-  // Cache icon handles per iconPath so identical icons reuse atlas entries
-  const iconCache = new Map<string, IconHandle>();
-  function ensureIcon(ico?: RemoteIcon): IconHandle | null {
+  // Cache ImageVisual instances per iconPath so identical icons reuse atlas entries
+  const visualCache = new Map<string, ImageVisual>();
+  function ensureVisual(ico?: RemoteIcon): ImageVisual | null {
     if (!map || !ico || !ico.iconPath) return null;
     const key = ico.iconPath;
-    let h = iconCache.get(key);
-    if (h) return h;
+    let v = visualCache.get(key);
+    if (v) return v;
     const full1x = ICON_PREFIX + (ico.iconPath.startsWith('/') ? '' : '/') + ico.iconPath;
     const full2x = ico.x2IconPath ? ICON_PREFIX + (ico.x2IconPath.startsWith('/') ? '' : '/') + ico.x2IconPath : undefined;
     const w = Math.max(1, Math.floor(ico.width ?? 24));
-    const hgt = Math.max(1, Math.floor(ico.height ?? w));
-    h = map.addIcon({ iconPath: full1x, x2IconPath: full2x, width: w, height: hgt, anchorX: Math.round(w / 2), anchorY: Math.round(hgt / 2) });
-    iconCache.set(key, h);
-    return h;
+    const h = Math.max(1, Math.floor(ico.height ?? w));
+    v = new ImageVisual(full1x, { w, h }, full2x);
+    v.anchor = 'center';
+    visualCache.set(key, v);
+    return v;
   }
 
-  // Minimal: fetch, project, and add markers with icons
+  // Minimal: fetch, project, and add markers with visuals
   async function loadRemoteMarkers(): Promise<void> {
     if (!map) return;
     const res = await fetch(DATA_URL);
@@ -44,10 +45,10 @@
     for (let i = 0; i < data.length; i++) {
       const m = data[i];
       if (m.mapId !== 'survival_1' || !m.location || !m.mapIcon) continue;
-      const ih = ensureIcon(m.mapIcon);
-      if (!ih) continue; // only render icons from the source
+      const visual = ensureVisual(m.mapIcon);
+      if (!visual) continue; // only render icons from the source
       const p = map.translate(m.location.x, m.location.y);
-      map.addMarker(p.x, p.y, { icon: ih, data: m });
+      map.addMarker(p.x, p.y, { visual, data: m });
     }
   }
 
@@ -63,15 +64,19 @@
       autoResize: true,
       spinner: { size: 64, color: '#c2c2c2' },
     });
-    // Initialize coord transformer (Unreal/world → pixel)
+    // Initialize coord transformer (Unreal/world -> pixel)
     map.setCoordBounds(HAGGA_EXTENTS);
     // Log the original marker record when an icon is clicked
     map.events.on('markerclick').each((e) => {
       // e.marker.data is the original RemoteMarker
       console.log('marker click:', e.marker.data);
     });
-    // Load remote markers/icons only
-    void loadRemoteMarkers();
+    // Defer remote dataset fetch until after map has initialized and
+    // started the image load. This ensures the raster request is queued
+    // first (avoids the small delay seen in the waterfall).
+    void map.events.once('load').then(() => {
+      void loadRemoteMarkers();
+    });
     return () => { map?.destroy?.(); };
   });
 </script>

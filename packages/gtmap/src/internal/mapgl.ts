@@ -1,7 +1,6 @@
 // Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
-import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData, SpinnerOptions, MarkerInternal } from '../api/types';
-import { DEBUG } from '../debug';
+import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData, MarkerInternal } from '../api/types';
 
 import Graphics, { type GraphicsHost } from './gl/graphics';
 import { ScreenCache } from './render/screen-cache';
@@ -28,26 +27,18 @@ import EventBridge from './events/event-bridge';
 import { ImageManager, type ImageManagerHost, type ImageData } from './core/image-manager';
 import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 
+import type { MapOptions as PublicMapOptions, Point } from '../api/types';
+
 export type LngLat = { lng: number; lat: number };
-export type MapOptions = {
-	image?: { url: string; width: number; height: number };
-	preview?: { url: string; width: number; height: number };
-	minZoom?: number;
-	maxZoom?: number;
-	wrapX?: boolean;
-	freePan?: boolean;
-	center?: LngLat;
-	zoom?: number;
+
+/** Internal map options extending the public API with internal-only settings. */
+export type MapOptions = Omit<PublicMapOptions, 'center'> & {
+	/** Center accepts Point (x/y) or legacy LngLat (lng/lat). */
+	center?: Point | LngLat;
+	/** Zoom-out center bias factor (internal). */
 	zoomOutCenterBias?: number | boolean;
-	autoResize?: boolean;
-	backgroundColor?: string | { r: number; g: number; b: number; a?: number };
-	fpsCap?: number;
-	screenCache?: boolean;
+	/** Ctrl+wheel speed multiplier (internal). */
 	wheelSpeedCtrl?: number;
-	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
-	maxBoundsViscosity?: number;
-	bounceAtZoomLimits?: boolean;
-	spinner?: SpinnerOptions;
 };
 export type EaseOptions = {
 	easeBaseMs?: number;
@@ -108,9 +99,12 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _icons: IconRenderer | null = null;
 	private _pendingIconDefs: Record<string, IconDefInput> | null = null;
 	private _pendingMarkers: MarkerInternal[] | null = null;
+	private _pendingDecals: MarkerInternal[] | null = null;
+	private _debug = false;
 	private _renderer!: MapRenderer;
 	private _allIconDefs: Record<string, IconDefInput> = {};
 	private _lastMarkers: MarkerInternal[] = [];
+	private _lastDecals: MarkerInternal[] = [];
 	private _rasterOpacity = 1.0;
 	private _upscaleFilter: 'auto' | 'linear' | 'bicubic' = 'linear';
 	private _iconScaleFunction: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
@@ -383,11 +377,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 	public _log(msg: string): void {
 		try {
-			const allow = (globalThis.DEBUG ?? false) || DEBUG || (typeof localStorage !== 'undefined' && localStorage.getItem('GTMAP_DEBUG') === '1');
-			if (allow) {
-				const t = this._nowMs() - this._t0Ms;
-				console.log(`[GTMap t=${t.toFixed(1)}ms] ${msg}`);
-			}
+			if (!this._debug) return;
+			const t = this._nowMs() - this._t0Ms;
+			console.log(`[GTMap t=${t.toFixed(1)}ms] ${msg}`);
 		} catch {}
 	}
 	public _gpuWaitEnabled(): boolean {
@@ -441,9 +433,11 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this.maxZoom = Math.max(this.minZoom, defaultMaxZoom);
 		this.wrapX = options.wrapX ?? false;
 		this.freePan = options.freePan ?? false;
+		// Accept either Point (x/y) or LngLat (lng/lat) for center
+		const c = options.center as (Point & Partial<LngLat>) | undefined;
 		this.center = {
-			lng: options.center?.lng ?? this.mapSize.width / 2,
-			lat: options.center?.lat ?? this.mapSize.height / 2,
+			lng: c?.x ?? c?.lng ?? this.mapSize.width / 2,
+			lat: c?.y ?? c?.lat ?? this.mapSize.height / 2,
 		};
 		this.zoom = options.zoom ?? Math.min(this.maxZoom, this._imageMaxZoom);
 
@@ -460,6 +454,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			this._targetFps = v;
 		}
 		if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
+		if (options.debug === true) this._debug = true;
 		if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
 		if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
@@ -514,6 +509,12 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						const m = this._pendingMarkers.slice();
 						this._pendingMarkers = null;
 						this.setMarkers(m);
+					}
+					// If decals were provided early, apply them once icons are ready
+					if (this._pendingDecals && this._pendingDecals.length) {
+						const d = this._pendingDecals.slice();
+						this._pendingDecals = null;
+						this.setDecals(d);
 					}
 				},
 				weight: 3,
@@ -840,9 +841,27 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			}
 		} catch {}
 		this._icons.setMarkers(markers);
+		if (this._debug) this._log(`setMarkers count=${markers.length}`);
 		try {
-			if (DEBUG) console.debug('[map.setMarkers]', { count: markers.length });
+			this._screenCache?.clear?.();
 		} catch {}
+		this._needsRender = true;
+	}
+	setDecals(decals: MarkerInternal[]) {
+		// Remember decals for GL resume
+		try {
+			this._lastDecals = decals.slice();
+		} catch {
+			this._lastDecals = decals as MarkerInternal[];
+		}
+		if (!this._icons) {
+			// Buffer until icon renderer is ready
+			this._pendingDecals = decals.slice();
+			return;
+		}
+		// Decals use the same icon renderer but are non-interactive
+		this._icons.setDecals?.(decals);
+		if (this._debug) this._log(`setDecals count=${decals.length}`);
 		try {
 			this._screenCache?.clear?.();
 		} catch {}
@@ -1425,6 +1444,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				}
 				if (this._lastMarkers && this._lastMarkers.length) {
 					this._icons.setMarkers(this._lastMarkers);
+				}
+				if (this._lastDecals && this._lastDecals.length) {
+					this._icons.setDecals?.(this._lastDecals);
 				}
 			} catch {}
 			try {

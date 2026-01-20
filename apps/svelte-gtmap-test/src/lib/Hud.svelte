@@ -181,7 +181,7 @@
                         rotateDir.set(mk.id, Math.random() < 0.5 ? -1 : 1);
                     }
                 });
-                offLayerRemove = map.markers.events.on('entityremove').each(({ entity }) => {
+                offLayerRemove = map.markers.events.on('entityremove').each(({ entity }: { entity: GTMarker }) => {
                     animState.delete(entity.id);
                     rotateBase.delete(entity.id);
                     rotateDir.delete(entity.id);

@@ -57,7 +57,7 @@ export interface PublicEvents<EventMap> {
 
 import type { EventMap as MapEventMap } from '../types';
 
-import type { MarkerEventMap, VectorEventMap, EntityCollectionEventMap } from './maps';
+import type { MarkerEventMap, VectorEventMap, DecalEventMap, EntityCollectionEventMap } from './maps';
 
 /** Marker events surface with typed names and payloads. */
 export interface MarkerEvents<T = unknown> extends PublicEvents<MarkerEventMap<T>> {
@@ -75,6 +75,13 @@ export interface VectorEvents<T = unknown> extends PublicEvents<VectorEventMap<T
 	/** Supported names: 'remove' */
 	on<K extends keyof VectorEventMap<T> & string>(event: K): EventSubscription<VectorEventMap<T>[K]>;
 	on<K extends keyof VectorEventMap<T> & string>(event: K, handler: (value: VectorEventMap<T>[K]) => void): Unsubscribe;
+}
+
+/** Decal events surface with typed names and payloads. */
+export interface DecalEvents extends PublicEvents<DecalEventMap> {
+	/** Supported names: 'positionchange' | 'remove' */
+	on<K extends keyof DecalEventMap & string>(event: K): EventSubscription<DecalEventMap[K]>;
+	on<K extends keyof DecalEventMap & string>(event: K, handler: (value: DecalEventMap[K]) => void): Unsubscribe;
 }
 
 /** EntityCollection events surface with typed names and payloads. */

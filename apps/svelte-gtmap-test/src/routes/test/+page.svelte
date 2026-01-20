@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import { GTMap } from '@gtmap';
-	import type { IconDef } from '@gtmap';
+	import { onMount } from 'svelte';
+	import { GTMap, ImageVisual, type IconDef } from '@gtmap';
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
 
@@ -14,7 +13,6 @@
 	onMount(() => {
 		if (!container) return;
 
-		// Create map with new GTMap API
 		map = new GTMap(container, {
 			center: HOME,
 			zoom: 2,
@@ -25,9 +23,11 @@
 			wrapX: false
 		});
 
-		// Add icon and marker
-		const iconHandle = map.addIcon(typedIconDefs.sandstorm);
-		map.addMarker(HOME.x, HOME.y, { icon: iconHandle });
+		// Add marker with ImageVisual
+		const def = typedIconDefs.sandstorm;
+		const visual = new ImageVisual(def.iconPath, { w: def.width, h: def.height }, def.x2IconPath);
+		visual.anchor = 'center';
+		map.addMarker(HOME.x, HOME.y, { visual });
 
 		// Listen to events
 		const unsubClick = map.events.on('pointerdown').each((event) => {

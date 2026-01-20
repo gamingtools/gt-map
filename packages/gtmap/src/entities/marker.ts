@@ -1,5 +1,6 @@
 import type { MarkerEventMap, MarkerData } from '../api/events/maps';
 import type { ApplyOptions, ApplyResult, Easing } from '../api/types';
+import type { Visual } from '../api/visual';
 
 import { EventedEntity } from './base';
 
@@ -9,18 +10,24 @@ import { EventedEntity } from './base';
  * @public
  */
 export interface MarkerOptions<T = unknown> {
-	iconType?: string; // id of IconHandle, defaults to 'default'
-	size?: number;
-	rotation?: number; // degrees clockwise
+	/** Visual template for rendering. */
+	visual: Visual;
+	/** Scale multiplier (1 = visual's native size). */
+	scale?: number;
+	/** Clockwise rotation in degrees. */
+	rotation?: number;
+	/** Opacity (0-1). */
+	opacity?: number;
+	/** Arbitrary user data attached to the marker. */
 	data?: T;
 }
 
-/** Builder for animating a single Marker (position/rotation/size). */
+/** Builder for animating a single Marker (position/rotation/scale). */
 export interface MarkerTransition {
 	/** Target a new position in world pixels. */
 	moveTo(x: number, y: number): this;
-	/** Target style properties (size, rotation). */
-	setStyle(opts: { size?: number; rotation?: number }): this;
+	/** Target style properties (scale, rotation, opacity). */
+	setStyle(opts: { scale?: number; rotation?: number; opacity?: number }): this;
 	/** Commit the transition (instant or animated). */
 	apply(opts?: ApplyOptions): Promise<ApplyResult>;
 	/** Cancel a pending or running transition. */
@@ -34,20 +41,21 @@ function genMarkerId(): string {
 }
 
 /**
- * Marker - an icon anchored at a world pixel coordinate.
+ * Marker - an interactive visual anchored at a world pixel coordinate.
  *
  * @public
  * @remarks
  * Emits typed events via {@link Marker.events | marker.events} (`click`,
- * `pointerenter`, `pointerleave`, `positionchange`, `remove`, …).
+ * `pointerenter`, `pointerleave`, `positionchange`, `remove`, ...).
  */
 export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	readonly id: string;
 	private _x: number;
 	private _y: number;
-	private _iconType: string;
-	private _size?: number;
-	private _rotation?: number;
+	private _visual: Visual;
+	private _scale: number;
+	private _rotation: number;
+	private _opacity: number;
 	private _data?: T;
 	private _onChange?: () => void;
 	private _activeTx?: MarkerTransitionImpl<T>;
@@ -58,18 +66,19 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * @public
 	 * @param x - World X (pixels)
 	 * @param y - World Y (pixels)
-	 * @param opts - Optional style and user data
+	 * @param opts - Visual, style, and user data options
 	 * @param onChange - Internal callback to notify the map facade of changes
 	 * @internal
 	 */
-	constructor(x: number, y: number, opts: MarkerOptions<T> = {}, onChange?: () => void) {
+	constructor(x: number, y: number, opts: MarkerOptions<T>, onChange?: () => void) {
 		super();
 		this.id = genMarkerId();
 		this._x = x;
 		this._y = y;
-		this._iconType = opts.iconType ?? 'default';
-		this._size = opts.size;
-		this._rotation = opts.rotation;
+		this._visual = opts.visual;
+		this._scale = opts.scale ?? 1;
+		this._rotation = opts.rotation ?? 0;
+		this._opacity = opts.opacity ?? 1;
 		this._data = opts.data;
 		this._onChange = onChange;
 	}
@@ -82,17 +91,21 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	get y(): number {
 		return this._y;
 	}
-	/** Icon id for this marker (or `'default'`). */
-	get iconType(): string {
-		return this._iconType;
+	/** The visual template for this marker. */
+	get visual(): Visual {
+		return this._visual;
 	}
-	/** Optional scale multiplier (renderer treats `undefined` as 1). */
-	get size(): number | undefined {
-		return this._size;
+	/** Scale multiplier (1 = visual's native size). */
+	get scale(): number {
+		return this._scale;
 	}
-	/** Optional clockwise rotation in degrees. */
-	get rotation(): number | undefined {
+	/** Clockwise rotation in degrees. */
+	get rotation(): number {
 		return this._rotation;
+	}
+	/** Opacity (0-1). */
+	get opacity(): number {
+		return this._opacity;
 	}
 	/** Arbitrary user data attached to the marker. */
 	get data(): T | undefined {
@@ -120,13 +133,14 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * Update the marker style properties and trigger a renderer sync.
 	 *
 	 * @public
-	 * @param opts - Partial style ({@link MarkerOptions})
+	 * @param opts - Partial style options
 	 * @returns This marker for chaining
 	 */
-	setStyle(opts: { iconType?: string; size?: number; rotation?: number }): this {
-		if (opts.iconType !== undefined) this._iconType = opts.iconType;
-		if (opts.size !== undefined) this._size = opts.size;
+	setStyle(opts: { visual?: Visual; scale?: number; rotation?: number; opacity?: number }): this {
+		if (opts.visual !== undefined) this._visual = opts.visual;
+		if (opts.scale !== undefined) this._scale = opts.scale;
 		if (opts.rotation !== undefined) this._rotation = opts.rotation;
+		if (opts.opacity !== undefined) this._opacity = opts.opacity;
 		this._onChange?.();
 		return this;
 	}
@@ -136,7 +150,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 *
 	 * @public
 	 * @remarks
-	 * Emits a `positionchange` event and re‑syncs to the renderer.
+	 * Emits a `positionchange` event and re-syncs to the renderer.
 	 * @returns This marker for chaining
 	 * @example
 	 * ```ts
@@ -155,7 +169,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	}
 
 	/**
-	 * Emit a `remove` event (called by the owning layer after deletion).
+	 * Emit a `remove` event (called by the owning collection after deletion).
 	 * @internal
 	 */
 	_emitRemove(): void {
@@ -180,9 +194,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		this.emit(event, payload);
 	}
 
-	/** Public events surface for this marker (typed event names/payloads). */
-
-	/** Start a marker transition (position/rotation/size). */
+	/** Start a marker transition (position/rotation/scale/opacity). */
 	transition(): MarkerTransition {
 		return new MarkerTransitionImpl<T>(this);
 	}
@@ -204,8 +216,9 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 	private marker: Marker<T>;
 	private targetX?: number;
 	private targetY?: number;
-	private targetSize?: number;
+	private targetScale?: number;
 	private targetRotation?: number;
+	private targetOpacity?: number;
 	private rafId: number | null = null;
 	private resolve?: (r: ApplyResult) => void;
 	private promise?: Promise<ApplyResult>;
@@ -220,9 +233,10 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 		this.targetY = y;
 		return this;
 	}
-	setStyle(opts: { size?: number; rotation?: number }): this {
-		if (opts.size !== undefined) this.targetSize = opts.size;
+	setStyle(opts: { scale?: number; rotation?: number; opacity?: number }): this {
+		if (opts.scale !== undefined) this.targetScale = opts.scale;
 		if (opts.rotation !== undefined) this.targetRotation = opts.rotation;
+		if (opts.opacity !== undefined) this.targetOpacity = opts.opacity;
 		return this;
 	}
 
@@ -241,7 +255,10 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 		if (this.promise) return this.promise;
 
 		const needsPos = typeof this.targetX === 'number' && typeof this.targetY === 'number';
-		const needsStyle = typeof this.targetSize === 'number' || typeof this.targetRotation === 'number';
+		const needsStyle =
+			typeof this.targetScale === 'number' ||
+			typeof this.targetRotation === 'number' ||
+			typeof this.targetOpacity === 'number';
 		if (!needsPos && !needsStyle) {
 			return Promise.resolve({ status: 'instant' });
 		}
@@ -249,7 +266,8 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 		const animate = opts?.animate;
 		if (!animate) {
 			if (needsPos) this.marker.moveTo(this.targetX as number, this.targetY as number);
-			if (needsStyle) this.marker.setStyle({ size: this.targetSize, rotation: this.targetRotation });
+			if (needsStyle)
+				this.marker.setStyle({ scale: this.targetScale, rotation: this.targetRotation, opacity: this.targetOpacity });
 			return Promise.resolve({ status: 'instant' });
 		}
 
@@ -263,12 +281,14 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 		// Capture starts
 		const sx = this.marker.x;
 		const sy = this.marker.y;
-		const ss = this.marker.size;
-		const sr = typeof this.marker.rotation === 'number' ? this.marker.rotation : 0;
+		const ss = this.marker.scale;
+		const sr = this.marker.rotation;
+		const so = this.marker.opacity;
 		const tx = needsPos ? (this.targetX as number) : sx;
 		const ty = needsPos ? (this.targetY as number) : sy;
-		const ts = typeof this.targetSize === 'number' ? (this.targetSize as number) : (ss as number | undefined);
-		const tr = typeof this.targetRotation === 'number' ? (this.targetRotation as number) : sr;
+		const ts = typeof this.targetScale === 'number' ? this.targetScale : ss;
+		const tr = typeof this.targetRotation === 'number' ? this.targetRotation : sr;
+		const to = typeof this.targetOpacity === 'number' ? this.targetOpacity : so;
 
 		// Normalize rotation to shortest path
 		const norm = (a: number) => ((a % 360) + 360) % 360;
@@ -306,7 +326,9 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 				if (needsPos) this.marker.moveTo(cx, cy);
 				if (needsStyle) {
 					const rot = norm(srN + dR * k);
-					this.marker.setStyle({ size: ts, rotation: rot });
+					const sca = ss + (ts - ss) * k;
+					const opa = so + (to - so) * k;
+					this.marker.setStyle({ scale: sca, rotation: rot, opacity: opa });
 				}
 				if (t >= 1) {
 					this.rafId = null;

@@ -31,7 +31,7 @@ export interface ImageSourceOptions {
 // Map configuration
 export interface MapOptions {
 	/** Single raster image to display (full resolution). */
-	image: ImageSourceOptions;
+	image?: ImageSourceOptions;
 	/**
 	 * Optional low‑resolution preview to render first, then seamlessly upgrade to {@link MapOptions.image}.
 	 *
@@ -75,6 +75,12 @@ export interface MapOptions {
 	 * - speedMs: rotation period in milliseconds (default 1000)
 	 */
 	spinner?: SpinnerOptions;
+	/**
+	 * Enable debug logging to console for this map instance.
+	 * When true, logs initialization timing, image uploads, and internal events.
+	 * Default: false.
+	 */
+	debug?: boolean;
 }
 
 export interface SpinnerOptions {
