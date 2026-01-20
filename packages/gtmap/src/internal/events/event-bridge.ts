@@ -10,7 +10,7 @@ type Hit = {
 	type: string;
 	world: { x: number; y: number };
 	screen: { x: number; y: number };
-	size: { w: number; h: number };
+	size: { width: number; height: number };
 	rotation?: number;
 	icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 };
@@ -31,7 +31,7 @@ export interface EventBridgeDeps {
 		id: string;
 		idx: number;
 		world: { x: number; y: number };
-		size: { w: number; h: number };
+		size: { width: number; height: number };
 		rotation?: number;
 		icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 	}>;
@@ -149,7 +149,7 @@ export default class EventBridge {
 						now,
 						view: this.d.getView(),
 						screen: { x: e.x, y: e.y },
-						marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 }, data: prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null },
+						marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { width: 0, height: 0 }, data: prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null },
 						icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
 						originalEvent: e.originalEvent,
 					} as MarkerEventData;
@@ -170,7 +170,7 @@ export default class EventBridge {
 							now,
 							view: this.d.getView(),
 							screen: { x: e.x, y: e.y },
-							marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 }, data: prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null },
+							marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { width: 0, height: 0 }, data: prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null },
 							icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
 							originalEvent: e.originalEvent,
 						} as MarkerEventData;
@@ -203,7 +203,7 @@ export default class EventBridge {
 					now,
 					view: this.d.getView(),
 					screen: { x: e.x, y: e.y },
-					marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+					marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { width: 0, height: 0 } },
 					icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
 					originalEvent: e.originalEvent,
 				} as MarkerEventData;

@@ -2,6 +2,49 @@ import type { ZoomDeps } from '../types';
 import { DEBUG } from '../../debug';
 import * as Coords from '../coords';
 
+/**
+ * ZoomController manages zoom animations with anchor-point stability.
+ *
+ * ## Core Concept: Anchored Zoom
+ *
+ * When zooming with a mouse wheel, the point under the cursor should remain
+ * stationary on screen. This is called "anchored zoom" and requires adjusting
+ * the map center as zoom changes.
+ *
+ * ## The Math
+ *
+ * Given:
+ * - Current center in level space: `centerNow`
+ * - Pointer position in CSS pixels: `(px, py)`
+ * - Old zoom `zOld`, new zoom `zNew`
+ *
+ * The world point under the pointer before zoom:
+ * ```
+ * worldBefore = tlWorld + (px, py) / scaleOld
+ * ```
+ *
+ * After zoom, the same world point should be at the same screen position.
+ * So we need a new center such that:
+ * ```
+ * tlWorld_new + (px, py) / scaleNew = worldBefore_new
+ * ```
+ *
+ * Where `worldBefore_new = worldBefore * factor` (scaled to new zoom level).
+ * Solving for the new center gives us the anchored position.
+ *
+ * ## Zoom-Out Center Bias
+ *
+ * When zooming out, purely anchored zoom can feel "wrong" because the
+ * viewport pulls toward the pointer. We add a configurable bias that
+ * blends between pointer-anchored and center-anchored positions,
+ * proportional to how much we're zooming out.
+ *
+ * ## Bounds Enforcement
+ *
+ * The controller respects maxBounds by clamping the zoom to prevent
+ * showing areas outside the bounds. It can optionally "bounce" with
+ * an easeOutBack effect when hitting zoom limits.
+ */
 export default class ZoomController {
 	private deps: ZoomDeps;
 	private easeBaseMs = 150;
@@ -29,6 +72,29 @@ export default class ZoomController {
 	cancel() {
 		this.zoomAnim = null;
 	}
+	/**
+	 * Start an eased zoom animation by a delta amount.
+	 *
+	 * @param dz - Zoom delta (positive = zoom in, negative = zoom out)
+	 * @param px - Anchor X position in CSS pixels
+	 * @param py - Anchor Y position in CSS pixels
+	 * @param anchor - 'pointer' keeps the point under cursor stable; 'center' zooms around viewport center
+	 * @param easing - Optional easing function (default: easeOutCubic)
+	 *
+	 * ## Animation Duration
+	 *
+	 * Duration scales with zoom distance:
+	 * ```
+	 * duration = base + perUnit * |dz|
+	 * ```
+	 * Clamped to [easeMinMs, easeMaxMs] for consistent feel.
+	 *
+	 * ## Continuing Animations
+	 *
+	 * If called during an existing animation, we calculate the current
+	 * interpolated position and start the new animation from there.
+	 * This provides smooth momentum when rapidly scrolling.
+	 */
 	startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center', easing?: (t: number) => number) {
 		const now = this.deps.now();
 		let current = this.deps.getZoom();
@@ -66,6 +132,27 @@ export default class ZoomController {
 		this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor, bounce, easing };
 		this.deps.requestRender();
 	}
+	/**
+	 * Advance the zoom animation by one frame.
+	 *
+	 * Called each frame by the main render loop. Computes the interpolated
+	 * zoom value and applies it via `applyAnchoredZoom`.
+	 *
+	 * ## Easing
+	 *
+	 * Default easing is `easeOutCubic: t => 1 - (1-t)^3`
+	 * This provides smooth deceleration toward the target.
+	 *
+	 * ## Bounce Effect
+	 *
+	 * When `bounce` is set (hitting zoom limits), uses `easeOutBack`:
+	 * ```
+	 * outBack(t) = 1 + c3*(t-1)^3 + c1*(t-1)^2
+	 * ```
+	 * Creates a slight overshoot then return, giving tactile feedback.
+	 *
+	 * @returns true if animation is still active, false if complete
+	 */
 	step(): boolean {
 		if (!this.zoomAnim) return false;
 		const now = this.deps.now();
@@ -89,6 +176,44 @@ export default class ZoomController {
 		return true;
 	}
 
+	/**
+	 * Apply a zoom change while keeping the anchor point stable on screen.
+	 *
+	 * This is the core zoom algorithm. It transforms coordinates between
+	 * zoom levels while ensuring visual continuity.
+	 *
+	 * @param targetZoom - The target zoom level (will be clamped)
+	 * @param px - Anchor X in CSS pixels (mouse position for pointer anchor)
+	 * @param py - Anchor Y in CSS pixels (mouse position for pointer anchor)
+	 * @param anchor - 'pointer' or 'center'
+	 *
+	 * ## Algorithm (Pointer Anchor)
+	 *
+	 * 1. Find the world point under the pointer at current zoom:
+	 *    ```
+	 *    worldBefore = tlWorld + (px, py) / scale
+	 *    ```
+	 *
+	 * 2. Scale that point to the new zoom level:
+	 *    ```
+	 *    factor = 2^(zInt_new - zInt_old)
+	 *    worldBefore2 = worldBefore * factor
+	 *    ```
+	 *
+	 * 3. Compute new top-left such that worldBefore2 is at (px, py):
+	 *    ```
+	 *    tl2 = worldBefore2 - (px, py) / scale2
+	 *    ```
+	 *
+	 * 4. Derive center from new top-left:
+	 *    ```
+	 *    center2 = tl2 + viewport / (2 * scale2)
+	 *    ```
+	 *
+	 * 5. For zoom-out, blend with center-anchored position using bias.
+	 *
+	 * 6. Clamp center to bounds and apply.
+	 */
 	applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center') {
 		// Respect the requested anchor; default is 'pointer'.
 		const anchorEff: 'pointer' | 'center' = anchor;

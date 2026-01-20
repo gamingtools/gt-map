@@ -55,4 +55,5 @@ export type { MarkerData, DecalData, VectorData, VectorGeometry, MarkerEventMap,
 export type { MarkerOptions, MarkerTransition } from './entities/marker';
 export type { DecalOptions } from './entities/decal';
 export type { VectorOptions } from './entities/vector';
+export { CoordTransformer } from './api/coord-transformer';
 export type { Bounds as SourceBounds, TransformType } from './api/coord-transformer';

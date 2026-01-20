@@ -61,6 +61,12 @@ export interface MapOptions {
 	maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number } | null;
 	maxBoundsViscosity?: number;
 	/**
+	 * When true, clip all rendering (raster, markers, vectors) to the map image bounds.
+	 * Useful to prevent content from appearing outside the actual map area.
+	 * Defaults to false.
+	 */
+	clipToBounds?: boolean;
+	/**
 	 * When true, allow a small elastic bounce at zoom limits (visual easing only).
 	 * Defaults to false.
 	 */
@@ -211,7 +217,7 @@ export interface MouseEventData {
 /** Marker hover hit on the map surface (mouse only, when enabled). */
 export interface MarkerHit {
 	/** Lightweight marker snapshot for hover purposes. */
-	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: unknown | null };
+	marker: { id: string; index: number; world: Point; size: { width: number; height: number }; rotation?: number; data?: unknown | null };
 	/** Icon metadata associated with the hit marker. */
 	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 }
@@ -387,7 +393,7 @@ export interface MarkerEventData<T = unknown> {
 	now: number;
 	view: ViewState;
 	screen: { x: number; y: number };
-	marker: { id: string; index: number; world: Point; size: { w: number; h: number }; rotation?: number; data?: T | null };
+	marker: { id: string; index: number; world: Point; size: { width: number; height: number }; rotation?: number; data?: T | null };
 	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 	originalEvent?: PointerEvent | MouseEvent;
 }

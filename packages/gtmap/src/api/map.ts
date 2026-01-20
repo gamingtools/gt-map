@@ -660,6 +660,30 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		this._impl.setMaxBoundsViscosity(v);
 		return this;
 	}
+
+	/**
+	 * Enable or disable clipping to map image bounds.
+	 *
+	 * When enabled, all rendering (raster, markers, vectors) is clipped to
+	 * the map image boundaries. This prevents content from appearing outside
+	 * the actual map area when panned or zoomed out.
+	 *
+	 * @public
+	 * @group Tiles & Styling
+	 * @param on - Whether to clip to bounds
+	 * @returns This map instance for chaining
+	 *
+	 * @example
+	 * ```ts
+	 * // Clip everything outside map bounds
+	 * map.setClipToBounds(true);
+	 * ```
+	 */
+	setClipToBounds(on: boolean): this {
+		this._impl.setClipToBounds?.(on);
+		return this;
+	}
+
 	/**
 	 * Set the maximum frames per second.
 	 *

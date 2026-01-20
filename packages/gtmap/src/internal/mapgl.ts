@@ -117,6 +117,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _inputsAttached = false;
 	private _maxBoundsPx: { minX: number; minY: number; maxX: number; maxY: number } | null = null;
 	private _maxBoundsViscosity = 0;
+	private _clipToBounds = false;
 	_bounceAtZoomLimits = false;
 	// Home view (initial center)
 	// Home view (initial center) no longer tracked
@@ -459,6 +460,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
+		if (typeof options.clipToBounds === 'boolean') this._clipToBounds = options.clipToBounds;
 		this._autoResize = options.autoResize !== false;
 
 		// Start async initialization
@@ -842,7 +844,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 					now,
 					view: this._viewPublic(),
 					screen: { x: -1, y: -1 },
-					marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { w: 0, h: 0 } },
+					marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { width: 0, height: 0 } },
 					icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
 				});
 				this._lastHover = null;
@@ -1203,6 +1205,13 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._maxBoundsViscosity = Math.max(0, Math.min(1, v));
 		this._needsRender = true;
 	}
+	public setClipToBounds(on: boolean) {
+		const v = !!on;
+		if (v !== this._clipToBounds) {
+			this._clipToBounds = v;
+			this._needsRender = true;
+		}
+	}
 	private _initEvents() {
 		this._inputDeps = {
 			getContainer: () => this.container,
@@ -1301,7 +1310,61 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 		const imageReadyAtCall = this.getImage().ready;
 		const tR0 = this._nowMs();
+
+		// Apply scissor clipping to map bounds if enabled
+		const gl = this.gl;
+		let scissorEnabled = false;
+		if (this._clipToBounds) {
+			try {
+				const rect = this.container.getBoundingClientRect();
+				const wCSS = rect.width;
+				const hCSS = rect.height;
+				const dpr = this._dpr;
+
+				// Compute map corners in screen space
+				const tl = Coords.worldToCSS(
+					{ x: 0, y: 0 },
+					this.zoom,
+					{ x: this.center.lng, y: this.center.lat },
+					{ x: wCSS, y: hCSS },
+					this._imageMaxZoom,
+				);
+				const br = Coords.worldToCSS(
+					{ x: this.mapSize.width, y: this.mapSize.height },
+					this.zoom,
+					{ x: this.center.lng, y: this.center.lat },
+					{ x: wCSS, y: hCSS },
+					this._imageMaxZoom,
+				);
+
+				// Clamp to viewport
+				const x0 = Math.max(0, Math.floor(tl.x * dpr));
+				const y0 = Math.max(0, Math.floor(tl.y * dpr));
+				const x1 = Math.min(this.canvas.width, Math.ceil(br.x * dpr));
+				const y1 = Math.min(this.canvas.height, Math.ceil(br.y * dpr));
+
+				// WebGL scissor uses bottom-left origin
+				const scissorX = x0;
+				const scissorY = this.canvas.height - y1;
+				const scissorW = Math.max(0, x1 - x0);
+				const scissorH = Math.max(0, y1 - y0);
+
+				if (scissorW > 0 && scissorH > 0) {
+					gl.enable(gl.SCISSOR_TEST);
+					gl.scissor(scissorX, scissorY, scissorW, scissorH);
+					scissorEnabled = true;
+				}
+			} catch {}
+		}
+
 		this._renderer.render();
+
+		// Disable scissor test after rendering
+		if (scissorEnabled) {
+			try {
+				gl.disable(gl.SCISSOR_TEST);
+			} catch {}
+		}
 		if (imageReadyAtCall && this._firstRasterDrawAtMs == null) {
 			if (this._gpuWaitEnabled()) {
 				try {
@@ -1530,49 +1593,129 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			} catch {}
 		}
 	}
+	/**
+	 * Hit test markers at a screen position, returning the topmost hit.
+	 *
+	 * ## Algorithm Overview
+	 *
+	 * 1. **Iterate top-to-bottom**: Markers are rendered in array order, so later
+	 *    markers appear on top. We iterate in reverse to find the topmost hit first.
+	 *
+	 * 2. **AABB test**: First check if point is within the marker's axis-aligned
+	 *    bounding box (fast rejection for most markers).
+	 *
+	 * 3. **Alpha mask test** (optional): For pixel-accurate hits on non-rectangular
+	 *    icons, sample the icon's alpha channel. This handles irregular shapes,
+	 *    transparency, and rotation.
+	 *
+	 * ## Rotation Handling
+	 *
+	 * When a marker is rotated, we need to "unrotate" the hit point before sampling
+	 * the alpha mask. The rotation is around the anchor point:
+	 *
+	 * ```
+	 * 1. Translate point to anchor-relative coords: (lx - ax, ly - ay)
+	 * 2. Apply inverse rotation: rotate by -theta
+	 * 3. Translate back: add anchor offset
+	 * 4. Sample mask at the unrotated position
+	 * ```
+	 *
+	 * @param px - Screen X in CSS pixels (relative to container)
+	 * @param py - Screen Y in CSS pixels (relative to container)
+	 * @param requireAlpha - Reserved for future use (currently ignored)
+	 * @returns Hit info for the topmost marker, or null if no hit
+	 */
 	private _hitTestMarker(px: number, py: number, requireAlpha = false) {
 		void requireAlpha;
 		if (!this._icons) return null;
+
 		const rect = this.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
 		const imageMaxZ = this._imageMaxZoom;
+
+		// Iterate in reverse: last marker rendered is on top, so check it first
 		for (let i = info.length - 1; i >= 0; i--) {
 			const it = info[i];
+
+			// Convert marker world position to screen position
 			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+
+			// Compute AABB bounds (anchor offsets from the marker's screen position)
 			const left = css.x - it.anchor.ax;
 			const top = css.y - it.anchor.ay;
+
+			// Fast AABB rejection test
 			if (px >= left && px <= left + it.w && py >= top && py <= top + it.h) {
-				// Optional alpha-mask sampling for pixel-accurate hits
+				// Point is within bounding box - now check alpha mask for pixel-accuracy
 				const mask = this._icons.getMaskInfo?.(it.type) || null;
 				if (mask) {
-					// Map pointer to icon local coords (account for rotation around anchor)
-					const ax = it.anchor.ax;
-					const ay = it.anchor.ay;
-					const lx = px - left;
-					const ly = py - top;
+					// Transform hit point to icon's local coordinate space
+					const ax = it.anchor.ax; // Anchor X (rotation pivot)
+					const ay = it.anchor.ay; // Anchor Y (rotation pivot)
+					const lx = px - left; // Local X (0 to width)
+					const ly = py - top; // Local Y (0 to height)
+
+					// Translate to anchor-relative coords for rotation
 					const cx = lx - ax;
 					const cy = ly - ay;
+
+					// Apply INVERSE rotation to get the unrotated position
+					// (We're undoing the marker's rotation to find the original texel)
 					const theta = ((it.rotation || 0) * Math.PI) / 180;
 					const c = Math.cos(-theta),
 						s = Math.sin(-theta);
-					const rx = cx * c - cy * s + ax;
-					const ry = cx * s + cy * c + ay;
+					const rx = cx * c - cy * s + ax; // Rotated X + translate back
+					const ry = cx * s + cy * c + ay; // Rotated Y + translate back
+
+					// Bounds check after rotation (point might rotate outside icon)
 					if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
+
+					// Map local coords to mask texel coords
 					const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
 					const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
+
+					// Sample alpha value (0-255)
 					const alpha = mask.data[my * mask.w + mx] | 0;
-					const THRESH = 32; // ~12.5%
-					if (alpha < THRESH) continue; // treat as transparent: no hit
+					const THRESH = 32; // ~12.5% opacity threshold
+					if (alpha < THRESH) continue; // Transparent pixel - no hit
 				}
-				return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { w: it.w, h: it.h }, rotation: it.rotation, icon: it.icon };
+
+				// Hit confirmed - return marker info
+				return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { width: it.w, height: it.h }, rotation: it.rotation, icon: it.icon };
 			}
 		}
 		return null;
 	}
 
+	/**
+	 * Compute all markers that hit a screen position, ordered top-to-bottom.
+	 *
+	 * Unlike `_hitTestMarker` which returns only the topmost hit, this method
+	 * returns ALL markers under the cursor. Useful for:
+	 * - Click-through: showing a menu of overlapping markers
+	 * - Analytics: counting markers at a point
+	 * - Debugging: visualizing marker stacking
+	 *
+	 * ## Algorithm
+	 *
+	 * Same as `_hitTestMarker`:
+	 * 1. Iterate markers in reverse render order (top-to-bottom)
+	 * 2. AABB test for fast rejection
+	 * 3. Alpha mask test for pixel-accurate hits (with rotation handling)
+	 * 4. Collect all hits instead of returning on first hit
+	 *
+	 * ## Return Order
+	 *
+	 * Results are ordered from topmost (first) to bottommost (last),
+	 * matching visual stacking order.
+	 *
+	 * @param px - Screen X in CSS pixels (relative to container)
+	 * @param py - Screen Y in CSS pixels (relative to container)
+	 * @returns Array of hit markers with position, size, rotation, and icon info
+	 */
 	private _computeMarkerHits(
 		px: number,
 		py: number,
@@ -1580,7 +1723,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		id: string;
 		idx: number;
 		world: { x: number; y: number };
-		size: { w: number; h: number };
+		size: { width: number; height: number };
 		rotation?: number;
 		icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 	}> {
@@ -1588,25 +1731,37 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			id: string;
 			idx: number;
 			world: { x: number; y: number };
-			size: { w: number; h: number };
+			size: { width: number; height: number };
 			rotation?: number;
 			icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 		}> = [];
 		if (!this._icons) return out;
+
 		const rect = this.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
 		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
 		const info = this._icons.getMarkerInfo(iconScale);
 		const imageMaxZ = this._imageMaxZoom;
+
+		// Iterate in reverse: top-to-bottom in visual stacking order
 		for (let i = info.length - 1; i >= 0; i--) {
 			const it = info[i];
+
+			// Convert marker world position to screen position
 			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+
+			// Compute AABB bounds
 			const left = css.x - it.anchor.ax;
 			const top = css.y - it.anchor.ay;
+
+			// Fast AABB rejection
 			if (px < left || px > left + it.w || py < top || py > top + it.h) continue;
+
+			// Alpha mask test for pixel-accurate hit detection
 			const mask = this._icons.getMaskInfo?.(it.type) || null;
 			if (mask) {
+				// Transform to local coords and apply inverse rotation (same as _hitTestMarker)
 				const ax = it.anchor.ax;
 				const ay = it.anchor.ay;
 				const lx = px - left;
@@ -1618,18 +1773,24 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 					s = Math.sin(-theta);
 				const rx = cx * c - cy * s + ax;
 				const ry = cx * s + cy * c + ay;
+
+				// Bounds check after rotation
 				if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
+
+				// Sample alpha mask
 				const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
 				const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
 				const alpha = mask.data[my * mask.w + mx] | 0;
-				const THRESH = 32;
+				const THRESH = 32; // ~12.5% opacity threshold
 				if (alpha < THRESH) continue;
 			}
+
+			// Hit confirmed - add to results (unlike _hitTestMarker, we collect all)
 			out.push({
 				id: it.id,
 				idx: it.index,
 				world: { x: it.lng, y: it.lat },
-				size: { w: it.w, h: it.h },
+				size: { width: it.w, height: it.h },
 				rotation: it.rotation,
 				icon: { id: it.type, iconPath: it.icon.iconPath, x2IconPath: it.icon.x2IconPath, width: it.icon.width, height: it.icon.height, anchorX: it.icon.anchorX, anchorY: it.icon.anchorY },
 			});

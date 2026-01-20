@@ -151,6 +151,7 @@ export interface MapImpl {
 	setWrapX(on: boolean): void;
 	setMaxBoundsPx(bounds: MaxBoundsPx | null): void;
 	setMaxBoundsViscosity(v: number): void;
+	setClipToBounds?(on: boolean): void;
 	setIconDefs(defs: Record<string, IconDefInternal>): Promise<void>;
 	setMarkers(markers: MarkerInternal[]): void;
 	setDecals?(markers: MarkerInternal[]): void;

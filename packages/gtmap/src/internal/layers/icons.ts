@@ -8,6 +8,52 @@ import { createAtlas } from './icons/icon-atlas';
 export type IconDef = { id: string; url: string; width: number; height: number; anchorX?: number; anchorY?: number };
 export type MarkerRenderData = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number };
 
+/**
+ * IconRenderer handles efficient WebGL rendering of map markers and decals.
+ *
+ * ## Instanced Rendering
+ *
+ * For performance with many markers, we use WebGL instanced drawing:
+ * - A single unit quad (0,0 to 1,1) is drawn multiple times
+ * - Per-instance attributes provide position, size, anchor, and rotation
+ * - One draw call renders all markers of the same type
+ *
+ * This is vastly more efficient than individual draw calls, especially
+ * when markers number in the hundreds or thousands.
+ *
+ * ## Texture Atlas
+ *
+ * Icons are packed into texture atlases to minimize texture binding:
+ * - Multiple icon images are combined into one texture
+ * - UV coordinates select the correct region for each icon type
+ * - Retina (2x) and standard (1x) atlases are maintained separately
+ *
+ * ## Instance Buffer Layout
+ *
+ * Each instance uses 7 floats (28 bytes):
+ * ```
+ * [lng, lat, width, height, anchorX, anchorY, angle]
+ *   0    1     2       3        4        5       6
+ * ```
+ *
+ * ## Shader Math
+ *
+ * The vertex shader transforms from world coordinates to clip space:
+ * 1. Convert native coords to level space: `world = native * invS`
+ * 2. Convert to CSS pixels: `css = (world - tlWorld) * scale`
+ * 3. Quantize to device pixels to eliminate subpixel jitter
+ * 4. Apply rotation around anchor point
+ * 5. Transform to clip space: `clip = (pixel / resolution) * 2 - 1`
+ *
+ * ## Rotation
+ *
+ * Rotation is applied in device pixel space around the anchor point:
+ * ```
+ * v = vertex * size - anchor  // offset from anchor
+ * vr = rotate(v, angle)       // apply rotation
+ * pos = center + vr           // final position
+ * ```
+ */
 export class IconRenderer {
 	private gl: WebGLRenderingContext;
 	private textures = new Map<string, WebGLTexture>();
@@ -262,6 +308,30 @@ export class IconRenderer {
 		this.rebuildTypeData();
 	}
 
+	/**
+	 * Rebuild per-type instance data arrays for GPU upload.
+	 *
+	 * ## Data Layout
+	 *
+	 * Groups all markers by icon type and packs their data into Float32Arrays:
+	 * ```
+	 * [lng, lat, width, height, anchorX, anchorY, angle] x N instances
+	 *   0    1     2       3        4        5       6
+	 * ```
+	 *
+	 * Each instance = 7 floats = 28 bytes.
+	 *
+	 * ## Versioning
+	 *
+	 * A version counter tracks when data changes, allowing the GPU buffer
+	 * upload to skip unchanged types (avoiding redundant uploads).
+	 *
+	 * ## Markers + Decals
+	 *
+	 * Both markers and decals are combined into the same type buckets,
+	 * so a single draw call renders all icons of a given type regardless
+	 * of whether they're interactive markers or background decals.
+	 */
 	private rebuildTypeData() {
 		// Combine markers and decals for rendering
 		const all = [...this.markers, ...this.decals];
@@ -336,6 +406,37 @@ export class IconRenderer {
 		}
 	}
 
+	/**
+	 * Draw all markers and decals to the WebGL context.
+	 *
+	 * ## Rendering Strategy
+	 *
+	 * 1. **Try instanced path first**: If WebGL2 or ANGLE_instanced_arrays
+	 *    is available, use instanced rendering for maximum performance.
+	 *
+	 * 2. **Fallback to per-marker draws**: For older WebGL1 contexts without
+	 *    instancing, fall back to individual draw calls (slower but compatible).
+	 *
+	 * ## Batching
+	 *
+	 * Markers are grouped by icon type to minimize texture binds:
+	 * - All markers of type "pin" are drawn together
+	 * - Then all markers of type "star", etc.
+	 *
+	 * ## Coordinate Flow
+	 *
+	 * 1. Compute top-left of viewport in level space (snapped to device pixels)
+	 * 2. For each marker, convert world coords -> CSS -> device pixels
+	 * 3. Apply anchor offset and rotation
+	 * 4. Quantize final position to eliminate subpixel jitter
+	 *
+	 * ## Device Pixel Snapping
+	 *
+	 * All positions are snapped to integer device pixels to prevent:
+	 * - Texture filtering artifacts (blurry icons)
+	 * - Subpixel shimmer during pan
+	 * - Inconsistent icon sizes
+	 */
 	draw(ctx: {
 		gl: WebGLRenderingContext;
 		prog: WebGLProgram;
@@ -529,6 +630,25 @@ export class IconRenderer {
 		}
 	}
 
+	/**
+	 * Ensure instanced rendering is available and set up.
+	 *
+	 * ## WebGL Version Handling
+	 *
+	 * - **WebGL2**: Instancing is native via `drawArraysInstanced()`
+	 * - **WebGL1**: Requires `ANGLE_instanced_arrays` extension
+	 *
+	 * ## Shader Program
+	 *
+	 * Creates a specialized instancing shader with:
+	 * - `a_pos`: Unit quad vertex position (0-1)
+	 * - `a_i_native`: Per-instance world position (lng, lat)
+	 * - `a_i_size`: Per-instance icon size (width, height)
+	 * - `a_i_anchor`: Per-instance anchor offset
+	 * - `a_i_angle`: Per-instance rotation angle (radians)
+	 *
+	 * @returns true if instancing is available and ready
+	 */
 	private ensureInstanced(gl: WebGLRenderingContext): boolean {
 		// WebGL2 supports instancing natively; WebGL1 requires ANGLE_instanced_arrays
 		const isGL2 = 'drawArraysInstanced' in (gl as WebGL2RenderingContext);
@@ -644,8 +764,17 @@ export class IconRenderer {
 	}
 }
 
+/**
+ * Round buffer capacity up to a power-of-two with 1.5x headroom.
+ *
+ * This strategy reduces buffer reallocations by:
+ * 1. Adding 50% headroom to accommodate growth
+ * 2. Rounding to power-of-two for GPU-friendly allocation
+ *
+ * @param n - Minimum required bytes
+ * @returns Capacity in bytes (power of two >= n * 1.5)
+ */
 function roundCapacity(n: number): number {
-	// grow with 1.5x headroom up to next power-of-two-like boundary
 	const target = Math.floor(n * 1.5);
 	let p = 1;
 	while (p < target) p <<= 1;
