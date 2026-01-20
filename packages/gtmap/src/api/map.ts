@@ -9,7 +9,8 @@ import { Vector } from '../entities/vector';
 import { ViewTransitionImpl, type ViewTransition } from '../internal/core/view-transition';
 import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../internal/core/vector-types';
 
-import { Visual, isImageVisual, resolveAnchor } from './visual';
+import { Visual, isImageVisual, isTextVisual, resolveAnchor } from './visual';
+import { renderTextToCanvas } from '../internal/layers/text-renderer';
 import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
 import { CoordTransformer, type Bounds as SourceBounds, type TransformType } from './coord-transformer';
@@ -80,6 +81,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	private _defaultIconReady = false;
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
 	private _visualToIconId: WeakMap<Visual, string> = new WeakMap();
+	private _visualToSize: WeakMap<Visual, { w: number; h: number }> = new WeakMap();
 	private _visualIdSeq = 0;
 	private _iconIdSeq = 0;
 	private _markersDirty = false;
@@ -879,11 +881,12 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		this._visualIdSeq = (this._visualIdSeq + 1) % Number.MAX_SAFE_INTEGER;
 		const iconId = `v_${this._visualIdSeq.toString(36)}`;
 
-		// Currently only ImageVisual is supported by the renderer
+		let iconDef: IconDefInternal | null = null;
+
 		if (isImageVisual(visual)) {
 			const size = visual.getSize();
 			const anchor = resolveAnchor(visual.anchor);
-			const iconDef: IconDefInternal = {
+			iconDef = {
 				iconPath: visual.icon,
 				x2IconPath: visual.icon2x,
 				width: size.w,
@@ -891,12 +894,39 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				anchorX: anchor.x * size.w,
 				anchorY: anchor.y * size.h,
 			};
-			this._impl.setIconDefs?.(Object.fromEntries([[iconId, iconDef]]));
+		} else if (isTextVisual(visual)) {
+			// Render text to canvas and use as icon
+			const result = renderTextToCanvas({
+				text: visual.text,
+				fontSize: visual.fontSize,
+				fontFamily: visual.fontFamily,
+				color: visual.color,
+				backgroundColor: visual.backgroundColor,
+				padding: visual.padding,
+			});
+			const anchor = resolveAnchor(visual.anchor);
+			// The canvas is rendered at 2x scale for retina sharpness
+			// Use half the canvas dimensions for display size
+			const displayW = result.width / 2;
+			const displayH = result.height / 2;
+			iconDef = {
+				iconPath: result.dataUrl,
+				width: displayW,
+				height: displayH,
+				anchorX: anchor.x * displayW,
+				anchorY: anchor.y * displayH,
+			};
 		} else {
-			// For non-image visuals, create a placeholder
-			// TODO: Implement rendering for other visual types
+			// For non-supported visuals, create a placeholder
+			// TODO: Implement rendering for CircleVisual, RectVisual, SvgVisual, HtmlVisual
 			console.warn(`GTMap: Visual type '${visual.type}' is not yet supported for rendering. Using default icon.`);
 			return 'default';
+		}
+
+		if (iconDef) {
+			this._impl.setIconDefs?.(Object.fromEntries([[iconId, iconDef]]));
+			// Store the resolved size for scaling calculations
+			this._visualToSize.set(visual, { w: iconDef.width, h: iconDef.height });
 		}
 
 		this._visualToIconId.set(visual, iconId);
@@ -918,9 +948,14 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		if (scale === 1) return undefined; // Let renderer use native icon size
 		// For non-1 scales, we need to calculate the actual size
 		// The internal renderer uses size as the width (assuming square or aspect-preserving)
+		// Use cached size from visual registration (works for all visual types)
+		const cachedSize = this._visualToSize.get(visual);
+		if (cachedSize) {
+			return Math.max(cachedSize.w, cachedSize.h) * scale;
+		}
+		// Fallback for ImageVisual if not yet registered
 		if (isImageVisual(visual)) {
 			const sz = visual.getSize();
-			// Use the larger dimension as the base size
 			return Math.max(sz.w, sz.h) * scale;
 		}
 		return undefined;

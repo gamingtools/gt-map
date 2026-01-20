@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { GTMap, ImageVisual, type IconDef } from '@gtmap';
+	import { GTMap, ImageVisual, TextVisual, type IconDef } from '@gtmap';
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
 	import Hud from '$lib/Hud.svelte';
@@ -62,6 +62,8 @@
 			const visual = iconVisuals && iconVisuals.length > 0 ? iconVisuals[i % iconVisuals.length] : fallback;
 			map.addMarker(x, y, { visual, data: { id: i } });
 		}
+		// Always re-add text labels after marker count change
+		addTextLabels();
 	}
 
 	function setMarkerCount(n: number): void {
@@ -113,6 +115,62 @@
 
 	function clearVectors(): void {
 		map?.clearVectors?.();
+	}
+
+	function addTextLabels(): void {
+		if (!map) return;
+
+		const PAD = 100; // padding from edges
+
+		// Top-left: Small monospace terminal style
+		const label1 = new TextVisual('> TERMINAL_OUTPUT', {
+			fontSize: 10,
+			fontFamily: 'monospace',
+			color: '#22c55e',
+			backgroundColor: '#0a0a0a',
+			padding: 6,
+		});
+		label1.anchor = 'top-left';
+		map.addMarker(PAD, PAD, { visual: label1 });
+
+		// Top-right: Large bold header
+		const label2 = new TextVisual('HEADER', {
+			fontSize: 28,
+			color: '#1e3a5f',
+			backgroundColor: '#e0f2fe',
+			padding: 12,
+		});
+		label2.anchor = 'top-right';
+		map.addMarker(MAP_IMAGE.width - PAD, PAD, { visual: label2 });
+
+		// Bottom-left: Medium serif style
+		const label3 = new TextVisual('Serif Text', {
+			fontSize: 18,
+			fontFamily: 'Georgia, serif',
+			color: '#7c2d12',
+			backgroundColor: '#fef3c7',
+			padding: 10,
+		});
+		label3.anchor = 'bottom-left';
+		map.addMarker(PAD, MAP_IMAGE.height - PAD, { visual: label3 });
+
+		// Bottom-right: Tiny tag
+		const label4 = new TextVisual('TAG', {
+			fontSize: 8,
+			color: '#ffffff',
+			backgroundColor: '#dc2626',
+			padding: 3,
+		});
+		label4.anchor = 'bottom-right';
+		map.addMarker(MAP_IMAGE.width - PAD, MAP_IMAGE.height - PAD, { visual: label4 });
+
+		// Center: Large plain text no background
+		const label5 = new TextVisual('Plain Large Text', {
+			fontSize: 32,
+			color: '#6b7280',
+		});
+		label5.anchor = 'center';
+		map.addMarker(HOME.lng, HOME.lat, { visual: label5 });
 	}
 
 	function setMarkersEnabled(on: boolean): void {
