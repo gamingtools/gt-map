@@ -31,7 +31,7 @@
     const full2x = ico.x2IconPath ? ICON_PREFIX + (ico.x2IconPath.startsWith('/') ? '' : '/') + ico.x2IconPath : undefined;
     const w = Math.max(1, Math.floor(ico.width ?? 24));
     const h = Math.max(1, Math.floor(ico.height ?? w));
-    v = new ImageVisual(full1x, { w, h }, full2x);
+    v = new ImageVisual(full1x, { width: w, height:    h }, full2x);
     v.anchor = 'center';
     visualCache.set(key, v);
     return v;

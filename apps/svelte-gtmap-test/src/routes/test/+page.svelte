@@ -25,7 +25,7 @@
 
 		// Add marker with ImageVisual
 		const def = typedIconDefs.sandstorm;
-		const visual = new ImageVisual(def.iconPath, { w: def.width, h: def.height }, def.x2IconPath);
+		const visual = new ImageVisual(def.iconPath, { width: def.width, height: def.height }, def.x2IconPath);
 		visual.anchor = 'center';
 		map.addMarker(HOME.x, HOME.y, { visual });
 

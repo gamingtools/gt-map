@@ -85,10 +85,14 @@ export default class MapRenderer {
 			this.iconsUnlocked = true;
 		}
 
-		if (ctx.icons && this.iconsUnlocked) {
+		// Draw vectors and markers with z-ordering
+		const hasVectors = ctx.vectorZIndices && ctx.vectorZIndices.length > 0 && ctx.drawVectorOverlay;
+		const hasIcons = ctx.icons && this.iconsUnlocked;
+
+		if (hasIcons) {
 			gl.uniform1f(ctx.loc.u_alpha!, 1.0);
 			if (ctx.loc.u_filterMode) gl.uniform1i(ctx.loc.u_filterMode, 0);
-			ctx.icons.draw({
+			ctx.icons!.draw({
 				gl: ctx.gl,
 				prog: ctx.prog,
 				loc: ctx.loc,
@@ -104,7 +108,12 @@ export default class MapRenderer {
 				project: (x: number, y: number, z: number) => ctx.project(x, y, z),
 				wrapX: ctx.wrapX,
 				iconScaleFunction: ctx.iconScaleFunction ?? undefined,
+				drawOverlayAtZ: ctx.drawVectorOverlay ? () => ctx.drawVectorOverlay!() : undefined,
+				overlayZIndices: ctx.vectorZIndices,
 			});
+		} else if (hasVectors) {
+			// Draw vectors directly when no icons to handle z-ordering
+			ctx.drawVectorOverlay!();
 		}
 
 		if (ctx.useScreenCache && ctx.screenCache) {

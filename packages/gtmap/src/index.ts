@@ -49,7 +49,19 @@ export { isPolyline, isPolygon, isCircle } from './api/types';
 // Export public event surface types
 export type { PublicEvents, EventSubscription, MarkerEvents, DecalEvents, VectorEvents, EntityCollectionEvents, MapEvents, Unsubscribe } from './api/events/public';
 
-export type { MarkerData, DecalData, VectorData, VectorGeometry, MarkerEventMap, DecalEventMap, VectorEventMap, EntityCollectionEventMap, PointerMeta, PointerModifiers, InputDevice } from './api/events/maps';
+export type {
+	MarkerData,
+	DecalData,
+	VectorData,
+	VectorGeometry,
+	MarkerEventMap,
+	DecalEventMap,
+	VectorEventMap,
+	EntityCollectionEventMap,
+	PointerMeta,
+	PointerModifiers,
+	InputDevice,
+} from './api/events/maps';
 
 // Export entity option types
 export type { MarkerOptions, MarkerTransition } from './entities/marker';

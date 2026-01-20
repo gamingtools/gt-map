@@ -203,7 +203,7 @@
 		for (const key in typedIconDefs) {
 			const def = typedIconDefs[key];
 			iconVisuals = iconVisuals || [];
-			const visual = new ImageVisual(def.iconPath, { w: def.width, h: def.height }, def.x2IconPath);
+			const visual = new ImageVisual(def.iconPath, { width: def.width, height: def.height }, def.x2IconPath);
 			visual.anchor = 'center';
 			iconVisuals.push(visual);
 		}

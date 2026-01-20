@@ -81,7 +81,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	private _defaultIconReady = false;
 	private _icons: Map<string, IconDef> = new Map<string, IconDef>();
 	private _visualToIconId: WeakMap<Visual, string> = new WeakMap();
-	private _visualToSize: WeakMap<Visual, { w: number; h: number }> = new WeakMap();
+	private _visualToSize: WeakMap<Visual, { width: number; height: number }> = new WeakMap();
 	private _visualIdSeq = 0;
 	private _iconIdSeq = 0;
 	private _markersDirty = false;
@@ -515,7 +515,13 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	 * @public
 	 * @group Content
 	 * @param geometry - Vector geometry (polyline, polygon, circle)
+	 * @param opts - Options including user data
 	 * @returns The created {@link Vector}
+	 *
+	 * @remarks
+	 * Vectors always render at z=0. Markers and decals default to z=1,
+	 * so vectors appear behind them. To place a marker behind vectors,
+	 * use a negative zIndex (e.g., `{ zIndex: -1 }`).
 	 *
 	 * @example
 	 * ```ts
@@ -889,10 +895,10 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			iconDef = {
 				iconPath: visual.icon,
 				x2IconPath: visual.icon2x,
-				width: size.w,
-				height: size.h,
-				anchorX: anchor.x * size.w,
-				anchorY: anchor.y * size.h,
+				width: size.width,
+				height: size.height,
+				anchorX: anchor.x * size.width,
+				anchorY: anchor.y * size.height,
 			};
 		} else if (isTextVisual(visual)) {
 			// Render text to canvas and use as icon
@@ -926,7 +932,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		if (iconDef) {
 			this._impl.setIconDefs?.(Object.fromEntries([[iconId, iconDef]]));
 			// Store the resolved size for scaling calculations
-			this._visualToSize.set(visual, { w: iconDef.width, h: iconDef.height });
+			this._visualToSize.set(visual, { width: iconDef.width, height: iconDef.height });
 		}
 
 		this._visualToIconId.set(visual, iconId);
@@ -951,12 +957,12 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		// Use cached size from visual registration (works for all visual types)
 		const cachedSize = this._visualToSize.get(visual);
 		if (cachedSize) {
-			return Math.max(cachedSize.w, cachedSize.h) * scale;
+			return Math.max(cachedSize.width, cachedSize.height) * scale;
 		}
 		// Fallback for ImageVisual if not yet registered
 		if (isImageVisual(visual)) {
 			const sz = visual.getSize();
-			return Math.max(sz.w, sz.h) * scale;
+			return Math.max(sz.width, sz.height) * scale;
 		}
 		return undefined;
 	}

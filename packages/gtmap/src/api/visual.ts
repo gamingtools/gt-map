@@ -16,16 +16,7 @@ export type VisualType = 'image' | 'text' | 'circle' | 'rect' | 'svg' | 'html';
  * Anchor presets for positioning visuals relative to their point.
  * @public
  */
-export type AnchorPreset =
-	| 'top-left'
-	| 'top-center'
-	| 'top-right'
-	| 'center-left'
-	| 'center'
-	| 'center-right'
-	| 'bottom-left'
-	| 'bottom-center'
-	| 'bottom-right';
+export type AnchorPreset = 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
 
 /**
  * Explicit anchor as normalized coordinates (0-1 range).
@@ -76,14 +67,14 @@ export function resolveAnchor(anchor: Anchor): AnchorPoint {
  * Size specification: single number (square) or width/height object.
  * @public
  */
-export type VisualSize = number | { w: number; h: number };
+export type VisualSize = number | { width: number; height: number };
 
 /**
  * Resolve a size spec to width and height.
  * @internal
  */
-export function resolveSize(size: VisualSize): { w: number; h: number } {
-	return typeof size === 'number' ? { w: size, h: size } : size;
+export function resolveSize(size: VisualSize): { width: number; height: number } {
+	return typeof size === 'number' ? { width: size, height: size } : size;
 }
 
 /**
@@ -134,7 +125,7 @@ export class ImageVisual extends Visual {
 	/**
 	 * Create an image visual.
 	 * @param icon - URL or data URL for the icon
-	 * @param size - Display size (number for square, or {w, h})
+	 * @param size - Display size (number for square, or {width, height})
 	 * @param icon2x - Optional 2x retina icon URL
 	 */
 	constructor(icon: string, size: VisualSize, icon2x?: string) {
@@ -144,8 +135,8 @@ export class ImageVisual extends Visual {
 		this.icon2x = icon2x;
 	}
 
-	/** Get resolved size as {w, h}. */
-	getSize(): { w: number; h: number } {
+	/** Get resolved size as {width, height}. */
+	getSize(): { width: number; height: number } {
 		return resolveSize(this.size);
 	}
 }
@@ -194,7 +185,7 @@ export class TextVisual extends Visual {
 			color?: string;
 			backgroundColor?: string;
 			padding?: number;
-		} = {}
+		} = {},
 	) {
 		super();
 		this.text = text;
@@ -244,7 +235,7 @@ export class CircleVisual extends Visual {
 			fill?: string;
 			stroke?: string;
 			strokeWidth?: number;
-		} = {}
+		} = {},
 	) {
 		super();
 		this.radius = radius;
@@ -263,7 +254,7 @@ export class CircleVisual extends Visual {
  *
  * @example
  * ```ts
- * const box = new RectVisual({ w: 20, h: 16 }, { fill: '#0000ff', stroke: '#000' });
+ * const box = new RectVisual({ width: 20, height: 16 }, { fill: '#0000ff', stroke: '#000' });
  * ```
  */
 export class RectVisual extends Visual {
@@ -286,7 +277,7 @@ export class RectVisual extends Visual {
 
 	/**
 	 * Create a rectangle visual.
-	 * @param size - Rectangle size (number for square, or {w, h})
+	 * @param size - Rectangle size (number for square, or {width, height})
 	 * @param options - Styling options
 	 */
 	constructor(
@@ -296,7 +287,7 @@ export class RectVisual extends Visual {
 			stroke?: string;
 			strokeWidth?: number;
 			borderRadius?: number;
-		} = {}
+		} = {},
 	) {
 		super();
 		this.size = size;
@@ -306,8 +297,8 @@ export class RectVisual extends Visual {
 		this.borderRadius = options.borderRadius;
 	}
 
-	/** Get resolved size as {w, h}. */
-	getSize(): { w: number; h: number } {
+	/** Get resolved size as {width, height}. */
+	getSize(): { width: number; height: number } {
 		return resolveSize(this.size);
 	}
 }
@@ -318,7 +309,7 @@ export class RectVisual extends Visual {
  * @public
  * @example
  * ```ts
- * const svg = new SvgVisual('<svg>...</svg>', { w: 24, h: 24 });
+ * const svg = new SvgVisual('<svg>...</svg>', { width: 24, height: 24 });
  * ```
  */
 export class SvgVisual extends Visual {
@@ -341,8 +332,8 @@ export class SvgVisual extends Visual {
 		this.size = size;
 	}
 
-	/** Get resolved size as {w, h}. */
-	getSize(): { w: number; h: number } {
+	/** Get resolved size as {width, height}. */
+	getSize(): { width: number; height: number } {
 		return resolveSize(this.size);
 	}
 }
@@ -356,7 +347,7 @@ export class SvgVisual extends Visual {
  *
  * @example
  * ```ts
- * const html = new HtmlVisual('<div class="tooltip">Info</div>', { w: 100, h: 50 });
+ * const html = new HtmlVisual('<div class="tooltip">Info</div>', { width: 100, height: 50 });
  * ```
  */
 export class HtmlVisual extends Visual {
@@ -379,8 +370,8 @@ export class HtmlVisual extends Visual {
 		this.size = size;
 	}
 
-	/** Get resolved size as {w, h}. */
-	getSize(): { w: number; h: number } {
+	/** Get resolved size as {width, height}. */
+	getSize(): { width: number; height: number } {
 		return resolveSize(this.size);
 	}
 }

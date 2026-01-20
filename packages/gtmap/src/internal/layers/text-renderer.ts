@@ -42,19 +42,7 @@ export interface TextRenderResult {
  * @returns Rendered text as canvas with dimensions and data URL
  */
 export function renderTextToCanvas(options: TextRenderOptions): TextRenderResult {
-	const {
-		text,
-		fontSize,
-		fontFamily,
-		color,
-		backgroundColor,
-		padding = 4,
-		maxWidth = 0,
-		fontWeight = 'normal',
-		borderColor,
-		borderWidth = 0,
-		borderRadius = 0,
-	} = options;
+	const { text, fontSize, fontFamily, color, backgroundColor, padding = 4, maxWidth = 0, fontWeight = 'normal', borderColor, borderWidth = 0, borderRadius = 0 } = options;
 
 	// Create measurement canvas
 	const measureCanvas = document.createElement('canvas');
@@ -181,14 +169,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
 /**
  * Draw a rounded rectangle path.
  */
-function roundRect(
-	ctx: CanvasRenderingContext2D,
-	x: number,
-	y: number,
-	width: number,
-	height: number,
-	radius: number,
-): void {
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
 	const r = Math.min(radius, width / 2, height / 2);
 	ctx.moveTo(x + r, y);
 	ctx.lineTo(x + width - r, y);

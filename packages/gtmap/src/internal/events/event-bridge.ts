@@ -149,7 +149,13 @@ export default class EventBridge {
 						now,
 						view: this.d.getView(),
 						screen: { x: e.x, y: e.y },
-						marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { width: 0, height: 0 }, data: prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null },
+						marker: {
+							id: prev.id || '',
+							index: prev.idx ?? -1,
+							world: { x: 0, y: 0 },
+							size: { width: 0, height: 0 },
+							data: prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null,
+						},
 						icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
 						originalEvent: e.originalEvent,
 					} as MarkerEventData;
@@ -170,7 +176,13 @@ export default class EventBridge {
 							now,
 							view: this.d.getView(),
 							screen: { x: e.x, y: e.y },
-							marker: { id: prev.id || '', index: prev.idx ?? -1, world: { x: 0, y: 0 }, size: { width: 0, height: 0 }, data: prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null },
+							marker: {
+								id: prev.id || '',
+								index: prev.idx ?? -1,
+								world: { x: 0, y: 0 },
+								size: { width: 0, height: 0 },
+								data: prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null,
+							},
 							icon: { id: prev.type, iconPath: '', width: 0, height: 0, anchorX: 0, anchorY: 0 },
 							originalEvent: e.originalEvent,
 						} as MarkerEventData;

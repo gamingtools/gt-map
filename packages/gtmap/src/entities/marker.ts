@@ -18,7 +18,11 @@ export interface MarkerOptions<T = unknown> {
 	rotation?: number;
 	/** Opacity (0-1). */
 	opacity?: number;
-	/** Z-index for stacking order (higher values render on top). */
+	/**
+	 * Z-index for stacking order (higher values render on top).
+	 * @defaultValue 1
+	 * @remarks Vectors always render at z=0. Use negative zIndex to place markers behind vectors.
+	 */
 	zIndex?: number;
 	/** Arbitrary user data attached to the marker. */
 	data?: T;
@@ -82,7 +86,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		this._scale = opts.scale ?? 1;
 		this._rotation = opts.rotation ?? 0;
 		this._opacity = opts.opacity ?? 1;
-		this._zIndex = opts.zIndex ?? 0;
+		this._zIndex = opts.zIndex ?? 1;
 		this._data = opts.data;
 		this._onChange = onChange;
 	}
@@ -264,10 +268,7 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 		if (this.promise) return this.promise;
 
 		const needsPos = typeof this.targetX === 'number' && typeof this.targetY === 'number';
-		const needsStyle =
-			typeof this.targetScale === 'number' ||
-			typeof this.targetRotation === 'number' ||
-			typeof this.targetOpacity === 'number';
+		const needsStyle = typeof this.targetScale === 'number' || typeof this.targetRotation === 'number' || typeof this.targetOpacity === 'number';
 		if (!needsPos && !needsStyle) {
 			return Promise.resolve({ status: 'instant' });
 		}
@@ -275,8 +276,7 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 		const animate = opts?.animate;
 		if (!animate) {
 			if (needsPos) this.marker.moveTo(this.targetX as number, this.targetY as number);
-			if (needsStyle)
-				this.marker.setStyle({ scale: this.targetScale, rotation: this.targetRotation, opacity: this.targetOpacity });
+			if (needsStyle) this.marker.setStyle({ scale: this.targetScale, rotation: this.targetRotation, opacity: this.targetOpacity });
 			return Promise.resolve({ status: 'instant' });
 		}
 

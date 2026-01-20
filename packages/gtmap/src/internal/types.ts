@@ -67,6 +67,10 @@ export interface RenderCtx {
 	};
 	vectorCtx?: CanvasRenderingContext2D | null;
 	drawVectors?: () => void;
+	/** Vector z-indices for overlay interleaving */
+	vectorZIndices?: number[];
+	/** Callback to draw vector overlay at a given z-index */
+	drawVectorOverlay?: () => void;
 }
 
 export interface InputDeps {
@@ -159,7 +163,6 @@ export interface MapImpl {
 	setUpscaleFilter?(mode: UpscaleFilterMode): void;
 	setWheelSpeed?(v: number): void;
 	resize?(): void;
-	setMarkerHitboxesVisible?(on: boolean): void;
 	setActive?(on: boolean, opts?: SuspendOptions): void;
 	setIconScaleFunction?(fn: IconScaleFunction | null): void;
 	setAutoResize?(on: boolean): void;

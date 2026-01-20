@@ -17,7 +17,11 @@ export interface DecalOptions {
 	rotation?: number;
 	/** Opacity (0-1). */
 	opacity?: number;
-	/** Z-index for stacking order (higher values render on top). */
+	/**
+	 * Z-index for stacking order (higher values render on top).
+	 * @defaultValue 1
+	 * @remarks Vectors always render at z=0. Use negative zIndex to place decals behind vectors.
+	 */
 	zIndex?: number;
 }
 
@@ -65,7 +69,7 @@ export class Decal extends EventedEntity<DecalEventMap> {
 		this._scale = opts.scale ?? 1;
 		this._rotation = opts.rotation ?? 0;
 		this._opacity = opts.opacity ?? 1;
-		this._zIndex = opts.zIndex ?? 0;
+		this._zIndex = opts.zIndex ?? 1;
 		this._onChange = onChange;
 	}
 

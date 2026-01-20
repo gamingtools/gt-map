@@ -10,6 +10,7 @@ import * as Coords from './coords';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
+import { OverlayRenderer } from './layers/vectors/overlay-renderer';
 import { TypedEventBus } from './events/typed-stream';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
@@ -27,7 +28,6 @@ import AutoResizeManager from './core/auto-resize-manager';
 import EventBridge from './events/event-bridge';
 import { ImageManager, type ImageManagerHost, type ImageData } from './core/image-manager';
 import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
-
 
 export type LngLat = { lng: number; lat: number };
 
@@ -111,7 +111,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _zoomCtrl!: ZoomController;
 	private _gfx!: Graphics;
 	private _state!: ViewState;
-	private _showMarkerHitboxes = false;
 	private _active = true;
 	private _glReleased = false;
 	private _inputsAttached = false;
@@ -291,7 +290,21 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				height: this.getImage().height,
 				ready: this.getImage().ready,
 			},
+			vectorZIndices: this._getVectorZIndices(),
+			drawVectorOverlay: () => this._drawVectorOverlay(),
 		};
+	}
+
+	/** Get the z-index at which to draw the vector overlay (always 0). */
+	private _getVectorZIndices(): number[] {
+		// Vectors always render at z=0. Markers/decals default to z=1.
+		return this._vectors.length ? [0] : [];
+	}
+
+	/** Draw vector overlay (called from IconRenderer at z-index boundaries) */
+	private _drawVectorOverlay(): void {
+		if (!this._vectorOverlay || !this._vectorCanvas) return;
+		this._vectorOverlay.draw();
 	}
 
 	// ImageManagerHost API: allow background uploads to pause during interaction
@@ -343,9 +356,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private showGrid = false;
 	private gridCanvas: HTMLCanvasElement | null = null;
 	private _gridCtx: CanvasRenderingContext2D | null = null;
-	// Vector overlay (initially 2D canvas; upgradeable to WebGL later)
-	private vectorCanvas: HTMLCanvasElement | null = null;
-	private _vectorCtx: CanvasRenderingContext2D | null = null;
+	// Vector overlay (Canvas 2D rendered to OffscreenCanvas, copied to WebGL texture)
+	private _vectorCanvas: OffscreenCanvas | HTMLCanvasElement | null = null;
+	private _vectorCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
+	private _vectorOverlay: OverlayRenderer | null = null;
 	private _vectors: VectorPrimitive[] = [];
 	public pointerAbs: { x: number; y: number } | null = null;
 	// Loading pacing/cancel
@@ -988,13 +1002,20 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			} catch {}
 			this.gridCanvas = null;
 			this._gridCtx = null;
-			if (this.vectorCanvas) {
-				try {
-					this.vectorCanvas.remove();
-				} catch {}
-				this.vectorCanvas = null;
+			if (this._vectorCanvas) {
+				// OffscreenCanvas doesn't need removal from DOM
+				if (this._vectorCanvas instanceof HTMLCanvasElement) {
+					try {
+						this._vectorCanvas.remove();
+					} catch {}
+				}
+				this._vectorCanvas = null;
 				this._vectorCtx = null;
 				this._vectors = [];
+			}
+			if (this._vectorOverlay) {
+				this._vectorOverlay.dispose();
+				this._vectorOverlay = null;
 			}
 		}
 	}
@@ -1139,12 +1160,15 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				this._needsRender = true;
 			}
 		}
-		if (this.vectorCanvas) {
-			this.vectorCanvas.style.width = cssW + 'px';
-			this.vectorCanvas.style.height = cssH + 'px';
-			if (this.vectorCanvas.width !== w || this.vectorCanvas.height !== h) {
-				this.vectorCanvas.width = w;
-				this.vectorCanvas.height = h;
+		if (this._vectorCanvas) {
+			// OffscreenCanvas doesn't have style; just resize the buffer
+			if (this._vectorCanvas instanceof HTMLCanvasElement) {
+				this._vectorCanvas.style.width = cssW + 'px';
+				this._vectorCanvas.style.height = cssH + 'px';
+			}
+			if (this._vectorCanvas.width !== w || this._vectorCanvas.height !== h) {
+				this._vectorCanvas.width = w;
+				this._vectorCanvas.height = h;
 				this._needsRender = true;
 			}
 		}
@@ -1322,20 +1346,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				const dpr = this._dpr;
 
 				// Compute map corners in screen space
-				const tl = Coords.worldToCSS(
-					{ x: 0, y: 0 },
-					this.zoom,
-					{ x: this.center.lng, y: this.center.lat },
-					{ x: wCSS, y: hCSS },
-					this._imageMaxZoom,
-				);
-				const br = Coords.worldToCSS(
-					{ x: this.mapSize.width, y: this.mapSize.height },
-					this.zoom,
-					{ x: this.center.lng, y: this.center.lat },
-					{ x: wCSS, y: hCSS },
-					this._imageMaxZoom,
-				);
+				const tl = Coords.worldToCSS({ x: 0, y: 0 }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: wCSS, y: hCSS }, this._imageMaxZoom);
+				const br = Coords.worldToCSS({ x: this.mapSize.width, y: this.mapSize.height }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: wCSS, y: hCSS }, this._imageMaxZoom);
 
 				// Clamp to viewport
 				const x0 = Math.max(0, Math.floor(tl.x * dpr));
@@ -1356,6 +1368,11 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				}
 			} catch {}
 		}
+
+		// Upload vector overlay before rendering (so IconRenderer can draw it)
+		try {
+			this._drawVectors();
+		} catch {}
 
 		this._renderer.render();
 
@@ -1413,10 +1430,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			const pal = this._gridPalette();
 			drawGrid(this._gridCtx, this.gridCanvas, baseZ, scale, widthCSS, heightCSS, tlWorld, this._dpr, this._imageMaxZoom, this.baseGridSize, pal);
 		}
-		// Draw vector overlay (if any)
-		try {
-			this._drawVectors();
-		} catch {}
 	}
 
 	// Zoom actions handled by ZoomController
@@ -1544,19 +1557,26 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 
 	private _initVectorCanvas() {
-		const c = document.createElement('canvas');
-		c.classList.add('gtmap-vector-canvas');
-		this.vectorCanvas = c;
-		c.style.display = 'block';
-		c.style.position = 'absolute';
-		c.style.left = '0';
-		c.style.top = '0';
-		c.style.right = '0';
-		c.style.bottom = '0';
-		c.style.zIndex = '6';
-		(c.style as CSSStyleDeclaration).pointerEvents = 'none';
-		this.container.appendChild(c);
-		this._vectorCtx = c.getContext('2d');
+		const rect = this.container.getBoundingClientRect();
+		const w = Math.max(1, Math.floor(rect.width * (this._dpr || 1)));
+		const h = Math.max(1, Math.floor(rect.height * (this._dpr || 1)));
+
+		// Use OffscreenCanvas if available, otherwise hidden HTMLCanvasElement
+		if (typeof OffscreenCanvas !== 'undefined') {
+			this._vectorCanvas = new OffscreenCanvas(w, h);
+			this._vectorCtx = this._vectorCanvas.getContext('2d');
+		} else {
+			const c = document.createElement('canvas');
+			c.width = w;
+			c.height = h;
+			this._vectorCanvas = c;
+			this._vectorCtx = c.getContext('2d');
+		}
+
+		// Initialize overlay renderer for WebGL compositing
+		if (!this._vectorOverlay && this.gl) {
+			this._vectorOverlay = new OverlayRenderer(this.gl);
+		}
 	}
 
 	public setVectors(vectors: VectorPrimitive[]) {
@@ -1684,7 +1704,16 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				}
 
 				// Hit confirmed - return marker info
-				return { idx: it.index, id: it.id, type: it.type, world: { x: it.lng, y: it.lat }, screen: { x: css.x, y: css.y }, size: { width: it.w, height: it.h }, rotation: it.rotation, icon: it.icon };
+				return {
+					idx: it.index,
+					id: it.id,
+					type: it.type,
+					world: { x: it.lng, y: it.lat },
+					screen: { x: css.x, y: css.y },
+					size: { width: it.w, height: it.h },
+					rotation: it.rotation,
+					icon: it.icon,
+				};
 			}
 		}
 		return null;
@@ -1798,11 +1827,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		return out;
 	}
 
-	public setMarkerHitboxesVisible(on: boolean) {
-		this._showMarkerHitboxes = !!on;
-		this._needsRender = true;
-	}
-
 	public setIconScaleFunction(fn: ((zoom: number, minZoom: number, maxZoom: number) => number) | null) {
 		this._iconScaleFunction = fn;
 		// Invalidate screen cache since icon sizes will change
@@ -1823,17 +1847,20 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			this.gridCanvas.width = wPx;
 			this.gridCanvas.height = hPx;
 		}
-		if (this.vectorCanvas && (this.vectorCanvas.width !== wPx || this.vectorCanvas.height !== hPx)) {
-			this.vectorCanvas.width = wPx;
-			this.vectorCanvas.height = hPx;
+		if (this._vectorCanvas && (this._vectorCanvas.width !== wPx || this._vectorCanvas.height !== hPx)) {
+			this._vectorCanvas.width = wPx;
+			this._vectorCanvas.height = hPx;
 		}
 	}
 
 	private _drawVectors() {
 		if (!this._vectorCtx) this._initVectorCanvas();
+		if (!this._vectorCanvas || !this._vectorCtx) return;
+
 		this._ensureOverlaySizes();
-		const ctx = this._vectorCtx!;
-		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		const ctx = this._vectorCtx;
+		const canvas = this._vectorCanvas;
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
 		ctx.save();
 		try {
 			ctx.scale(this._dpr || 1, this._dpr || 1);
@@ -1843,9 +1870,13 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			const rect = this.container.getBoundingClientRect();
 			const viewport = { x: rect.width, y: rect.height };
 			const imageMaxZ = this._imageMaxZoom;
+			// Subtle zoom-based stroke scaling: ~8% per zoom level, clamped
+			const refZoom = 2;
+			const zoomScale = Math.max(0.6, Math.min(1.8, 1 + (z - refZoom) * 0.08));
 			for (const prim of this._vectors) {
 				const style = (prim.style ?? {}) as VectorStyleInternal;
-				ctx.lineWidth = Math.max(1, style.weight ?? 2);
+				const baseWeight = style.weight ?? 2;
+				ctx.lineWidth = Math.max(1, baseWeight * zoomScale);
 				ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
 				ctx.globalAlpha = style.opacity ?? 1;
 				const begin = () => ctx.beginPath();
@@ -1887,36 +1918,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 		ctx.restore();
 
-		// Draw marker hitboxes (debug aid)
-		if (this._showMarkerHitboxes && this._icons) {
-			ctx.save();
-			try {
-				ctx.scale(this._dpr || 1, this._dpr || 1);
-			} catch {}
-			const rect = this.container.getBoundingClientRect();
-			const viewport = { x: rect.width, y: rect.height };
-			const imageMaxZ = this._imageMaxZoom;
-			const info = this._icons.getMarkerInfo();
-			ctx.lineWidth = 1;
-			ctx.strokeStyle = 'rgba(255,0,0,0.9)';
-			ctx.fillStyle = 'rgba(255,0,0,0.06)';
-			ctx.font = '10px system-ui, sans-serif';
-			ctx.textBaseline = 'top';
-			for (const it of info) {
-				const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-				const left = css.x - it.w / 2;
-				const top = css.y - it.h / 2;
-				// Skip if completely outside viewport
-				if (left + it.w < 0 || top + it.h < 0 || left > viewport.x || top > viewport.y) continue;
-				ctx.beginPath();
-				ctx.rect(Math.round(left) + 0.5, Math.round(top) + 0.5, Math.round(it.w), Math.round(it.h));
-				ctx.fill();
-				ctx.stroke();
-				try {
-					ctx.fillText(it.type, Math.round(left) + 2, Math.round(top) + 2);
-				} catch {}
-			}
-			ctx.restore();
+		// Upload to WebGL overlay (drawing happens via IconRenderer z-index callback)
+		if (this._vectorOverlay && this._vectors.length) {
+			this._vectorOverlay.uploadCanvas(canvas);
 		}
 	}
 }

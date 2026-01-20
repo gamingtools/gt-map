@@ -91,6 +91,7 @@ export class IconRenderer {
 	} | null = null;
 	private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number; capacityBytes: number }>();
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
+	private typeMinZ = new Map<string, number>(); // Min zIndex per type for draw ordering
 
 	dispose() {
 		const gl = this.gl;
@@ -180,10 +181,7 @@ export class IconRenderer {
 	 *                          If false (default), new icons are added/updated incrementally
 	 *                          but old atlases may accumulate until dispose().
 	 */
-	async loadIcons(
-		defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>,
-		opts?: { replaceAll?: boolean },
-	) {
+	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>, opts?: { replaceAll?: boolean }) {
 		const entries = Object.entries(defs);
 		const gl = this.gl;
 
@@ -348,11 +346,14 @@ export class IconRenderer {
 			}
 			arr.push(m);
 		}
+		// Clear and rebuild type data with min zIndex tracking
+		this.typeMinZ.clear();
 		for (const [type, list] of byType) {
 			const sz = this.texSize.get(type) || { w: 32, h: 32 };
 			const anc = this.texAnchor.get(type) || { ax: sz.w / 2, ay: sz.h / 2 };
 			const data = new Float32Array(list.length * 7);
 			let j = 0;
+			let minZ = Infinity;
 			for (const m of list) {
 				const w = m.size || sz.w;
 				const h = m.size || sz.h;
@@ -363,10 +364,13 @@ export class IconRenderer {
 				data[j++] = anc.ax;
 				data[j++] = anc.ay;
 				data[j++] = (m.rotation || 0) * (Math.PI / 180);
+				const z = m.zIndex ?? 0;
+				if (z < minZ) minZ = z;
 			}
 			const prev = this.typeData.get(type);
 			const version = (prev?.version || 0) + 1;
 			this.typeData.set(type, { data, version });
+			this.typeMinZ.set(type, minZ);
 		}
 	}
 
@@ -457,8 +461,21 @@ export class IconRenderer {
 		project: (x: number, y: number, z: number) => { x: number; y: number };
 		wrapX: boolean;
 		iconScaleFunction?: ((zoom: number, minZoom: number, maxZoom: number) => number) | null;
+		/** Callback to draw overlays at a specific z-index boundary */
+		drawOverlayAtZ?: (zIndex: number) => void;
+		/** Z-indices at which to call the overlay callback (sorted ascending) */
+		overlayZIndices?: number[];
 	}) {
-		if (this.markers.length === 0 && this.decals.length === 0) return;
+		const hasMarkers = this.markers.length > 0 || this.decals.length > 0;
+		// Draw overlays even when no markers (for independent vector visibility)
+		if (!hasMarkers) {
+			// Just draw all overlays and return
+			const overlayZs = ctx.overlayZIndices ?? [];
+			for (const z of overlayZs) {
+				ctx.drawOverlayAtZ?.(z);
+			}
+			return;
+		}
 		const gl = ctx.gl;
 		const { zInt: baseZ, scale: effScale } = Coords.zParts(ctx.zoom);
 		const widthCSS = ctx.viewport.width;
@@ -493,7 +510,7 @@ export class IconRenderer {
 			gl.uniform1f(this.instLoc!.u_invS!, invS);
 			gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
 
-			// For each type
+			// For each type, sorted by minZ for proper z-ordering with overlays
 			const isGL2 = 'drawArraysInstanced' in (gl as WebGL2RenderingContext);
 			const seen = new Set<string>();
 			for (const m of this.markers) {
@@ -502,7 +519,23 @@ export class IconRenderer {
 			for (const d of this.decals) {
 				seen.add(d.type);
 			}
-			for (const type of Array.from(seen)) {
+			// Sort types by their minimum zIndex
+			const sortedTypes = Array.from(seen).sort((a, b) => (this.typeMinZ.get(a) ?? 0) - (this.typeMinZ.get(b) ?? 0));
+			// Track which overlay z-indices have been drawn
+			const overlayZs = ctx.overlayZIndices ?? [];
+			let overlayIdx = 0;
+			for (const type of sortedTypes) {
+				const typeMinZ = this.typeMinZ.get(type) ?? 0;
+				// Draw any overlays that should appear before this type
+				while (overlayIdx < overlayZs.length && overlayZs[overlayIdx] <= typeMinZ) {
+					ctx.drawOverlayAtZ?.(overlayZs[overlayIdx]);
+					overlayIdx++;
+					// Restore instanced program state after overlay draw (overlay uses its own program)
+					gl.useProgram(this.instProg!);
+					gl.bindBuffer(gl.ARRAY_BUFFER, ctx.quad);
+					gl.enableVertexAttribArray(this.instLoc!.a_pos);
+					gl.vertexAttribPointer(this.instLoc!.a_pos, 2, gl.FLOAT, false, 0, 0);
+				}
 				// Use retina if available, otherwise fallback to regular
 				const useRetina = this.hasRetina.get(type);
 
@@ -569,6 +602,12 @@ export class IconRenderer {
 				if (isGL2) (gl as WebGL2RenderingContext).drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, rec.count);
 				else this.instExt!.drawArraysInstancedANGLE(gl.TRIANGLE_STRIP, 0, 4, rec.count);
 			}
+			// Draw any remaining overlays after all marker types
+			while (overlayIdx < overlayZs.length) {
+				ctx.drawOverlayAtZ?.(overlayZs[overlayIdx]);
+				overlayIdx++;
+				// No need to restore state here since we're done drawing markers
+			}
 			return;
 		}
 
@@ -631,6 +670,12 @@ export class IconRenderer {
 				gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 			}
 			// no scissor state changes here
+		}
+		// Draw any overlays (fallback path - draw all at end)
+		if (ctx.drawOverlayAtZ && ctx.overlayZIndices) {
+			for (const z of ctx.overlayZIndices) {
+				ctx.drawOverlayAtZ(z);
+			}
 		}
 	}
 

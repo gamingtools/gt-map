@@ -364,6 +364,7 @@ export interface SuspendOptions {
 }
 
 // Internal vector primitive (with lng/lat)
+// Vectors always render at z=0. Markers/decals default to z=1.
 export type VectorPrimitiveInternal =
 	| { type: 'polyline'; points: { lng: number; lat: number }[]; style?: VectorStyle }
 	| { type: 'polygon'; points: { lng: number; lat: number }[]; style?: VectorStyle }
