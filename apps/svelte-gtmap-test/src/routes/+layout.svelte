@@ -15,6 +15,10 @@
 	<nav class="font-semibold">
 		<a href="/map" class="header-link">Map</a>
 		<a href="/worldmap" class="header-link">WorldMap</a>
+		<a href="/demo/markers" class="header-link">Markers</a>
+		<a href="/demo/vectors" class="header-link">Vectors</a>
+		<a href="/demo/text" class="header-link">Text</a>
+		<a href="/demo/non-square" class="header-link">Non-Square</a>
 	</nav>
 </header>
 {@render children?.()}
