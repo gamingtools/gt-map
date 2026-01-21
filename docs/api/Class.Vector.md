@@ -18,12 +18,13 @@
   - [data](#data)
   - [events](#events)
   - [geometry](#geometry)
+  - [zIndex](#zindex)
 - [Methods](#methods)
   - [setData()](#setdata)
   - [setGeometry()](#setgeometry)
   - [toData()](#todata)
 
-Defined in: [entities/vector.ts:33](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L33)
+Defined in: [entities/vector.ts:33](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/vector.ts#L33)
 
 Vector - a simple geometric overlay (polyline, polygon, or circle).
 
@@ -47,7 +48,7 @@ Events are minimal for now (`remove`); interaction events can be added later.
 
 > `readonly` **id**: `string`
 
-Defined in: [entities/vector.ts:34](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L34)
+Defined in: [entities/vector.ts:34](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/vector.ts#L34)
 
 ## Accessors
 
@@ -57,7 +58,7 @@ Defined in: [entities/vector.ts:34](https://github.com/gamingtools/gt-map/blob/6
 
 > **get** **data**(): `undefined` \| `T`
 
-Defined in: [entities/vector.ts:62](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L62)
+Defined in: [entities/vector.ts:73](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/vector.ts#L73)
 
 Get user data attached to this vector.
 
@@ -73,7 +74,7 @@ Get user data attached to this vector.
 
 > **get** **events**(): [`PublicEvents`](Interface.PublicEvents.md)\<`EventMap`\>
 
-Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/base.ts#L7)
+Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/base.ts#L7)
 
 ##### Returns
 
@@ -91,7 +92,7 @@ Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/6b6b
 
 > **get** **geometry**(): [`VectorGeometry`](TypeAlias.VectorGeometry.md)
 
-Defined in: [entities/vector.ts:57](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L57)
+Defined in: [entities/vector.ts:68](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/vector.ts#L68)
 
 Get current geometry.
 
@@ -99,13 +100,34 @@ Get current geometry.
 
 [`VectorGeometry`](TypeAlias.VectorGeometry.md)
 
+***
+
+### zIndex
+
+#### Get Signature
+
+> **get** **zIndex**(): `number`
+
+Defined in: [entities/vector.ts:63](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/vector.ts#L63)
+
+Get z-index for rendering order.
+
+##### Remarks
+
+Vectors always render at z=0. Markers/decals default to z=1.
+Use negative zIndex on markers to place them behind vectors.
+
+##### Returns
+
+`number`
+
 ## Methods
 
 ### setData()
 
 > **setData**(`data`): `this`
 
-Defined in: [entities/vector.ts:94](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L94)
+Defined in: [entities/vector.ts:105](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/vector.ts#L105)
 
 Update user data attached to this vector.
 
@@ -135,7 +157,7 @@ vector.setData({ region: 'north', level: 5 });
 
 > **setGeometry**(`geometry`): `this`
 
-Defined in: [entities/vector.ts:77](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L77)
+Defined in: [entities/vector.ts:88](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/vector.ts#L88)
 
 Replace the vector geometry and trigger a renderer sync.
 
@@ -164,7 +186,7 @@ v.setGeometry({ type: 'polyline', points: [ { x: 0, y: 0 }, { x: 100, y: 50 } ] 
 
 > **toData**(): [`VectorData`](Interface.VectorData.md)\<`T`\>
 
-Defined in: [entities/vector.ts:104](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/entities/vector.ts#L104)
+Defined in: [entities/vector.ts:115](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/vector.ts#L115)
 
 Get a snapshot used in event payloads.
 

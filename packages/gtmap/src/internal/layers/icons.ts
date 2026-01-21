@@ -176,8 +176,12 @@ export class IconRenderer {
 			const h0 = m.size || sz.h;
 			const w = w0 * scale;
 			const h = h0 * scale;
-			const a = this.texAnchor.get(m.type) || { ax: w0 / 2, ay: h0 / 2 };
-			const meta = this.iconMeta.get(m.type) || { iconPath: '', x2IconPath: undefined, width: sz.w, height: sz.h, anchorX: a.ax, anchorY: a.ay };
+			const origAnchor = this.texAnchor.get(m.type) || { ax: sz.w / 2, ay: sz.h / 2 };
+			// Scale anchor per-axis when m.size forces non-square icons to square
+			const scaleX = m.size ? m.size / sz.w : 1;
+			const scaleY = m.size ? m.size / sz.h : 1;
+			const a = { ax: origAnchor.ax * scaleX, ay: origAnchor.ay * scaleY };
+			const meta = this.iconMeta.get(m.type) || { iconPath: '', x2IconPath: undefined, width: sz.w, height: sz.h, anchorX: origAnchor.ax, anchorY: origAnchor.ay };
 			out.push({ id: m.id, index: idx, lng: m.lng, lat: m.lat, w, h, type: m.type, anchor: { ax: a.ax * scale, ay: a.ay * scale }, rotation: m.rotation, icon: meta });
 			idx++;
 		}
@@ -383,6 +387,11 @@ export class IconRenderer {
 			for (const m of list) {
 				const w = m.size || sz.w;
 				const h = m.size || sz.h;
+				// Scale anchor per-axis when m.size forces non-square icons to square
+				const scaleX = m.size ? m.size / sz.w : 1;
+				const scaleY = m.size ? m.size / sz.h : 1;
+				const ax = anc.ax * scaleX;
+				const ay = anc.ay * scaleY;
 				// Compute per-instance iconScale: marker's function if set, else 1.0 (map's applied via uniform)
 				let iconScale = 1.0;
 				if (m.iconScaleFunction === null) {
@@ -395,8 +404,8 @@ export class IconRenderer {
 				data[j++] = m.lat; // native y
 				data[j++] = w;
 				data[j++] = h;
-				data[j++] = anc.ax;
-				data[j++] = anc.ay;
+				data[j++] = ax;
+				data[j++] = ay;
 				data[j++] = (m.rotation || 0) * (Math.PI / 180);
 				data[j++] = iconScale;
 				const z = m.zIndex ?? 0;

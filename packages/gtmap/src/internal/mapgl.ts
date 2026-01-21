@@ -5,12 +5,11 @@ import type { MapOptions as PublicMapOptions, Point } from '../api/types';
 
 import Graphics, { type GraphicsHost } from './gl/graphics';
 import { ScreenCache } from './render/screen-cache';
-import type { RenderCtx, MapImpl, VectorStyle as VectorStyleInternal, VectorPrimitive } from './types';
+import type { RenderCtx, MapImpl, VectorPrimitive } from './types';
 import * as Coords from './coords';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
-import { OverlayRenderer } from './layers/vectors/overlay-renderer';
 import { TypedEventBus } from './events/typed-stream';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
@@ -28,6 +27,10 @@ import AutoResizeManager from './core/auto-resize-manager';
 import EventBridge from './events/event-bridge';
 import { ImageManager, type ImageManagerHost, type ImageData } from './core/image-manager';
 import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
+import { BackgroundUIManager, type SpinnerOptions } from './core/background-ui';
+import { OptionsManager } from './core/options-manager';
+import { VectorLayer } from './layers/vector-layer';
+import { MarkerHitTesting } from './events/marker-hit-testing';
 
 export type LngLat = { lng: number; lat: number };
 
@@ -63,6 +66,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _imageManager: ImageManager;
 	private _asyncInitManager: AsyncInitManager;
 	private _imageMaxZoom = 0;
+	private _bgUI!: BackgroundUIManager;
+	private _optionsMgr!: OptionsManager;
+	private _vectorLayer!: VectorLayer;
+	private _hitTesting!: MarkerHitTesting;
 
 	private _needsRender = true;
 	private _frameLoop: FrameLoop | null = null;
@@ -77,17 +84,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _dt = 0;
 	// lastFrameAt handled by FrameLoop
 	private _targetFps = 60;
-	// Simple zoom easing
-	private wheelSpeed = 1.0;
-	private wheelImmediate = 0.9;
-	private wheelSpeedCtrl = 0.4;
-	private wheelImmediateCtrl = 0.24;
+	// Zoom options managed by OptionsManager
 	private zoomDamping = 0.09;
 	private maxZoomRate = 12.0;
 	private anchorMode: 'pointer' | 'center' = 'pointer';
-	// Easing options now owned by ZoomController
-	// Zoom-out stability bias toward center
-	private outCenterBias = 0.15;
 	// Sticky center anchor hysteresis for finite worlds
 	private _stickyCenterAnchor = false;
 	private _stickyAnchorUntil = 0;
@@ -100,6 +100,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _pendingIconDefs: Record<string, IconDefInput> | null = null;
 	private _pendingMarkers: MarkerInternal[] | null = null;
 	private _pendingDecals: MarkerInternal[] | null = null;
+	private _pendingVectors: VectorPrimitive[] | null = null;
+	private _pendingBackgroundColor: string | { r: number; g: number; b: number; a?: number } | null = null;
 	private _debug = false;
 	private _renderer!: MapRenderer;
 	private _allIconDefs: Record<string, IconDefInput> = {};
@@ -118,119 +120,35 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _maxBoundsViscosity = 0;
 	private _clipToBounds = false;
 	_bounceAtZoomLimits = false;
-	// Home view (initial center)
-	// Home view (initial center) no longer tracked
-	// Leaflet-like inertia options and state
-	private inertia = true;
-	private inertiaDeceleration = 3400; // px/s^2
-	private inertiaMaxSpeed = 2000; // px/s (cap to prevent excessive throw)
-	private easeLinearity = 0.2;
+	// Inertia options managed by OptionsManager
 	private _panCtrl!: PanController;
 	// (moved to EventBridge)
 	// RequestIdleCallback gating for mask build
 	private _maskBuildRequested = false;
 
-	// Background color (normalized 0..1). Default: fully transparent.
-	private _bg = { r: 0, g: 0, b: 0, a: 0 };
-
+	// Background UI methods - delegate to BackgroundUIManager
 	private _parseBackground(input?: string | { r: number; g: number; b: number; a?: number }) {
-		// Policy: if omitted or 'transparent' => fully transparent; otherwise use solid color (alpha forced to 1)
-		const transparent = { r: 0, g: 0, b: 0, a: 0 };
-		const toSolid = (str: string) => {
-			const s = str.trim().toLowerCase();
-			if (s === 'transparent') return transparent;
-			const m = s.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i);
-			if (m) {
-				const hex = m[1];
-				const rr = parseInt(hex.slice(0, 2), 16) / 255;
-				const gg = parseInt(hex.slice(2, 4), 16) / 255;
-				const bb = parseInt(hex.slice(4, 6), 16) / 255;
-				return { r: rr, g: gg, b: bb, a: 1 };
-			}
-			return transparent;
-		};
-		let bg = transparent;
-		if (typeof input === 'string') bg = toSolid(input);
-		else if (input && typeof input.r === 'number' && typeof input.g === 'number' && typeof input.b === 'number') {
-			bg = {
-				r: Math.max(0, Math.min(1, input.r / (input.r > 1 ? 255 : 1))),
-				g: Math.max(0, Math.min(1, input.g / (input.g > 1 ? 255 : 1))),
-				b: Math.max(0, Math.min(1, input.b / (input.b > 1 ? 255 : 1))),
-				a: 1,
-			};
-		}
-		this._bg = bg;
-		try {
-			// For alpha < 1 (only 'transparent' case), keep the element background transparent so the page can show through
-			// and let the WebGL clear color's alpha drive compositing (alpha will be 0 in that case).
-			this.canvas.style.backgroundColor = bg.a < 1 ? 'transparent' : `rgb(${Math.round(bg.r * 255)}, ${Math.round(bg.g * 255)}, ${Math.round(bg.b * 255)})`;
-		} catch {}
-	}
-
-	private _ensureSpinnerCss() {
-		if (GTMap._spinnerCssInjected) return;
-		try {
-			const style = document.createElement('style');
-			style.textContent = `@keyframes gtmap_spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
-			document.head.appendChild(style);
-			GTMap._spinnerCssInjected = true;
-		} catch {}
-	}
-
-	private _createLoadingEl() {
-		if (!this._showLoading || this._loadingEl) return;
-		try {
-			const wrap = document.createElement('div');
-			Object.assign(wrap.style, {
-				position: 'absolute',
-				left: '0',
-				top: '0',
-				right: '0',
-				bottom: '0',
-				display: 'flex',
-				alignItems: 'center',
-				justifyContent: 'center',
-				pointerEvents: 'none',
-				zIndex: '10',
-			} as CSSStyleDeclaration);
-			const spinner = document.createElement('div');
-			const { size, thickness, color, trackColor, speedMs } = this._spinner;
-			Object.assign(spinner.style, {
-				width: `${size}px`,
-				height: `${size}px`,
-				border: `${thickness}px solid ${trackColor}`,
-				borderTopColor: color,
-				borderRadius: '50%',
-				animation: `gtmap_spin ${speedMs}ms linear infinite`,
-			} as CSSStyleDeclaration);
-			wrap.appendChild(spinner);
-			// Ensure container is positioned
-			const cs = getComputedStyle(this.container);
-			if (cs.position === 'static' || !cs.position) this.container.style.position = 'relative';
-			this.container.appendChild(wrap);
-			this._loadingEl = wrap;
-			this._setLoadingVisible(false);
-		} catch {}
+		this._bgUI.parseBackground(input);
 	}
 
 	private _setLoadingVisible(on: boolean) {
-		this._loadingEl && (this._loadingEl.style.display = on ? 'flex' : 'none');
+		this._bgUI.setLoadingVisible(on);
 	}
 
 	private _gridPalette() {
-		// Choose contrasting grid based on background luminance
-		const L = 0.2126 * this._bg.r + 0.7152 * this._bg.g + 0.0722 * this._bg.b;
-		const lightBg = L >= 0.5;
-		if (lightBg) {
-			return { minor: 'rgba(0,0,0,0.2)', major: 'rgba(0,0,0,0.45)', labelBg: 'rgba(0,0,0,0.55)', labelFg: 'rgba(255,255,255,0.9)' };
-		}
-		return { minor: 'rgba(255,255,255,0.25)', major: 'rgba(255,255,255,0.55)', labelBg: 'rgba(255,255,255,0.75)', labelFg: 'rgba(0,0,0,0.9)' };
+		return this._bgUI.getGridPalette();
 	}
 
 	public setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }) {
+		if (!this._bgUI) {
+			// Queue for after initialization
+			this._pendingBackgroundColor = color;
+			return;
+		}
 		this._parseBackground(color);
 		try {
-			this.gl.clearColor(this._bg.r, this._bg.g, this._bg.b, this._bg.a);
+			const bg = this._bgUI.getBackground();
+			this.gl.clearColor(bg.r, bg.g, bg.b, bg.a);
 		} catch {}
 		this._needsRender = true;
 	}
@@ -275,7 +193,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			icons: this._icons,
 			isIdle: () => {
 				const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-				const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
+				const idleByTime = now - this._lastInteractAt > this._optionsMgr.interactionIdleMs;
 				const anim = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
 				return idleByTime && !anim;
 			},
@@ -298,20 +216,21 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	/** Get the z-index at which to draw the vector overlay (always 0). */
 	private _getVectorZIndices(): number[] {
 		// Vectors always render at z=0. Markers/decals default to z=1.
-		return this._vectors.length ? [0] : [];
+		if (!this._vectorLayer) return [];
+		return this._vectorLayer.hasVectors() ? [0] : [];
 	}
 
 	/** Draw vector overlay (called from IconRenderer at z-index boundaries) */
 	private _drawVectorOverlay(): void {
-		if (!this._vectorOverlay || !this._vectorCanvas) return;
-		this._vectorOverlay.draw();
+		if (!this._vectorLayer) return;
+		this._vectorLayer.drawOverlay();
 	}
 
 	// ImageManagerHost API: allow background uploads to pause during interaction
 	public isIdle(): boolean {
 		try {
 			const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-			const idleByTime = now - this._lastInteractAt > this.interactionIdleMs;
+			const idleByTime = now - this._lastInteractAt > this._optionsMgr.interactionIdleMs;
 			const anim = this._zoomCtrl.isAnimating() || this._panCtrl.isAnimating();
 			return idleByTime && !anim;
 		} catch {
@@ -356,14 +275,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private showGrid = false;
 	private gridCanvas: HTMLCanvasElement | null = null;
 	private _gridCtx: CanvasRenderingContext2D | null = null;
-	// Vector overlay (Canvas 2D rendered to OffscreenCanvas, copied to WebGL texture)
-	private _vectorCanvas: OffscreenCanvas | HTMLCanvasElement | null = null;
-	private _vectorCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null;
-	private _vectorOverlay: OverlayRenderer | null = null;
-	private _vectors: VectorPrimitive[] = [];
+	// Vector layer managed by VectorLayer module
 	public pointerAbs: { x: number; y: number } | null = null;
-	// Loading pacing/cancel
-	private interactionIdleMs = 160;
+	// interactionIdleMs managed by OptionsManager
 	private _lastInteractAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	// Wheel coalescing + velocity tail
 	private _wheelAnchor: { px: number; py: number; mode: 'pointer' | 'center' } = {
@@ -381,11 +295,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _t0Ms: number = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	private _imageReadyAtMs: number | null = null;
 	private _firstRasterDrawAtMs: number | null = null;
-	private _showLoading = true;
-	private _loadingEl: HTMLDivElement | null = null;
-	private static _spinnerCssInjected = false;
 	private _gateRenderUntilImageReady = false;
-	private _spinner = { size: 32, thickness: 3, color: 'rgba(0,0,0,0.6)', trackColor: 'rgba(0,0,0,0.2)', speedMs: 1000 };
 	private _pendingFullImage: { url: string; width: number; height: number } | null = null;
 	public _nowMs(): number {
 		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
@@ -426,20 +336,16 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._imageManager = new ImageManager(this);
 		this._asyncInitManager = new AsyncInitManager();
 
+		// Initialize options manager (no dependencies)
+		this._optionsMgr = new OptionsManager({ requestRender: () => { this._needsRender = true; } });
+		this._optionsMgr.initFromOptions({
+			zoomOutCenterBias: options.zoomOutCenterBias,
+			wheelSpeedCtrl: options.wheelSpeedCtrl,
+		});
+
 		// Spinner mode is always on; gate rendering until image is ready
-		this._showLoading = true;
 		this._gateRenderUntilImageReady = true;
-		// Merge spinner options
-		if (options.spinner) {
-			const o = options.spinner;
-			this._spinner = {
-				size: Math.max(4, Math.floor(o.size ?? this._spinner.size)),
-				thickness: Math.max(1, Math.floor(o.thickness ?? this._spinner.thickness)),
-				color: o.color ?? this._spinner.color,
-				trackColor: o.trackColor ?? this._spinner.trackColor,
-				speedMs: Math.max(100, Math.floor(o.speedMs ?? this._spinner.speedMs)),
-			};
-		}
+		// Spinner options are handled by BackgroundUIManager in async init
 
 		// Defer image load until async finalize. If a preview is provided,
 		// we avoid kicking off the full-res load here to prevent duplicate requests.
@@ -456,12 +362,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		};
 		this.zoom = options.zoom ?? Math.min(this.maxZoom, this._imageMaxZoom);
 
-		if (typeof options.zoomOutCenterBias === 'boolean') {
-			this.outCenterBias = options.zoomOutCenterBias ? 0.15 : 0.0;
-		} else if (Number.isFinite(options.zoomOutCenterBias as number)) {
-			const v = Math.max(0, Math.min(1, options.zoomOutCenterBias as number));
-			this.outCenterBias = v;
-		}
+		// zoomOutCenterBias and wheelSpeedCtrl are handled by OptionsManager.initFromOptions above
 
 		// Store options for async initialization
 		if (Number.isFinite(options.fpsCap as number)) {
@@ -470,7 +371,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 		if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
 		if (options.debug === true) this._debug = true;
-		if (Number.isFinite(options.wheelSpeedCtrl as number)) this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, options.wheelSpeedCtrl as number));
+		// wheelSpeedCtrl is handled by OptionsManager.initFromOptions above
 		if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
 		if (typeof options.bounceAtZoomLimits === 'boolean') this._bounceAtZoomLimits = options.bounceAtZoomLimits;
@@ -493,11 +394,23 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				name: 'Initialize Graphics',
 				execute: () => {
 					this._gfx = new Graphics(this);
-					this._parseBackground(options.backgroundColor);
-					this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
+					// Initialize BackgroundUIManager
+					this._bgUI = new BackgroundUIManager({
+						getContainer: () => this.container,
+						getCanvas: () => this.canvas,
+					});
+					if (options.spinner) {
+						this._bgUI.setSpinnerOptions(options.spinner as SpinnerOptions);
+					}
+					// Apply pending background color if set early, otherwise use options
+					const bgColorToApply = this._pendingBackgroundColor ?? options.backgroundColor;
+					this._pendingBackgroundColor = null;
+					this._bgUI.parseBackground(bgColorToApply);
+					const bg = this._bgUI.getBackground();
+					this._gfx.init(true, [bg.r, bg.g, bg.b, bg.a]);
 					// Prepare loading indicator overlay
-					this._ensureSpinnerCss();
-					this._createLoadingEl();
+					this._bgUI.ensureSpinnerCss();
+					this._bgUI.createLoadingEl();
 				},
 				weight: 3,
 			},
@@ -562,7 +475,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 							this.zoom = z;
 							this._state.zoom = this.zoom;
 						},
-						getOutCenterBias: () => this.outCenterBias,
+						getOutCenterBias: () => this._optionsMgr.outCenterBias,
 						clampCenterWorld: (cw, zInt, s, w, h) =>
 							clampCenterWorldCore(cw, zInt, s, w, h, this.wrapX, this.freePan, this.mapSize, this.maxZoom, this._maxBoundsPx, this._maxBoundsViscosity, false),
 						emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => this._events.emit(name, payload),
@@ -614,7 +527,22 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				name: 'Initialize Canvas Elements',
 				execute: () => {
 					this._initGridCanvas();
-					this._initVectorCanvas();
+					// Initialize VectorLayer (handles its own canvas creation)
+					this._vectorLayer = new VectorLayer({
+						getContainer: () => this.container,
+						getGL: () => this.gl,
+						getDpr: () => this._dpr,
+						getZoom: () => this.zoom,
+						getCenter: () => this.center,
+						getImageMaxZoom: () => this._imageMaxZoom,
+					});
+					this._vectorLayer.init();
+					// If vectors were provided early, apply them now
+					if (this._pendingVectors && this._pendingVectors.length) {
+						const v = this._pendingVectors.slice();
+						this._pendingVectors = null;
+						this._vectorLayer.setVectors(v);
+					}
 				},
 				weight: 2,
 			},
@@ -625,7 +553,20 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			},
 			{
 				name: 'Initialize Events',
-				execute: () => this._initEvents(),
+				execute: () => {
+					// Initialize MarkerHitTesting
+					this._hitTesting = new MarkerHitTesting({
+						getContainer: () => this.container,
+						getZoom: () => this.zoom,
+						getMinZoom: () => this.minZoom,
+						getMaxZoom: () => this.maxZoom,
+						getCenter: () => this.center,
+						getImageMaxZoom: () => this._imageMaxZoom,
+						getIcons: () => this._icons,
+						getIconScaleFunction: () => this._iconScaleFunction,
+					});
+					this._initEvents();
+				},
 				weight: 2,
 			},
 			{
@@ -694,7 +635,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		const previewImage = _options.preview;
 		if (previewImage && fullImage) {
 			// Progressive path: show preview first, then upgrade to full in background
-			if (this._showLoading) this._setLoadingVisible(true);
+			if (this._bgUI.getShowLoading()) this._setLoadingVisible(true);
 			this._pendingFullImage = { url: fullImage.url, width: fullImage.width, height: fullImage.height };
 			// Load preview but scale/fit to full image dimensions to avoid any geometry changes on upgrade
 			try {
@@ -702,7 +643,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			} catch {}
 		} else if (fullImage) {
 			// Non-progressive path (default): load full image with spinner gating
-			if (this._showLoading) this._setLoadingVisible(true);
+			if (this._bgUI.getShowLoading()) this._setLoadingVisible(true);
 			this.setImageSource(fullImage);
 		}
 
@@ -717,7 +658,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		} catch {}
 		this._needsRender = true;
 		// Hide loading overlay when image becomes ready (full image path)
-		if (this._showLoading) this._setLoadingVisible(false);
+		if (this._bgUI.getShowLoading()) this._setLoadingVisible(false);
 		// Allow rendering now if it was gated
 		this._gateRenderUntilImageReady = false;
 		// Attach inputs if they were deferred
@@ -1002,22 +943,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			} catch {}
 			this.gridCanvas = null;
 			this._gridCtx = null;
-			if (this._vectorCanvas) {
-				// OffscreenCanvas doesn't need removal from DOM
-				if (this._vectorCanvas instanceof HTMLCanvasElement) {
-					try {
-						this._vectorCanvas.remove();
-					} catch {}
-				}
-				this._vectorCanvas = null;
-				this._vectorCtx = null;
-				this._vectors = [];
-			}
-			if (this._vectorOverlay) {
-				this._vectorOverlay.dispose();
-				this._vectorOverlay = null;
-			}
 		}
+		// Clean up vector layer
+		this._vectorLayer?.dispose();
 	}
 
 	// Public controls
@@ -1077,26 +1005,13 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._clearCache();
 	}
 	public setWheelSpeed(speed: number) {
-		if (Number.isFinite(speed)) {
-			this.wheelSpeed = Math.max(0.01, Math.min(2, speed));
-			const t = Math.max(0, Math.min(1, this.wheelSpeed / 2));
-			// Map speed to immediate step size; velocity gain removed in DI path
-			this.wheelImmediate = 0.05 + t * (1.75 - 0.05);
-		}
-		// Keep ctrl-step in sync if desired
-		const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
-		this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
+		this._optionsMgr.setWheelSpeed(speed);
 	}
 	public setWheelCtrlSpeed(speed: number) {
-		if (Number.isFinite(speed)) {
-			this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, speed));
-			const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
-			this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
-		}
+		this._optionsMgr.setWheelCtrlSpeed(speed);
 	}
 	public setWheelOptions(opts: { base?: number; ctrl?: number }) {
-		if (Number.isFinite(opts.base as number)) this.setWheelSpeed(opts.base as number);
-		if (Number.isFinite(opts.ctrl as number)) this.setWheelCtrlSpeed(opts.ctrl as number);
+		this._optionsMgr.setWheelOptions(opts);
 	}
 	public setAnchorMode(mode: 'pointer' | 'center') {
 		this.anchorMode = mode;
@@ -1104,30 +1019,12 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 
 	// Inertia options (Leaflet-like) setters
 	public setInertiaOptions(opts: { inertia?: boolean; inertiaDeceleration?: number; inertiaMaxSpeed?: number; easeLinearity?: number }) {
-		if (typeof opts.inertia === 'boolean') this.inertia = opts.inertia;
-		if (Number.isFinite(opts.inertiaDeceleration as number)) {
-			// clamp to sensible range (px/s^2)
-			const v = Math.max(100, Math.min(20000, opts.inertiaDeceleration as number));
-			this.inertiaDeceleration = v;
-		}
-		if (Number.isFinite(opts.inertiaMaxSpeed as number)) {
-			const v = Math.max(10, Math.min(1e6, opts.inertiaMaxSpeed as number));
-			this.inertiaMaxSpeed = v;
-		}
-		if (Number.isFinite(opts.easeLinearity as number)) {
-			const v = Math.max(0.01, Math.min(1.0, opts.easeLinearity as number));
-			this.easeLinearity = v;
-		}
+		this._optionsMgr.setInertiaOptions(opts);
 	}
 
 	// Zoom-out center bias: when zooming out, bias the center toward previous visual center
-	// v is approximately per-unit-zoom bias (0..1), internally clamped and capped.
 	public setZoomOutCenterBias(v: number | boolean) {
-		if (typeof v === 'boolean') {
-			this.outCenterBias = v ? 0.15 : 0.0;
-			return;
-		}
-		if (Number.isFinite(v)) this.outCenterBias = Math.max(0, Math.min(1, v as number));
+		this._optionsMgr.setZoomOutCenterBias(v);
 	}
 
 	private _initPrograms() {
@@ -1160,18 +1057,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				this._needsRender = true;
 			}
 		}
-		if (this._vectorCanvas) {
-			// OffscreenCanvas doesn't have style; just resize the buffer
-			if (this._vectorCanvas instanceof HTMLCanvasElement) {
-				this._vectorCanvas.style.width = cssW + 'px';
-				this._vectorCanvas.style.height = cssH + 'px';
-			}
-			if (this._vectorCanvas.width !== w || this._vectorCanvas.height !== h) {
-				this._vectorCanvas.width = w;
-				this._vectorCanvas.height = h;
-				this._needsRender = true;
-			}
-		}
+		// Resize vector layer
+		this._vectorLayer?.resize(w, h);
 	}
 
 	public setAutoResize(on: boolean) {
@@ -1219,7 +1106,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 	}
 	public setLoaderOptions(opts: { maxTiles?: number; maxInflightLoads?: number; interactionIdleMs?: number }) {
-		if (Number.isFinite(opts.interactionIdleMs as number)) this.interactionIdleMs = Math.max(0, (opts.interactionIdleMs as number) | 0);
+		this._optionsMgr.setLoaderOptions(opts);
 	}
 	public setMaxBoundsPx(bounds: { minX: number; minY: number; maxX: number; maxY: number } | null) {
 		this._maxBoundsPx = bounds ? { ...bounds } : null;
@@ -1256,16 +1143,16 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				this._lastInteractAt = t;
 			},
 			getAnchorMode: () => this.anchorMode,
-			getWheelStep: (ctrl: boolean) => (ctrl ? this.wheelImmediateCtrl || this.wheelImmediate || 0.16 : this.wheelImmediate || 0.16),
+			getWheelStep: (ctrl: boolean) => this._optionsMgr.getWheelStep(ctrl),
 			startEase: (dz, px, py, anchor) => this._zoomCtrl.startEase(dz, px, py, anchor),
 			cancelZoomAnim: () => {
 				this._zoomCtrl.cancel();
 			},
 			applyAnchoredZoom: (targetZoom, px, py, anchor) => this._zoomCtrl.applyAnchoredZoom(targetZoom, px, py, anchor),
-			getInertia: () => this.inertia,
-			getInertiaDecel: () => this.inertiaDeceleration,
-			getInertiaMaxSpeed: () => this.inertiaMaxSpeed,
-			getEaseLinearity: () => this.easeLinearity,
+			getInertia: () => this._optionsMgr.inertia,
+			getInertiaDecel: () => this._optionsMgr.inertiaDeceleration,
+			getInertiaMaxSpeed: () => this._optionsMgr.inertiaMaxSpeed,
+			getEaseLinearity: () => this._optionsMgr.easeLinearity,
 			startPanBy: (dxPx: number, dyPx: number, durSec: number, _ease?: number) => this._startPanBy(dxPx, dyPx, durSec, undefined),
 			cancelPanAnim: () => {
 				this._panCtrl.cancel();
@@ -1511,7 +1398,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			} catch {}
 			try {
 				// Reinitialize with alpha enabled so background transparency is supported after resume
-				this._gfx.init(true, [this._bg.r, this._bg.g, this._bg.b, this._bg.a]);
+				const bg = this._bgUI.getBackground();
+				this._gfx.init(true, [bg.r, bg.g, bg.b, bg.a]);
 			} catch {}
 			try {
 				this._initPrograms();
@@ -1540,6 +1428,23 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 					void this._imageManager.loadImage(img.url, { width: img.width, height: img.height });
 				}
 			} catch {}
+			try {
+				// Rebuild vector layer (recreates WebGL overlay renderer)
+				const currentVectors = this._vectorLayer?.getVectors() ?? [];
+				this._vectorLayer?.dispose();
+				this._vectorLayer = new VectorLayer({
+					getContainer: () => this.container,
+					getGL: () => this.gl,
+					getDpr: () => this._dpr,
+					getZoom: () => this.zoom,
+					getCenter: () => this.center,
+					getImageMaxZoom: () => this._imageMaxZoom,
+				});
+				this._vectorLayer.init();
+				if (currentVectors.length) {
+					this._vectorLayer.setVectors(currentVectors);
+				}
+			} catch {}
 			this._glReleased = false;
 		}
 		try {
@@ -1556,31 +1461,13 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		/* no-op: single image renderer */
 	}
 
-	private _initVectorCanvas() {
-		const rect = this.container.getBoundingClientRect();
-		const w = Math.max(1, Math.floor(rect.width * (this._dpr || 1)));
-		const h = Math.max(1, Math.floor(rect.height * (this._dpr || 1)));
-
-		// Use OffscreenCanvas if available, otherwise hidden HTMLCanvasElement
-		if (typeof OffscreenCanvas !== 'undefined') {
-			this._vectorCanvas = new OffscreenCanvas(w, h);
-			this._vectorCtx = this._vectorCanvas.getContext('2d');
-		} else {
-			const c = document.createElement('canvas');
-			c.width = w;
-			c.height = h;
-			this._vectorCanvas = c;
-			this._vectorCtx = c.getContext('2d');
-		}
-
-		// Initialize overlay renderer for WebGL compositing
-		if (!this._vectorOverlay && this.gl) {
-			this._vectorOverlay = new OverlayRenderer(this.gl);
-		}
-	}
-
 	public setVectors(vectors: VectorPrimitive[]) {
-		this._vectors = vectors.slice();
+		if (!this._vectorLayer) {
+			// Queue for after initialization
+			this._pendingVectors = vectors.slice();
+			return;
+		}
+		this._vectorLayer.setVectors(vectors);
 		this._needsRender = true;
 	}
 
@@ -1646,185 +1533,15 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	 * @returns Hit info for the topmost marker, or null if no hit
 	 */
 	private _hitTestMarker(px: number, py: number, requireAlpha = false) {
-		void requireAlpha;
-		if (!this._icons) return null;
-
-		const rect = this.container.getBoundingClientRect();
-		const widthCSS = rect.width;
-		const heightCSS = rect.height;
-		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
-		const info = this._icons.getMarkerInfo(iconScale);
-		const imageMaxZ = this._imageMaxZoom;
-
-		// Iterate in reverse: last marker rendered is on top, so check it first
-		for (let i = info.length - 1; i >= 0; i--) {
-			const it = info[i];
-
-			// Convert marker world position to screen position
-			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
-
-			// Compute AABB bounds (anchor offsets from the marker's screen position)
-			const left = css.x - it.anchor.ax;
-			const top = css.y - it.anchor.ay;
-
-			// Fast AABB rejection test
-			if (px >= left && px <= left + it.w && py >= top && py <= top + it.h) {
-				// Point is within bounding box - now check alpha mask for pixel-accuracy
-				const mask = this._icons.getMaskInfo?.(it.type) || null;
-				if (mask) {
-					// Transform hit point to icon's local coordinate space
-					const ax = it.anchor.ax; // Anchor X (rotation pivot)
-					const ay = it.anchor.ay; // Anchor Y (rotation pivot)
-					const lx = px - left; // Local X (0 to width)
-					const ly = py - top; // Local Y (0 to height)
-
-					// Translate to anchor-relative coords for rotation
-					const cx = lx - ax;
-					const cy = ly - ay;
-
-					// Apply INVERSE rotation to get the unrotated position
-					// (We're undoing the marker's rotation to find the original texel)
-					const theta = ((it.rotation || 0) * Math.PI) / 180;
-					const c = Math.cos(-theta),
-						s = Math.sin(-theta);
-					const rx = cx * c - cy * s + ax; // Rotated X + translate back
-					const ry = cx * s + cy * c + ay; // Rotated Y + translate back
-
-					// Bounds check after rotation (point might rotate outside icon)
-					if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
-
-					// Map local coords to mask texel coords
-					const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
-					const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
-
-					// Sample alpha value (0-255)
-					const alpha = mask.data[my * mask.w + mx] | 0;
-					const THRESH = 32; // ~12.5% opacity threshold
-					if (alpha < THRESH) continue; // Transparent pixel - no hit
-				}
-
-				// Hit confirmed - return marker info
-				return {
-					idx: it.index,
-					id: it.id,
-					type: it.type,
-					world: { x: it.lng, y: it.lat },
-					screen: { x: css.x, y: css.y },
-					size: { width: it.w, height: it.h },
-					rotation: it.rotation,
-					icon: it.icon,
-				};
-			}
-		}
-		return null;
+		return this._hitTesting.hitTest(px, py, requireAlpha);
 	}
 
 	/**
-	 * Compute all markers that hit a screen position, ordered top-to-bottom.
-	 *
-	 * Unlike `_hitTestMarker` which returns only the topmost hit, this method
-	 * returns ALL markers under the cursor. Useful for:
-	 * - Click-through: showing a menu of overlapping markers
-	 * - Analytics: counting markers at a point
-	 * - Debugging: visualizing marker stacking
-	 *
-	 * ## Algorithm
-	 *
-	 * Same as `_hitTestMarker`:
-	 * 1. Iterate markers in reverse render order (top-to-bottom)
-	 * 2. AABB test for fast rejection
-	 * 3. Alpha mask test for pixel-accurate hits (with rotation handling)
-	 * 4. Collect all hits instead of returning on first hit
-	 *
-	 * ## Return Order
-	 *
-	 * Results are ordered from topmost (first) to bottommost (last),
-	 * matching visual stacking order.
-	 *
-	 * @param px - Screen X in CSS pixels (relative to container)
-	 * @param py - Screen Y in CSS pixels (relative to container)
-	 * @returns Array of hit markers with position, size, rotation, and icon info
+	 * Compute all markers hit at given screen position with full hit details.
+	 * Delegates to MarkerHitTesting module.
 	 */
-	private _computeMarkerHits(
-		px: number,
-		py: number,
-	): Array<{
-		id: string;
-		idx: number;
-		world: { x: number; y: number };
-		size: { width: number; height: number };
-		rotation?: number;
-		icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
-	}> {
-		const out: Array<{
-			id: string;
-			idx: number;
-			world: { x: number; y: number };
-			size: { width: number; height: number };
-			rotation?: number;
-			icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
-		}> = [];
-		if (!this._icons) return out;
-
-		const rect = this.container.getBoundingClientRect();
-		const widthCSS = rect.width;
-		const heightCSS = rect.height;
-		const iconScale = this._iconScaleFunction ? this._iconScaleFunction(this.zoom, this.minZoom, this.maxZoom) : 1.0;
-		const info = this._icons.getMarkerInfo(iconScale);
-		const imageMaxZ = this._imageMaxZoom;
-
-		// Iterate in reverse: top-to-bottom in visual stacking order
-		for (let i = info.length - 1; i >= 0; i--) {
-			const it = info[i];
-
-			// Convert marker world position to screen position
-			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, this.zoom, { x: this.center.lng, y: this.center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
-
-			// Compute AABB bounds
-			const left = css.x - it.anchor.ax;
-			const top = css.y - it.anchor.ay;
-
-			// Fast AABB rejection
-			if (px < left || px > left + it.w || py < top || py > top + it.h) continue;
-
-			// Alpha mask test for pixel-accurate hit detection
-			const mask = this._icons.getMaskInfo?.(it.type) || null;
-			if (mask) {
-				// Transform to local coords and apply inverse rotation (same as _hitTestMarker)
-				const ax = it.anchor.ax;
-				const ay = it.anchor.ay;
-				const lx = px - left;
-				const ly = py - top;
-				const cx = lx - ax;
-				const cy = ly - ay;
-				const theta = ((it.rotation || 0) * Math.PI) / 180;
-				const c = Math.cos(-theta),
-					s = Math.sin(-theta);
-				const rx = cx * c - cy * s + ax;
-				const ry = cx * s + cy * c + ay;
-
-				// Bounds check after rotation
-				if (rx < 0 || ry < 0 || rx >= it.w || ry >= it.h) continue;
-
-				// Sample alpha mask
-				const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
-				const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
-				const alpha = mask.data[my * mask.w + mx] | 0;
-				const THRESH = 32; // ~12.5% opacity threshold
-				if (alpha < THRESH) continue;
-			}
-
-			// Hit confirmed - add to results (unlike _hitTestMarker, we collect all)
-			out.push({
-				id: it.id,
-				idx: it.index,
-				world: { x: it.lng, y: it.lat },
-				size: { width: it.w, height: it.h },
-				rotation: it.rotation,
-				icon: { id: it.type, iconPath: it.icon.iconPath, x2IconPath: it.icon.x2IconPath, width: it.icon.width, height: it.icon.height, anchorX: it.icon.anchorX, anchorY: it.icon.anchorY },
-			});
-		}
-		return out;
+	private _computeMarkerHits(px: number, py: number) {
+		return this._hitTesting.computeAllHits(px, py);
 	}
 
 	public setIconScaleFunction(fn: ((zoom: number, minZoom: number, maxZoom: number) => number) | null) {
@@ -1836,91 +1553,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._needsRender = true;
 	}
 
-	private _ensureOverlaySizes() {
-		const rect = this.container.getBoundingClientRect();
-		const wCSS = Math.max(1, rect.width | 0);
-		const hCSS = Math.max(1, rect.height | 0);
-		const dpr = this._dpr || (typeof devicePixelRatio !== 'undefined' ? devicePixelRatio : 1);
-		const wPx = Math.max(1, Math.round(wCSS * dpr));
-		const hPx = Math.max(1, Math.round(hCSS * dpr));
-		if (this.gridCanvas && (this.gridCanvas.width !== wPx || this.gridCanvas.height !== hPx)) {
-			this.gridCanvas.width = wPx;
-			this.gridCanvas.height = hPx;
-		}
-		if (this._vectorCanvas && (this._vectorCanvas.width !== wPx || this._vectorCanvas.height !== hPx)) {
-			this._vectorCanvas.width = wPx;
-			this._vectorCanvas.height = hPx;
-		}
-	}
-
 	private _drawVectors() {
-		if (!this._vectorCtx) this._initVectorCanvas();
-		if (!this._vectorCanvas || !this._vectorCtx) return;
-
-		this._ensureOverlaySizes();
-		const ctx = this._vectorCtx;
-		const canvas = this._vectorCanvas;
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		ctx.save();
-		try {
-			ctx.scale(this._dpr || 1, this._dpr || 1);
-		} catch {}
-		if (this._vectors.length) {
-			const z = this.zoom;
-			const rect = this.container.getBoundingClientRect();
-			const viewport = { x: rect.width, y: rect.height };
-			const imageMaxZ = this._imageMaxZoom;
-			// Subtle zoom-based stroke scaling: ~8% per zoom level, clamped
-			const refZoom = 2;
-			const zoomScale = Math.max(0.6, Math.min(1.8, 1 + (z - refZoom) * 0.08));
-			for (const prim of this._vectors) {
-				const style = (prim.style ?? {}) as VectorStyleInternal;
-				const baseWeight = style.weight ?? 2;
-				ctx.lineWidth = Math.max(1, baseWeight * zoomScale);
-				ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
-				ctx.globalAlpha = style.opacity ?? 1;
-				const begin = () => ctx.beginPath();
-				const finishStroke = () => ctx.stroke();
-				const finishFill = () => {
-					if (style.fill) {
-						ctx.globalAlpha = style.fillOpacity ?? 0.25;
-						ctx.fillStyle = style.fillColor || style.color || 'rgba(0,0,0,0.25)';
-						ctx.fill();
-						ctx.globalAlpha = style.opacity ?? 1;
-					}
-				};
-				if (prim.type === 'polyline' || prim.type === 'polygon') {
-					const pts = prim.points as Array<{ lng: number; lat: number }>;
-					if (!pts.length) continue;
-					begin();
-					for (let i = 0; i < pts.length; i++) {
-						const p = pts[i];
-						const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-						if (i === 0) ctx.moveTo(css.x, css.y);
-						else ctx.lineTo(css.x, css.y);
-					}
-					if (prim.type === 'polygon') ctx.closePath();
-					finishStroke();
-					finishFill();
-				} else if (prim.type === 'circle') {
-					const c = prim.center as { lng: number; lat: number };
-					const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: this.center.lng, y: this.center.lat }, viewport, imageMaxZ);
-					// Radius: specified in native px; convert to CSS using current zInt/scale
-					const { zInt, scale } = Coords.zParts(z);
-					const s = Coords.sFor(imageMaxZ as number, zInt);
-					const rCss = ((prim.radius as number) / s) * scale;
-					begin();
-					ctx.arc(css.x, css.y, rCss, 0, Math.PI * 2);
-					finishStroke();
-					finishFill();
-				}
-			}
-		}
-		ctx.restore();
-
-		// Upload to WebGL overlay (drawing happens via IconRenderer z-index callback)
-		if (this._vectorOverlay && this._vectors.length) {
-			this._vectorOverlay.uploadCanvas(canvas);
-		}
+		if (!this._vectorLayer) return;
+		this._vectorLayer.draw();
 	}
 }

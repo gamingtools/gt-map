@@ -11,7 +11,7 @@
 - [Properties](#properties)
   - [releaseGL?](#releasegl)
 
-Defined in: [api/types.ts:349](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L349)
+Defined in: [api/types.ts:361](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L361)
 
 ## Properties
 
@@ -19,6 +19,6 @@ Defined in: [api/types.ts:349](https://github.com/gamingtools/gt-map/blob/6b6b51
 
 > `optional` **releaseGL**: `boolean`
 
-Defined in: [api/types.ts:351](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/types.ts#L351)
+Defined in: [api/types.ts:363](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L363)
 
 If true, release WebGL context and textures to free VRAM

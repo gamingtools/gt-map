@@ -47,7 +47,7 @@ function buildHeader(basePath) {
     + `- Wrap & bounds: [setWrapX](${basePath}Class.GTMap.md#setwrapx), [setMaxBoundsPx](${basePath}Class.GTMap.md#setmaxboundspx), [setMaxBoundsViscosity](${basePath}Class.GTMap.md#setmaxboundsviscosity)\n`
     + `- Change the view: [ViewTransition](${basePath}Interface.ViewTransition.md), [transition()](${basePath}Class.GTMap.md#transition)\n`
     + `- Add content: [addIcon](${basePath}Class.GTMap.md#addicon), [addMarker](${basePath}Class.GTMap.md#addmarker), [addVector](${basePath}Class.GTMap.md#addvector)\n`
-    + `- Events: [MapEvents](${basePath}Interface.MapEvents.md), [Layer.events](${basePath}Class.Layer.md#events), [Marker.events](${basePath}Class.Marker.md#events)\n`
+    + `- Events: [MapEvents](${basePath}Interface.MapEvents.md), [EntityCollection.events](${basePath}Class.EntityCollection.md#events), [Marker.events](${basePath}Class.Marker.md#events)\n`
     + `- Utilities: [setAutoResize](${basePath}Class.GTMap.md#setautoresize), [invalidateSize](${basePath}Class.GTMap.md#invalidatesize), [setFpsCap](${basePath}Class.GTMap.md#setfpscap), [setBackgroundColor](${basePath}Class.GTMap.md#setbackgroundcolor)\n\n`
     + 'Tip: The events pages list supported event names and payloads for IntelliSense.\n\n'
     + '## Contents\n\nUse the lists below to jump directly to types and members.';

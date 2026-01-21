@@ -14,7 +14,7 @@
 
 > **easeInCubic**(`t`): `number`
 
-Defined in: [api/easings.ts:30](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/easings.ts#L30)
+Defined in: [api/easings.ts:30](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/easings.ts#L30)
 
 Cubic ease‑in.
 

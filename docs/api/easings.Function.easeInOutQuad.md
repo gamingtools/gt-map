@@ -14,7 +14,7 @@
 
 > **easeInOutQuad**(`t`): `number`
 
-Defined in: [api/easings.ts:25](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/easings.ts#L25)
+Defined in: [api/easings.ts:25](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/easings.ts#L25)
 
 Quadratic ease‑in‑out.
 

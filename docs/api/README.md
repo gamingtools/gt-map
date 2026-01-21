@@ -11,7 +11,7 @@ Quick links to common tasks using the GTMap API.
 - Wrap & bounds: [setWrapX](./Class.GTMap.md#setwrapx), [setMaxBoundsPx](./Class.GTMap.md#setmaxboundspx), [setMaxBoundsViscosity](./Class.GTMap.md#setmaxboundsviscosity)
 - Change the view: [ViewTransition](./Interface.ViewTransition.md), [transition()](./Class.GTMap.md#transition)
 - Add content: [addIcon](./Class.GTMap.md#addicon), [addMarker](./Class.GTMap.md#addmarker), [addVector](./Class.GTMap.md#addvector)
-- Events: [MapEvents](./Interface.MapEvents.md), [Layer.events](./Class.Layer.md#events), [Marker.events](./Class.Marker.md#events)
+- Events: [MapEvents](./Interface.MapEvents.md), [EntityCollection.events](./Class.EntityCollection.md#events), [Marker.events](./Class.Marker.md#events)
 - Utilities: [setAutoResize](./Class.GTMap.md#setautoresize), [invalidateSize](./Class.GTMap.md#invalidatesize), [setFpsCap](./Class.GTMap.md#setfpscap), [setBackgroundColor](./Class.GTMap.md#setbackgroundcolor)
 
 Tip: The events pages list supported event names and payloads for IntelliSense.
@@ -22,16 +22,30 @@ Use the lists below to jump directly to types and members.
 
 ### Classes
 
+- [CircleVisual](./Class.CircleVisual.md)
+- [CoordTransformer](./Class.CoordTransformer.md)
+- [Decal](./Class.Decal.md)
 - [EntityCollection](./Class.EntityCollection.md)
 - [GTMap](./Class.GTMap.md)
+- [HtmlVisual](./Class.HtmlVisual.md)
+- [ImageVisual](./Class.ImageVisual.md)
 - [Marker](./Class.Marker.md)
+- [RectVisual](./Class.RectVisual.md)
+- [SvgVisual](./Class.SvgVisual.md)
+- [TextVisual](./Class.TextVisual.md)
 - [Vector](./Class.Vector.md)
+- [Visual](./Class.Visual.md)
 
 ### Interfaces
 
+- [AnchorPoint](./Interface.AnchorPoint.md)
 - [AnimateOptions](./Interface.AnimateOptions.md)
 - [ApplyOptions](./Interface.ApplyOptions.md)
 - [ApplyResult](./Interface.ApplyResult.md)
+- [DecalData](./Interface.DecalData.md)
+- [DecalEventMap](./Interface.DecalEventMap.md)
+- [DecalEvents](./Interface.DecalEvents.md)
+- [DecalOptions](./Interface.DecalOptions.md)
 - [EntityCollectionEventMap](./Interface.EntityCollectionEventMap.md)
 - [EntityCollectionEvents](./Interface.EntityCollectionEvents.md)
 - [EventMap](./Interface.EventMap.md)
@@ -72,6 +86,8 @@ Use the lists below to jump directly to types and members.
 
 ### Type Aliases
 
+- [Anchor](./TypeAlias.Anchor.md)
+- [AnchorPreset](./TypeAlias.AnchorPreset.md)
 - [ApplyStatus](./TypeAlias.ApplyStatus.md)
 - [Circle](./TypeAlias.Circle.md)
 - [Easing](./TypeAlias.Easing.md)
@@ -84,12 +100,20 @@ Use the lists below to jump directly to types and members.
 - [TransformType](./TypeAlias.TransformType.md)
 - [Unsubscribe](./TypeAlias.Unsubscribe.md)
 - [VectorGeometry](./TypeAlias.VectorGeometry.md)
+- [VisualSize](./TypeAlias.VisualSize.md)
+- [VisualType](./TypeAlias.VisualType.md)
 
 ### Functions
 
 - [isCircle](./Function.isCircle.md)
+- [isCircleVisual](./Function.isCircleVisual.md)
+- [isHtmlVisual](./Function.isHtmlVisual.md)
+- [isImageVisual](./Function.isImageVisual.md)
 - [isPolygon](./Function.isPolygon.md)
 - [isPolyline](./Function.isPolyline.md)
+- [isRectVisual](./Function.isRectVisual.md)
+- [isSvgVisual](./Function.isSvgVisual.md)
+- [isTextVisual](./Function.isTextVisual.md)
 
 ### Namespaces
 

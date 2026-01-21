@@ -8,9 +8,9 @@ import type { DecalOptions } from '../entities/decal';
 import { Vector } from '../entities/vector';
 import { ViewTransitionImpl, type ViewTransition } from '../internal/core/view-transition';
 import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../internal/core/vector-types';
+import { renderTextToCanvas } from '../internal/layers/text-renderer';
 
 import { Visual, isImageVisual, isTextVisual, resolveAnchor } from './visual';
-import { renderTextToCanvas } from '../internal/layers/text-renderer';
 import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
 import { CoordTransformer, type Bounds as SourceBounds, type TransformType } from './coord-transformer';

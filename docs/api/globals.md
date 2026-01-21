@@ -21,15 +21,29 @@
 
 ## Classes
 
+- [CircleVisual](Class.CircleVisual.md)
+- [CoordTransformer](Class.CoordTransformer.md)
+- [Decal](Class.Decal.md)
 - [EntityCollection](Class.EntityCollection.md)
+- [HtmlVisual](Class.HtmlVisual.md)
+- [ImageVisual](Class.ImageVisual.md)
 - [Marker](Class.Marker.md)
+- [RectVisual](Class.RectVisual.md)
+- [SvgVisual](Class.SvgVisual.md)
+- [TextVisual](Class.TextVisual.md)
 - [Vector](Class.Vector.md)
+- [Visual](Class.Visual.md)
 
 ## Interfaces
 
+- [AnchorPoint](Interface.AnchorPoint.md)
 - [AnimateOptions](Interface.AnimateOptions.md)
 - [ApplyOptions](Interface.ApplyOptions.md)
 - [ApplyResult](Interface.ApplyResult.md)
+- [DecalData](Interface.DecalData.md)
+- [DecalEventMap](Interface.DecalEventMap.md)
+- [DecalEvents](Interface.DecalEvents.md)
+- [DecalOptions](Interface.DecalOptions.md)
 - [EntityCollectionEventMap](Interface.EntityCollectionEventMap.md)
 - [EntityCollectionEvents](Interface.EntityCollectionEvents.md)
 - [EventMap](Interface.EventMap.md)
@@ -70,6 +84,8 @@
 
 ## Type Aliases
 
+- [Anchor](TypeAlias.Anchor.md)
+- [AnchorPreset](TypeAlias.AnchorPreset.md)
 - [ApplyStatus](TypeAlias.ApplyStatus.md)
 - [Circle](TypeAlias.Circle.md)
 - [Easing](TypeAlias.Easing.md)
@@ -82,12 +98,20 @@
 - [TransformType](TypeAlias.TransformType.md)
 - [Unsubscribe](TypeAlias.Unsubscribe.md)
 - [VectorGeometry](TypeAlias.VectorGeometry.md)
+- [VisualSize](TypeAlias.VisualSize.md)
+- [VisualType](TypeAlias.VisualType.md)
 
 ## Functions
 
 - [isCircle](Function.isCircle.md)
+- [isCircleVisual](Function.isCircleVisual.md)
+- [isHtmlVisual](Function.isHtmlVisual.md)
+- [isImageVisual](Function.isImageVisual.md)
 - [isPolygon](Function.isPolygon.md)
 - [isPolyline](Function.isPolyline.md)
+- [isRectVisual](Function.isRectVisual.md)
+- [isSvgVisual](Function.isSvgVisual.md)
+- [isTextVisual](Function.isTextVisual.md)
 
 ## Overview
 

@@ -21,7 +21,7 @@
   - [remove](#remove)
   - [tap](#tap)
 
-Defined in: [api/events/maps.ts:52](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L52)
+Defined in: [api/events/maps.ts:61](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L61)
 
 Events emitted by a Marker instance.
 
@@ -37,7 +37,7 @@ Events emitted by a Marker instance.
 
 > **click**: `object`
 
-Defined in: [api/events/maps.ts:54](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L54)
+Defined in: [api/events/maps.ts:63](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L63)
 
 Device‑agnostic activate (mouse click or touch tap).
 
@@ -63,7 +63,7 @@ Device‑agnostic activate (mouse click or touch tap).
 
 > **longpress**: `object`
 
-Defined in: [api/events/maps.ts:58](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L58)
+Defined in: [api/events/maps.ts:67](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L67)
 
 Touch long‑press (~500ms) on the marker.
 
@@ -89,7 +89,7 @@ Touch long‑press (~500ms) on the marker.
 
 > **pointerdown**: `object`
 
-Defined in: [api/events/maps.ts:60](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L60)
+Defined in: [api/events/maps.ts:69](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L69)
 
 Pointer pressed on the marker.
 
@@ -115,7 +115,7 @@ Pointer pressed on the marker.
 
 > **pointerenter**: `object`
 
-Defined in: [api/events/maps.ts:64](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L64)
+Defined in: [api/events/maps.ts:73](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L73)
 
 Hover enter on the top‑most marker under the pointer.
 
@@ -141,7 +141,7 @@ Hover enter on the top‑most marker under the pointer.
 
 > **pointerleave**: `object`
 
-Defined in: [api/events/maps.ts:66](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L66)
+Defined in: [api/events/maps.ts:75](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L75)
 
 Hover leave for the previously hovered marker.
 
@@ -167,7 +167,7 @@ Hover leave for the previously hovered marker.
 
 > **pointerup**: `object`
 
-Defined in: [api/events/maps.ts:62](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L62)
+Defined in: [api/events/maps.ts:71](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L71)
 
 Pointer released on the marker.
 
@@ -193,7 +193,7 @@ Pointer released on the marker.
 
 > **positionchange**: `object`
 
-Defined in: [api/events/maps.ts:68](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L68)
+Defined in: [api/events/maps.ts:77](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L77)
 
 Position changed via Marker.moveTo; includes deltas.
 
@@ -223,7 +223,7 @@ Position changed via Marker.moveTo; includes deltas.
 
 > **remove**: `object`
 
-Defined in: [api/events/maps.ts:70](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L70)
+Defined in: [api/events/maps.ts:79](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L79)
 
 Marker was removed.
 
@@ -237,7 +237,7 @@ Marker was removed.
 
 > **tap**: `object`
 
-Defined in: [api/events/maps.ts:56](https://github.com/gamingtools/gt-map/blob/6b6b511db05d2521ce5caa9af1679c9c1ef796c1/packages/gtmap/src/api/events/maps.ts#L56)
+Defined in: [api/events/maps.ts:65](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L65)
 
 Touch alias for click (emitted only on touch).
 
