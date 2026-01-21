@@ -9,8 +9,9 @@ import { Vector } from '../entities/vector';
 import { ViewTransitionImpl, type ViewTransition } from '../internal/core/view-transition';
 import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../internal/core/vector-types';
 import { renderTextToCanvas } from '../internal/layers/text-renderer';
+import { renderSvgToDataUrlSync, renderSvgToCanvasAsync } from '../internal/layers/svg-renderer';
 
-import { Visual, isImageVisual, isTextVisual, resolveAnchor } from './visual';
+import { Visual, isImageVisual, isTextVisual, isSvgVisual, resolveAnchor } from './visual';
 import type { VectorGeometry as VectorGeom } from './events/maps';
 import type { MapEvents } from './events/public';
 import { CoordTransformer, type Bounds as SourceBounds, type TransformType } from './coord-transformer';
@@ -26,7 +27,7 @@ export { EntityCollection } from '../entities/entity-collection';
 // Re-export Visual classes and types
 export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual } from './visual';
 export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual } from './visual';
-export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize } from './visual';
+export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow } from './visual';
 
 // Re-export ViewTransition interface from extracted module for public API
 export type { ViewTransition };
@@ -913,6 +914,8 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				padding: visual.padding,
 				strokeColor: visual.strokeColor,
 				strokeWidth: visual.strokeWidth,
+				fontWeight: visual.fontWeight,
+				fontStyle: visual.fontStyle,
 			});
 			const anchor = resolveAnchor(visual.anchor);
 			// The canvas is rendered at 2x scale for retina sharpness
@@ -926,9 +929,74 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				anchorX: anchor.x * displayW,
 				anchorY: anchor.y * displayH,
 			};
+		} else if (isSvgVisual(visual)) {
+			// Render SVG to icon
+			const size = visual.getSize();
+			const anchor = resolveAnchor(visual.anchor);
+
+			// Check if we need async rendering (shadow or URL-based SVG)
+			const needsAsync = visual.shadow || visual.svg.trim().startsWith('http');
+
+			if (!needsAsync) {
+				// Synchronous path: inline SVG without shadow
+				const dataUrl = renderSvgToDataUrlSync({
+					svg: visual.svg,
+					width: size.width,
+					height: size.height,
+					fill: visual.fill,
+					stroke: visual.stroke,
+					strokeWidth: visual.strokeWidth,
+				});
+
+				if (dataUrl) {
+					iconDef = {
+						iconPath: dataUrl,
+						width: size.width,
+						height: size.height,
+						anchorX: anchor.x * size.width,
+						anchorY: anchor.y * size.height,
+					};
+				}
+			} else {
+				// Async path: URL-based SVG or has shadow
+				// Register with default icon first, then update when rendered
+				this._visualToIconId.set(visual, iconId);
+
+				renderSvgToCanvasAsync(
+					{
+						svg: visual.svg,
+						width: size.width,
+						height: size.height,
+						fill: visual.fill,
+						stroke: visual.stroke,
+						strokeWidth: visual.strokeWidth,
+						shadow: visual.shadow,
+					},
+					(result) => {
+						// Update the icon definition when render completes
+						const displayW = result.width / 2;
+						const displayH = result.height / 2;
+						const updatedIconDef: IconDefInternal = {
+							iconPath: result.dataUrl,
+							width: displayW,
+							height: displayH,
+							anchorX: anchor.x * displayW,
+							anchorY: anchor.y * displayH,
+						};
+						this._impl.setIconDefs?.(Object.fromEntries([[iconId, updatedIconDef]]));
+						this._visualToSize.set(visual, { width: displayW, height: displayH });
+						// Trigger re-render to show the updated icon
+						this._markMarkersDirtyAndSchedule();
+						this._markDecalsDirtyAndSchedule();
+					},
+				);
+
+				// Return the iconId now - it will be updated when async render completes
+				return iconId;
+			}
 		} else {
 			// For non-supported visuals, create a placeholder
-			// TODO: Implement rendering for CircleVisual, RectVisual, SvgVisual, HtmlVisual
+			// TODO: Implement rendering for CircleVisual, RectVisual, HtmlVisual
 			console.warn(`GTMap: Visual type '${visual.type}' is not yet supported for rendering. Using default icon.`);
 			return 'default';
 		}

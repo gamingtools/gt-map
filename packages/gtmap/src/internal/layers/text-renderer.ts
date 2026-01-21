@@ -14,8 +14,10 @@ export interface TextRenderOptions {
 	padding?: number;
 	/** Maximum width before text wrapping (0 = no limit) */
 	maxWidth?: number;
-	/** Font weight (normal, bold, etc.) */
+	/** Font weight (normal, bold, 100-900) */
 	fontWeight?: string;
+	/** Font style (normal, italic, oblique) */
+	fontStyle?: string;
 	/** Border/outline color (around background box) */
 	borderColor?: string;
 	/** Border width in pixels (around background box) */
@@ -46,14 +48,14 @@ export interface TextRenderResult {
  * @returns Rendered text as canvas with dimensions and data URL
  */
 export function renderTextToCanvas(options: TextRenderOptions): TextRenderResult {
-	const { text, fontSize, fontFamily, color, backgroundColor, padding = 4, maxWidth = 0, fontWeight = 'normal', borderColor, borderWidth = 0, borderRadius = 0, strokeColor, strokeWidth = 0 } = options;
+	const { text, fontSize, fontFamily, color, backgroundColor, padding = 4, maxWidth = 0, fontWeight = 'normal', fontStyle = 'normal', borderColor, borderWidth = 0, borderRadius = 0, strokeColor, strokeWidth = 0 } = options;
 
 	// Create measurement canvas
 	const measureCanvas = document.createElement('canvas');
 	const measureCtx = measureCanvas.getContext('2d')!;
 
-	// Set font for measurement
-	const font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+	// Set font for measurement (CSS font shorthand: style weight size family)
+	const font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
 	measureCtx.font = font;
 
 	// Split text into lines if maxWidth is set

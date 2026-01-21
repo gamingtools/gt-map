@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { GTMap, ImageVisual, TextVisual, type IconDef } from '@gtmap';
+	import { GTMap, ImageVisual, TextVisual, SvgVisual, type IconDef } from '@gtmap';
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
 	import Hud from '$lib/Hud.svelte';
@@ -25,6 +25,75 @@
 	}
 
 	let iconVisuals: ImageVisual[] | null = null;
+	let svgVisuals: SvgVisual[] | null = null;
+
+	const SVG_CDN = 'https://cdn.gaming.tools/gt/game-icons/lorc';
+
+	function createSvgVisuals(): SvgVisual[] {
+		const icons: SvgVisual[] = [];
+
+		// Sword - red with white stroke
+		const sword = new SvgVisual(`${SVG_CDN}/broadsword.svg`, 32, {
+			fill: '#dc2626',
+			stroke: '#ffffff',
+			strokeWidth: 2,
+			shadow: { blur: 3, offsetY: 2 }
+		});
+		sword.anchor = 'center';
+		icons.push(sword);
+
+		// Shield - blue with yellow stroke
+		const shield = new SvgVisual(`${SVG_CDN}/bordered-shield.svg`, 32, {
+			fill: '#3b82f6',
+			stroke: '#fbbf24',
+			strokeWidth: 2,
+			shadow: { blur: 3, offsetY: 2 }
+		});
+		shield.anchor = 'center';
+		icons.push(shield);
+
+		// Crown - gold with dark stroke
+		const crown = new SvgVisual(`${SVG_CDN}/crown.svg`, 32, {
+			fill: '#f59e0b',
+			stroke: '#78350f',
+			strokeWidth: 2,
+			shadow: { blur: 3, offsetY: 2 }
+		});
+		crown.anchor = 'center';
+		icons.push(crown);
+
+		// Castle - gray with dark stroke
+		const castle = new SvgVisual(`${SVG_CDN}/castle.svg`, 36, {
+			fill: '#6b7280',
+			stroke: '#1f2937',
+			strokeWidth: 2,
+			shadow: { blur: 3, offsetY: 2 }
+		});
+		castle.anchor = 'center';
+		icons.push(castle);
+
+		// Chest - brown with dark stroke
+		const chest = new SvgVisual(`${SVG_CDN}/locked-chest.svg`, 32, {
+			fill: '#92400e',
+			stroke: '#451a03',
+			strokeWidth: 2,
+			shadow: { blur: 3, offsetY: 2 }
+		});
+		chest.anchor = 'center';
+		icons.push(chest);
+
+		// Diamond - cyan with dark stroke
+		const diamond = new SvgVisual(`${SVG_CDN}/cut-diamond.svg`, 28, {
+			fill: '#06b6d4',
+			stroke: '#164e63',
+			strokeWidth: 2,
+			shadow: { blur: 4, offsetY: 2, color: 'rgba(6,182,212,0.4)' }
+		});
+		diamond.anchor = 'center';
+		icons.push(diamond);
+
+		return icons;
+	}
 
 	function createFallbackVisual(): ImageVisual {
 		const size = 32;
@@ -56,10 +125,15 @@
 		map?.clearMarkers?.();
 
 		const fallback = createFallbackVisual();
+		const allVisuals = [
+			...(iconVisuals || []),
+			...(svgVisuals || [])
+		];
+
 		for (let i = 0; i < markerCount; i++) {
 			const x = rand(0, MAP_IMAGE.width);
 			const y = rand(0, MAP_IMAGE.height);
-			const visual = iconVisuals && iconVisuals.length > 0 ? iconVisuals[i % iconVisuals.length] : fallback;
+			const visual = allVisuals.length > 0 ? allVisuals[i % allVisuals.length] : fallback;
 			map.addMarker(x, y, { visual, data: { id: i } });
 		}
 		// Always re-add text labels after marker count change
@@ -203,6 +277,8 @@
 			preview: PREVIEW_IMAGE,
 			image: MAP_IMAGE,
 			wrapX: false,
+			clipToBounds: true,
+			debug:true,
 			spinner: { size: 64, color: '#c2c2c2' },
 		});
 
@@ -214,6 +290,9 @@
 			visual.anchor = 'center';
 			iconVisuals.push(visual);
 		}
+
+		// Create SvgVisual instances
+		svgVisuals = createSvgVisuals();
 
 		applyMarkerCount(markerCount);
 

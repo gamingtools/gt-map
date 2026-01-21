@@ -187,6 +187,12 @@ export class TextVisual extends Visual {
 	/** Text stroke/outline width in pixels. */
 	readonly strokeWidth?: number;
 
+	/** Font weight (normal, bold, 100-900). */
+	readonly fontWeight?: string;
+
+	/** Font style (normal, italic, oblique). */
+	readonly fontStyle?: string;
+
 	/**
 	 * Create a text visual.
 	 * @param text - Text content
@@ -204,6 +210,10 @@ export class TextVisual extends Visual {
 			strokeColor?: string;
 			/** Text stroke/outline width in pixels */
 			strokeWidth?: number;
+			/** Font weight (normal, bold, 100-900) */
+			fontWeight?: string;
+			/** Font style (normal, italic, oblique) */
+			fontStyle?: string;
 		} = {},
 	) {
 		super();
@@ -215,6 +225,8 @@ export class TextVisual extends Visual {
 		this.padding = options.padding;
 		this.strokeColor = options.strokeColor;
 		this.strokeWidth = options.strokeWidth;
+		this.fontWeight = options.fontWeight;
+		this.fontStyle = options.fontStyle;
 	}
 }
 
@@ -324,13 +336,36 @@ export class RectVisual extends Visual {
 	}
 }
 
+/** Shadow options for SvgVisual. */
+export interface SvgShadow {
+	/** Shadow color (default: 'rgba(0,0,0,0.3)'). */
+	color?: string;
+	/** Shadow blur radius in pixels (default: 4). */
+	blur?: number;
+	/** Horizontal shadow offset in pixels (default: 0). */
+	offsetX?: number;
+	/** Vertical shadow offset in pixels (default: 2). */
+	offsetY?: number;
+}
+
 /**
- * SVG-based visual.
+ * SVG-based visual with color customization and shadow support.
  *
  * @public
+ * @remarks
+ * Supports inline SVG content or URLs. Colors can be overridden dynamically.
+ *
  * @example
  * ```ts
- * const svg = new SvgVisual('<svg>...</svg>', { width: 24, height: 24 });
+ * // Basic SVG
+ * const icon = new SvgVisual('<svg>...</svg>', { width: 24, height: 24 });
+ *
+ * // With color override and shadow
+ * const colored = new SvgVisual('<svg>...</svg>', { width: 32, height: 32 }, {
+ *   fill: '#ff0000',
+ *   stroke: '#000000',
+ *   shadow: { blur: 4, offsetY: 2 }
+ * });
  * ```
  */
 export class SvgVisual extends Visual {
@@ -342,15 +377,45 @@ export class SvgVisual extends Visual {
 	/** Display size. */
 	readonly size: VisualSize;
 
+	/** Override fill color for all SVG elements. */
+	readonly fill?: string;
+
+	/** Override stroke color for all SVG elements. */
+	readonly stroke?: string;
+
+	/** Override stroke width for all SVG elements. */
+	readonly strokeWidth?: number;
+
+	/** Shadow effect options. */
+	readonly shadow?: SvgShadow;
+
 	/**
 	 * Create an SVG visual.
 	 * @param svg - SVG content string or URL
 	 * @param size - Display size
+	 * @param options - Color and shadow options
 	 */
-	constructor(svg: string, size: VisualSize) {
+	constructor(
+		svg: string,
+		size: VisualSize,
+		options: {
+			/** Override fill color for all SVG elements */
+			fill?: string;
+			/** Override stroke color for all SVG elements */
+			stroke?: string;
+			/** Override stroke width for all SVG elements */
+			strokeWidth?: number;
+			/** Shadow effect options */
+			shadow?: SvgShadow;
+		} = {},
+	) {
 		super();
 		this.svg = svg;
 		this.size = size;
+		this.fill = options.fill;
+		this.stroke = options.stroke;
+		this.strokeWidth = options.strokeWidth;
+		this.shadow = options.shadow;
 	}
 
 	/** Get resolved size as {width, height}. */
