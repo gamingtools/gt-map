@@ -909,6 +909,8 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				color: visual.color,
 				backgroundColor: visual.backgroundColor,
 				padding: visual.padding,
+				strokeColor: visual.strokeColor,
+				strokeWidth: visual.strokeWidth,
 			});
 			const anchor = resolveAnchor(visual.anchor);
 			// The canvas is rendered at 2x scale for retina sharpness
@@ -984,6 +986,8 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				rotation: m.rotation,
 				zIndex: m.zIndex,
 				id: m.id,
+				// Cascading iconScaleFunction: marker > visual > (map handled by renderer)
+				iconScaleFunction: m.iconScaleFunction !== undefined ? m.iconScaleFunction : m.visual.iconScaleFunction,
 			}));
 			this._impl.setMarkers(internalMarkers);
 			try {
@@ -1015,6 +1019,8 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 				rotation: d.rotation,
 				zIndex: d.zIndex,
 				id: d.id,
+				// Cascading iconScaleFunction: decal > visual > (map handled by renderer)
+				iconScaleFunction: d.iconScaleFunction !== undefined ? d.iconScaleFunction : d.visual.iconScaleFunction,
 			}));
 			// Decals use same renderer as markers for now
 			// They're distinguished by being in a separate collection

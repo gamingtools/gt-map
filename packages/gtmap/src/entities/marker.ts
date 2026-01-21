@@ -1,5 +1,5 @@
 import type { MarkerEventMap, MarkerData } from '../api/events/maps';
-import type { ApplyOptions, ApplyResult, Easing } from '../api/types';
+import type { ApplyOptions, ApplyResult, Easing, IconScaleFunction } from '../api/types';
 import type { Visual } from '../api/visual';
 
 import { EventedEntity } from './base';
@@ -24,6 +24,12 @@ export interface MarkerOptions<T = unknown> {
 	 * @remarks Vectors always render at z=0. Use negative zIndex to place markers behind vectors.
 	 */
 	zIndex?: number;
+	/**
+	 * Override the map-level icon scale function for this marker.
+	 * Set to `null` to disable scaling (always use scale=1).
+	 * If undefined, falls back to visual's iconScaleFunction, then map's.
+	 */
+	iconScaleFunction?: IconScaleFunction | null;
 	/** Arbitrary user data attached to the marker. */
 	data?: T;
 }
@@ -63,6 +69,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	private _rotation: number;
 	private _opacity: number;
 	private _zIndex: number;
+	private _iconScaleFunction?: IconScaleFunction | null;
 	private _data?: T;
 	private _onChange?: () => void;
 	private _activeTx?: MarkerTransitionImpl<T>;
@@ -87,6 +94,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		this._rotation = opts.rotation ?? 0;
 		this._opacity = opts.opacity ?? 1;
 		this._zIndex = opts.zIndex ?? 1;
+		this._iconScaleFunction = opts.iconScaleFunction;
 		this._data = opts.data;
 		this._onChange = onChange;
 	}
@@ -118,6 +126,10 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	/** Z-index for stacking order (higher values render on top). */
 	get zIndex(): number {
 		return this._zIndex;
+	}
+	/** Icon scale function override for this marker (undefined = use visual's or map's). */
+	get iconScaleFunction(): IconScaleFunction | null | undefined {
+		return this._iconScaleFunction;
 	}
 	/** Arbitrary user data attached to the marker. */
 	get data(): T | undefined {

@@ -16,12 +16,16 @@ export interface TextRenderOptions {
 	maxWidth?: number;
 	/** Font weight (normal, bold, etc.) */
 	fontWeight?: string;
-	/** Border/outline color */
+	/** Border/outline color (around background box) */
 	borderColor?: string;
-	/** Border width in pixels */
+	/** Border width in pixels (around background box) */
 	borderWidth?: number;
 	/** Border radius for rounded corners */
 	borderRadius?: number;
+	/** Text stroke/outline color */
+	strokeColor?: string;
+	/** Text stroke/outline width in pixels */
+	strokeWidth?: number;
 }
 
 export interface TextRenderResult {
@@ -42,7 +46,7 @@ export interface TextRenderResult {
  * @returns Rendered text as canvas with dimensions and data URL
  */
 export function renderTextToCanvas(options: TextRenderOptions): TextRenderResult {
-	const { text, fontSize, fontFamily, color, backgroundColor, padding = 4, maxWidth = 0, fontWeight = 'normal', borderColor, borderWidth = 0, borderRadius = 0 } = options;
+	const { text, fontSize, fontFamily, color, backgroundColor, padding = 4, maxWidth = 0, fontWeight = 'normal', borderColor, borderWidth = 0, borderRadius = 0, strokeColor, strokeWidth = 0 } = options;
 
 	// Create measurement canvas
 	const measureCanvas = document.createElement('canvas');
@@ -79,8 +83,9 @@ export function renderTextToCanvas(options: TextRenderOptions): TextRenderResult
 	const lineSpacing = fontSize * 0.25; // Spacing between lines for multi-line
 	const textHeight = lines.length * actualLineHeight + Math.max(0, lines.length - 1) * lineSpacing;
 
-	// Calculate canvas size with padding and border
-	const totalPadding = padding * 2 + borderWidth * 2;
+	// Calculate canvas size with padding, border, and text stroke
+	const textStrokeExtra = strokeWidth; // Stroke extends outward
+	const totalPadding = padding * 2 + borderWidth * 2 + textStrokeExtra * 2;
 	const width = Math.ceil(maxLineWidth + totalPadding);
 	const height = Math.ceil(textHeight + totalPadding);
 
@@ -117,16 +122,24 @@ export function renderTextToCanvas(options: TextRenderOptions): TextRenderResult
 
 	// Draw text
 	ctx.font = font;
-	ctx.fillStyle = color;
 	ctx.textBaseline = 'alphabetic';
 	ctx.textAlign = 'left';
 
-	const textX = padding + borderWidth;
+	const textX = padding + borderWidth + strokeWidth;
 	// Start at padding + ascent so text baseline aligns properly
-	const startY = padding + borderWidth + maxAscent;
+	const startY = padding + borderWidth + strokeWidth + maxAscent;
 	let textY = startY;
 
 	for (const line of lines) {
+		// Draw stroke first (behind fill)
+		if (strokeColor && strokeWidth > 0) {
+			ctx.strokeStyle = strokeColor;
+			ctx.lineWidth = strokeWidth * 2; // Stroke is centered, so double for full width
+			ctx.lineJoin = 'round';
+			ctx.strokeText(line, textX, textY);
+		}
+		// Draw fill
+		ctx.fillStyle = color;
 		ctx.fillText(line, textX, textY);
 		textY += actualLineHeight + lineSpacing;
 	}

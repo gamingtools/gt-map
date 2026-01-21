@@ -379,6 +379,8 @@ export interface MarkerInternal {
 	rotation?: number;
 	zIndex?: number;
 	id: string;
+	/** Per-marker icon scale function override (undefined = use map's, null = no scaling) */
+	iconScaleFunction?: IconScaleFunction | null;
 }
 
 // Icon definition internal

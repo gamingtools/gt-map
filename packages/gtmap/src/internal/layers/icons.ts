@@ -1,12 +1,22 @@
 import * as Coords from '../coords';
-import type { ANGLEInstancedArrays } from '../../api/types';
+import type { ANGLEInstancedArrays, IconScaleFunction } from '../../api/types';
 import type { ProgramLocs } from '../render/screen-cache';
 
 import { IconMaskBuilder } from './icons/icon-mask-builder';
 import { createAtlas } from './icons/icon-atlas';
 
 export type IconDef = { id: string; url: string; width: number; height: number; anchorX?: number; anchorY?: number };
-export type MarkerRenderData = { id: string; lng: number; lat: number; type: string; size?: number; rotation?: number; zIndex?: number };
+export type MarkerRenderData = {
+	id: string;
+	lng: number;
+	lat: number;
+	type: string;
+	size?: number;
+	rotation?: number;
+	zIndex?: number;
+	/** Per-marker icon scale function override (undefined = use map's, null = no scaling) */
+	iconScaleFunction?: IconScaleFunction | null;
+};
 
 /**
  * IconRenderer handles efficient WebGL rendering of map markers and decals.
@@ -78,6 +88,7 @@ export class IconRenderer {
 		a_i_size: number;
 		a_i_anchor: number;
 		a_i_angle: number;
+		a_i_iconScale: number;
 		u_resolution: WebGLUniformLocation | null;
 		u_tlWorld: WebGLUniformLocation | null;
 		u_scale: WebGLUniformLocation | null;
@@ -92,6 +103,11 @@ export class IconRenderer {
 	private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number; capacityBytes: number }>();
 	private typeData = new Map<string, { data: Float32Array; version: number }>();
 	private typeMinZ = new Map<string, number>(); // Min zIndex per type for draw ordering
+	private typeMarkers = new Map<string, MarkerRenderData[]>(); // Markers grouped by type for iconScale updates
+	private hasCustomIconScale = false; // Track if any markers have custom iconScaleFunction
+	private lastBuildZoom = 0; // Zoom level at which typeData was last built
+	private lastBuildMinZoom = 0;
+	private lastBuildMaxZoom = 19;
 
 	dispose() {
 		const gl = this.gl;
@@ -338,6 +354,7 @@ export class IconRenderer {
 		all.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
 
 		const byType = new Map<string, MarkerRenderData[]>();
+		let hasCustom = false;
 		for (const m of all) {
 			let arr = byType.get(m.type);
 			if (!arr) {
@@ -345,18 +362,35 @@ export class IconRenderer {
 				byType.set(m.type, arr);
 			}
 			arr.push(m);
+			if (m.iconScaleFunction !== undefined) hasCustom = true;
 		}
+		this.hasCustomIconScale = hasCustom;
+		this.typeMarkers = byType;
+
 		// Clear and rebuild type data with min zIndex tracking
+		// 8 floats per instance: x, y, w, h, ax, ay, angle, iconScale
 		this.typeMinZ.clear();
+		const zoom = this.lastBuildZoom;
+		const minZoom = this.lastBuildMinZoom;
+		const maxZoom = this.lastBuildMaxZoom;
+
 		for (const [type, list] of byType) {
 			const sz = this.texSize.get(type) || { w: 32, h: 32 };
 			const anc = this.texAnchor.get(type) || { ax: sz.w / 2, ay: sz.h / 2 };
-			const data = new Float32Array(list.length * 7);
+			const data = new Float32Array(list.length * 8);
 			let j = 0;
 			let minZ = Infinity;
 			for (const m of list) {
 				const w = m.size || sz.w;
 				const h = m.size || sz.h;
+				// Compute per-instance iconScale: marker's function if set, else 1.0 (map's applied via uniform)
+				let iconScale = 1.0;
+				if (m.iconScaleFunction === null) {
+					iconScale = 1.0; // Explicitly disabled scaling
+				} else if (m.iconScaleFunction !== undefined) {
+					iconScale = m.iconScaleFunction(zoom, minZoom, maxZoom);
+				}
+				// If no custom function, iconScale=1.0 and map's uniform will apply
 				data[j++] = m.lng; // native x
 				data[j++] = m.lat; // native y
 				data[j++] = w;
@@ -364,6 +398,7 @@ export class IconRenderer {
 				data[j++] = anc.ax;
 				data[j++] = anc.ay;
 				data[j++] = (m.rotation || 0) * (Math.PI / 180);
+				data[j++] = iconScale;
 				const z = m.zIndex ?? 0;
 				if (z < minZ) minZ = z;
 			}
@@ -376,6 +411,42 @@ export class IconRenderer {
 
 	getMaskInfo(type: string): { data: Uint8Array; w: number; h: number } | null {
 		return this.maskBuilder.getMaskInfo(type);
+	}
+
+	/**
+	 * Update iconScale values in typeData when zoom changes.
+	 * Only needed if any markers have custom iconScaleFunction.
+	 * @param mapIconScale - The computed scale from the map's iconScaleFunction (or 1.0)
+	 */
+	private updateIconScales(zoom: number, minZoom: number, maxZoom: number, mapIconScale: number) {
+		if (!this.hasCustomIconScale) return;
+		// Update each type's iconScale values
+		for (const [type, list] of this.typeMarkers) {
+			const td = this.typeData.get(type);
+			if (!td) continue;
+			const data = td.data;
+			// iconScale is at offset 7 in each 8-float block
+			for (let i = 0; i < list.length; i++) {
+				const m = list[i];
+				let iconScale: number;
+				if (m.iconScaleFunction === null) {
+					// Explicitly disabled - no scaling
+					iconScale = 1.0;
+				} else if (m.iconScaleFunction !== undefined) {
+					// Custom function - use it directly
+					iconScale = m.iconScaleFunction(zoom, minZoom, maxZoom);
+				} else {
+					// No custom function - use map's scale
+					iconScale = mapIconScale;
+				}
+				data[i * 8 + 7] = iconScale;
+			}
+			// Increment version to trigger buffer re-upload
+			td.version++;
+		}
+		this.lastBuildZoom = zoom;
+		this.lastBuildMinZoom = minZoom;
+		this.lastBuildMaxZoom = maxZoom;
 	}
 
 	private async loadImageSource(url: string): Promise<ImageBitmap | HTMLImageElement | null> {
@@ -487,8 +558,20 @@ export class IconRenderer {
 		const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
 		tlWorld = { x: snapTL(tlWorld.x), y: snapTL(tlWorld.y) };
 
-		// Calculate scale factor from icon scale function (screen-space scaling)
-		const iconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, ctx.minZoom ?? 0, ctx.maxZoom ?? 19) : 1.0;
+		// Calculate map-level icon scale
+		const minZoom = ctx.minZoom ?? 0;
+		const maxZoom = ctx.maxZoom ?? 19;
+		const mapIconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, minZoom, maxZoom) : 1.0;
+
+		// Update per-instance iconScale values if zoom changed and any markers have custom scale functions
+		if (this.hasCustomIconScale && ctx.zoom !== this.lastBuildZoom) {
+			this.updateIconScales(ctx.zoom, minZoom, maxZoom, mapIconScale);
+		}
+
+		// Determine uniform iconScale:
+		// - If markers have custom functions, they're baked into per-instance data, uniform=1.0
+		// - If no custom functions, per-instance data is all 1.0, uniform=mapIconScale
+		const uniformIconScale = this.hasCustomIconScale ? 1.0 : mapIconScale;
 		// Compute map scissor in device pixels to clip icons outside the finite image
 		// Icons themselves are not clipped here; screen cache draw is clipped to map extent in renderer.
 
@@ -508,7 +591,7 @@ export class IconRenderer {
 			gl.uniform1f(this.instLoc!.u_scale!, effScale);
 			gl.uniform1f(this.instLoc!.u_dpr!, ctx.dpr);
 			gl.uniform1f(this.instLoc!.u_invS!, invS);
-			gl.uniform1f(this.instLoc!.u_iconScale!, iconScale);
+			gl.uniform1f(this.instLoc!.u_iconScale!, uniformIconScale);
 
 			// For each type, sorted by minZ for proper z-ordering with overlays
 			const isGL2 = 'drawArraysInstanced' in (gl as WebGL2RenderingContext);
@@ -551,14 +634,14 @@ export class IconRenderer {
 					gl.bindBuffer(gl.ARRAY_BUFFER, buf);
 					gl.bufferData(gl.ARRAY_BUFFER, capacityBytes, gl.DYNAMIC_DRAW);
 					gl.bufferSubData(gl.ARRAY_BUFFER, 0, td.data);
-					rec = { buf, count: td.data.length / 7, version: td.version, uploaded: td.version, capacityBytes };
+					rec = { buf, count: td.data.length / 8, version: td.version, uploaded: td.version, capacityBytes };
 					this.instBuffers.set(type, rec);
 				} else if (rec.uploaded !== td.version) {
 					gl.bindBuffer(gl.ARRAY_BUFFER, rec.buf);
 					const LARGE_BYTES = 1 << 20; // 1MB
 					const prevCount = Math.max(1, rec.count);
-					// 7 floats per instance (x,y,w,h,ax,ay,angle)
-					const newCount = td.data.length / 7;
+					// 8 floats per instance (x,y,w,h,ax,ay,angle,iconScale)
+					const newCount = td.data.length / 8;
 					const deltaRatio = Math.abs(newCount - prevCount) / prevCount;
 					const needResize = byteLen > rec.capacityBytes;
 					const shouldOrphan = needResize || byteLen >= LARGE_BYTES || deltaRatio >= 0.25;
@@ -577,23 +660,28 @@ export class IconRenderer {
 				}
 				// Per-instance attributes
 				gl.enableVertexAttribArray(this.instLoc!.a_i_native);
-				gl.vertexAttribPointer(this.instLoc!.a_i_native, 2, gl.FLOAT, false, 28, 0);
+				gl.vertexAttribPointer(this.instLoc!.a_i_native, 2, gl.FLOAT, false, 32, 0);
 				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_native, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_native, 1);
 				gl.enableVertexAttribArray(this.instLoc!.a_i_size);
-				gl.vertexAttribPointer(this.instLoc!.a_i_size, 2, gl.FLOAT, false, 28, 8);
+				gl.vertexAttribPointer(this.instLoc!.a_i_size, 2, gl.FLOAT, false, 32, 8);
 				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_size, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_size, 1);
 				// anchor
 				gl.enableVertexAttribArray(this.instLoc!.a_i_anchor);
-				gl.vertexAttribPointer(this.instLoc!.a_i_anchor, 2, gl.FLOAT, false, 28, 16);
+				gl.vertexAttribPointer(this.instLoc!.a_i_anchor, 2, gl.FLOAT, false, 32, 16);
 				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_anchor, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_anchor, 1);
 				// angle
 				gl.enableVertexAttribArray(this.instLoc!.a_i_angle);
-				gl.vertexAttribPointer(this.instLoc!.a_i_angle, 1, gl.FLOAT, false, 28, 24);
+				gl.vertexAttribPointer(this.instLoc!.a_i_angle, 1, gl.FLOAT, false, 32, 24);
 				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_angle, 1);
 				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_angle, 1);
+				// iconScale (per-instance)
+				gl.enableVertexAttribArray(this.instLoc!.a_i_iconScale);
+				gl.vertexAttribPointer(this.instLoc!.a_i_iconScale, 1, gl.FLOAT, false, 32, 28);
+				if (isGL2) (gl as WebGL2RenderingContext).vertexAttribDivisor(this.instLoc!.a_i_iconScale, 1);
+				else this.instExt!.vertexAttribDivisorANGLE(this.instLoc!.a_i_iconScale, 1);
 				gl.bindTexture(gl.TEXTURE_2D, tex);
 				// Set UVs based on atlas packing (use retina UVs if using retina texture)
 				const uv = useRetina && this.uvRect2x.has(type) ? this.uvRect2x.get(type)! : this.uvRect.get(type) || { u0: 0, v0: 0, u1: 1, v1: 1 };
@@ -649,8 +737,17 @@ export class IconRenderer {
 				const p = ctx.project(m.lng, m.lat, baseZ);
 				const xCSS = (p.x - tlWorld.x) * effScale;
 				const yCSS = (p.y - tlWorld.y) * effScale;
-				const w = (m.size || sz.w) * iconScale;
-				const h = (m.size || sz.h) * iconScale;
+				// Compute per-marker iconScale
+				let markerIconScale: number;
+				if (m.iconScaleFunction === null) {
+					markerIconScale = 1.0;
+				} else if (m.iconScaleFunction !== undefined) {
+					markerIconScale = m.iconScaleFunction(ctx.zoom, minZoom, maxZoom);
+				} else {
+					markerIconScale = mapIconScale;
+				}
+				const w = (m.size || sz.w) * markerIconScale;
+				const h = (m.size || sz.h) * markerIconScale;
 
 				// Frustum cull before adjusting for centering
 				if (xCSS + w / 2 < 0 || yCSS + h / 2 < 0 || xCSS - w / 2 > widthCSS || yCSS - h / 2 > heightCSS) continue;
@@ -716,6 +813,7 @@ export class IconRenderer {
         attribute vec2 a_i_size;
         attribute vec2 a_i_anchor;
         attribute float a_i_angle;
+        attribute float a_i_iconScale;
         uniform vec2 u_resolution;
         uniform vec2 u_tlWorld;
         uniform float u_scale;
@@ -728,8 +826,10 @@ export class IconRenderer {
           vec2 css = (world - u_tlWorld) * u_scale;
           // Quantize center and size to device pixels to eliminate subpixel jitter
           vec2 basePx = floor(css * u_dpr + 0.5);
-          vec2 sizePx = a_i_size * u_iconScale * u_dpr;
-          vec2 anchorPx = a_i_anchor * u_iconScale * u_dpr;
+          // Per-instance iconScale multiplied by uniform (uniform=1 when per-instance is used)
+          float effectiveScale = a_i_iconScale * u_iconScale;
+          vec2 sizePx = a_i_size * effectiveScale * u_dpr;
+          vec2 anchorPx = a_i_anchor * effectiveScale * u_dpr;
           // Round size and anchor to integer pixels
           sizePx = floor(sizePx + 0.5);
           anchorPx = floor(anchorPx + 0.5);
@@ -765,6 +865,7 @@ export class IconRenderer {
 				a_i_size: gl.getAttribLocation(prog, 'a_i_size'),
 				a_i_anchor: gl.getAttribLocation(prog, 'a_i_anchor'),
 				a_i_angle: gl.getAttribLocation(prog, 'a_i_angle'),
+				a_i_iconScale: gl.getAttribLocation(prog, 'a_i_iconScale'),
 				u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
 				u_tlWorld: gl.getUniformLocation(prog, 'u_tlWorld'),
 				u_scale: gl.getUniformLocation(prog, 'u_scale'),

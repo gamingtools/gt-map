@@ -6,6 +6,8 @@
  * They are separate from entities (Marker, Decal) which define position and interactivity.
  */
 
+import type { IconScaleFunction } from './types';
+
 /**
  * Discriminator for Visual subclasses.
  * @public
@@ -92,6 +94,13 @@ export abstract class Visual {
 	anchor: Anchor = 'center';
 
 	/**
+	 * Optional scale function for this visual.
+	 * Overrides the map-level iconScaleFunction when set.
+	 * Set to `null` to disable scaling (use scale=1 always).
+	 */
+	iconScaleFunction?: IconScaleFunction | null;
+
+	/**
 	 * Get the resolved anchor as normalized coordinates.
 	 * @internal
 	 */
@@ -172,6 +181,12 @@ export class TextVisual extends Visual {
 	/** Optional padding in pixels. */
 	readonly padding?: number;
 
+	/** Text stroke/outline color. */
+	readonly strokeColor?: string;
+
+	/** Text stroke/outline width in pixels. */
+	readonly strokeWidth?: number;
+
 	/**
 	 * Create a text visual.
 	 * @param text - Text content
@@ -185,6 +200,10 @@ export class TextVisual extends Visual {
 			color?: string;
 			backgroundColor?: string;
 			padding?: number;
+			/** Text stroke/outline color */
+			strokeColor?: string;
+			/** Text stroke/outline width in pixels */
+			strokeWidth?: number;
 		} = {},
 	) {
 		super();
@@ -194,6 +213,8 @@ export class TextVisual extends Visual {
 		this.color = options.color ?? '#000000';
 		this.backgroundColor = options.backgroundColor;
 		this.padding = options.padding;
+		this.strokeColor = options.strokeColor;
+		this.strokeWidth = options.strokeWidth;
 	}
 }
 

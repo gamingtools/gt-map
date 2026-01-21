@@ -131,6 +131,7 @@
 			padding: 6,
 		});
 		label1.anchor = 'top-left';
+		label1.iconScaleFunction = null; // Don't scale with zoom
 		map.addMarker(PAD, PAD, { visual: label1 });
 
 		// Top-right: Large bold header
@@ -141,6 +142,7 @@
 			padding: 12,
 		});
 		label2.anchor = 'top-right';
+		label2.iconScaleFunction = null; // Don't scale with zoom
 		map.addMarker(MAP_IMAGE.width - PAD, PAD, { visual: label2 });
 
 		// Bottom-left: Medium serif style
@@ -152,6 +154,7 @@
 			padding: 10,
 		});
 		label3.anchor = 'bottom-left';
+		label3.iconScaleFunction = null; // Don't scale with zoom
 		map.addMarker(PAD, MAP_IMAGE.height - PAD, { visual: label3 });
 
 		// Bottom-right: Tiny tag
@@ -162,14 +165,18 @@
 			padding: 3,
 		});
 		label4.anchor = 'bottom-right';
+		label4.iconScaleFunction = null; // Don't scale with zoom
 		map.addMarker(MAP_IMAGE.width - PAD, MAP_IMAGE.height - PAD, { visual: label4 });
 
-		// Center: Large plain text no background
+		// Center: Large plain text with black stroke (no background)
 		const label5 = new TextVisual('Plain Large Text', {
 			fontSize: 32,
-			color: '#6b7280',
+			color: '#ffffff',
+			strokeColor: '#000000',
+			strokeWidth: 2,
 		});
 		label5.anchor = 'center';
+		label5.iconScaleFunction = null; // Don't scale with zoom
 		map.addMarker(HOME.lng, HOME.lat, { visual: label5 });
 	}
 

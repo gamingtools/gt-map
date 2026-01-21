@@ -1,4 +1,5 @@
 import type { DecalEventMap, DecalData } from '../api/events/maps';
+import type { IconScaleFunction } from '../api/types';
 import type { Visual } from '../api/visual';
 
 import { EventedEntity } from './base';
@@ -23,6 +24,12 @@ export interface DecalOptions {
 	 * @remarks Vectors always render at z=0. Use negative zIndex to place decals behind vectors.
 	 */
 	zIndex?: number;
+	/**
+	 * Override the map-level icon scale function for this decal.
+	 * Set to `null` to disable scaling (always use scale=1).
+	 * If undefined, falls back to visual's iconScaleFunction, then map's.
+	 */
+	iconScaleFunction?: IconScaleFunction | null;
 }
 
 let _decalIdSeq = 0;
@@ -49,6 +56,7 @@ export class Decal extends EventedEntity<DecalEventMap> {
 	private _rotation: number;
 	private _opacity: number;
 	private _zIndex: number;
+	private _iconScaleFunction?: IconScaleFunction | null;
 	private _onChange?: () => void;
 
 	/**
@@ -70,6 +78,7 @@ export class Decal extends EventedEntity<DecalEventMap> {
 		this._rotation = opts.rotation ?? 0;
 		this._opacity = opts.opacity ?? 1;
 		this._zIndex = opts.zIndex ?? 1;
+		this._iconScaleFunction = opts.iconScaleFunction;
 		this._onChange = onChange;
 	}
 
@@ -106,6 +115,11 @@ export class Decal extends EventedEntity<DecalEventMap> {
 	/** Z-index for stacking order (higher values render on top). */
 	get zIndex(): number {
 		return this._zIndex;
+	}
+
+	/** Icon scale function override for this decal (undefined = use visual's or map's). */
+	get iconScaleFunction(): IconScaleFunction | null | undefined {
+		return this._iconScaleFunction;
 	}
 
 	/**
