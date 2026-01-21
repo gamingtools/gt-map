@@ -1,6 +1,12 @@
 // Type-safe event bus with generic event map
 import { EventStream, type Listener } from './stream';
 
+/** Global debug flag for event buses - set by GTMap when debug mode enabled */
+export let eventBusDebug = false;
+export function setEventBusDebug(enabled: boolean): void {
+	eventBusDebug = enabled;
+}
+
 export class TypedEventBus<EventMap = Record<string, unknown>> {
 	private listeners = new Map<keyof EventMap, Set<Listener<unknown>>>();
 
@@ -24,7 +30,9 @@ export class TypedEventBus<EventMap = Record<string, unknown>> {
 		for (const fn of Array.from(set)) {
 			try {
 				(fn as Listener<EventMap[K]>)(payload);
-			} catch {}
+			} catch (err) {
+				if (eventBusDebug) console.warn(`[GTMap] Event handler error for '${String(name)}':`, err);
+			}
 		}
 	}
 

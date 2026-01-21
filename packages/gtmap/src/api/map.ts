@@ -134,6 +134,8 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			maxBoundsViscosity: options.maxBoundsViscosity,
 			bounceAtZoomLimits: options.bounceAtZoomLimits,
 			spinner: options.spinner,
+			clipToBounds: options.clipToBounds,
+			debug: options.debug,
 		};
 		this._impl = new Impl(container as HTMLDivElement, implOpts);
 		this._ensureDefaultIcon();

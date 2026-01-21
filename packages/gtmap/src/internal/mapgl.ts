@@ -10,7 +10,7 @@ import * as Coords from './coords';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
-import { TypedEventBus } from './events/typed-stream';
+import { TypedEventBus, setEventBusDebug } from './events/typed-stream';
 // grid and wheel helpers are used via delegated modules
 // zoom core used via ZoomController
 import ZoomController from './core/zoom-controller';
@@ -307,6 +307,11 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			console.log(`[GTMap t=${t.toFixed(1)}ms] ${msg}`);
 		} catch {}
 	}
+	public _warn(context: string, err?: unknown): void {
+		if (!this._debug) return;
+		const msg = err instanceof Error ? err.message : String(err ?? '');
+		console.warn(`[GTMap] ${context}${msg ? ': ' + msg : ''}`);
+	}
 	public _gpuWaitEnabled(): boolean {
 		try {
 			return typeof localStorage !== 'undefined' && localStorage.getItem('GTMAP_DEBUG_GPUWAIT') === '1';
@@ -370,7 +375,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			this._targetFps = v;
 		}
 		if (typeof options.screenCache === 'boolean') this.useScreenCache = options.screenCache;
-		if (options.debug === true) this._debug = true;
+		if (options.debug === true) {
+			this._debug = true;
+			setEventBusDebug(true);
+		}
 		// wheelSpeedCtrl is handled by OptionsManager.initFromOptions above
 		if (options.maxBoundsPx) this._maxBoundsPx = { ...options.maxBoundsPx };
 		if (Number.isFinite(options.maxBoundsViscosity as number)) this._maxBoundsViscosity = Math.max(0, Math.min(1, options.maxBoundsViscosity as number));
@@ -1182,7 +1190,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				getMarkerDataById: (id: string) => this._markerData.get(id),
 			});
 			bridge.attach();
-		} catch {}
+		} catch (e) { this._warn('Event bridge attach', e); }
 	}
 
 	public setMarkerData(payloads: Record<string, unknown | null | undefined>) {
@@ -1225,8 +1233,17 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		// Apply scissor clipping to map bounds if enabled
 		const gl = this.gl;
 		let scissorEnabled = false;
+
 		if (this._clipToBounds) {
+			// Debug: log once to verify clipToBounds path is active
+			if (this._debug && this._frame === 1) {
+				console.log('[GTMap] clipToBounds enabled, scissor clipping active');
+			}
 			try {
+				// Clear entire canvas first (before scissor) to ensure
+				// area outside map bounds doesn't retain stale icon pixels
+				gl.clear(gl.COLOR_BUFFER_BIT);
+
 				const rect = this.container.getBoundingClientRect();
 				const wCSS = rect.width;
 				const hCSS = rect.height;
@@ -1247,6 +1264,12 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				const scissorY = this.canvas.height - y1;
 				const scissorW = Math.max(0, x1 - x0);
 				const scissorH = Math.max(0, y1 - y0);
+
+				// Debug log scissor values once per second
+				if (this._debug && this._frame % 60 === 0) {
+					const mapFullyVisible = tl.x >= 0 && tl.y >= 0 && br.x <= wCSS && br.y <= hCSS;
+					this._log(`scissor: tl=(${tl.x.toFixed(0)},${tl.y.toFixed(0)}) br=(${br.x.toFixed(0)},${br.y.toFixed(0)}) viewport=${wCSS}x${hCSS} canvas=${this.canvas.width}x${this.canvas.height} box=(${scissorX},${scissorY},${scissorW},${scissorH}) mapVisible=${mapFullyVisible}`);
+				}
 
 				if (scissorW > 0 && scissorH > 0) {
 					gl.enable(gl.SCISSOR_TEST);
@@ -1395,18 +1418,18 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			try {
 				const ext = this.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
 				ext?.restoreContext();
-			} catch {}
+			} catch (e) { this._warn('GL restore context', e); }
 			try {
 				// Reinitialize with alpha enabled so background transparency is supported after resume
 				const bg = this._bgUI.getBackground();
 				this._gfx.init(true, [bg.r, bg.g, bg.b, bg.a]);
-			} catch {}
+			} catch (e) { this._warn('GL reinit graphics', e); }
 			try {
 				this._initPrograms();
-			} catch {}
+			} catch (e) { this._warn('GL reinit programs', e); }
 			try {
 				this._screenCache = new ScreenCache(this.gl, (this._screenTexFormat ?? this.gl.RGBA) as 6408 | 6407);
-			} catch {}
+			} catch (e) { this._warn('GL reinit screen cache', e); }
 			try {
 				// Rebuild icons and reapply markers
 				this._icons = new IconRenderer(this.gl);
@@ -1420,14 +1443,14 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				if (this._lastDecals && this._lastDecals.length) {
 					this._icons.setDecals?.(this._lastDecals);
 				}
-			} catch {}
+			} catch (e) { this._warn('GL reinit icons', e); }
 			try {
 				// Reload base image texture
 				const img = this._imageManager.getImage();
 				if (img && img.url) {
 					void this._imageManager.loadImage(img.url, { width: img.width, height: img.height });
 				}
-			} catch {}
+			} catch (e) { this._warn('GL reload image', e); }
 			try {
 				// Rebuild vector layer (recreates WebGL overlay renderer)
 				const currentVectors = this._vectorLayer?.getVectors() ?? [];
@@ -1444,7 +1467,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				if (currentVectors.length) {
 					this._vectorLayer.setVectors(currentVectors);
 				}
-			} catch {}
+			} catch (e) { this._warn('GL reinit vectors', e); }
 			this._glReleased = false;
 		}
 		try {
