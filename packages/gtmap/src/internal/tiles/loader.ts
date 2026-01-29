@@ -53,15 +53,14 @@ export class TileLoader {
         return;
       }
       const gl: WebGLRenderingContext = this.deps.getGL();
-      const MAX_PER_FRAME = 2;
-      let n = 0;
-      while (n < MAX_PER_FRAME && this.pendingMips.length > 0) {
+      const MIP_BUDGET_MS = 2;
+      const start = performance.now();
+      while (performance.now() - start < MIP_BUDGET_MS && this.pendingMips.length > 0) {
         const it = this.pendingMips.shift()!;
         if (!gl.isTexture(it.tex) || !this.deps.isTileReady(it.key, it.tex)) continue;
         gl.bindTexture(gl.TEXTURE_2D, it.tex);
         gl.generateMipmap(gl.TEXTURE_2D);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-        n++;
       }
       if (this.pendingMips.length > 0) requestAnimationFrame(() => this.scheduleMips());
       this.deps.requestRender();
