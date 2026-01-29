@@ -108,18 +108,28 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	 * @param options.fpsCap - Maximum frames per second (default: 60)
 	 */
 	constructor(container: HTMLElement, options: MapOptions) {
-		// Validate required image configuration up-front
+		// Validate: either image or tiles must be provided
 		const img = options?.image;
-		if (!img) throw new Error('GTMap: image is required in MapOptions');
-		if (!img.url || typeof img.url !== 'string') throw new Error('GTMap: image.url must be a non-empty string');
-		if (!Number.isFinite(img.width) || img.width <= 0) throw new Error('GTMap: image.width must be a positive number');
-		if (!Number.isFinite(img.height) || img.height <= 0) throw new Error('GTMap: image.height must be a positive number');
+		const tiles = options?.tiles;
+		if (!img && !tiles) throw new Error('GTMap: either image or tiles is required in MapOptions');
+		if (img && tiles) throw new Error('GTMap: image and tiles are mutually exclusive in MapOptions');
+		if (img) {
+			if (!img.url || typeof img.url !== 'string') throw new Error('GTMap: image.url must be a non-empty string');
+			if (!Number.isFinite(img.width) || img.width <= 0) throw new Error('GTMap: image.width must be a positive number');
+			if (!Number.isFinite(img.height) || img.height <= 0) throw new Error('GTMap: image.height must be a positive number');
+		}
+		if (tiles) {
+			if (!tiles.url || typeof tiles.url !== 'string') throw new Error('GTMap: tiles.url must be a non-empty string');
+			if (!Number.isFinite(tiles.tileSize) || tiles.tileSize <= 0) throw new Error('GTMap: tiles.tileSize must be a positive number');
+			if (!tiles.mapSize || !Number.isFinite(tiles.mapSize.width) || !Number.isFinite(tiles.mapSize.height)) throw new Error('GTMap: tiles.mapSize must have width and height');
+		}
 
 		if (Number.isFinite(options.minZoom as number) && Number.isFinite(options.maxZoom as number) && (options.minZoom as number) > (options.maxZoom as number)) {
 			throw new Error('GTMap: minZoom must be <= maxZoom');
 		}
 		const implOpts: Partial<ImplMapOptions> = {
-			image: { url: img.url, width: img.width, height: img.height },
+			...(img ? { image: { url: img.url, width: img.width, height: img.height } } : {}),
+			...(tiles ? { tiles } : {}),
 			preview: options.preview ? { url: options.preview.url, width: options.preview.width, height: options.preview.height } : undefined,
 			minZoom: options.minZoom,
 			maxZoom: options.maxZoom,

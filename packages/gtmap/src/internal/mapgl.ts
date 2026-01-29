@@ -1,12 +1,15 @@
 // Pixel-CRS: treat lng=x, lat=y in image pixel coordinates at native resolution
 // programs are initialized via Graphics
 import type { EventMap, ViewState as PublicViewState, ShaderLocations, WebGLLoseContext, MarkerEventData, MarkerInternal } from '../api/types';
-import type { MapOptions as PublicMapOptions, Point } from '../api/types';
+import type { MapOptions as PublicMapOptions, Point, TileSourceOptions } from '../api/types';
 
 import Graphics, { type GraphicsHost } from './gl/graphics';
 import { ScreenCache } from './render/screen-cache';
-import type { RenderCtx, MapImpl, VectorPrimitive } from './types';
+import type { RenderCtx, MapImpl, VectorPrimitive, TileDeps } from './types';
 import * as Coords from './coords';
+import { TileCache } from './tiles/cache';
+import { TileLoader, type TileLoaderDeps } from './tiles/loader';
+import TilePipeline from './tiles/tile-pipeline';
 // url templating moved inline
 import { RasterRenderer } from './layers/raster';
 import { IconRenderer } from './layers/icons';
@@ -42,6 +45,8 @@ export type MapOptions = Omit<PublicMapOptions, 'center'> & {
 	zoomOutCenterBias?: number | boolean;
 	/** Ctrl+wheel speed multiplier (internal). */
 	wheelSpeedCtrl?: number;
+	/** Tile pyramid source (mutually exclusive with image). */
+	tiles?: TileSourceOptions;
 };
 export type EaseOptions = {
 	easeBaseMs?: number;
@@ -103,6 +108,20 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _pendingVectors: VectorPrimitive[] | null = null;
 	private _pendingBackgroundColor: string | { r: number; g: number; b: number; a?: number } | null = null;
 	private _debug = false;
+	// Tile pipeline state
+	private _tileMode = false;
+	private _tileCache: TileCache | null = null;
+	private _tileLoader: TileLoader | null = null;
+	private _tilePipeline: TilePipeline | null = null;
+	private _tileUrl = '';
+	private _tileSize = 256;
+	private _sourceMaxZoom = 5;
+	// sourceMinZoom is captured via minZoom on the map itself
+	private _maxInflightLoads = 6;
+	private _maxTiles = 256;
+	private _pendingTiles = new Set<string>();
+	private _inflightCount = 0;
+	private _wantedKeys = new Set<string>();
 	private _renderer!: MapRenderer;
 	private _allIconDefs: Record<string, IconDefInput> = {};
 	private _lastMarkers: MarkerInternal[] = [];
@@ -208,6 +227,18 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				height: this.getImage().height,
 				ready: this.getImage().ready,
 			},
+			// Tile mode fields
+			...(this._tileMode && this._tileCache ? {
+				tileCache: this._tileCache,
+				tileSize: this._tileSize,
+				sourceMaxZoom: this._sourceMaxZoom,
+				enqueueTile: (z: number, x: number, y: number, priority?: number) => {
+					this._tilePipeline?.enqueue(z, x, y, priority ?? 0);
+				},
+				wantTileKey: (key: string) => {
+					this._wantedKeys.add(key);
+				},
+			} : {}),
 			vectorZIndices: this._getVectorZIndices(),
 			drawVectorOverlay: () => this._drawVectorOverlay(),
 		};
@@ -328,8 +359,16 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		// Basic configuration setup (synchronous)
 		const fullImage = options.image;
 		const previewImage = options.preview;
-		this.minZoom = options.minZoom ?? 0;
-		if (fullImage) {
+		const tileOpts = options.tiles;
+		this._tileMode = !!tileOpts && !fullImage;
+		this.minZoom = options.minZoom ?? (this._tileMode ? (tileOpts!.sourceMinZoom ?? 0) : 0);
+		if (this._tileMode && tileOpts) {
+			this.mapSize = { width: Math.max(1, tileOpts.mapSize.width), height: Math.max(1, tileOpts.mapSize.height) };
+			this._tileUrl = tileOpts.url;
+			this._tileSize = tileOpts.tileSize;
+			// sourceMinZoom captured via this.minZoom above
+			this._sourceMaxZoom = tileOpts.sourceMaxZoom;
+		} else if (fullImage) {
 			// Always size the world to the full image for seamless preview->full upgrade
 			this.mapSize = { width: Math.max(1, fullImage.width), height: Math.max(1, fullImage.height) };
 		} else if (previewImage) {
@@ -465,6 +504,9 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 						panVelocityTick: () => {
 							this._panCtrl.step();
 						},
+						prefetchNeighbors: (z, tl, scale, w, h) => this.prefetchNeighbors(z, tl, scale, w, h),
+						cancelUnwanted: () => this._cancelUnwantedTiles(),
+						clearWanted: () => this._wantedKeys.clear(),
 					});
 					this._zoomCtrl = new ZoomController({
 						getZoom: () => this.zoom,
@@ -638,21 +680,33 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			else setTimeout(attach, 0);
 		}
 
-		// Start image loading after async init
-		const fullImage = initialImage;
-		const previewImage = _options.preview;
-		if (previewImage && fullImage) {
-			// Progressive path: show preview first, then upgrade to full in background
-			if (this._bgUI.getShowLoading()) this._setLoadingVisible(true);
-			this._pendingFullImage = { url: fullImage.url, width: fullImage.width, height: fullImage.height };
-			// Load preview but scale/fit to full image dimensions to avoid any geometry changes on upgrade
-			try {
-				void this._imageManager.loadImage(previewImage.url, { width: this.mapSize.width, height: this.mapSize.height });
-			} catch {}
-		} else if (fullImage) {
-			// Non-progressive path (default): load full image with spinner gating
-			if (this._bgUI.getShowLoading()) this._setLoadingVisible(true);
-			this.setImageSource(fullImage);
+		// Start image/tile loading after async init
+		if (this._tileMode) {
+			this._initTilePipeline();
+			// Tiles don't need the image gate - unlock immediately
+			this._gateRenderUntilImageReady = false;
+			if (this._input && !this._inputsAttached) {
+				try {
+					this._input.attach();
+					this._inputsAttached = true;
+				} catch {}
+			}
+		} else {
+			const fullImage = initialImage;
+			const previewImage = _options.preview;
+			if (previewImage && fullImage) {
+				// Progressive path: show preview first, then upgrade to full in background
+				if (this._bgUI.getShowLoading()) this._setLoadingVisible(true);
+				this._pendingFullImage = { url: fullImage.url, width: fullImage.width, height: fullImage.height };
+				// Load preview but scale/fit to full image dimensions to avoid any geometry changes on upgrade
+				try {
+					void this._imageManager.loadImage(previewImage.url, { width: this.mapSize.width, height: this.mapSize.height });
+				} catch {}
+			} else if (fullImage) {
+				// Non-progressive path (default): load full image with spinner gating
+				if (this._bgUI.getShowLoading()) this._setLoadingVisible(true);
+				this.setImageSource(fullImage);
+			}
 		}
 
 		this._log('ctor: end');
@@ -902,6 +956,14 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 	// recenter helper removed from public surface; use setCenter/setView via facade
 	destroy() {
+		// Tear down tile pipeline
+		try {
+			this._tileLoader?.cancelAll();
+			this._tileCache?.destroy();
+			this._tileCache = null;
+			this._tileLoader = null;
+			this._tilePipeline = null;
+		} catch {}
 		// Detach observers and listeners first
 		try {
 			this._resizeMgr?.detach();
@@ -1223,11 +1285,11 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		if (!this._zoomCtrl.isAnimating() && !this._panCtrl.isAnimating()) this._needsRender = false;
 	}
 	private _render() {
-		// Gate rendering until the full image is ready (spinner shown)
-		if (this._gateRenderUntilImageReady && !this.getImage().ready) {
+		// Gate rendering until the full image is ready (spinner shown) - skip for tile mode
+		if (!this._tileMode && this._gateRenderUntilImageReady && !this.getImage().ready) {
 			return;
 		}
-		const imageReadyAtCall = this.getImage().ready;
+		const imageReadyAtCall = this._tileMode || this.getImage().ready;
 		const tR0 = this._nowMs();
 
 		// Apply scissor clipping to map bounds if enabled
@@ -1445,12 +1507,21 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				}
 			} catch (e) { this._warn('GL reinit icons', e); }
 			try {
-				// Reload base image texture
-				const img = this._imageManager.getImage();
-				if (img && img.url) {
-					void this._imageManager.loadImage(img.url, { width: img.width, height: img.height });
+				if (this._tileMode) {
+					// Rebuild tile pipeline on GL resume
+					this._tileCache?.destroy();
+					this._tileCache = null;
+					this._tileLoader = null;
+					this._tilePipeline = null;
+					this._initTilePipeline();
+				} else {
+					// Reload base image texture
+					const img = this._imageManager.getImage();
+					if (img && img.url) {
+						void this._imageManager.loadImage(img.url, { width: img.width, height: img.height });
+					}
 				}
-			} catch (e) { this._warn('GL reload image', e); }
+			} catch (e) { this._warn('GL reload image/tiles', e); }
 			try {
 				// Rebuild vector layer (recreates WebGL overlay renderer)
 				const currentVectors = this._vectorLayer?.getVectors() ?? [];
@@ -1480,8 +1551,102 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		} catch {}
 	}
 
-	public prefetchNeighbors(_z: number, _tl: { x: number; y: number }, _scale: number, _w: number, _h: number) {
-		/* no-op: single image renderer */
+	public prefetchNeighbors(z: number, _tl: { x: number; y: number }, _scale: number, _w: number, _h: number) {
+		if (!this._tileMode || !this._tilePipeline) return;
+		this._tilePipeline.scheduleBaselinePrefetch(z);
+	}
+
+	private _initTilePipeline() {
+		if (!this._tileMode) return;
+		this._tileCache = new TileCache(this.gl, this._maxTiles);
+		const tileDeps: TileDeps = {
+			hasTile: (key: string) => {
+				const rec = this._tileCache?.get(key);
+				// Treat both 'ready' and 'error' as "has tile" to prevent
+				// infinite re-enqueue of tiles that failed (e.g. 404).
+				return !!rec && (rec.status === 'ready' || rec.status === 'error');
+			},
+			isPending: (key: string) => this._pendingTiles.has(key),
+			urlFor: (z: number, x: number, y: number) => this._tileUrlFor(z, x, y),
+			hasCapacity: () => this._inflightCount < this._maxInflightLoads,
+			now: () => (typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now()),
+			getInteractionIdleMs: () => this._optionsMgr.interactionIdleMs,
+			getLastInteractAt: () => this._lastInteractAt,
+			getZoom: () => this.zoom,
+			getMaxZoom: () => this.maxZoom,
+			getImageMaxZoom: () => this._imageMaxZoom,
+			getCenter: () => this.center,
+			getTileSize: () => this._tileSize,
+			getMapSize: () => this.mapSize,
+			getWrapX: () => this.wrapX,
+			getViewportSizeCSS: () => {
+				const rect = this.container.getBoundingClientRect();
+				return { width: rect.width, height: rect.height };
+			},
+			startImageLoad: (task) => this._tileLoader?.start({ key: task.key, url: task.url }),
+			addPinned: (key: string) => this._tileCache?.pin(key),
+		};
+		this._tilePipeline = new TilePipeline(tileDeps);
+
+		const loaderDeps: TileLoaderDeps = {
+			addPending: (key: string) => this._pendingTiles.add(key),
+			removePending: (key: string) => this._pendingTiles.delete(key),
+			incInflight: () => { this._inflightCount++; },
+			decInflight: () => { this._inflightCount = Math.max(0, this._inflightCount - 1); },
+			setLoading: (key: string) => this._tileCache?.setLoading(key),
+			setError: (key: string) => this._tileCache?.setError(key),
+			setReady: (key: string, tex: WebGLTexture, w: number, h: number, frame: number) => {
+				this._tileCache?.setReady(key, tex, w, h, frame);
+			},
+			getGL: () => this.gl,
+			getFrame: () => this._frame,
+			requestRender: () => { this._needsRender = true; },
+			getUseImageBitmap: () => this.useImageBitmap,
+			setUseImageBitmap: (v: boolean) => { this.useImageBitmap = v; },
+			acquireTexture: () => this._tileCache?.acquireTexture() ?? null,
+			isIdle: () => this.isIdle(),
+		};
+		this._tileLoader = new TileLoader(loaderDeps);
+		this._log(`tile-pipeline: initialized tileSize=${this._tileSize} sourceMaxZoom=${this._sourceMaxZoom}`);
+	}
+
+	private _tileUrlFor(z: number, x: number, y: number): string {
+		return this._tileUrl
+			.replace('{z}', String(z))
+			.replace('{x}', String(x))
+			.replace('{y}', String(y));
+	}
+
+	private _cancelUnwantedTiles() {
+		if (!this._tileMode || !this._tileLoader) return;
+		this._tileLoader.cancelUnwanted(this._wantedKeys);
+		this._tilePipeline?.cancelUnwanted(this._wantedKeys);
+	}
+
+	public setTileSource(opts: { url: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }) {
+		// Tear down any existing tile pipeline
+		this._tileLoader?.cancelAll();
+		this._tileCache?.destroy();
+		this._tileCache = null;
+		this._tileLoader = null;
+		this._tilePipeline = null;
+		this._pendingTiles.clear();
+		this._inflightCount = 0;
+		this._wantedKeys.clear();
+
+		this._tileMode = true;
+		this._tileUrl = opts.url;
+		this._tileSize = opts.tileSize;
+		this.minZoom = Math.max(this.minZoom, opts.sourceMinZoom);
+		this._sourceMaxZoom = opts.sourceMaxZoom;
+		this.mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
+		this._imageMaxZoom = this._computeImageMaxZoom(this.mapSize.width, this.mapSize.height);
+		this.maxZoom = Math.max(this.minZoom, this._sourceMaxZoom);
+		this._state.maxZoom = this.maxZoom;
+
+		this._initTilePipeline();
+		try { this._screenCache?.clear?.(); } catch {}
+		this._needsRender = true;
 	}
 
 	public setVectors(vectors: VectorPrimitive[]) {

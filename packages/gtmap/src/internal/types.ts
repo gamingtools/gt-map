@@ -26,6 +26,7 @@ import type { ProgramLocs } from './render/screen-cache';
 import type { RasterRenderer } from './layers/raster';
 import type { IconRenderer } from './layers/icons';
 import type { ScreenCache } from './render/screen-cache';
+import type { TileCache } from './tiles/cache';
 
 export type ViewState = {
 	center: LngLat;
@@ -34,6 +35,35 @@ export type ViewState = {
 	maxZoom: number;
 	wrapX: boolean;
 };
+
+export type TileTask = {
+	key: string;
+	url: string;
+	z: number;
+	x: number;
+	y: number;
+	priority: number;
+};
+
+export interface TileDeps {
+	hasTile(key: string): boolean;
+	isPending(key: string): boolean;
+	urlFor(z: number, x: number, y: number): string;
+	hasCapacity(): boolean;
+	now(): number;
+	getInteractionIdleMs(): number;
+	getLastInteractAt(): number;
+	getZoom(): number;
+	getMaxZoom(): number;
+	getImageMaxZoom(): number;
+	getCenter(): LngLat;
+	getTileSize(): number;
+	getMapSize(): { width: number; height: number };
+	getWrapX(): boolean;
+	getViewportSizeCSS(): { width: number; height: number };
+	startImageLoad(task: { key: string; url: string }): void;
+	addPinned(key: string): void;
+}
 
 export interface RenderCtx {
 	gl: WebGLRenderingContext;
@@ -65,6 +95,12 @@ export interface RenderCtx {
 		height: number;
 		ready: boolean;
 	};
+	// Tile mode fields (present when using tile pyramid instead of single image)
+	tileCache?: TileCache;
+	tileSize?: number;
+	sourceMaxZoom?: number;
+	enqueueTile?(z: number, x: number, y: number, priority?: number): void;
+	wantTileKey?(key: string): void;
 	vectorCtx?: CanvasRenderingContext2D | null;
 	drawVectors?: () => void;
 	/** Vector z-indices for overlay interleaving */
@@ -148,6 +184,7 @@ export interface MapImpl {
 	setCenter(lng: number, lat: number): void;
 	setZoom(z: number): void;
 	setImageSource(opts: { url: string; width: number; height: number }): void;
+	setTileSource?(opts: { url: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void;
 	setRasterOpacity(v: number): void;
 	setGridVisible(on: boolean): void;
 	setInertiaOptions(opts: InertiaOptions): void;

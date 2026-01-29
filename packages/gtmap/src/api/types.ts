@@ -28,10 +28,32 @@ export interface ImageSourceOptions {
 	height: number;
 }
 
+/**
+ * Tile pyramid source options.
+ *
+ * @remarks
+ * Use `{z}`, `{x}`, `{y}` placeholders in the URL template.
+ * Tiles must be square (tileSize x tileSize), but the overall map may be non-square.
+ */
+export interface TileSourceOptions {
+	/** URL template with `{z}`, `{x}`, `{y}` placeholders. */
+	url: string;
+	/** Tile size in pixels (tiles are always square). */
+	tileSize: number;
+	/** Full map dimensions in pixels at the source's maximum zoom level. */
+	mapSize: { width: number; height: number };
+	/** Minimum zoom level available in the tile set. */
+	sourceMinZoom: number;
+	/** Maximum zoom level available in the tile set. */
+	sourceMaxZoom: number;
+}
+
 // Map configuration
 export interface MapOptions {
-	/** Single raster image to display (full resolution). */
+	/** Single raster image to display (full resolution). Mutually exclusive with `tiles`. */
 	image?: ImageSourceOptions;
+	/** Tile pyramid source. Mutually exclusive with `image`. */
+	tiles?: TileSourceOptions;
 	/**
 	 * Optional low‑resolution preview to render first, then seamlessly upgrade to {@link MapOptions.image}.
 	 *

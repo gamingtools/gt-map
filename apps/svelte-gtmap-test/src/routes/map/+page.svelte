@@ -8,9 +8,14 @@
 	let container: HTMLDivElement | null = null;
 	let map: GTMap;
 
-	const MAP_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_8k.webp', width: 8192, height: 8192 };
-	const PREVIEW_IMAGE = { url: 'https://gtcdn.info/dune/tiles/hb_1k.webp', width: 1024, height: 1024 };
-	const HOME = { lng: MAP_IMAGE.width / 2, lat: MAP_IMAGE.height / 2 };
+	const MAP_TILES = {
+		url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
+		tileSize: 256,
+		mapSize: { width: 8192, height: 8192 },
+		sourceMinZoom: 0,
+		sourceMaxZoom: 5,
+	};
+	const HOME = { lng: MAP_TILES.mapSize.width / 2, lat: MAP_TILES.mapSize.height / 2 };
 
 	let markerCount = 1000;
 
@@ -131,8 +136,8 @@
 		];
 
 		for (let i = 0; i < markerCount; i++) {
-			const x = rand(0, MAP_IMAGE.width);
-			const y = rand(0, MAP_IMAGE.height);
+			const x = rand(0, MAP_TILES.mapSize.width);
+			const y = rand(0, MAP_TILES.mapSize.height);
 			const visual = allVisuals.length > 0 ? allVisuals[i % allVisuals.length] : fallback;
 			map.addMarker(x, y, { visual, data: { id: i } });
 		}
@@ -217,7 +222,7 @@
 		});
 		label2.anchor = 'top-right';
 		label2.iconScaleFunction = null; // Don't scale with zoom
-		map.addMarker(MAP_IMAGE.width - PAD, PAD, { visual: label2 });
+		map.addMarker(MAP_TILES.mapSize.width - PAD, PAD, { visual: label2 });
 
 		// Bottom-left: Medium serif style
 		const label3 = new TextVisual('Serif Text', {
@@ -229,7 +234,7 @@
 		});
 		label3.anchor = 'bottom-left';
 		label3.iconScaleFunction = null; // Don't scale with zoom
-		map.addMarker(PAD, MAP_IMAGE.height - PAD, { visual: label3 });
+		map.addMarker(PAD, MAP_TILES.mapSize.height - PAD, { visual: label3 });
 
 		// Bottom-right: Tiny tag
 		const label4 = new TextVisual('TAG', {
@@ -240,7 +245,7 @@
 		});
 		label4.anchor = 'bottom-right';
 		label4.iconScaleFunction = null; // Don't scale with zoom
-		map.addMarker(MAP_IMAGE.width - PAD, MAP_IMAGE.height - PAD, { visual: label4 });
+		map.addMarker(MAP_TILES.mapSize.width - PAD, MAP_TILES.mapSize.height - PAD, { visual: label4 });
 
 		// Center: Large plain text with black stroke (no background)
 		const label5 = new TextVisual('Plain Large Text', {
@@ -271,15 +276,13 @@
 			center: { x: HOME.lng, y: HOME.lat },
 			zoom: 2,
 			minZoom: 0,
-			maxZoom: 6,
+			maxZoom: 5,
 			fpsCap: 60,
 			autoResize: true,
-			preview: PREVIEW_IMAGE,
-			image: MAP_IMAGE,
+			tiles: MAP_TILES,
 			wrapX: false,
 			clipToBounds: true,
-			debug:true,
-			spinner: { size: 64, color: '#c2c2c2' },
+			debug: true,
 		});
 
 		// Create ImageVisual instances from icon definitions
