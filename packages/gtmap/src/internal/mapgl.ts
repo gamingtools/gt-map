@@ -28,7 +28,6 @@ import { clampCenterWorld as clampCenterWorldCore } from './core/bounds';
 import { FrameLoop } from './core/frame-loop';
 import AutoResizeManager from './core/auto-resize-manager';
 import EventBridge from './events/event-bridge';
-import { ImageManager, type ImageManagerHost, type ImageData } from './core/image-manager';
 import { AsyncInitManager, type InitProgress } from './core/async-init-manager';
 import { BackgroundUIManager, type SpinnerOptions } from './core/background-ui';
 import { OptionsManager } from './core/options-manager';
@@ -45,7 +44,7 @@ export type MapOptions = Omit<PublicMapOptions, 'center'> & {
 	zoomOutCenterBias?: number | boolean;
 	/** Ctrl+wheel speed multiplier (internal). */
 	wheelSpeedCtrl?: number;
-	/** Tile pyramid source (mutually exclusive with image). */
+	/** Tile pyramid source. */
 	tiles?: TileSourceOptions;
 };
 export type EaseOptions = {
@@ -56,7 +55,7 @@ export type EaseOptions = {
 };
 export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
 
-export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
+export default class GTMap implements MapImpl, GraphicsHost {
 	container: HTMLDivElement;
 	canvas!: HTMLCanvasElement;
 	gl!: WebGLRenderingContext;
@@ -68,7 +67,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	center: LngLat;
 	zoom: number;
 	private readonly baseGridSize = 256;
-	private _imageManager: ImageManager;
 	private _asyncInitManager: AsyncInitManager;
 	private _imageMaxZoom = 0;
 	private _bgUI!: BackgroundUIManager;
@@ -109,7 +107,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	private _pendingBackgroundColor: string | { r: number; g: number; b: number; a?: number } | null = null;
 	private _debug = false;
 	// Tile pipeline state
-	private _tileMode = false;
 	private _tileCache: TileCache | null = null;
 	private _tileLoader: TileLoader | null = null;
 	private _tilePipeline: TilePipeline | null = null;
@@ -148,10 +145,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	// Background UI methods - delegate to BackgroundUIManager
 	private _parseBackground(input?: string | { r: number; g: number; b: number; a?: number }) {
 		this._bgUI.parseBackground(input);
-	}
-
-	private _setLoadingVisible(on: boolean) {
-		this._bgUI.setLoadingVisible(on);
 	}
 
 	private _gridPalette() {
@@ -220,25 +213,16 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			project: (x: number, y: number, z: number) => {
 				return Coords.worldToLevel({ x, y }, this._imageMaxZoom, Math.floor(z));
 			},
-			image: {
-				texture: this.getImage().texture,
-				// width/height here refer to the underlying texture's pixel dimensions
-				width: this.getImage().width,
-				height: this.getImage().height,
-				ready: this.getImage().ready,
+			// Tile fields
+			tileCache: this._tileCache!,
+			tileSize: this._tileSize,
+			sourceMaxZoom: this._sourceMaxZoom,
+			enqueueTile: (z: number, x: number, y: number, priority?: number) => {
+				this._tilePipeline?.enqueue(z, x, y, priority ?? 0);
 			},
-			// Tile mode fields
-			...(this._tileMode && this._tileCache ? {
-				tileCache: this._tileCache,
-				tileSize: this._tileSize,
-				sourceMaxZoom: this._sourceMaxZoom,
-				enqueueTile: (z: number, x: number, y: number, priority?: number) => {
-					this._tilePipeline?.enqueue(z, x, y, priority ?? 0);
-				},
-				wantTileKey: (key: string) => {
-					this._wantedKeys.add(key);
-				},
-			} : {}),
+			wantTileKey: (key: string) => {
+				this._wantedKeys.add(key);
+			},
 			vectorZIndices: this._getVectorZIndices(),
 			drawVectorOverlay: () => this._drawVectorOverlay(),
 		};
@@ -257,7 +241,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._vectorLayer.drawOverlay();
 	}
 
-	// ImageManagerHost API: allow background uploads to pause during interaction
 	public isIdle(): boolean {
 		try {
 			const now = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
@@ -269,23 +252,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 	}
 
-	public getVisibleYRangePx(): { y0: number; y1: number } {
-		try {
-			const rect = this.container.getBoundingClientRect();
-			const wCSS = Math.max(1, Math.round(rect.width));
-			const hCSS = Math.max(1, Math.round(rect.height));
-			const { zInt, scale } = Coords.zParts(this.zoom);
-			const tlLevel = Coords.tlWorldFor({ x: this.center.lng, y: this.center.lat }, this.zoom, { x: wCSS, y: hCSS }, this._imageMaxZoom);
-			const tlWorld = Coords.levelToWorld({ x: 0, y: tlLevel.y }, this._imageMaxZoom, zInt);
-			const brLevelY = tlLevel.y + hCSS / scale;
-			const brWorld = Coords.levelToWorld({ x: 0, y: brLevelY }, this._imageMaxZoom, zInt);
-			const y0 = Math.max(0, Math.min(this.mapSize.height, Math.floor(tlWorld.y)));
-			const y1 = Math.max(0, Math.min(this.mapSize.height, Math.ceil(brWorld.y)));
-			return y0 <= y1 ? { y0, y1 } : { y0: y1, y1: y0 };
-		} catch {
-			return { y0: 0, y1: this.mapSize.height };
-		}
-	}
 	public zoomVelocityTick() {
 		if (Math.abs(this._zoomVel) <= 1e-4) return;
 		const dt = Math.max(0.0005, Math.min(0.1, this._dt || 1 / 60));
@@ -324,10 +290,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 
 	// Timing + logging helpers (relative to instance creation)
 	private _t0Ms: number = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
-	private _imageReadyAtMs: number | null = null;
 	private _firstRasterDrawAtMs: number | null = null;
-	private _gateRenderUntilImageReady = false;
-	private _pendingFullImage: { url: string; width: number; height: number } | null = null;
 	public _nowMs(): number {
 		return typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 	}
@@ -351,33 +314,24 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 	}
 
-	constructor(container: HTMLDivElement, options: MapOptions = {}) {
+	constructor(container: HTMLDivElement, options: MapOptions) {
 		this.container = container;
 		this._t0Ms = this._nowMs();
 		this._log('ctor: begin');
 
 		// Basic configuration setup (synchronous)
-		const fullImage = options.image;
-		const previewImage = options.preview;
 		const tileOpts = options.tiles;
-		this._tileMode = !!tileOpts && !fullImage;
-		this.minZoom = options.minZoom ?? (this._tileMode ? (tileOpts!.sourceMinZoom ?? 0) : 0);
-		if (this._tileMode && tileOpts) {
+		this.minZoom = options.minZoom ?? (tileOpts?.sourceMinZoom ?? 0);
+		if (tileOpts) {
 			this.mapSize = { width: Math.max(1, tileOpts.mapSize.width), height: Math.max(1, tileOpts.mapSize.height) };
 			this._tileUrl = tileOpts.url;
 			this._tileSize = tileOpts.tileSize;
 			// sourceMinZoom captured via this.minZoom above
 			this._sourceMaxZoom = tileOpts.sourceMaxZoom;
-		} else if (fullImage) {
-			// Always size the world to the full image for seamless preview->full upgrade
-			this.mapSize = { width: Math.max(1, fullImage.width), height: Math.max(1, fullImage.height) };
-		} else if (previewImage) {
-			this.mapSize = { width: Math.max(1, previewImage.width), height: Math.max(1, previewImage.height) };
 		} else {
 			this.mapSize = { width: 512, height: 512 };
 		}
 
-		this._imageManager = new ImageManager(this);
 		this._asyncInitManager = new AsyncInitManager();
 
 		// Initialize options manager (no dependencies)
@@ -387,12 +341,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			wheelSpeedCtrl: options.wheelSpeedCtrl,
 		});
 
-		// Spinner mode is always on; gate rendering until image is ready
-		this._gateRenderUntilImageReady = true;
-		// Spinner options are handled by BackgroundUIManager in async init
-
-		// Defer image load until async finalize. If a preview is provided,
-		// we avoid kicking off the full-res load here to prevent duplicate requests.
 		this._imageMaxZoom = this._computeImageMaxZoom(this.mapSize.width, this.mapSize.height);
 		const defaultMaxZoom = options.maxZoom ?? this._imageMaxZoom;
 		this.maxZoom = Math.max(this.minZoom, defaultMaxZoom);
@@ -426,10 +374,10 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._autoResize = options.autoResize !== false;
 
 		// Start async initialization
-		this._startAsyncInit(options, fullImage);
+		this._startAsyncInit(options);
 	}
 
-	private async _startAsyncInit(options: MapOptions, initialImage: MapOptions['image']): Promise<void> {
+	private async _startAsyncInit(options: MapOptions): Promise<void> {
 		// Set up initialization steps
 		this._asyncInitManager.addSteps([
 			{
@@ -641,7 +589,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				},
 				onComplete: () => {
 					this._log('init:complete - async initialization finished');
-					this._finalizeInit(options, initialImage);
+					this._finalizeInit(options);
 				},
 				onError: (error: Error) => {
 					this._log(`init:error ${error.message}`);
@@ -654,7 +602,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		}
 	}
 
-	private _finalizeInit(_options: MapOptions, initialImage: MapOptions['image']): void {
+	private _finalizeInit(_options: MapOptions): void {
 		try {
 			const emitLoad = () => {
 				const rect2 = this.container.getBoundingClientRect();
@@ -680,71 +628,16 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			else setTimeout(attach, 0);
 		}
 
-		// Start image/tile loading after async init
-		if (this._tileMode) {
-			this._initTilePipeline();
-			// Tiles don't need the image gate - unlock immediately
-			this._gateRenderUntilImageReady = false;
-			if (this._input && !this._inputsAttached) {
-				try {
-					this._input.attach();
-					this._inputsAttached = true;
-				} catch {}
-			}
-		} else {
-			const fullImage = initialImage;
-			const previewImage = _options.preview;
-			if (previewImage && fullImage) {
-				// Progressive path: show preview first, then upgrade to full in background
-				if (this._bgUI.getShowLoading()) this._setLoadingVisible(true);
-				this._pendingFullImage = { url: fullImage.url, width: fullImage.width, height: fullImage.height };
-				// Load preview but scale/fit to full image dimensions to avoid any geometry changes on upgrade
-				try {
-					void this._imageManager.loadImage(previewImage.url, { width: this.mapSize.width, height: this.mapSize.height });
-				} catch {}
-			} else if (fullImage) {
-				// Non-progressive path (default): load full image with spinner gating
-				if (this._bgUI.getShowLoading()) this._setLoadingVisible(true);
-				this.setImageSource(fullImage);
-			}
-		}
-
-		this._log('ctor: end');
-	}
-
-	// ImageManagerHost interface implementation
-	onImageReady(): void {
-		this._imageReadyAtMs = this._nowMs();
-		try {
-			this._screenCache?.clear?.();
-		} catch {}
-		this._needsRender = true;
-		// Hide loading overlay when image becomes ready (full image path)
-		if (this._bgUI.getShowLoading()) this._setLoadingVisible(false);
-		// Allow rendering now if it was gated
-		this._gateRenderUntilImageReady = false;
-		// Attach inputs if they were deferred
+		// Initialize tile pipeline
+		this._initTilePipeline();
 		if (this._input && !this._inputsAttached) {
 			try {
 				this._input.attach();
 				this._inputsAttached = true;
 			} catch {}
 		}
-		// If a full image is pending (progressive), kick off the upgrade in the background now.
-		if (this._pendingFullImage) {
-			const cur = this.getImage();
-			const want = this._pendingFullImage;
-			if (cur && cur.url !== want.url) {
-				try {
-					void this._imageManager.loadImage(want.url, { width: this.mapSize.width, height: this.mapSize.height });
-				} catch {}
-			}
-			this._pendingFullImage = null;
-		}
-	}
 
-	getImage(): ImageData {
-		return this._imageManager.getImage();
+		this._log('ctor: end');
 	}
 
 	setCenter(lng: number, lat: number) {
@@ -776,34 +669,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			this._needsRender = true;
 		}
 	}
-	setImageSource(opts: { url: string; width: number; height: number }) {
-		if (!opts || typeof opts.url !== 'string' || !opts.url.trim()) throw new Error('GTMap: image url must be a non-empty string');
-		if (!Number.isFinite(opts.width) || opts.width <= 0) throw new Error('GTMap: image width must be a positive number');
-		if (!Number.isFinite(opts.height) || opts.height <= 0) throw new Error('GTMap: image height must be a positive number');
-		this._log(`image:set url=${opts.url} size=${opts.width}x${opts.height}`);
-		const currentImage = this.getImage();
-		if (currentImage.texture) {
-			try {
-				this.gl.deleteTexture(currentImage.texture);
-			} catch {}
-		}
-		this.mapSize = { width: Math.max(1, Math.floor(opts.width)), height: Math.max(1, Math.floor(opts.height)) };
-		this._imageManager.setImage({ url: opts.url, width: this.mapSize.width, height: this.mapSize.height });
-		this._imageMaxZoom = this._computeImageMaxZoom(this.mapSize.width, this.mapSize.height);
-		this.maxZoom = Math.max(this.minZoom, this.maxZoom);
-		this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.zoom));
-		this._state.maxZoom = this.maxZoom;
-		this._state.center = this.center;
-		this._state.zoom = this.zoom;
-		this._state.wrapX = this.wrapX;
-		this.setCenter(this.center.lng, this.center.lat);
-		try {
-			this._screenCache?.clear?.();
-		} catch {}
-		this._needsRender = true;
-		// ImageManager.setImage() already begins async loading
-	}
-
 	private _computeImageMaxZoom(width: number, height: number): number {
 		const maxDim = Math.max(1, Math.max(width, height));
 		const base = Math.max(1, this.baseGridSize);
@@ -983,7 +848,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		try {
 			this._gfx?.dispose?.();
 		} catch {}
-		this._destroyCache();
 		const gl = this.gl;
 		this._screenCache?.dispose();
 		if (this._quad) {
@@ -1063,16 +927,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			if (!this.showGrid) this._gridCtx?.clearRect(0, 0, this.gridCanvas.width, this.gridCanvas.height);
 		}
 		this._needsRender = true;
-	}
-	private _clearCache() {
-		this._imageManager.dispose();
-	}
-	public clearCache() {
-		this._clearCache();
-		this._needsRender = true;
-	}
-	private _destroyCache() {
-		this._clearCache();
 	}
 	public setWheelSpeed(speed: number) {
 		this._optionsMgr.setWheelSpeed(speed);
@@ -1229,10 +1083,8 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			},
 		};
 		this._input = new InputController(this._inputDeps);
-		if (!this._gateRenderUntilImageReady) {
-			this._input.attach();
-			this._inputsAttached = true;
-		}
+		this._input.attach();
+		this._inputsAttached = true;
 		// Wire marker hover/click and mouse derivations via EventBridge
 		try {
 			const bridge = new EventBridge({
@@ -1285,11 +1137,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		if (!this._zoomCtrl.isAnimating() && !this._panCtrl.isAnimating()) this._needsRender = false;
 	}
 	private _render() {
-		// Gate rendering until the full image is ready (spinner shown) - skip for tile mode
-		if (!this._tileMode && this._gateRenderUntilImageReady && !this.getImage().ready) {
-			return;
-		}
-		const imageReadyAtCall = this._tileMode || this.getImage().ready;
 		const tR0 = this._nowMs();
 
 		// Apply scissor clipping to map bounds if enabled
@@ -1354,7 +1201,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				gl.disable(gl.SCISSOR_TEST);
 			} catch {}
 		}
-		if (imageReadyAtCall && this._firstRasterDrawAtMs == null) {
+		if (this._firstRasterDrawAtMs == null) {
 			if (this._gpuWaitEnabled()) {
 				try {
 					this.gl.finish();
@@ -1362,8 +1209,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 			}
 			this._firstRasterDrawAtMs = this._nowMs();
 			const dtRender = this._firstRasterDrawAtMs - tR0;
-			const dtSinceReady = this._imageReadyAtMs ? this._firstRasterDrawAtMs - this._imageReadyAtMs : NaN;
-			this._log(`first-render done dtRender=${dtRender.toFixed(1)}ms sinceReady=${Number.isFinite(dtSinceReady) ? dtSinceReady.toFixed(1) : 'n/a'}ms`);
+			this._log(`first-render done dtRender=${dtRender.toFixed(1)}ms`);
 		}
 		// Kick off deferred icon mask build after first render
 		try {
@@ -1507,21 +1353,13 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 				}
 			} catch (e) { this._warn('GL reinit icons', e); }
 			try {
-				if (this._tileMode) {
-					// Rebuild tile pipeline on GL resume
-					this._tileCache?.destroy();
-					this._tileCache = null;
-					this._tileLoader = null;
-					this._tilePipeline = null;
-					this._initTilePipeline();
-				} else {
-					// Reload base image texture
-					const img = this._imageManager.getImage();
-					if (img && img.url) {
-						void this._imageManager.loadImage(img.url, { width: img.width, height: img.height });
-					}
-				}
-			} catch (e) { this._warn('GL reload image/tiles', e); }
+				// Rebuild tile pipeline on GL resume
+				this._tileCache?.destroy();
+				this._tileCache = null;
+				this._tileLoader = null;
+				this._tilePipeline = null;
+				this._initTilePipeline();
+			} catch (e) { this._warn('GL reload tiles', e); }
 			try {
 				// Rebuild vector layer (recreates WebGL overlay renderer)
 				const currentVectors = this._vectorLayer?.getVectors() ?? [];
@@ -1552,12 +1390,11 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 
 	public prefetchNeighbors(z: number, _tl: { x: number; y: number }, _scale: number, _w: number, _h: number) {
-		if (!this._tileMode || !this._tilePipeline) return;
+		if (!this._tilePipeline) return;
 		this._tilePipeline.scheduleBaselinePrefetch(z);
 	}
 
 	private _initTilePipeline() {
-		if (!this._tileMode) return;
 		this._tileCache = new TileCache(this.gl, this._maxTiles);
 		const tileDeps: TileDeps = {
 			hasTile: (key: string) => {
@@ -1618,7 +1455,7 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 	}
 
 	private _cancelUnwantedTiles() {
-		if (!this._tileMode || !this._tileLoader) return;
+		if (!this._tileLoader) return;
 		this._tileLoader.cancelUnwanted(this._wantedKeys);
 		this._tilePipeline?.cancelUnwanted(this._wantedKeys);
 	}
@@ -1634,7 +1471,6 @@ export default class GTMap implements MapImpl, GraphicsHost, ImageManagerHost {
 		this._inflightCount = 0;
 		this._wantedKeys.clear();
 
-		this._tileMode = true;
 		this._tileUrl = opts.url;
 		this._tileSize = opts.tileSize;
 		this.minZoom = Math.max(this.minZoom, opts.sourceMinZoom);

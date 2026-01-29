@@ -59,12 +59,7 @@ export default class MapRenderer {
     const snap = (v: number) => Coords.snapLevelToDevice(v, levelScale, ctx.dpr);
     tlLevel = { x: snap(tlLevel.x), y: snap(tlLevel.y) };
 
-    // Branch: tile mode vs single-image mode
-    if (ctx.tileCache && ctx.tileSize != null && ctx.sourceMaxZoom != null && ctx.enqueueTile) {
-      this.renderTiles(ctx, gl, baseZ, levelScale, widthCSS, heightCSS, tlLevel);
-    } else {
-      this.renderImage(ctx, gl, baseZ, levelScale, widthCSS, heightCSS, tlLevel);
-    }
+    this.renderTiles(ctx, gl, baseZ, levelScale, widthCSS, heightCSS, tlLevel);
 
     // Draw vectors and markers with z-ordering
     const hasVectors = ctx.vectorZIndices && ctx.vectorZIndices.length > 0 && ctx.drawVectorOverlay;
@@ -100,60 +95,6 @@ export default class MapRenderer {
       ctx.screenCache.update({ zInt: baseZ, scale: levelScale, tlWorld: tlLevel, widthCSS, heightCSS, dpr: ctx.dpr }, ctx.canvas);
     }
     if (this.hooks.cancelUnwanted) this.hooks.cancelUnwanted();
-  }
-
-  /** Single-image rendering path (existing behavior). */
-  private renderImage(
-    ctx: RenderCtx,
-    gl: WebGLRenderingContext,
-    baseZ: number,
-    levelScale: number,
-    widthCSS: number,
-    heightCSS: number,
-    tlLevel: { x: number; y: number },
-  ) {
-    if (ctx.useScreenCache && ctx.screenCache) {
-      ctx.screenCache.draw({ zInt: baseZ, scale: levelScale, tlWorld: tlLevel, widthCSS, heightCSS, dpr: ctx.dpr }, ctx.loc, ctx.prog, ctx.quad, ctx.canvas);
-    }
-
-    const imageReady = ctx.image.ready && !!ctx.image.texture;
-    if (imageReady) {
-      const tlWorld = Coords.levelToWorld(tlLevel, ctx.imageMaxZoom, baseZ);
-      const scaleWorldToCss = Math.pow(2, ctx.zoom - ctx.imageMaxZoom);
-      const translateCssBase = {
-        x: -tlWorld.x * scaleWorldToCss,
-        y: -tlWorld.y * scaleWorldToCss,
-      };
-      const sizeCss = {
-        width: ctx.mapSize.width * scaleWorldToCss,
-        height: ctx.mapSize.height * scaleWorldToCss,
-      };
-      const alpha = Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1));
-      gl.uniform1f(ctx.loc.u_alpha!, alpha);
-      const draw = (offsetX: number) => {
-        ctx.raster.drawImage(ctx.loc, {
-          texture: ctx.image.texture!,
-          translateCss: { x: translateCssBase.x + offsetX, y: translateCssBase.y },
-          sizeCss,
-          dpr: ctx.dpr,
-          imageWidth: ctx.image.width,
-          imageHeight: ctx.image.height,
-          filterMode: ctx.upscaleFilter,
-        });
-      };
-      if (ctx.wrapX) {
-        const worldWidthCss = ctx.mapSize.width * scaleWorldToCss;
-        const viewportWorldWidth = widthCSS / Math.max(1e-6, scaleWorldToCss);
-        const start = Math.floor(Coords.levelToWorld(tlLevel, ctx.imageMaxZoom, baseZ).x / ctx.mapSize.width) - 1;
-        const end = Math.floor((Coords.levelToWorld(tlLevel, ctx.imageMaxZoom, baseZ).x + viewportWorldWidth) / ctx.mapSize.width) + 1;
-        for (let i = start; i <= end; i++) {
-          draw(i * worldWidthCss);
-        }
-      } else {
-        draw(0);
-      }
-      this.iconsUnlocked = true;
-    }
   }
 
   /** Tile pyramid rendering path. */

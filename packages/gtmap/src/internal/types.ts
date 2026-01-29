@@ -89,18 +89,12 @@ export interface RenderCtx {
 	iconScaleFunction?: IconScaleFunction | null;
 	isIdle?: () => boolean;
 	project(x: number, y: number, z: number): { x: number; y: number };
-	image: {
-		texture: WebGLTexture | null;
-		width: number;
-		height: number;
-		ready: boolean;
-	};
-	// Tile mode fields (present when using tile pyramid instead of single image)
-	tileCache?: TileCache;
-	tileSize?: number;
-	sourceMaxZoom?: number;
-	enqueueTile?(z: number, x: number, y: number, priority?: number): void;
-	wantTileKey?(key: string): void;
+	// Tile fields
+	tileCache: TileCache;
+	tileSize: number;
+	sourceMaxZoom: number;
+	enqueueTile(z: number, x: number, y: number, priority?: number): void;
+	wantTileKey(key: string): void;
 	vectorCtx?: CanvasRenderingContext2D | null;
 	drawVectors?: () => void;
 	/** Vector z-indices for overlay interleaving */
@@ -183,7 +177,6 @@ export interface MapImpl {
 	// controls
 	setCenter(lng: number, lat: number): void;
 	setZoom(z: number): void;
-	setImageSource(opts: { url: string; width: number; height: number }): void;
 	setTileSource?(opts: { url: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void;
 	setRasterOpacity(v: number): void;
 	setGridVisible(on: boolean): void;

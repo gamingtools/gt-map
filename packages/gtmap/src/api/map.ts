@@ -37,21 +37,22 @@ export type { ViewTransition };
  *
  * @public
  * @remarks
- * Use this facade to configure the image, control the view, add content and subscribe to events.
+ * Use this facade to configure tile sources, control the view, add content and subscribe to events.
  *
  * @example
  * ```ts
- * // Create a map with an 8192x8192 raster and initial view
+ * // Create a map with a tile pyramid and initial view
  * const map = new GTMap(document.getElementById('map')!, {
- *   image: {
- *     url: 'https://example.com/large-map.webp',
- *     width: 8192,
- *     height: 8192,
+ *   tiles: {
+ *     url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+ *     tileSize: 256,
+ *     mapSize: { width: 8192, height: 8192 },
+ *     sourceMinZoom: 0,
+ *     sourceMaxZoom: 5,
  *   },
  *   wrapX: false,
  *   center: { x: 4096, y: 4096 },
  *   zoom: 3,
- *   maxZoom: 5
  * });
  * ```
  */
@@ -99,7 +100,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	 * @group Lifecycle
 	 * @param container - The HTML element to render the map into
 	 * @param options - Configuration options for the map
-	 * @param options.image - Single large raster image metadata
+	 * @param options.tiles - Tile pyramid source
 	 * @param options.minZoom - Minimum zoom level (default: 0)
 	 * @param options.maxZoom - Maximum zoom level (default: 19)
 	 * @param options.center - Initial center position in pixel coordinates
@@ -108,29 +109,17 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	 * @param options.fpsCap - Maximum frames per second (default: 60)
 	 */
 	constructor(container: HTMLElement, options: MapOptions) {
-		// Validate: either image or tiles must be provided
-		const img = options?.image;
 		const tiles = options?.tiles;
-		if (!img && !tiles) throw new Error('GTMap: either image or tiles is required in MapOptions');
-		if (img && tiles) throw new Error('GTMap: image and tiles are mutually exclusive in MapOptions');
-		if (img) {
-			if (!img.url || typeof img.url !== 'string') throw new Error('GTMap: image.url must be a non-empty string');
-			if (!Number.isFinite(img.width) || img.width <= 0) throw new Error('GTMap: image.width must be a positive number');
-			if (!Number.isFinite(img.height) || img.height <= 0) throw new Error('GTMap: image.height must be a positive number');
-		}
-		if (tiles) {
-			if (!tiles.url || typeof tiles.url !== 'string') throw new Error('GTMap: tiles.url must be a non-empty string');
-			if (!Number.isFinite(tiles.tileSize) || tiles.tileSize <= 0) throw new Error('GTMap: tiles.tileSize must be a positive number');
-			if (!tiles.mapSize || !Number.isFinite(tiles.mapSize.width) || !Number.isFinite(tiles.mapSize.height)) throw new Error('GTMap: tiles.mapSize must have width and height');
-		}
+		if (!tiles) throw new Error('GTMap: tiles is required in MapOptions');
+		if (!tiles.url || typeof tiles.url !== 'string') throw new Error('GTMap: tiles.url must be a non-empty string');
+		if (!Number.isFinite(tiles.tileSize) || tiles.tileSize <= 0) throw new Error('GTMap: tiles.tileSize must be a positive number');
+		if (!tiles.mapSize || !Number.isFinite(tiles.mapSize.width) || !Number.isFinite(tiles.mapSize.height)) throw new Error('GTMap: tiles.mapSize must have width and height');
 
 		if (Number.isFinite(options.minZoom as number) && Number.isFinite(options.maxZoom as number) && (options.minZoom as number) > (options.maxZoom as number)) {
 			throw new Error('GTMap: minZoom must be <= maxZoom');
 		}
-		const implOpts: Partial<ImplMapOptions> = {
-			...(img ? { image: { url: img.url, width: img.width, height: img.height } } : {}),
-			...(tiles ? { tiles } : {}),
-			preview: options.preview ? { url: options.preview.url, width: options.preview.width, height: options.preview.height } : undefined,
+		const implOpts: Partial<ImplMapOptions> & Pick<ImplMapOptions, 'tiles'> = {
+			tiles,
 			minZoom: options.minZoom,
 			maxZoom: options.maxZoom,
 			center: options.center,

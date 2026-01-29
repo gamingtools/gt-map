@@ -12,7 +12,6 @@ export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShad
 // Export all public types
 export type {
 	Point,
-	ImageSourceOptions,
 	TileSourceOptions,
 	MapOptions,
 	SpinnerOptions,

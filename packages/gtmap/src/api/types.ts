@@ -18,16 +18,6 @@ export interface ViewState {
 	wrapX: boolean;
 }
 
-// Single-image source (pixel CRS)
-export interface ImageSourceOptions {
-	/** URL or data URL for the image. */
-	url: string;
-	/** Native width in pixels. */
-	width: number;
-	/** Native height in pixels. */
-	height: number;
-}
-
 /**
  * Tile pyramid source options.
  *
@@ -50,18 +40,8 @@ export interface TileSourceOptions {
 
 // Map configuration
 export interface MapOptions {
-	/** Single raster image to display (full resolution). Mutually exclusive with `tiles`. */
-	image?: ImageSourceOptions;
-	/** Tile pyramid source. Mutually exclusive with `image`. */
-	tiles?: TileSourceOptions;
-	/**
-	 * Optional low‑resolution preview to render first, then seamlessly upgrade to {@link MapOptions.image}.
-	 *
-	 * When provided, the map shows the preview as soon as it is decoded and uploaded, then loads the
-	 * full‑resolution image in the background and swaps textures atomically without blocking interaction.
-	 * The preview is scaled to the full image dimensions so the swap is visually seamless (only quality improves).
-	 */
-	preview?: ImageSourceOptions;
+	/** Tile pyramid source. */
+	tiles: TileSourceOptions;
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;
@@ -94,7 +74,7 @@ export interface MapOptions {
 	 */
 	bounceAtZoomLimits?: boolean;
 	/**
-	 * Spinner appearance while loading the full image.
+	 * Spinner appearance while loading tiles.
 	 *
 	 * - size: outer diameter in CSS pixels (default 32)
 	 * - thickness: ring thickness in CSS pixels (default 3)
