@@ -92,7 +92,9 @@ export class TileManager {
 				this.useImageBitmap = v;
 			},
 			acquireTexture: () => this._cache?.acquireTexture() ?? null,
+			isTileReady: (key: string, tex: WebGLTexture) => this._cache?.isTileReady(key, tex) ?? false,
 			isIdle: () => this.isIdle(),
+			log: (msg: string) => ctx.debug.log(msg),
 		};
 		this._loader = new TileLoader(loaderDeps);
 
@@ -122,6 +124,7 @@ export class TileManager {
 
 	wantKey(key: string): void {
 		this._wantedKeys.add(key);
+		this._cache?.touch(key, this.frame);
 	}
 
 	clearWanted(): void {
@@ -134,13 +137,21 @@ export class TileManager {
 		this._pipeline?.cancelUnwanted(this._wantedKeys);
 	}
 
+	private _prefetchedWhileIdle = false;
+
 	prefetchNeighbors(z: number): void {
+		if (!this.isIdle()) {
+			this._prefetchedWhileIdle = false;
+			return;
+		}
+		if (this._prefetchedWhileIdle) return;
+		this._prefetchedWhileIdle = true;
 		this._pipeline?.scheduleBaselinePrefetch(z);
 	}
 
 	setSource(opts: { url: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
 		// Tear down existing pipeline
-		this._loader?.cancelAll();
+		this._loader?.cancelAll('source-change');
 		this._cache?.destroy();
 		this._cache = null;
 		this._loader = null;
@@ -154,7 +165,7 @@ export class TileManager {
 		this._sourceMaxZoom = opts.sourceMaxZoom;
 
 		const vs = this.ctx.viewState;
-		vs.minZoom = Math.max(vs.minZoom, opts.sourceMinZoom);
+		vs.minZoom = opts.sourceMinZoom;
 		vs.mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
 		vs.imageMaxZoom = ViewStateStoreCompute(vs.mapSize.width, vs.mapSize.height);
 		vs.maxZoom = Math.max(vs.minZoom, this._sourceMaxZoom);
@@ -175,16 +186,20 @@ export class TileManager {
 	}
 
 	rebuild(): void {
+		this._loader?.cancelAll('rebuild');
 		this._cache?.destroy();
 		this._cache = null;
 		this._loader = null;
 		this._pipeline = null;
+		this._pendingTiles.clear();
+		this._inflightCount = 0;
+		this._wantedKeys.clear();
 		this.init();
 	}
 
 	destroy(): void {
 		try {
-			this._loader?.cancelAll();
+			this._loader?.cancelAll('destroy');
 			this._cache?.destroy();
 			this._cache = null;
 			this._loader = null;

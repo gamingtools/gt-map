@@ -14,6 +14,8 @@ export class TileCache {
   private map = new Map<string, TileRecord>();
   private texturePool: WebGLTexture[] = [];
   private readonly poolSize = 20;
+  /** Keys requested for pinning before the tile record existed. */
+  private deferredPins = new Set<string>();
 
   constructor(gl: WebGLRenderingContext, maxTiles: number) {
     this.gl = gl;
@@ -46,26 +48,51 @@ export class TileCache {
   get(key: string) {
     return this.map.get(key);
   }
+
+  /** Update lastUsed so the tile survives LRU eviction. */
+  touch(key: string, frame: number) {
+    const rec = this.map.get(key);
+    if (rec) rec.lastUsed = frame;
+  }
   keys() {
     return this.map.keys();
   }
+  /** Check whether a tile is still ready with the given texture. */
+  isTileReady(key: string, tex: WebGLTexture): boolean {
+    const rec = this.map.get(key);
+    return rec?.status === 'ready' && rec.tex === tex;
+  }
 
   setLoading(key: string) {
-    this.map.set(key, { status: 'loading' });
+    const existing = this.map.get(key);
+    if (existing?.tex) this.releaseTexture(existing.tex);
+    const pinned = this.deferredPins.delete(key) || existing?.pinned === true;
+    this.map.set(key, { status: 'loading', pinned });
   }
   setError(key: string) {
-    this.map.set(key, { status: 'error' });
+    const existing = this.map.get(key);
+    if (existing?.tex) this.releaseTexture(existing.tex);
+    const pinned = this.deferredPins.delete(key) || existing?.pinned === true;
+    this.map.set(key, { status: 'error', pinned });
   }
   setReady(key: string, tex: WebGLTexture, width: number, height: number, frame: number) {
-    this.map.set(key, { status: 'ready', tex, width, height, lastUsed: frame });
+    const existing = this.map.get(key);
+    if (existing?.tex && existing.tex !== tex) this.releaseTexture(existing.tex);
+    const pinned = this.deferredPins.delete(key) || existing?.pinned === true;
+    this.map.set(key, { status: 'ready', tex, width, height, lastUsed: frame, pinned });
     this.evictIfNeeded();
   }
 
   pin(key: string) {
     const rec = this.map.get(key);
-    if (rec) rec.pinned = true;
+    if (rec) {
+      rec.pinned = true;
+    } else {
+      this.deferredPins.add(key);
+    }
   }
   unpin(key: string) {
+    this.deferredPins.delete(key);
     const rec = this.map.get(key);
     if (rec) rec.pinned = false;
   }
@@ -76,6 +103,7 @@ export class TileCache {
       this.releaseTexture(rec.tex);
     }
     this.map.delete(key);
+    this.deferredPins.delete(key);
   }
 
   clear() {
@@ -85,6 +113,7 @@ export class TileCache {
       }
     }
     this.map.clear();
+    this.deferredPins.clear();
   }
 
   destroy() {
@@ -110,6 +139,16 @@ export class TileCache {
       if (needed <= 0) break;
       this.delete(c.key);
       needed--;
+    }
+    // If still over capacity, evict error tiles
+    if (needed > 0) {
+      for (const [k, rec] of this.map) {
+        if (needed <= 0) break;
+        if (rec.status === 'error' && !rec.pinned) {
+          this.delete(k);
+          needed--;
+        }
+      }
     }
   }
 }
