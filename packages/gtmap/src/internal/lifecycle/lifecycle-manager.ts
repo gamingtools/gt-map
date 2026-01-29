@@ -12,7 +12,7 @@ import { AsyncInitManager, type InitProgress } from '../core/async-init-manager'
 import { BackgroundUIManager } from '../core/background-ui';
 import AutoResizeManager from '../core/auto-resize-manager';
 import { TileManager } from '../tiles/tile-manager';
-import { ContentManager } from '../content/content-manager';
+
 import { RenderCoordinator } from '../render/render-coordinator';
 import { InputManager } from '../input/input-manager';
 
@@ -212,10 +212,9 @@ export class LifecycleManager {
 		coord.initRaster();
 		coord.initScreenCache();
 
-		// Content manager -- icons, pending flush
-		const cm = new ContentManager(ctx);
-		ctx.contentManager = cm;
-		cm.initRenderers();
+		// Content manager -- initialize GL-dependent renderers on the
+		// instance created eagerly by MapEngine (so buffered icon defs survive).
+		ctx.contentManager!.initRenderers();
 	}
 
 	private _initControllers(): void {

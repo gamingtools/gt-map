@@ -20,6 +20,7 @@ import type { MapImpl, VectorPrimitive } from './types';
 import type { LngLat } from './context/view-state';
 import { MapConfig } from './context/map-config';
 import { MapContext } from './context/map-context';
+import { ContentManager } from './content/content-manager';
 import { LifecycleManager } from './lifecycle/lifecycle-manager';
 
 export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
@@ -31,6 +32,9 @@ export class MapEngine implements MapImpl {
 	constructor(container: HTMLDivElement, options: MapOptions) {
 		const config = new MapConfig(options);
 		this._ctx = new MapContext(container, config);
+		// Create ContentManager eagerly so icon defs and markers can be buffered
+		// before async init completes (prevents silent drops via optional chaining).
+		this._ctx.contentManager = new ContentManager(this._ctx);
 		this._lifecycle = new LifecycleManager(this._ctx);
 		this._lifecycle.init();
 	}
