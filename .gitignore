@@ -55,3 +55,5 @@ temp/
 .git_head_sha
 /.npm-cache
 /sandbox
+.mcp.json
+.claude/settings.local.json

@@ -12,7 +12,13 @@
       "Bash(npm -w gtmap-svelte-test run check)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$\\(cat <<''EOF''\nrefactor\\(raster\\): remove single image source in favor of tile pyramids\n\nRemove single-image and preview-image rendering support, making tile\npyramids the only raster source. This simplifies the rendering pipeline\nby eliminating all single-image/tile-mode branching.\n\n- Delete ImageManager \\(chunked upload, progressive preview->full swap\\)\n- Remove ImageSourceOptions, image/preview from MapOptions; make tiles required\n- Remove renderImage\\(\\) from MapRenderer and drawImage\\(\\) from RasterRenderer\n- Remove setImageSource\\(\\), onImageReady\\(\\), getImage\\(\\) from internal impl\n- Remove _tileMode branching throughout mapgl.ts, setActive GL resume, etc\n- Make tile fields \\(tileCache, tileSize, sourceMaxZoom\\) required in RenderCtx\n- Delete demo pages \\(worldmap, test, cors, demo/*\\); keep only /map route\n- Update navigation, CLAUDE.md, and public API docs\nEOF\n\\)\")",
-      "Bash(python -c:*)"
+      "Bash(python -c:*)",
+      "Bash(git commit:*)",
+      "mcp__chrome__list_console_messages",
+      "mcp__chrome__list_pages",
+      "mcp__chrome__navigate_page",
+      "mcp__chrome__wait_for",
+      "mcp__codex__codex"
     ],
     "deny": [],
     "ask": []
