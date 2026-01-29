@@ -42,7 +42,7 @@ export class BackgroundUIManager {
 			if (s === 'transparent') return transparent;
 			const m = s.match(/^#([0-9a-f]{6})([0-9a-f]{2})?$/i);
 			if (m) {
-				const hex = m[1];
+				const hex = m[1]!;
 				const rr = parseInt(hex.slice(0, 2), 16) / 255;
 				const gg = parseInt(hex.slice(2, 4), 16) / 255;
 				const bb = parseInt(hex.slice(4, 6), 16) / 255;

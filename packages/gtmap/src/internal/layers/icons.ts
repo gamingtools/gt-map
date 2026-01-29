@@ -181,8 +181,8 @@ export class IconRenderer {
 			const scaleX = m.size ? m.size / sz.w : 1;
 			const scaleY = m.size ? m.size / sz.h : 1;
 			const a = { ax: origAnchor.ax * scaleX, ay: origAnchor.ay * scaleY };
-			const meta = this.iconMeta.get(m.type) || { iconPath: '', x2IconPath: undefined, width: sz.w, height: sz.h, anchorX: origAnchor.ax, anchorY: origAnchor.ay };
-			out.push({ id: m.id, index: idx, lng: m.lng, lat: m.lat, w, h, type: m.type, anchor: { ax: a.ax * scale, ay: a.ay * scale }, rotation: m.rotation, icon: meta });
+			const meta = this.iconMeta.get(m.type) || { iconPath: '', width: sz.w, height: sz.h, anchorX: origAnchor.ax, anchorY: origAnchor.ay };
+			out.push({ id: m.id, index: idx, lng: m.lng, lat: m.lat, w, h, type: m.type, anchor: { ax: a.ax * scale, ay: a.ay * scale }, ...(m.rotation !== undefined ? { rotation: m.rotation } : {}), icon: meta });
 			idx++;
 		}
 		return out;
@@ -231,7 +231,7 @@ export class IconRenderer {
 		const loadTasks = entries.map(async ([key, d]) => {
 			this.texSize.set(key, { w: d.width, h: d.height });
 			this.texAnchor.set(key, { ax: d.anchorX ?? d.width / 2, ay: d.anchorY ?? d.height / 2 });
-			this.iconMeta.set(key, { iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height, anchorX: d.anchorX ?? d.width / 2, anchorY: d.anchorY ?? d.height / 2 });
+			this.iconMeta.set(key, { iconPath: d.iconPath, ...(d.x2IconPath !== undefined ? { x2IconPath: d.x2IconPath } : {}), width: d.width, height: d.height, anchorX: d.anchorX ?? d.width / 2, anchorY: d.anchorY ?? d.height / 2 });
 
 			let src2x: ImageBitmap | HTMLImageElement | null = null;
 			if (d.x2IconPath) src2x = await this.loadImageSource(d.x2IconPath);
@@ -300,7 +300,7 @@ export class IconRenderer {
 				norm.push(m as MarkerRenderData);
 			} else {
 				const mm = m as { lng: number; lat: number; type: string; size?: number; rotation?: number; zIndex?: number };
-				norm.push({ id: `m${idx++}`, lng: mm.lng, lat: mm.lat, type: mm.type, size: mm.size, rotation: mm.rotation, zIndex: mm.zIndex });
+				norm.push({ id: `m${idx++}`, lng: mm.lng, lat: mm.lat, type: mm.type, ...(mm.size !== undefined ? { size: mm.size } : {}), ...(mm.rotation !== undefined ? { rotation: mm.rotation } : {}), ...(mm.zIndex !== undefined ? { zIndex: mm.zIndex } : {}) });
 			}
 		}
 		this.markers = norm;
@@ -317,7 +317,7 @@ export class IconRenderer {
 				norm.push(d as MarkerRenderData);
 			} else {
 				const dd = d as { lng: number; lat: number; type: string; size?: number; rotation?: number; zIndex?: number };
-				norm.push({ id: `d${idx++}`, lng: dd.lng, lat: dd.lat, type: dd.type, size: dd.size, rotation: dd.rotation, zIndex: dd.zIndex });
+				norm.push({ id: `d${idx++}`, lng: dd.lng, lat: dd.lat, type: dd.type, ...(dd.size !== undefined ? { size: dd.size } : {}), ...(dd.rotation !== undefined ? { rotation: dd.rotation } : {}), ...(dd.zIndex !== undefined ? { zIndex: dd.zIndex } : {}) });
 			}
 		}
 		this.decals = norm;
@@ -436,7 +436,7 @@ export class IconRenderer {
 			const data = td.data;
 			// iconScale is at offset 7 in each 8-float block
 			for (let i = 0; i < list.length; i++) {
-				const m = list[i];
+				const m = list[i]!;
 				let iconScale: number;
 				if (m.iconScaleFunction === null) {
 					// Explicitly disabled - no scaling
@@ -619,8 +619,8 @@ export class IconRenderer {
 			for (const type of sortedTypes) {
 				const typeMinZ = this.typeMinZ.get(type) ?? 0;
 				// Draw any overlays that should appear before this type
-				while (overlayIdx < overlayZs.length && overlayZs[overlayIdx] <= typeMinZ) {
-					ctx.drawOverlayAtZ?.(overlayZs[overlayIdx]);
+				while (overlayIdx < overlayZs.length && overlayZs[overlayIdx]! <= typeMinZ) {
+					ctx.drawOverlayAtZ?.(overlayZs[overlayIdx]!);
 					overlayIdx++;
 					// Restore instanced program state after overlay draw (overlay uses its own program)
 					gl.useProgram(this.instProg!);
@@ -701,7 +701,7 @@ export class IconRenderer {
 			}
 			// Draw any remaining overlays after all marker types
 			while (overlayIdx < overlayZs.length) {
-				ctx.drawOverlayAtZ?.(overlayZs[overlayIdx]);
+				ctx.drawOverlayAtZ?.(overlayZs[overlayIdx]!);
 				overlayIdx++;
 				// No need to restore state here since we're done drawing markers
 			}

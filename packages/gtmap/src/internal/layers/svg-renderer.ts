@@ -89,7 +89,7 @@ function applySvgOverrides(svgContent: string, fill?: string, stroke?: string, s
 		if (viewBox) {
 			const parts = viewBox.split(/\s+/);
 			if (parts.length >= 4) {
-				const viewBoxSize = Math.max(parseFloat(parts[2]), parseFloat(parts[3]));
+				const viewBoxSize = Math.max(parseFloat(parts[2]!), parseFloat(parts[3]!));
 				// Scale stroke so that strokeWidth in pixels maps to viewBox units
 				strokeScale = viewBoxSize / targetSize;
 			}

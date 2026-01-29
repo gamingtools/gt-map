@@ -261,11 +261,11 @@ export class ViewTransitionImpl implements ViewTransition {
 	private _cleanup(): void {
 		if (this.unsubscribeMoveEnd) {
 			this.unsubscribeMoveEnd();
-			this.unsubscribeMoveEnd = undefined;
+			delete this.unsubscribeMoveEnd;
 		}
 		if (this.unsubscribeZoomEnd) {
 			this.unsubscribeZoomEnd();
-			this.unsubscribeZoomEnd = undefined;
+			delete this.unsubscribeZoomEnd;
 		}
 	}
 }

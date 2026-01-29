@@ -279,13 +279,13 @@ export default class InputController {
 		const onTouchStart = (e: TouchEvent) => {
 			this.lastTouchAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 			if (e.touches.length === 1) {
-				this.touchState = { mode: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
+				this.touchState = { mode: 'pan', x: e.touches[0]!.clientX, y: e.touches[0]!.clientY };
 			} else if (e.touches.length === 2) {
 				this.lastTouchAt = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
 				// While pinching, keep a cooldown window active to block inertia after pinch
 				this.pinchCooldownUntil = this.lastTouchAt + 500;
-				const t0 = e.touches[0];
-				const t1 = e.touches[1];
+				const t0 = e.touches[0]!;
+				const t1 = e.touches[1]!;
 				const dx = t1.clientX - t0.clientX;
 				const dy = t1.clientY - t0.clientY;
 				// Record starting zoom and center (keep center fixed during pinch like Leaflet 'center')
@@ -319,7 +319,7 @@ export default class InputController {
 			if (!touchState) return;
 			// If pinch transitioned to one finger, switch to pan smoothly
 			if (touchState.mode === 'pinch' && e.touches.length === 1) {
-				const t = e.touches[0];
+				const t = e.touches[0]!;
 				touchState.mode = 'pan';
 				touchState.x = t.clientX;
 				touchState.y = t.clientY;
@@ -335,7 +335,7 @@ export default class InputController {
 				return;
 			}
 			if (touchState.mode === 'pan' && e.touches.length === 1) {
-				const t = e.touches[0];
+				const t = e.touches[0]!;
 				// Initialize baseline if missing (first pan frame)
 				if (touchState.x == null || touchState.y == null) {
 					touchState.x = t.clientX;
@@ -365,8 +365,8 @@ export default class InputController {
 				// Update cooldown on every pinch frame and mark as interaction
 				this.pinchCooldownUntil = Math.max(this.pinchCooldownUntil, this.lastTouchAt + 500);
 				deps.setLastInteractAt(this.lastTouchAt);
-				const t0 = e.touches[0];
-				const t1 = e.touches[1];
+				const t0 = e.touches[0]!;
+				const t1 = e.touches[1]!;
 				const dx = t1.clientX - t0.clientX;
 				const dy = t1.clientY - t0.clientY;
 				const dist = Math.hypot(dx, dy);
@@ -471,7 +471,7 @@ export default class InputController {
 		this._positions.push({ x, y });
 		this._times.push(now);
 		// keep only last ~100ms for smoother velocity estimation
-		while (this._positions.length > 1 && now - (this._times[0] || 0) > 100) {
+		while (this._positions.length > 1 && now - this._times[0]! > 100) {
 			this._positions.shift();
 			this._times.shift();
 		}
@@ -489,10 +489,10 @@ export default class InputController {
 		const decel = deps.getInertiaDecel();
 		const lastIdx = this._positions.length - 1;
 		const firstIdx = 0;
-		const last = this._positions[lastIdx];
-		const first = this._positions[firstIdx];
-		const lastT = this._times[lastIdx];
-		const firstT = this._times[firstIdx];
+		const last = this._positions[lastIdx]!;
+		const first = this._positions[firstIdx]!;
+		const lastT = this._times[lastIdx]!;
+		const firstT = this._times[firstIdx]!;
 		const duration = Math.max(0.008, (lastT - firstT) / 1000);
 		// very small windows produce noisy velocity; skip
 		if (duration < 0.02) return;

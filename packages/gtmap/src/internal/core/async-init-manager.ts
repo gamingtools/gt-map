@@ -82,7 +82,7 @@ export class AsyncInitManager {
 
 		try {
 			for (let i = 0; i < this.steps.length; i++) {
-				const step = this.steps[i];
+				const step = this.steps[i]!;
 				this.currentStep = i;
 
 				// Execute step

@@ -48,7 +48,7 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	 */
 	constructor(opts: EntityCollectionOptions = {}) {
 		this.id = opts.id ?? genCollectionId();
-		this._onChange = opts.onChange;
+		if (opts.onChange !== undefined) this._onChange = opts.onChange;
 	}
 
 	/** Add an entity and emit `entityadd`. */

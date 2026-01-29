@@ -94,9 +94,9 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		this._rotation = opts.rotation ?? 0;
 		this._opacity = opts.opacity ?? 1;
 		this._zIndex = opts.zIndex ?? 1;
-		this._iconScaleFunction = opts.iconScaleFunction;
-		this._data = opts.data;
-		this._onChange = onChange;
+		if (opts.iconScaleFunction !== undefined) this._iconScaleFunction = opts.iconScaleFunction;
+		if (opts.data !== undefined) this._data = opts.data;
+		if (onChange !== undefined) this._onChange = onChange;
 	}
 
 	/** Get the current world X (pixels). */
@@ -207,7 +207,9 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * @public
 	 */
 	toData(): MarkerData<T> {
-		return { id: this.id, x: this._x, y: this._y, data: this._data };
+		const d: MarkerData<T> = { id: this.id, x: this._x, y: this._y };
+		if (this._data !== undefined) d.data = this._data;
+		return d;
 	}
 
 	// Internal: allow map facade to forward underlying impl events
@@ -229,7 +231,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		try {
 			this._activeTx?.cancel();
 		} catch {}
-		this._activeTx = undefined;
+		delete this._activeTx;
 	}
 	/** @internal Set the active transition for this marker. */
 	_setActiveTransition(tx: MarkerTransitionImpl<T>): void {
@@ -288,7 +290,13 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 		const animate = opts?.animate;
 		if (!animate) {
 			if (needsPos) this.marker.moveTo(this.targetX as number, this.targetY as number);
-			if (needsStyle) this.marker.setStyle({ scale: this.targetScale, rotation: this.targetRotation, opacity: this.targetOpacity });
+			if (needsStyle) {
+				const s: { scale?: number; rotation?: number; opacity?: number } = {};
+				if (this.targetScale !== undefined) s.scale = this.targetScale;
+				if (this.targetRotation !== undefined) s.rotation = this.targetRotation;
+				if (this.targetOpacity !== undefined) s.opacity = this.targetOpacity;
+				this.marker.setStyle(s);
+			}
 			return Promise.resolve({ status: 'instant' });
 		}
 

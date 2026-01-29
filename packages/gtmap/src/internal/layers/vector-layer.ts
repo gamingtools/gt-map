@@ -150,7 +150,7 @@ export class VectorLayer {
 					if (!pts.length) continue;
 					begin();
 					for (let i = 0; i < pts.length; i++) {
-						const p = pts[i];
+						const p = pts[i]!;
 						const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: center.lng, y: center.lat }, viewport, imageMaxZ);
 						if (i === 0) ctx.moveTo(css.x, css.y);
 						else ctx.lineTo(css.x, css.y);

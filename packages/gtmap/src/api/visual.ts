@@ -141,7 +141,7 @@ export class ImageVisual extends Visual {
 		super();
 		this.icon = icon;
 		this.size = size;
-		this.icon2x = icon2x;
+		if (icon2x !== undefined) this.icon2x = icon2x;
 	}
 
 	/** Get resolved size as {width, height}. */
@@ -221,12 +221,12 @@ export class TextVisual extends Visual {
 		this.fontSize = options.fontSize ?? 14;
 		this.fontFamily = options.fontFamily ?? 'system-ui, sans-serif';
 		this.color = options.color ?? '#000000';
-		this.backgroundColor = options.backgroundColor;
-		this.padding = options.padding;
-		this.strokeColor = options.strokeColor;
-		this.strokeWidth = options.strokeWidth;
-		this.fontWeight = options.fontWeight;
-		this.fontStyle = options.fontStyle;
+		if (options.backgroundColor !== undefined) this.backgroundColor = options.backgroundColor;
+		if (options.padding !== undefined) this.padding = options.padding;
+		if (options.strokeColor !== undefined) this.strokeColor = options.strokeColor;
+		if (options.strokeWidth !== undefined) this.strokeWidth = options.strokeWidth;
+		if (options.fontWeight !== undefined) this.fontWeight = options.fontWeight;
+		if (options.fontStyle !== undefined) this.fontStyle = options.fontStyle;
 	}
 }
 
@@ -272,9 +272,9 @@ export class CircleVisual extends Visual {
 	) {
 		super();
 		this.radius = radius;
-		this.fill = options.fill;
-		this.stroke = options.stroke;
-		this.strokeWidth = options.strokeWidth;
+		if (options.fill !== undefined) this.fill = options.fill;
+		if (options.stroke !== undefined) this.stroke = options.stroke;
+		if (options.strokeWidth !== undefined) this.strokeWidth = options.strokeWidth;
 	}
 }
 
@@ -324,10 +324,10 @@ export class RectVisual extends Visual {
 	) {
 		super();
 		this.size = size;
-		this.fill = options.fill;
-		this.stroke = options.stroke;
-		this.strokeWidth = options.strokeWidth;
-		this.borderRadius = options.borderRadius;
+		if (options.fill !== undefined) this.fill = options.fill;
+		if (options.stroke !== undefined) this.stroke = options.stroke;
+		if (options.strokeWidth !== undefined) this.strokeWidth = options.strokeWidth;
+		if (options.borderRadius !== undefined) this.borderRadius = options.borderRadius;
 	}
 
 	/** Get resolved size as {width, height}. */
@@ -412,10 +412,10 @@ export class SvgVisual extends Visual {
 		super();
 		this.svg = svg;
 		this.size = size;
-		this.fill = options.fill;
-		this.stroke = options.stroke;
-		this.strokeWidth = options.strokeWidth;
-		this.shadow = options.shadow;
+		if (options.fill !== undefined) this.fill = options.fill;
+		if (options.stroke !== undefined) this.stroke = options.stroke;
+		if (options.strokeWidth !== undefined) this.strokeWidth = options.strokeWidth;
+		if (options.shadow !== undefined) this.shadow = options.shadow;
 	}
 
 	/** Get resolved size as {width, height}. */

@@ -56,7 +56,7 @@ export class IconMaskBuilder {
 			const img = ctx.getImageData(0, 0, w, h);
 			const rgba = img.data;
 			const data = new Uint8Array(w * h);
-			for (let i = 0, j = 0; i < rgba.length; i += 4, j++) data[j] = rgba[i + 3];
+			for (let i = 0, j = 0; i < rgba.length; i += 4, j++) data[j] = rgba[i + 3]!;
 			this.maskAlpha.set(key, { data, w, h });
 		} catch {
 			// Likely CORS taint; skip mask for this icon

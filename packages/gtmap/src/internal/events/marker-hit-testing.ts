@@ -122,7 +122,7 @@ export class MarkerHitTesting {
 
 		// Iterate in reverse: last marker rendered is on top, so check it first
 		for (let i = info.length - 1; i >= 0; i--) {
-			const it = info[i];
+			const it = info[i]!;
 
 			// Convert marker world position to screen position
 			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, zoom, { x: center.lng, y: center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
@@ -162,7 +162,7 @@ export class MarkerHitTesting {
 					const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
 
 					// Sample alpha value (0-255)
-					const alpha = mask.data[my * mask.w + mx] | 0;
+					const alpha = mask.data[my * mask.w + mx]! | 0;
 					const THRESH = 32; // ~12.5% opacity threshold
 					if (alpha < THRESH) continue; // Transparent pixel - no hit
 				}
@@ -175,7 +175,7 @@ export class MarkerHitTesting {
 					world: { x: it.lng, y: it.lat },
 					screen: { x: css.x, y: css.y },
 					size: { width: it.w, height: it.h },
-					rotation: it.rotation,
+					...(it.rotation !== undefined ? { rotation: it.rotation } : {}),
 					icon: it.icon,
 				};
 			}
@@ -220,7 +220,7 @@ export class MarkerHitTesting {
 
 		// Iterate in reverse: top-to-bottom in visual stacking order
 		for (let i = info.length - 1; i >= 0; i--) {
-			const it = info[i];
+			const it = info[i]!;
 
 			// Convert marker world position to screen position
 			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, zoom, { x: center.lng, y: center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
@@ -254,7 +254,7 @@ export class MarkerHitTesting {
 				// Sample alpha mask
 				const mx = Math.max(0, Math.min(mask.w - 1, Math.floor((rx / it.w) * mask.w)));
 				const my = Math.max(0, Math.min(mask.h - 1, Math.floor((ry / it.h) * mask.h)));
-				const alpha = mask.data[my * mask.w + mx] | 0;
+				const alpha = mask.data[my * mask.w + mx]! | 0;
 				const THRESH = 32; // ~12.5% opacity threshold
 				if (alpha < THRESH) continue;
 			}
@@ -265,11 +265,11 @@ export class MarkerHitTesting {
 				idx: it.index,
 				world: { x: it.lng, y: it.lat },
 				size: { width: it.w, height: it.h },
-				rotation: it.rotation,
+				...(it.rotation !== undefined ? { rotation: it.rotation } : {}),
 				icon: {
 					id: it.type,
 					iconPath: it.icon.iconPath,
-					x2IconPath: it.icon.x2IconPath,
+					...(it.icon.x2IconPath !== undefined ? { x2IconPath: it.icon.x2IconPath } : {}),
 					width: it.icon.width,
 					height: it.icon.height,
 					anchorX: it.icon.anchorX,

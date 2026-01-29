@@ -50,9 +50,9 @@ export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
 		super();
 		this.id = genVectorId();
 		this._geometry = geometry;
-		this._data = opts.data;
+		if (opts.data !== undefined) this._data = opts.data;
 		this._zIndex = 0; // Vectors always render at z=0
-		this._onChange = onChange;
+		if (onChange !== undefined) this._onChange = onChange;
 	}
 
 	/**
@@ -113,7 +113,9 @@ export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
 	 * @public
 	 */
 	toData(): VectorData<T> {
-		return { id: this.id, geometry: this._geometry, data: this._data };
+		const result: VectorData<T> = { id: this.id, geometry: this._geometry };
+		if (this._data !== undefined) result.data = this._data;
+		return result;
 	}
 
 	/**

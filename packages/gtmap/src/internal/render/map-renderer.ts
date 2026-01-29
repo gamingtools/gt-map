@@ -83,9 +83,9 @@ export default class MapRenderer {
         viewport: { width: widthCSS, height: heightCSS },
         project: (x: number, y: number, z: number) => ctx.project(x, y, z),
         wrapX: ctx.wrapX,
-        iconScaleFunction: ctx.iconScaleFunction ?? undefined,
-        drawOverlayAtZ: ctx.drawVectorOverlay ? () => ctx.drawVectorOverlay!() : undefined,
-        overlayZIndices: ctx.vectorZIndices,
+        ...(ctx.iconScaleFunction !== undefined ? { iconScaleFunction: ctx.iconScaleFunction } : {}),
+        ...(ctx.drawVectorOverlay ? { drawOverlayAtZ: () => ctx.drawVectorOverlay!() } : {}),
+        ...(ctx.vectorZIndices !== undefined ? { overlayZIndices: ctx.vectorZIndices } : {}),
       });
     } else if (hasVectors) {
       ctx.drawVectorOverlay!();

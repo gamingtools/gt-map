@@ -34,7 +34,7 @@ export class TileQueue {
     let bestIdx = -1;
     let bestScore = Infinity;
     for (let i = 0; i < this.queue.length; i++) {
-      const t = this.queue[i];
+      const t = this.queue[i]!;
       if (!idle && t.z > baseZ) continue;
       const factor = levelFactor(baseZ, t.z);
       const centerTileX = Math.floor(centerWorld.x / factor / tileSize);
@@ -52,7 +52,7 @@ export class TileQueue {
       }
     }
     if (bestIdx === -1) return null;
-    const task = this.queue.splice(bestIdx, 1)[0];
+    const task = this.queue.splice(bestIdx, 1)[0]!;
     this.set.delete(task.key);
     return task;
   }

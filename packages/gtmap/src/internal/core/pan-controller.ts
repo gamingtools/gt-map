@@ -91,7 +91,7 @@ export default class PanController {
 			dur: Math.max(0.05, durationSec),
 			fromWorld,
 			offsetWorld,
-			easing,
+			...(easing !== undefined ? { easing } : {}),
 		};
 		this.deps.requestRender();
 	}

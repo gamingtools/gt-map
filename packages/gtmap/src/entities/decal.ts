@@ -78,8 +78,8 @@ export class Decal extends EventedEntity<DecalEventMap> {
 		this._rotation = opts.rotation ?? 0;
 		this._opacity = opts.opacity ?? 1;
 		this._zIndex = opts.zIndex ?? 1;
-		this._iconScaleFunction = opts.iconScaleFunction;
-		this._onChange = onChange;
+		if (opts.iconScaleFunction !== undefined) this._iconScaleFunction = opts.iconScaleFunction;
+		if (onChange !== undefined) this._onChange = onChange;
 	}
 
 	/** Get the current world X (pixels). */

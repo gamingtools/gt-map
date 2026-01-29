@@ -2,7 +2,7 @@ export function chooseGridSpacing(scale: number, baseUnit: number): number {
 	const base = baseUnit;
 	const candidates = [base / 16, base / 8, base / 4, base / 2, base, base * 2, base * 4, base * 8, base * 16, base * 32, base * 64];
 	const targetPx = 100;
-	let best = candidates[0];
+	let best = candidates[0]!;
 	let bestErr = Infinity;
 	for (const w of candidates) {
 		const css = w * scale;

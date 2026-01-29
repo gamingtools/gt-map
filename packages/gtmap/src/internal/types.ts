@@ -21,7 +21,7 @@ type InternalEventBus = {
 	when<K extends keyof EventMap & string>(event: K): Promise<EventMap[K]>;
 };
 
-import type { LngLat } from './mapgl';
+import type { LngLat } from './context/view-state';
 import type { ProgramLocs } from './render/screen-cache';
 import type { RasterRenderer } from './layers/raster';
 import type { IconRenderer } from './layers/icons';

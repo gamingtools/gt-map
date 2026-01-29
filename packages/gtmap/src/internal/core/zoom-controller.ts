@@ -129,7 +129,7 @@ export default class ZoomController {
 		const dist = Math.abs(to - current);
 		const raw = this.easeBaseMs + this.easePerUnitMs * dist;
 		const dur = Math.max(this.easeMinMs, Math.min(this.easeMaxMs, raw));
-		this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor, bounce, easing };
+		this.zoomAnim = { from: current, to, px, py, start: now, dur, anchor, bounce, ...(easing !== undefined ? { easing } : {}) };
 		this.deps.requestRender();
 	}
 	/**
