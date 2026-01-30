@@ -26,8 +26,14 @@ export interface ViewState {
  * Tiles must be square (tileSize x tileSize), but the overall map may be non-square.
  */
 export interface TileSourceOptions {
-	/** URL template with `{z}`, `{x}`, `{y}` placeholders. */
+	/** URL template with `{z}`, `{x}`, `{y}` placeholders. Used as fallback when packUrl is set. */
 	url: string;
+	/**
+	 * Optional URL to a `.gtpk` tile pack (single binary containing the full tile pyramid).
+	 * When provided, tiles are served from this in-memory pack instead of individual HTTP requests.
+	 * Falls back to `url` template for tiles not found in the pack.
+	 */
+	packUrl?: string;
 	/** Tile size in pixels (tiles are always square). */
 	tileSize: number;
 	/** Full map dimensions in pixels at the source's maximum zoom level. */
