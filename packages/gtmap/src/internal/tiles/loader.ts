@@ -14,7 +14,9 @@ export interface TileLoaderDeps {
   acquireTexture(): WebGLTexture | null;
   /** Check whether a tile is still in cache as ready with the given texture. */
   isTileReady(key: string, tex: WebGLTexture): boolean;
-  /** True when user is not actively interacting (pan/zoom) for a short debounce. */
+  /** True when user is actively interacting (pan/zoom) within short debounce. */
+  isMoving(): boolean;
+  /** True when user is not actively interacting (pan/zoom) for a long debounce. */
   isIdle(): boolean;
   log(msg: string): void;
 }
@@ -36,6 +38,7 @@ export class TileLoader {
   private mipsScheduled = false;
   private bitmapFailedKeys = new Set<string>();
   private static readonly BITMAP_FAILURE_THRESHOLD = 3;
+  private _retryScheduled = false;
 
   constructor(deps: TileLoaderDeps) {
     this.deps = deps;
@@ -106,6 +109,7 @@ export class TileLoader {
     this.activeDecodes = 0;
     this.pendingMips = [];
     this.bitmapFailedKeys.clear();
+    this._retryScheduled = false;
     if (inflightCount > 0 || queuedCount > 0) {
       this.deps.log(`tile:cancel-all inflight=${inflightCount} queued=${queuedCount} reason=${reason ?? 'explicit'}`);
     }
@@ -133,12 +137,24 @@ export class TileLoader {
 
   private processQueue() {
     this.decodeQueue.sort((a, b) => b.priority - a.priority);
-    while (this.activeDecodes < this.maxConcurrentDecodes && this.decodeQueue.length > 0) {
+    const moving = this.deps.isMoving();
+    const effectiveMax = moving
+      ? Math.max(1, this.maxConcurrentDecodes >> 1)
+      : this.maxConcurrentDecodes;
+    while (this.activeDecodes < effectiveMax && this.decodeQueue.length > 0) {
       const tile = this.decodeQueue.shift();
       if (!tile) continue;
       if (tile.abortController.signal.aborted) continue;
       this.activeDecodes++;
       this.performDecode(tile);
+    }
+    // If throttled and queue still has items, retry next frame
+    if (this.decodeQueue.length > 0 && this.activeDecodes >= effectiveMax && !this._retryScheduled) {
+      this._retryScheduled = true;
+      requestAnimationFrame(() => {
+        this._retryScheduled = false;
+        this.processQueue();
+      });
     }
   }
 

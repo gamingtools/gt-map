@@ -50,7 +50,11 @@ export class TileManager {
 			},
 			isPending: (key: string) => this._pendingTiles.has(key),
 			urlFor: (z: number, x: number, y: number) => this.urlFor(z, x, y),
-			hasCapacity: () => this._inflightCount < this._maxInflightLoads,
+			hasCapacity: () => {
+				const max = this.isMoving() ? Math.max(1, this._maxInflightLoads >> 1) : this._maxInflightLoads;
+				return this._inflightCount < max;
+			},
+			isMoving: () => this.isMoving(),
 			now: () => ctx.now(),
 			getInteractionIdleMs: () => ctx.options.interactionIdleMs,
 			getLastInteractAt: () => ctx.lastInteractAt,
@@ -93,6 +97,7 @@ export class TileManager {
 			},
 			acquireTexture: () => this._cache?.acquireTexture() ?? null,
 			isTileReady: (key: string, tex: WebGLTexture) => this._cache?.isTileReady(key, tex) ?? false,
+			isMoving: () => this.isMoving(),
 			isIdle: () => this.isIdle(),
 			log: (msg: string) => ctx.debug.log(msg),
 		};
@@ -111,6 +116,18 @@ export class TileManager {
 			return idleByTime && !anim;
 		} catch {
 			return true;
+		}
+	}
+
+	/** Short-debounce movement check for concurrency throttling (50ms + animation). */
+	isMoving(): boolean {
+		try {
+			const ctx = this.ctx;
+			const recentInteraction = ctx.now() - ctx.lastInteractAt < 50;
+			const anim = ctx.renderCoordinator ? ctx.renderCoordinator.isAnimating() : false;
+			return recentInteraction || anim;
+		} catch {
+			return false;
 		}
 	}
 

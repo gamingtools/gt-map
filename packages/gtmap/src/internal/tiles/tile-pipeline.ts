@@ -7,6 +7,7 @@ import { tileKey as tileKeyOf } from './source';
 export default class TilePipeline {
   private deps: TileDeps;
   private queue: TileQueue;
+  private _retryScheduled = false;
 
   constructor(deps: TileDeps) {
     this.deps = deps;
@@ -46,6 +47,7 @@ export default class TilePipeline {
 
   clear() {
     this.queue = new TileQueue();
+    this._retryScheduled = false;
   }
 
   scheduleBaselinePrefetch(level: number, ring?: number) {
@@ -83,6 +85,14 @@ export default class TilePipeline {
       const task = this.queue.next(baseZ, centerWorld, idle, this.deps.getTileSize());
       if (!task) break;
       this.deps.startImageLoad(task);
+    }
+    // If throttled (moving) and queue still has items, retry next frame
+    if (this.queue.length > 0 && !this.deps.hasCapacity() && this.deps.isMoving() && !this._retryScheduled) {
+      this._retryScheduled = true;
+      requestAnimationFrame(() => {
+        this._retryScheduled = false;
+        this.process();
+      });
     }
   }
 }
