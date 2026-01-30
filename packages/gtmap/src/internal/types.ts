@@ -36,34 +36,6 @@ export type ViewState = {
 	wrapX: boolean;
 };
 
-export type TileTask = {
-	key: string;
-	z: number;
-	x: number;
-	y: number;
-	priority: number;
-};
-
-export interface TileDeps {
-	hasTile(key: string): boolean;
-	isPending(key: string): boolean;
-	hasCapacity(): boolean;
-	isMoving(): boolean;
-	now(): number;
-	getInteractionIdleMs(): number;
-	getLastInteractAt(): number;
-	getZoom(): number;
-	getMaxZoom(): number;
-	getImageMaxZoom(): number;
-	getCenter(): LngLat;
-	getTileSize(): number;
-	getMapSize(): { width: number; height: number };
-	getWrapX(): boolean;
-	getViewportSizeCSS(): { width: number; height: number };
-	startImageLoad(task: { key: string }): void;
-	addPinned(key: string): void;
-}
-
 export interface RenderCtx {
 	gl: WebGLRenderingContext;
 	prog: WebGLProgram;

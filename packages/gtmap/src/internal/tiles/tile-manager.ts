@@ -1,33 +1,31 @@
 /**
- * TileManager -- owns the tile pipeline lifecycle.
+ * TileManager -- owns the tile cache, GTPK reader, and decode pipeline.
  *
- * Manages TileCache, TileLoader, TilePipeline, URL templating, pending/inflight
- * tracking. Extracted from mapgl.ts _initTilePipeline + tile state fields.
+ * All tiles are served from an in-memory GTPK binary pack.
+ * Decode path: getBlob() -> createImageBitmap() -> GL upload -> cache.
  */
-import type { TileDeps } from '../types';
 import type { MapContext } from '../context/map-context';
+import * as Coords from '../coords';
 
 import { TileCache } from './cache';
-import { TileLoader, type TileLoaderDeps } from './loader';
-import TilePipeline from './tile-pipeline';
 import { GtpkReader } from './gtpk-reader';
+import { tileKey as tileKeyOf } from './source';
 
 export class TileManager {
 	private ctx: MapContext;
 	private _cache: TileCache | null = null;
-	private _loader: TileLoader | null = null;
-	private _pipeline: TilePipeline | null = null;
-
-	private _pendingTiles = new Set<string>();
-	private _inflightCount = 0;
-	private _wantedKeys = new Set<string>();
+	private _packReader: GtpkReader | null = null;
+	private _decoding = new Set<string>();
+	private _destroyed = false;
 
 	private _packUrl: string;
-	private _packReader: GtpkReader | null = null;
 	private _tileSize: number;
 	private _sourceMaxZoom: number;
-	private _maxInflightLoads = 6;
-	private _maxTiles = 256;
+	private _maxConcurrentDecodes: number;
+
+	// Mipmap scheduling
+	private _pendingMips: Array<{ key: string; tex: WebGLTexture }> = [];
+	private _mipsScheduled = false;
 
 	// Frame counter (shared with render coordinator)
 	frame = 0;
@@ -37,70 +35,14 @@ export class TileManager {
 		this._packUrl = ctx.config.tiles.packUrl!;
 		this._tileSize = ctx.config.tiles.tileSize;
 		this._sourceMaxZoom = ctx.config.tiles.sourceMaxZoom;
+		const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2;
+		this._maxConcurrentDecodes = Math.max(2, Math.min(Math.floor(cores / 2), 8));
 	}
 
 	init(): void {
 		const ctx = this.ctx;
-		const gl = ctx.gl!;
-		this._cache = new TileCache(gl, this._maxTiles);
-
-		const tileDeps: TileDeps = {
-			hasTile: (key: string) => {
-				const rec = this._cache?.get(key);
-				return !!rec && (rec.status === 'ready' || rec.status === 'error');
-			},
-			isPending: (key: string) => this._pendingTiles.has(key),
-			hasCapacity: () => {
-				// Block tile dispatch while the GTPK pack is still loading
-				if (this._packReader && !this._packReader.ready && !this._packReader.error) return false;
-				const max = this.isMoving() ? Math.max(1, this._maxInflightLoads >> 1) : this._maxInflightLoads;
-				return this._inflightCount < max;
-			},
-			isMoving: () => this.isMoving(),
-			now: () => ctx.now(),
-			getInteractionIdleMs: () => ctx.options.interactionIdleMs,
-			getLastInteractAt: () => ctx.lastInteractAt,
-			getZoom: () => ctx.viewState.zoom,
-			getMaxZoom: () => ctx.viewState.maxZoom,
-			getImageMaxZoom: () => ctx.viewState.imageMaxZoom,
-			getCenter: () => ctx.viewState.center,
-			getTileSize: () => this._tileSize,
-			getMapSize: () => ctx.viewState.mapSize,
-			getWrapX: () => ctx.viewState.wrapX,
-			getViewportSizeCSS: () => {
-				const rect = ctx.container.getBoundingClientRect();
-				return { width: rect.width, height: rect.height };
-			},
-			startImageLoad: (task) => this._loader?.start({ key: task.key }),
-			addPinned: (key: string) => this._cache?.pin(key),
-		};
-		this._pipeline = new TilePipeline(tileDeps);
-
-		const loaderDeps: TileLoaderDeps = {
-			addPending: (key: string) => this._pendingTiles.add(key),
-			removePending: (key: string) => this._pendingTiles.delete(key),
-			incInflight: () => {
-				this._inflightCount++;
-			},
-			decInflight: () => {
-				this._inflightCount = Math.max(0, this._inflightCount - 1);
-			},
-			setLoading: (key: string) => this._cache?.setLoading(key),
-			setError: (key: string) => this._cache?.setError(key),
-			setReady: (key: string, tex: WebGLTexture, w: number, h: number, frame: number) => {
-				this._cache?.setReady(key, tex, w, h, frame);
-			},
-			getGL: () => ctx.gl!,
-			getFrame: () => this.frame,
-			requestRender: () => ctx.requestRender(),
-			acquireTexture: () => this._cache?.acquireTexture() ?? null,
-			isTileReady: (key: string, tex: WebGLTexture) => this._cache?.isTileReady(key, tex) ?? false,
-			isMoving: () => this.isMoving(),
-			isIdle: () => this.isIdle(),
-			log: (msg: string) => ctx.debug.log(msg),
-			getPackReader: () => this._packReader,
-		};
-		this._loader = new TileLoader(loaderDeps);
+		this._destroyed = false;
+		this._cache = new TileCache(ctx.gl!);
 
 		// Load GTPK tile pack
 		this._packReader = new GtpkReader();
@@ -112,8 +54,102 @@ export class TileManager {
 			ctx.debug.log(`gtpk: failed to load ${packUrl}: ${(err as Error).message}`);
 		});
 
-		ctx.debug.log(`tile-pipeline: initialized tileSize=${this._tileSize} sourceMaxZoom=${this._sourceMaxZoom}`);
+		ctx.debug.log(`tile-manager: initialized tileSize=${this._tileSize} sourceMaxZoom=${this._sourceMaxZoom}`);
 	}
+
+	// -- Decode pipeline --
+
+	enqueue(z: number, x: number, y: number, _priority?: number): void {
+		const key = tileKeyOf(z, x, y);
+		if (this._cache?.has(key)) return;
+		if (this._decoding.has(key)) return;
+		if (!this._packReader?.ready) return;
+		if (!this.inBounds(z, x, y)) return;
+		if (this._decoding.size >= this._maxConcurrentDecodes) return;
+		this._decoding.add(key);
+		this.decode(key);
+	}
+
+	private decode(key: string): void {
+		const blob = this._packReader!.getBlob(key);
+		if (!blob) {
+			this._decoding.delete(key);
+			return;
+		}
+
+		createImageBitmap(blob, {
+			premultiplyAlpha: 'none',
+			colorSpaceConversion: 'none',
+		})
+			.then((bmp: ImageBitmap) => {
+				try {
+					if (this._destroyed) return;
+					const gl = this.ctx.gl!;
+					const tex = this._cache?.acquireTexture();
+					if (!tex) return;
+					gl.bindTexture(gl.TEXTURE_2D, tex);
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+					gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+					gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+					gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+					gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+					this._cache!.setReady(key, tex, bmp.width, bmp.height, this.frame);
+					this._pendingMips.push({ key, tex });
+					this.scheduleMips();
+					this.ctx.requestRender();
+				} finally {
+					try { bmp.close?.(); } catch {}
+				}
+			})
+			.catch(() => {})
+			.finally(() => {
+				this._decoding.delete(key);
+			});
+	}
+
+	// -- Bounds check (from tile-pipeline) --
+
+	private inBounds(z: number, x: number, y: number): boolean {
+		if (x < 0 || y < 0) return false;
+		const zMax = this.ctx.viewState.imageMaxZoom;
+		const TS = this._tileSize;
+		const mapSize = this.ctx.viewState.mapSize;
+		const s = Coords.sFor(zMax, z);
+		const tilesX = Math.ceil(Math.ceil(mapSize.width / s) / TS);
+		const tilesY = Math.ceil(Math.ceil(mapSize.height / s) / TS);
+		return x < tilesX && y < tilesY;
+	}
+
+	// -- Mipmap scheduling (from loader) --
+
+	private scheduleMips(): void {
+		if (this._mipsScheduled) return;
+		this._mipsScheduled = true;
+		const process = () => {
+			this._mipsScheduled = false;
+			if (!this.isIdle()) {
+				requestAnimationFrame(() => this.scheduleMips());
+				return;
+			}
+			const gl = this.ctx.gl!;
+			const MIP_BUDGET_MS = 2;
+			const start = performance.now();
+			while (performance.now() - start < MIP_BUDGET_MS && this._pendingMips.length > 0) {
+				const it = this._pendingMips.shift()!;
+				if (!this._cache?.isTileReady(it.key, it.tex)) continue;
+				gl.bindTexture(gl.TEXTURE_2D, it.tex);
+				gl.generateMipmap(gl.TEXTURE_2D);
+				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+			}
+			if (this._pendingMips.length > 0) requestAnimationFrame(() => this.scheduleMips());
+			this.ctx.requestRender();
+		};
+		requestAnimationFrame(process);
+	}
+
+	// -- State queries --
 
 	isIdle(): boolean {
 		try {
@@ -128,7 +164,6 @@ export class TileManager {
 		}
 	}
 
-	/** Short-debounce movement check for concurrency throttling (50ms + animation). */
 	isMoving(): boolean {
 		try {
 			const ctx = this.ctx;
@@ -140,24 +175,19 @@ export class TileManager {
 		}
 	}
 
-	enqueue(z: number, x: number, y: number, priority: number): void {
-		this._pipeline?.enqueue(z, x, y, priority);
-	}
+	// -- LRU touch (called by RasterRenderer via RenderCtx) --
 
 	wantKey(key: string): void {
-		this._wantedKeys.add(key);
 		this._cache?.touch(key, this.frame);
 	}
 
-	clearWanted(): void {
-		this._wantedKeys.clear();
-	}
+	/** No-op: with ~2ms in-memory decode, cancellation has no benefit. */
+	clearWanted(): void {}
 
-	cancelUnwanted(): void {
-		if (!this._loader) return;
-		this._loader.cancelUnwanted(this._wantedKeys);
-		this._pipeline?.cancelUnwanted(this._wantedKeys);
-	}
+	/** No-op: with ~2ms in-memory decode, cancellation has no benefit. */
+	cancelUnwanted(): void {}
+
+	// -- Prefetch --
 
 	private _prefetchedWhileIdle = false;
 
@@ -168,21 +198,30 @@ export class TileManager {
 		}
 		if (this._prefetchedWhileIdle) return;
 		this._prefetchedWhileIdle = true;
-		this._pipeline?.scheduleBaselinePrefetch(z);
+
+		const c = this.ctx.viewState.center;
+		const zMax = this.ctx.viewState.imageMaxZoom;
+		const TS = this._tileSize;
+		const s = Coords.sFor(zMax, z);
+		const cx = Math.floor(c.lng / s / TS);
+		const cy = Math.floor(c.lat / s / TS);
+		const R = 2;
+		for (let dy = -R; dy <= R; dy++) {
+			for (let dx = -R; dx <= R; dx++) {
+				const tx = cx + dx;
+				const ty = cy + dy;
+				if (tx < 0 || ty < 0) continue;
+				const key = tileKeyOf(z, tx, ty);
+				this._cache?.pin(key);
+				this.enqueue(z, tx, ty);
+			}
+		}
 	}
 
+	// -- Source change --
+
 	setSource(opts: { packUrl: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
-		// Tear down existing pipeline
-		this._loader?.cancelAll('source-change');
-		this._cache?.destroy();
-		this._packReader?.destroy();
-		this._packReader = null;
-		this._cache = null;
-		this._loader = null;
-		this._pipeline = null;
-		this._pendingTiles.clear();
-		this._inflightCount = 0;
-		this._wantedKeys.clear();
+		this._teardown();
 
 		this._packUrl = opts.packUrl;
 		this._tileSize = opts.tileSize;
@@ -197,6 +236,8 @@ export class TileManager {
 		this.init();
 	}
 
+	// -- Accessors --
+
 	get cache(): TileCache {
 		return this._cache!;
 	}
@@ -209,27 +250,27 @@ export class TileManager {
 		return this._sourceMaxZoom;
 	}
 
+	// -- Lifecycle --
+
 	rebuild(): void {
-		this._loader?.cancelAll('rebuild');
-		this._cache?.destroy();
-		this._cache = null;
-		this._loader = null;
-		this._pipeline = null;
-		this._pendingTiles.clear();
-		this._inflightCount = 0;
-		this._wantedKeys.clear();
+		this._teardown();
 		this.init();
+	}
+
+	private _teardown(): void {
+		this._destroyed = true;
+		this._cache?.destroy();
+		this._packReader?.destroy();
+		this._packReader = null;
+		this._cache = null;
+		this._decoding.clear();
+		this._pendingMips = [];
+		this._mipsScheduled = false;
 	}
 
 	destroy(): void {
 		try {
-			this._loader?.cancelAll('destroy');
-			this._cache?.destroy();
-			this._packReader?.destroy();
-			this._packReader = null;
-			this._cache = null;
-			this._loader = null;
-			this._pipeline = null;
+			this._teardown();
 		} catch {}
 	}
 }
