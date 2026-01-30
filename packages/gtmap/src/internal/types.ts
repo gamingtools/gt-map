@@ -50,6 +50,7 @@ export interface TileDeps {
 	isPending(key: string): boolean;
 	urlFor(z: number, x: number, y: number): string;
 	hasCapacity(): boolean;
+	isMoving(): boolean;
 	now(): number;
 	getInteractionIdleMs(): number;
 	getLastInteractAt(): number;
