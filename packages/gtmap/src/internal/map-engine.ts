@@ -105,7 +105,7 @@ export class MapEngine implements MapImpl {
 
 	// -- Tile source --
 
-	setTileSource(opts: { url: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
+	setTileSource(opts: { packUrl: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
 		this._ctx.tileManager?.setSource(opts);
 		this._ctx.requestRender();
 	}

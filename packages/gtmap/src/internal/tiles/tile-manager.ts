@@ -22,22 +22,19 @@ export class TileManager {
 	private _inflightCount = 0;
 	private _wantedKeys = new Set<string>();
 
-	private _tileUrl: string;
-	private _packUrl: string | undefined;
+	private _packUrl: string;
 	private _packReader: GtpkReader | null = null;
 	private _tileSize: number;
 	private _sourceMaxZoom: number;
 	private _maxInflightLoads = 6;
 	private _maxTiles = 256;
-	useImageBitmap = typeof createImageBitmap === 'function';
 
 	// Frame counter (shared with render coordinator)
 	frame = 0;
 
 	constructor(ctx: MapContext) {
 		this.ctx = ctx;
-		this._tileUrl = ctx.config.tiles.url;
-		this._packUrl = ctx.config.tiles.packUrl;
+		this._packUrl = ctx.config.tiles.packUrl!;
 		this._tileSize = ctx.config.tiles.tileSize;
 		this._sourceMaxZoom = ctx.config.tiles.sourceMaxZoom;
 	}
@@ -53,7 +50,6 @@ export class TileManager {
 				return !!rec && (rec.status === 'ready' || rec.status === 'error');
 			},
 			isPending: (key: string) => this._pendingTiles.has(key),
-			urlFor: (z: number, x: number, y: number) => this.urlFor(z, x, y),
 			hasCapacity: () => {
 				// Block tile dispatch while the GTPK pack is still loading
 				if (this._packReader && !this._packReader.ready && !this._packReader.error) return false;
@@ -75,7 +71,7 @@ export class TileManager {
 				const rect = ctx.container.getBoundingClientRect();
 				return { width: rect.width, height: rect.height };
 			},
-			startImageLoad: (task) => this._loader?.start({ key: task.key, url: task.url }),
+			startImageLoad: (task) => this._loader?.start({ key: task.key }),
 			addPinned: (key: string) => this._cache?.pin(key),
 		};
 		this._pipeline = new TilePipeline(tileDeps);
@@ -97,10 +93,6 @@ export class TileManager {
 			getGL: () => ctx.gl!,
 			getFrame: () => this.frame,
 			requestRender: () => ctx.requestRender(),
-			getUseImageBitmap: () => this.useImageBitmap,
-			setUseImageBitmap: (v: boolean) => {
-				this.useImageBitmap = v;
-			},
 			acquireTexture: () => this._cache?.acquireTexture() ?? null,
 			isTileReady: (key: string, tex: WebGLTexture) => this._cache?.isTileReady(key, tex) ?? false,
 			isMoving: () => this.isMoving(),
@@ -110,17 +102,15 @@ export class TileManager {
 		};
 		this._loader = new TileLoader(loaderDeps);
 
-		// Start loading GTPK pack if configured
-		if (this._packUrl) {
-			this._packReader = new GtpkReader();
-			const packUrl = this._packUrl;
-			this._packReader.load(packUrl).then(() => {
-				ctx.debug.log(`gtpk: loaded ${this._packReader!.tileCount} tiles from ${packUrl}`);
-				ctx.requestRender();
-			}).catch((err) => {
-				ctx.debug.log(`gtpk: failed to load ${packUrl}: ${(err as Error).message}`);
-			});
-		}
+		// Load GTPK tile pack
+		this._packReader = new GtpkReader();
+		const packUrl = this._packUrl;
+		this._packReader.load(packUrl).then(() => {
+			ctx.debug.log(`gtpk: loaded ${this._packReader!.tileCount} tiles from ${packUrl}`);
+			ctx.requestRender();
+		}).catch((err) => {
+			ctx.debug.log(`gtpk: failed to load ${packUrl}: ${(err as Error).message}`);
+		});
 
 		ctx.debug.log(`tile-pipeline: initialized tileSize=${this._tileSize} sourceMaxZoom=${this._sourceMaxZoom}`);
 	}
@@ -148,10 +138,6 @@ export class TileManager {
 		} catch {
 			return false;
 		}
-	}
-
-	urlFor(z: number, x: number, y: number): string {
-		return this._tileUrl.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(y));
 	}
 
 	enqueue(z: number, x: number, y: number, priority: number): void {
@@ -185,7 +171,7 @@ export class TileManager {
 		this._pipeline?.scheduleBaselinePrefetch(z);
 	}
 
-	setSource(opts: { url: string; packUrl?: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
+	setSource(opts: { packUrl: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
 		// Tear down existing pipeline
 		this._loader?.cancelAll('source-change');
 		this._cache?.destroy();
@@ -198,7 +184,6 @@ export class TileManager {
 		this._inflightCount = 0;
 		this._wantedKeys.clear();
 
-		this._tileUrl = opts.url;
 		this._packUrl = opts.packUrl;
 		this._tileSize = opts.tileSize;
 		this._sourceMaxZoom = opts.sourceMaxZoom;
