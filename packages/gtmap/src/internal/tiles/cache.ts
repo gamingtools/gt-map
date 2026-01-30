@@ -14,7 +14,7 @@ export class TileCache {
   private texturePool: WebGLTexture[] = [];
   private readonly poolSize = 20;
 
-  constructor(gl: WebGLRenderingContext, maxTiles = 150) {
+  constructor(gl: WebGLRenderingContext, maxTiles = 300) {
     this.gl = gl;
     this.maxTiles = Math.max(0, maxTiles | 0);
   }
@@ -64,7 +64,6 @@ export class TileCache {
     const existing = this.map.get(key);
     if (existing && existing.tex !== tex) this.releaseTexture(existing.tex);
     this.map.set(key, { status: 'ready', tex, width, height, lastUsed: frame, ...(existing?.pinned ? { pinned: true } : {}) });
-    this.evictIfNeeded();
   }
 
   pin(key: string) {

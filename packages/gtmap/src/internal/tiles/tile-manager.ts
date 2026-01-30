@@ -184,8 +184,10 @@ export class TileManager {
 	/** No-op: with ~2ms in-memory decode, cancellation has no benefit. */
 	clearWanted(): void {}
 
-	/** No-op: with ~2ms in-memory decode, cancellation has no benefit. */
-	cancelUnwanted(): void {}
+	/** Run deferred LRU eviction after render has touched all visible tiles. */
+	cancelUnwanted(): void {
+		this._cache?.evictIfNeeded();
+	}
 
 	// -- Prefetch --
 
