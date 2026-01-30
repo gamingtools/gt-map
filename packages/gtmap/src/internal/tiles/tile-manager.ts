@@ -10,6 +10,7 @@ import type { MapContext } from '../context/map-context';
 import { TileCache } from './cache';
 import { TileLoader, type TileLoaderDeps } from './loader';
 import TilePipeline from './tile-pipeline';
+import { GtpkReader } from './gtpk-reader';
 
 export class TileManager {
 	private ctx: MapContext;
@@ -22,6 +23,8 @@ export class TileManager {
 	private _wantedKeys = new Set<string>();
 
 	private _tileUrl: string;
+	private _packUrl: string | undefined;
+	private _packReader: GtpkReader | null = null;
 	private _tileSize: number;
 	private _sourceMaxZoom: number;
 	private _maxInflightLoads = 6;
@@ -34,6 +37,7 @@ export class TileManager {
 	constructor(ctx: MapContext) {
 		this.ctx = ctx;
 		this._tileUrl = ctx.config.tiles.url;
+		this._packUrl = ctx.config.tiles.packUrl;
 		this._tileSize = ctx.config.tiles.tileSize;
 		this._sourceMaxZoom = ctx.config.tiles.sourceMaxZoom;
 	}
@@ -51,6 +55,8 @@ export class TileManager {
 			isPending: (key: string) => this._pendingTiles.has(key),
 			urlFor: (z: number, x: number, y: number) => this.urlFor(z, x, y),
 			hasCapacity: () => {
+				// Block tile dispatch while the GTPK pack is still loading
+				if (this._packReader && !this._packReader.ready && !this._packReader.error) return false;
 				const max = this.isMoving() ? Math.max(1, this._maxInflightLoads >> 1) : this._maxInflightLoads;
 				return this._inflightCount < max;
 			},
@@ -100,8 +106,21 @@ export class TileManager {
 			isMoving: () => this.isMoving(),
 			isIdle: () => this.isIdle(),
 			log: (msg: string) => ctx.debug.log(msg),
+			getPackReader: () => this._packReader,
 		};
 		this._loader = new TileLoader(loaderDeps);
+
+		// Start loading GTPK pack if configured
+		if (this._packUrl) {
+			this._packReader = new GtpkReader();
+			const packUrl = this._packUrl;
+			this._packReader.load(packUrl).then(() => {
+				ctx.debug.log(`gtpk: loaded ${this._packReader!.tileCount} tiles from ${packUrl}`);
+				ctx.requestRender();
+			}).catch((err) => {
+				ctx.debug.log(`gtpk: failed to load ${packUrl}: ${(err as Error).message}`);
+			});
+		}
 
 		ctx.debug.log(`tile-pipeline: initialized tileSize=${this._tileSize} sourceMaxZoom=${this._sourceMaxZoom}`);
 	}
@@ -166,10 +185,12 @@ export class TileManager {
 		this._pipeline?.scheduleBaselinePrefetch(z);
 	}
 
-	setSource(opts: { url: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
+	setSource(opts: { url: string; packUrl?: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
 		// Tear down existing pipeline
 		this._loader?.cancelAll('source-change');
 		this._cache?.destroy();
+		this._packReader?.destroy();
+		this._packReader = null;
 		this._cache = null;
 		this._loader = null;
 		this._pipeline = null;
@@ -178,6 +199,7 @@ export class TileManager {
 		this._wantedKeys.clear();
 
 		this._tileUrl = opts.url;
+		this._packUrl = opts.packUrl;
 		this._tileSize = opts.tileSize;
 		this._sourceMaxZoom = opts.sourceMaxZoom;
 
@@ -218,6 +240,8 @@ export class TileManager {
 		try {
 			this._loader?.cancelAll('destroy');
 			this._cache?.destroy();
+			this._packReader?.destroy();
+			this._packReader = null;
 			this._cache = null;
 			this._loader = null;
 			this._pipeline = null;

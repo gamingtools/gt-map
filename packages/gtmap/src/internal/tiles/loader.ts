@@ -1,3 +1,5 @@
+import type { GtpkReader } from './gtpk-reader';
+
 export interface TileLoaderDeps {
   addPending(key: string): void;
   removePending(key: string): void;
@@ -19,6 +21,8 @@ export interface TileLoaderDeps {
   /** True when user is not actively interacting (pan/zoom) for a long debounce. */
   isIdle(): boolean;
   log(msg: string): void;
+  /** Optional GTPK tile pack reader (serves tiles from in-memory binary). */
+  getPackReader?(): GtpkReader | null;
 }
 
 interface QueuedTile {
@@ -188,20 +192,31 @@ export class TileLoader {
     };
 
     if (deps.getUseImageBitmap() && !this.bitmapFailedKeys.has(key)) {
-      fetch(url, {
-        mode: 'cors',
-        credentials: 'omit',
-        signal: abortController.signal,
-        ...({ priority: tile.priority > 1 ? 'high' : 'low' } as { priority?: 'high' | 'low' | 'auto' }),
-      })
-        .then((r: Response) => {
-          if (!r.ok) {
-            const err = new Error(`HTTP ${r.status}`);
-            (err as Error & { httpError: boolean }).httpError = true;
-            throw err;
-          }
-          return r.blob();
-        })
+      // Try GTPK pack first, fall back to HTTP fetch
+      const packReader = deps.getPackReader?.();
+      const packBlob = packReader?.ready ? packReader.getBlob(key) : null;
+
+      const blobPromise: Promise<Blob> = packBlob
+        ? Promise.resolve(packBlob)
+        : fetch(url, {
+            mode: 'cors',
+            credentials: 'omit',
+            signal: abortController.signal,
+            ...({ priority: tile.priority > 1 ? 'high' : 'low' } as { priority?: 'high' | 'low' | 'auto' }),
+          }).then((r: Response) => {
+            if (!r.ok) {
+              const err = new Error(`HTTP ${r.status}`);
+              (err as Error & { httpError: boolean }).httpError = true;
+              throw err;
+            }
+            return r.blob();
+          });
+
+      if (packBlob) {
+        deps.log(`tile:pack key=${key}`);
+      }
+
+      blobPromise
         .then((blob: Blob) =>
           createImageBitmap(blob, {
             premultiplyAlpha: 'none',
