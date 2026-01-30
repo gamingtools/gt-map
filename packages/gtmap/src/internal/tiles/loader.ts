@@ -11,8 +11,6 @@ export interface TileLoaderDeps {
   getGL(): WebGLRenderingContext;
   getFrame(): number;
   requestRender(): void;
-  getUseImageBitmap(): boolean;
-  setUseImageBitmap(v: boolean): void;
   acquireTexture(): WebGLTexture | null;
   /** Check whether a tile is still in cache as ready with the given texture. */
   isTileReady(key: string, tex: WebGLTexture): boolean;
@@ -21,13 +19,12 @@ export interface TileLoaderDeps {
   /** True when user is not actively interacting (pan/zoom) for a long debounce. */
   isIdle(): boolean;
   log(msg: string): void;
-  /** Optional GTPK tile pack reader (serves tiles from in-memory binary). */
-  getPackReader?(): GtpkReader | null;
+  /** GTPK tile pack reader (serves tiles from in-memory binary). */
+  getPackReader(): GtpkReader | null;
 }
 
 interface QueuedTile {
   key: string;
-  url: string;
   priority: number;
   abortController: AbortController;
 }
@@ -40,8 +37,6 @@ export class TileLoader {
   private maxConcurrentDecodes: number;
   private pendingMips: Array<{ key: string; tex: WebGLTexture }> = [];
   private mipsScheduled = false;
-  private bitmapFailedKeys = new Set<string>();
-  private static readonly BITMAP_FAILURE_THRESHOLD = 3;
   private _retryScheduled = false;
 
   constructor(deps: TileLoaderDeps) {
@@ -112,7 +107,6 @@ export class TileLoader {
     this.decodeQueue = [];
     this.activeDecodes = 0;
     this.pendingMips = [];
-    this.bitmapFailedKeys.clear();
     this._retryScheduled = false;
     if (inflightCount > 0 || queuedCount > 0) {
       this.deps.log(`tile:cancel-all inflight=${inflightCount} queued=${queuedCount} reason=${reason ?? 'explicit'}`);
@@ -162,7 +156,7 @@ export class TileLoader {
     }
   }
 
-  start({ key, url, priority = 1 }: { key: string; url: string; priority?: number }) {
+  start({ key, priority = 1 }: { key: string; priority?: number }) {
     const deps = this.deps;
     this.cancel(key, 'restart');
     const abortController = new AbortController();
@@ -170,13 +164,13 @@ export class TileLoader {
     deps.addPending(key);
     deps.incInflight();
     deps.setLoading(key);
-    this.decodeQueue.push({ key, url, priority, abortController });
-    deps.log(`tile:fetch key=${key} priority=${priority} queued=${this.decodeQueue.length} active=${this.activeDecodes}`);
+    this.decodeQueue.push({ key, priority, abortController });
+    deps.log(`tile:decode key=${key} priority=${priority} queued=${this.decodeQueue.length} active=${this.activeDecodes}`);
     this.processQueue();
   }
 
   private performDecode(tile: QueuedTile) {
-    const { key, url, abortController } = tile;
+    const { key, abortController } = tile;
     const deps = this.deps;
 
     const onFinally = () => {
@@ -191,155 +185,60 @@ export class TileLoader {
       }
     };
 
-    if (deps.getUseImageBitmap() && !this.bitmapFailedKeys.has(key)) {
-      // Try GTPK pack first, fall back to HTTP fetch
-      const packReader = deps.getPackReader?.();
-      const packBlob = packReader?.ready ? packReader.getBlob(key) : null;
-
-      const blobPromise: Promise<Blob> = packBlob
-        ? Promise.resolve(packBlob)
-        : fetch(url, {
-            mode: 'cors',
-            credentials: 'omit',
-            signal: abortController.signal,
-            ...({ priority: tile.priority > 1 ? 'high' : 'low' } as { priority?: 'high' | 'low' | 'auto' }),
-          }).then((r: Response) => {
-            if (!r.ok) {
-              const err = new Error(`HTTP ${r.status}`);
-              (err as Error & { httpError: boolean }).httpError = true;
-              throw err;
-            }
-            return r.blob();
-          });
-
-      if (packBlob) {
-        deps.log(`tile:pack key=${key}`);
-      }
-
-      blobPromise
-        .then((blob: Blob) =>
-          createImageBitmap(blob, {
-            premultiplyAlpha: 'none',
-            colorSpaceConversion: 'none',
-          }),
-        )
-        .then((bmp: ImageBitmap) => {
-          try {
-            if (abortController.signal.aborted) return;
-            const gl: WebGLRenderingContext = deps.getGL();
-            const tex = deps.acquireTexture();
-            if (!tex) {
-              deps.log(`tile:error key=${key} reason=no-texture-slot`);
-              deps.setError(key);
-              return;
-            }
-            gl.bindTexture(gl.TEXTURE_2D, tex);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-            gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
-            deps.setReady(key, tex, bmp.width, bmp.height, deps.getFrame());
-            deps.log(`tile:ready key=${key} size=${bmp.width}x${bmp.height}`);
-            this.pendingMips.push({ key, tex });
-            this.scheduleMips();
-            deps.requestRender();
-          } finally {
-            try {
-              (bmp as ImageBitmap).close?.();
-            } catch {}
-            onFinally();
-          }
-        })
-        .catch((err) => {
-          if (err.name === 'AbortError') {
-            deps.log(`tile:abort key=${key} reason=aborted`);
-            onFinally();
-          } else if ((err as Error & { httpError?: boolean }).httpError) {
-            // HTTP error (404, 500, etc.) -- not an ImageBitmap issue.
-            // Mark tile as error; do NOT disable ImageBitmap or retry.
-            deps.log(`tile:error key=${key} reason=${err.message}`);
-            deps.setError(key);
-            onFinally();
-          } else {
-            // Decode/ImageBitmap API failure -- retry tile with Image element
-            // unless the tile was canceled during decode.
-            if (abortController.signal.aborted) {
-              deps.log(`tile:abort key=${key} reason=aborted-during-decode`);
-              onFinally();
-              return;
-            }
-            this.bitmapFailedKeys.add(key);
-            if (this.bitmapFailedKeys.size >= TileLoader.BITMAP_FAILURE_THRESHOLD) {
-              deps.log(`tile:fallback-global key=${key} reason=bitmap-decode-failed failures=${this.bitmapFailedKeys.size}`);
-              deps.setUseImageBitmap(false);
-            } else {
-              deps.log(`tile:fallback key=${key} reason=bitmap-decode-failed failures=${this.bitmapFailedKeys.size}`);
-            }
-            onFinally();
-            this.start({ key, url, priority: tile.priority });
-          }
-        });
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    (img as HTMLImageElement & { decoding?: 'async' | 'auto' | 'sync' }).decoding = 'async';
-
-    const onAbort = () => {
-      deps.log(`tile:abort key=${key} reason=aborted`);
-      img.src = '';
-      img.onload = null;
-      img.onerror = null;
-      onFinally();
-    };
-
-    if (abortController.signal.aborted) {
-      onAbort();
-      return;
-    }
-    abortController.signal.addEventListener('abort', onAbort);
-
-    img.onload = () => {
-      abortController.signal.removeEventListener('abort', onAbort);
-      if (abortController.signal.aborted) {
-        onFinally();
-        return;
-      }
-      try {
-        const gl: WebGLRenderingContext = deps.getGL();
-        const tex = deps.acquireTexture();
-        if (!tex) {
-          deps.log(`tile:error key=${key} reason=no-texture-slot`);
-          deps.setError(key);
-          return;
-        }
-        gl.bindTexture(gl.TEXTURE_2D, tex);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
-        deps.setReady(key, tex, img.naturalWidth, img.naturalHeight, deps.getFrame());
-        deps.log(`tile:ready key=${key} size=${img.naturalWidth}x${img.naturalHeight}`);
-        this.pendingMips.push({ key, tex });
-        this.scheduleMips();
-        deps.requestRender();
-      } finally {
-        onFinally();
-      }
-    };
-    img.onerror = () => {
-      abortController.signal.removeEventListener('abort', onAbort);
-      deps.log(`tile:error key=${key} reason=image-load-failed`);
+    const packReader = deps.getPackReader?.();
+    if (!packReader || !packReader.ready) {
+      deps.log(`tile:error key=${key} reason=pack-not-ready`);
       deps.setError(key);
       onFinally();
-    };
-    img.src = url;
+      return;
+    }
+
+    const blob = packReader.getBlob(key);
+    if (!blob) {
+      deps.log(`tile:error key=${key} reason=not-in-pack`);
+      deps.setError(key);
+      onFinally();
+      return;
+    }
+
+    createImageBitmap(blob, {
+      premultiplyAlpha: 'none',
+      colorSpaceConversion: 'none',
+    })
+      .then((bmp: ImageBitmap) => {
+        try {
+          if (abortController.signal.aborted) return;
+          const gl: WebGLRenderingContext = deps.getGL();
+          const tex = deps.acquireTexture();
+          if (!tex) {
+            deps.log(`tile:error key=${key} reason=no-texture-slot`);
+            deps.setError(key);
+            return;
+          }
+          gl.bindTexture(gl.TEXTURE_2D, tex);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+          gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+          gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+          gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+          gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bmp);
+          deps.setReady(key, tex, bmp.width, bmp.height, deps.getFrame());
+          deps.log(`tile:ready key=${key} size=${bmp.width}x${bmp.height}`);
+          this.pendingMips.push({ key, tex });
+          this.scheduleMips();
+          deps.requestRender();
+        } finally {
+          try {
+            (bmp as ImageBitmap).close?.();
+          } catch {}
+          onFinally();
+        }
+      })
+      .catch((err) => {
+        deps.log(`tile:error key=${key} reason=decode-failed ${(err as Error).message}`);
+        deps.setError(key);
+        onFinally();
+      });
   }
 }

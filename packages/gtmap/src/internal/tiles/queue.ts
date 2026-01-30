@@ -2,7 +2,6 @@ import { levelFactor } from '../coords';
 
 export type TileTask = {
   key: string;
-  url: string;
   z: number;
   x: number;
   y: number;

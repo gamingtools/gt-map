@@ -38,7 +38,6 @@ export type ViewState = {
 
 export type TileTask = {
 	key: string;
-	url: string;
 	z: number;
 	x: number;
 	y: number;
@@ -48,7 +47,6 @@ export type TileTask = {
 export interface TileDeps {
 	hasTile(key: string): boolean;
 	isPending(key: string): boolean;
-	urlFor(z: number, x: number, y: number): string;
 	hasCapacity(): boolean;
 	isMoving(): boolean;
 	now(): number;
@@ -62,7 +60,7 @@ export interface TileDeps {
 	getMapSize(): { width: number; height: number };
 	getWrapX(): boolean;
 	getViewportSizeCSS(): { width: number; height: number };
-	startImageLoad(task: { key: string; url: string }): void;
+	startImageLoad(task: { key: string }): void;
 	addPinned(key: string): void;
 }
 
@@ -178,7 +176,7 @@ export interface MapImpl {
 	// controls
 	setCenter(lng: number, lat: number): void;
 	setZoom(z: number): void;
-	setTileSource?(opts: { url: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void;
+	setTileSource?(opts: { packUrl: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void;
 	setRasterOpacity(v: number): void;
 	setGridVisible(on: boolean): void;
 	setInertiaOptions(opts: InertiaOptions): void;

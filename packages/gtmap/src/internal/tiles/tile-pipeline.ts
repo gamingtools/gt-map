@@ -20,9 +20,7 @@ export default class TilePipeline {
     // Bounds check: reject tile coordinates outside the map extent
     if (!this.inBounds(z, x, y)) return;
     if (!this.queue.has(key)) {
-      const url = this.deps.urlFor(z, x, y);
-      if (!url) return;
-      this.queue.enqueue({ key, url, z, x, y, priority });
+      this.queue.enqueue({ key, z, x, y, priority });
     }
     // Always try to drain the queue, even if this tile was already queued.
     this.process();
