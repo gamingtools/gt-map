@@ -57,7 +57,7 @@ export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
 
 	/**
 	 * Get z-index for rendering order.
-	 * @remarks Vectors always render at z=0. Markers/decals default to z=1.
+	 * @remarks Vectors always render at z=0. Markers default to z=1.
 	 * Use negative zIndex on markers to place them behind vectors.
 	 */
 	get zIndex(): number {

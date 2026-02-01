@@ -4,7 +4,7 @@
  * Public API is organized into four facades:
  *   map.view    -- center, zoom, transitions, bounds, coordinates
  *   map.input   -- wheel speed, inertia
- *   map.content -- markers, decals, vectors, icons
+ *   map.content -- markers, vectors, icons
  *   map.display -- background, grid, upscale filter, FPS
  */
 import type { MapEvents } from './events/public';
@@ -21,7 +21,6 @@ import { DisplayFacade } from './facades/display-facade';
 // Re-export types from centralized types file
 export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, SuspendOptions } from './types';
 export { Marker } from '../entities/marker';
-export { Decal } from '../entities/decal';
 export { Vector } from '../entities/vector';
 export { EntityCollection } from '../entities/entity-collection';
 
@@ -33,7 +32,7 @@ export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShad
 /**
  * @group Overview
  */
-export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
+export class GTMap {
 	private _ctx: MapContext;
 	private _lifecycle: LifecycleManager;
 
@@ -41,8 +40,8 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	readonly view: ViewFacade;
 	/** Input settings: wheel speed, inertia. */
 	readonly input: InputFacade;
-	/** Content management: markers, decals, vectors, icons. */
-	readonly content: ContentFacade<TMarkerData, TVectorData>;
+	/** Content management: markers, vectors, icons. */
+	readonly content: ContentFacade;
 	/** Display settings: background, grid, upscale filter, FPS. */
 	readonly display: DisplayFacade;
 
@@ -146,10 +145,9 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		});
 
 		// Wire ContentFacade deps
-		this.content = new ContentFacade<TMarkerData, TVectorData>({
+		this.content = new ContentFacade({
 			setIconDefs: (defs) => cm.setIconDefs(defs),
 			setMarkers: (markers) => cm.setMarkers(markers),
-			setDecals: (markers) => cm.setDecals(markers),
 			setVectors: (vectors) => cm.setVectors(vectors),
 			setMarkerData: (payloads) => cm.setMarkerData(payloads),
 			onMarkerEvent: (name, handler) => cm.onMarkerEvent(name, handler),
@@ -190,16 +188,14 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 
 	// -- Events --
 
-	get events(): MapEvents<TMarkerData> {
+	get events(): MapEvents {
 		const bus = this._ctx.events;
-		// The internal bus uses EventMap<unknown>; the public surface narrows TMarkerData.
-		// The outer cast is required because TypeScript cannot verify the generic narrowing.
 		return {
 			on: <K extends keyof EventMap & string>(name: K, handler?: (value: EventMap[K]) => void) => {
 				const stream = bus.on(name);
 				return handler ? stream.each(handler) : stream;
 			},
 			once: <K extends keyof EventMap & string>(name: K) => bus.when(name),
-		} as MapEvents<TMarkerData>;
+		} as MapEvents;
 	}
 }

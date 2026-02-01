@@ -3,7 +3,7 @@
  *
  * @remarks
  * Visuals are pure rendering templates that define how something looks.
- * They are separate from entities (Marker, Decal) which define position and interactivity.
+ * They are separate from entities (Marker) which define position and interactivity.
  */
 
 import type { IconScaleFunction } from './types';
@@ -84,7 +84,7 @@ export function resolveSize(size: VisualSize): { width: number; height: number }
  *
  * @public
  * @remarks
- * Visuals define appearance only. Use with Marker (interactive) or Decal (non-interactive).
+ * Visuals define appearance only. Use with Marker for screen-sized interactive entities.
  */
 export abstract class Visual {
 	/** Discriminator for runtime type checking. */
