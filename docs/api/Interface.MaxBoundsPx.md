@@ -4,7 +4,17 @@
 
 # Interface: MaxBoundsPx
 
-Defined in: [api/types.ts:435](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L435)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [maxX](#maxx)
+  - [maxY](#maxy)
+  - [minX](#minx)
+  - [minY](#miny)
+
+Defined in: [api/types.ts:428](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L428)
 
 ## Properties
 
@@ -12,7 +22,7 @@ Defined in: [api/types.ts:435](https://github.com/gamingtools/gt-map/blob/a4029f
 
 > **maxX**: `number`
 
-Defined in: [api/types.ts:438](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L438)
+Defined in: [api/types.ts:431](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L431)
 
 ***
 
@@ -20,7 +30,7 @@ Defined in: [api/types.ts:438](https://github.com/gamingtools/gt-map/blob/a4029f
 
 > **maxY**: `number`
 
-Defined in: [api/types.ts:439](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L439)
+Defined in: [api/types.ts:432](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L432)
 
 ***
 
@@ -28,7 +38,7 @@ Defined in: [api/types.ts:439](https://github.com/gamingtools/gt-map/blob/a4029f
 
 > **minX**: `number`
 
-Defined in: [api/types.ts:436](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L436)
+Defined in: [api/types.ts:429](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L429)
 
 ***
 
@@ -36,4 +46,4 @@ Defined in: [api/types.ts:436](https://github.com/gamingtools/gt-map/blob/a4029f
 
 > **minY**: `number`
 
-Defined in: [api/types.ts:437](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L437)
+Defined in: [api/types.ts:430](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L430)

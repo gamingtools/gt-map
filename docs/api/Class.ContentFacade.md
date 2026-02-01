@@ -2,37 +2,31 @@
 
 ***
 
-# Class: ContentFacade\<TMarkerData, TVectorData\>
+# Class: ContentFacade
 
-Defined in: [api/facades/content-facade.ts:28](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L28)
+[← Back to API index](./README.md)
 
-## Type Parameters
+## Contents
 
-### TMarkerData
+- [Properties](#properties)
+  - [markers](#markers)
+  - [vectors](#vectors)
+- [Methods](#methods)
+  - [addIcon()](#addicon)
+  - [addMarker()](#addmarker)
+  - [addVector()](#addvector)
+  - [clearMarkers()](#clearmarkers)
+  - [clearVectors()](#clearvectors)
 
-`TMarkerData` = `unknown`
-
-### TVectorData
-
-`TVectorData` = `unknown`
+Defined in: [api/facades/content-facade.ts:25](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/content-facade.ts#L25)
 
 ## Properties
 
-### decals
-
-> `readonly` **decals**: [`EntityCollection`](Class.EntityCollection.md)\<[`Decal`](Class.Decal.md)\>
-
-Defined in: [api/facades/content-facade.ts:35](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L35)
-
-Decal collection for this map.
-
-***
-
 ### markers
 
-> `readonly` **markers**: [`EntityCollection`](Class.EntityCollection.md)\<[`Marker`](Class.Marker.md)\<`TMarkerData`\>\>
+> `readonly` **markers**: [`EntityCollection`](Class.EntityCollection.md)\<[`Marker`](Class.Marker.md)\>
 
-Defined in: [api/facades/content-facade.ts:33](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L33)
+Defined in: [api/facades/content-facade.ts:30](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/content-facade.ts#L30)
 
 Marker collection for this map.
 
@@ -40,47 +34,19 @@ Marker collection for this map.
 
 ### vectors
 
-> `readonly` **vectors**: [`EntityCollection`](Class.EntityCollection.md)\<[`Vector`](Class.Vector.md)\<`TVectorData`\>\>
+> `readonly` **vectors**: [`EntityCollection`](Class.EntityCollection.md)\<[`Vector`](Class.Vector.md)\>
 
-Defined in: [api/facades/content-facade.ts:37](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L37)
+Defined in: [api/facades/content-facade.ts:32](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/content-facade.ts#L32)
 
 Vector collection for this map.
 
 ## Methods
 
-### addDecal()
-
-> **addDecal**(`x`, `y`, `opts`): [`Decal`](Class.Decal.md)
-
-Defined in: [api/facades/content-facade.ts:111](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L111)
-
-Create and add a decal (non-interactive visual).
-
-#### Parameters
-
-##### x
-
-`number`
-
-##### y
-
-`number`
-
-##### opts
-
-[`DecalOptions`](Interface.DecalOptions.md)
-
-#### Returns
-
-[`Decal`](Class.Decal.md)
-
-***
-
 ### addIcon()
 
 > **addIcon**(`def`, `id?`): [`IconHandle`](Interface.IconHandle.md)
 
-Defined in: [api/facades/content-facade.ts:71](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L71)
+Defined in: [api/facades/content-facade.ts:64](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/content-facade.ts#L64)
 
 Register an icon definition for use with markers.
 
@@ -102,9 +68,9 @@ Register an icon definition for use with markers.
 
 ### addMarker()
 
-> **addMarker**(`x`, `y`, `opts`): [`Marker`](Class.Marker.md)\<`TMarkerData`\>
+> **addMarker**(`x`, `y`, `opts`): [`Marker`](Class.Marker.md)
 
-Defined in: [api/facades/content-facade.ts:92](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L92)
+Defined in: [api/facades/content-facade.ts:85](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/content-facade.ts#L85)
 
 Create and add a marker.
 
@@ -120,19 +86,19 @@ Create and add a marker.
 
 ##### opts
 
-[`MarkerOptions`](Interface.MarkerOptions.md)\<`TMarkerData`\>
+[`MarkerOptions`](Interface.MarkerOptions.md)
 
 #### Returns
 
-[`Marker`](Class.Marker.md)\<`TMarkerData`\>
+[`Marker`](Class.Marker.md)
 
 ***
 
 ### addVector()
 
-> **addVector**(`geometry`, `opts?`): [`Vector`](Class.Vector.md)\<`TVectorData`\>
+> **addVector**(`geometry`, `opts?`): [`Vector`](Class.Vector.md)
 
-Defined in: [api/facades/content-facade.ts:131](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L131)
+Defined in: [api/facades/content-facade.ts:104](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/content-facade.ts#L104)
 
 Create and add a vector shape.
 
@@ -146,25 +112,11 @@ Create and add a vector shape.
 
 ###### data?
 
-`TVectorData`
+`unknown`
 
 #### Returns
 
-[`Vector`](Class.Vector.md)\<`TVectorData`\>
-
-***
-
-### clearDecals()
-
-> **clearDecals**(): `void`
-
-Defined in: [api/facades/content-facade.ts:121](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L121)
-
-Remove all decals.
-
-#### Returns
-
-`void`
+[`Vector`](Class.Vector.md)
 
 ***
 
@@ -172,7 +124,7 @@ Remove all decals.
 
 > **clearMarkers**(): `void`
 
-Defined in: [api/facades/content-facade.ts:102](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L102)
+Defined in: [api/facades/content-facade.ts:95](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/content-facade.ts#L95)
 
 Remove all markers.
 
@@ -186,7 +138,7 @@ Remove all markers.
 
 > **clearVectors**(): `void`
 
-Defined in: [api/facades/content-facade.ts:141](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/content-facade.ts#L141)
+Defined in: [api/facades/content-facade.ts:114](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/content-facade.ts#L114)
 
 Remove all vectors.
 

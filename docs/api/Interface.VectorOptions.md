@@ -2,24 +2,25 @@
 
 ***
 
-# Interface: VectorOptions\<T\>
+# Interface: VectorOptions
 
-Defined in: [entities/vector.ts:15](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/vector.ts#L15)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [data?](#data)
+
+Defined in: [entities/vector.ts:15](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/vector.ts#L15)
 
 Options for creating a [Vector](Class.Vector.md).
-
-## Type Parameters
-
-### T
-
-`T` = `unknown`
 
 ## Properties
 
 ### data?
 
-> `optional` **data**: `T`
+> `optional` **data**: `unknown`
 
-Defined in: [entities/vector.ts:17](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/vector.ts#L17)
+Defined in: [entities/vector.ts:17](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/vector.ts#L17)
 
 User data attached to the vector.

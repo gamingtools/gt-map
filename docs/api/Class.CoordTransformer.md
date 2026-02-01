@@ -4,7 +4,18 @@
 
 # Class: CoordTransformer
 
-Defined in: [api/coord-transformer.ts:13](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/coord-transformer.ts#L13)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Constructors](#constructors)
+  - [Constructor](#constructor)
+- [Methods](#methods)
+  - [setSourceBounds()](#setsourcebounds)
+  - [setTargetSize()](#settargetsize)
+  - [translate()](#translate)
+
+Defined in: [api/coord-transformer.ts:13](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/coord-transformer.ts#L13)
 
 Coordinate transformer: maps source-space coordinates into image pixel space.
 
@@ -17,7 +28,7 @@ the target image dimensions while preserving aspect ratio.
 
 > **new CoordTransformer**(`targetWidth`, `targetHeight`, `source`, `_mode`): `CoordTransformer`
 
-Defined in: [api/coord-transformer.ts:22](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/coord-transformer.ts#L22)
+Defined in: [api/coord-transformer.ts:22](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/coord-transformer.ts#L22)
 
 #### Parameters
 
@@ -47,7 +58,7 @@ Defined in: [api/coord-transformer.ts:22](https://github.com/gamingtools/gt-map/
 
 > **setSourceBounds**(`b`): `void`
 
-Defined in: [api/coord-transformer.ts:103](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/coord-transformer.ts#L103)
+Defined in: [api/coord-transformer.ts:103](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/coord-transformer.ts#L103)
 
 Replace the source bounds and recompute the mapping.
 
@@ -67,7 +78,7 @@ Replace the source bounds and recompute the mapping.
 
 > **setTargetSize**(`width`, `height`): `void`
 
-Defined in: [api/coord-transformer.ts:89](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/coord-transformer.ts#L89)
+Defined in: [api/coord-transformer.ts:89](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/coord-transformer.ts#L89)
 
 Update the destination image size (pixels).
 
@@ -91,7 +102,7 @@ Update the destination image size (pixels).
 
 > **translate**(`x`, `y`, `type`): `object`
 
-Defined in: [api/coord-transformer.ts:37](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/coord-transformer.ts#L37)
+Defined in: [api/coord-transformer.ts:37](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/coord-transformer.ts#L37)
 
 Translate a source-space point to pixel coordinates using the given transform.
 

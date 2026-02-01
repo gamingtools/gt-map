@@ -4,13 +4,24 @@
 
 # Interface: TileSourceOptions
 
-Defined in: [api/types.ts:28](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L28)
+[← Back to API index](./README.md)
 
-Tile pyramid source options.
+## Contents
+
+- [Remarks](#remarks)
+- [Properties](#properties)
+  - [mapSize](#mapsize)
+  - [packUrl](#packurl)
+  - [sourceMaxZoom](#sourcemaxzoom)
+  - [sourceMinZoom](#sourceminzoom)
+  - [tileSize](#tilesize)
+
+Defined in: [api/types.ts:27](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L27)
+
+Tile pyramid source options (GTPK pack only).
 
 ## Remarks
 
-Use `{z}`, `{x}`, `{y}` placeholders in the URL template.
 Tiles must be square (tileSize x tileSize), but the overall map may be non-square.
 
 ## Properties
@@ -19,7 +30,7 @@ Tiles must be square (tileSize x tileSize), but the overall map may be non-squar
 
 > **mapSize**: `object`
 
-Defined in: [api/types.ts:40](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L40)
+Defined in: [api/types.ts:33](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L33)
 
 Full map dimensions in pixels at the source's maximum zoom level.
 
@@ -33,15 +44,13 @@ Full map dimensions in pixels at the source's maximum zoom level.
 
 ***
 
-### packUrl?
+### packUrl
 
-> `optional` **packUrl**: `string`
+> **packUrl**: `string`
 
-Defined in: [api/types.ts:36](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L36)
+Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L29)
 
-Optional URL to a `.gtpk` tile pack (single binary containing the full tile pyramid).
-When provided, tiles are served from this in-memory pack instead of individual HTTP requests.
-Falls back to `url` template for tiles not found in the pack.
+URL to a `.gtpk` tile pack (single binary containing the full tile pyramid).
 
 ***
 
@@ -49,7 +58,7 @@ Falls back to `url` template for tiles not found in the pack.
 
 > **sourceMaxZoom**: `number`
 
-Defined in: [api/types.ts:44](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L44)
+Defined in: [api/types.ts:37](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L37)
 
 Maximum zoom level available in the tile set.
 
@@ -59,7 +68,7 @@ Maximum zoom level available in the tile set.
 
 > **sourceMinZoom**: `number`
 
-Defined in: [api/types.ts:42](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L42)
+Defined in: [api/types.ts:35](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L35)
 
 Minimum zoom level available in the tile set.
 
@@ -69,16 +78,6 @@ Minimum zoom level available in the tile set.
 
 > **tileSize**: `number`
 
-Defined in: [api/types.ts:38](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L38)
+Defined in: [api/types.ts:31](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L31)
 
 Tile size in pixels (tiles are always square).
-
-***
-
-### url
-
-> **url**: `string`
-
-Defined in: [api/types.ts:30](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L30)
-
-URL template with `{z}`, `{x}`, `{y}` placeholders. Used as fallback when packUrl is set.

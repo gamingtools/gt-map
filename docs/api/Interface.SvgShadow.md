@@ -4,7 +4,17 @@
 
 # Interface: SvgShadow
 
-Defined in: [api/visual.ts:340](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L340)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [blur?](#blur)
+  - [color?](#color)
+  - [offsetX?](#offsetx)
+  - [offsetY?](#offsety)
+
+Defined in: [api/visual.ts:340](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L340)
 
 Shadow options for SvgVisual.
 
@@ -14,7 +24,7 @@ Shadow options for SvgVisual.
 
 > `optional` **blur**: `number`
 
-Defined in: [api/visual.ts:344](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L344)
+Defined in: [api/visual.ts:344](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L344)
 
 Shadow blur radius in pixels (default: 4).
 
@@ -24,7 +34,7 @@ Shadow blur radius in pixels (default: 4).
 
 > `optional` **color**: `string`
 
-Defined in: [api/visual.ts:342](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L342)
+Defined in: [api/visual.ts:342](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L342)
 
 Shadow color (default: 'rgba(0,0,0,0.3)').
 
@@ -34,7 +44,7 @@ Shadow color (default: 'rgba(0,0,0,0.3)').
 
 > `optional` **offsetX**: `number`
 
-Defined in: [api/visual.ts:346](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L346)
+Defined in: [api/visual.ts:346](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L346)
 
 Horizontal shadow offset in pixels (default: 0).
 
@@ -44,6 +54,6 @@ Horizontal shadow offset in pixels (default: 0).
 
 > `optional` **offsetY**: `number`
 
-Defined in: [api/visual.ts:348](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L348)
+Defined in: [api/visual.ts:348](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L348)
 
 Vertical shadow offset in pixels (default: 2).

@@ -2,25 +2,32 @@
 
 ***
 
-# Interface: MarkerOptions\<T\>
+# Interface: MarkerOptions
 
-Defined in: [entities/marker.ts:12](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L12)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [data?](#data)
+  - [iconScaleFunction?](#iconscalefunction)
+  - [opacity?](#opacity)
+  - [rotation?](#rotation)
+  - [scale?](#scale)
+  - [visual](#visual)
+  - [zIndex?](#zindex)
+
+Defined in: [entities/marker.ts:12](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L12)
 
 Options for creating or styling a [Marker](Class.Marker.md).
-
-## Type Parameters
-
-### T
-
-`T` = `unknown`
 
 ## Properties
 
 ### data?
 
-> `optional` **data**: `T`
+> `optional` **data**: `unknown`
 
-Defined in: [entities/marker.ts:34](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L34)
+Defined in: [entities/marker.ts:34](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L34)
 
 Arbitrary user data attached to the marker.
 
@@ -30,7 +37,7 @@ Arbitrary user data attached to the marker.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [entities/marker.ts:32](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L32)
+Defined in: [entities/marker.ts:32](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L32)
 
 Override the map-level icon scale function for this marker.
 Set to `null` to disable scaling (always use scale=1).
@@ -42,7 +49,7 @@ If undefined, falls back to visual's iconScaleFunction, then map's.
 
 > `optional` **opacity**: `number`
 
-Defined in: [entities/marker.ts:20](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L20)
+Defined in: [entities/marker.ts:20](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L20)
 
 Opacity (0-1).
 
@@ -52,7 +59,7 @@ Opacity (0-1).
 
 > `optional` **rotation**: `number`
 
-Defined in: [entities/marker.ts:18](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L18)
+Defined in: [entities/marker.ts:18](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L18)
 
 Clockwise rotation in degrees.
 
@@ -62,7 +69,7 @@ Clockwise rotation in degrees.
 
 > `optional` **scale**: `number`
 
-Defined in: [entities/marker.ts:16](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L16)
+Defined in: [entities/marker.ts:16](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L16)
 
 Scale multiplier (1 = visual's native size).
 
@@ -72,7 +79,7 @@ Scale multiplier (1 = visual's native size).
 
 > **visual**: [`Visual`](Class.Visual.md)
 
-Defined in: [entities/marker.ts:14](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L14)
+Defined in: [entities/marker.ts:14](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L14)
 
 Visual template for rendering.
 
@@ -82,7 +89,7 @@ Visual template for rendering.
 
 > `optional` **zIndex**: `number`
 
-Defined in: [entities/marker.ts:26](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L26)
+Defined in: [entities/marker.ts:26](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L26)
 
 Z-index for stacking order (higher values render on top).
 

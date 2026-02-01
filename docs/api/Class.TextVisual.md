@@ -4,7 +4,30 @@
 
 # Class: TextVisual
 
-Defined in: [api/visual.ts:163](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L163)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Example](#example)
+- [Extends](#extends)
+- [Constructors](#constructors)
+  - [Constructor](#constructor)
+- [Properties](#properties)
+  - [anchor](#anchor)
+  - [backgroundColor?](#backgroundcolor)
+  - [color](#color)
+  - [fontFamily](#fontfamily)
+  - [fontSize](#fontsize)
+  - [fontStyle?](#fontstyle)
+  - [fontWeight?](#fontweight)
+  - [iconScaleFunction?](#iconscalefunction)
+  - [padding?](#padding)
+  - [strokeColor?](#strokecolor)
+  - [strokeWidth?](#strokewidth)
+  - [text](#text)
+  - [type](#type)
+
+Defined in: [api/visual.ts:163](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L163)
 
 Text-based visual for labels.
 
@@ -25,7 +48,7 @@ label.anchor = 'bottom-center';
 
 > **new TextVisual**(`text`, `options`): `TextVisual`
 
-Defined in: [api/visual.ts:201](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L201)
+Defined in: [api/visual.ts:201](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L201)
 
 Create a text visual.
 
@@ -99,7 +122,7 @@ Text stroke/outline width in pixels
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -113,7 +136,7 @@ Anchor point for positioning. Defaults to center.
 
 > `readonly` `optional` **backgroundColor**: `string`
 
-Defined in: [api/visual.ts:179](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L179)
+Defined in: [api/visual.ts:179](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L179)
 
 Optional background color.
 
@@ -123,7 +146,7 @@ Optional background color.
 
 > `readonly` **color**: `string`
 
-Defined in: [api/visual.ts:176](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L176)
+Defined in: [api/visual.ts:176](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L176)
 
 Text color. Defaults to black.
 
@@ -133,7 +156,7 @@ Text color. Defaults to black.
 
 > `readonly` **fontFamily**: `string`
 
-Defined in: [api/visual.ts:173](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L173)
+Defined in: [api/visual.ts:173](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L173)
 
 Font family. Defaults to system sans-serif.
 
@@ -143,7 +166,7 @@ Font family. Defaults to system sans-serif.
 
 > `readonly` **fontSize**: `number`
 
-Defined in: [api/visual.ts:170](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L170)
+Defined in: [api/visual.ts:170](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L170)
 
 Font size in pixels.
 
@@ -153,7 +176,7 @@ Font size in pixels.
 
 > `readonly` `optional` **fontStyle**: `string`
 
-Defined in: [api/visual.ts:194](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L194)
+Defined in: [api/visual.ts:194](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L194)
 
 Font style (normal, italic, oblique).
 
@@ -163,7 +186,7 @@ Font style (normal, italic, oblique).
 
 > `readonly` `optional` **fontWeight**: `string`
 
-Defined in: [api/visual.ts:191](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L191)
+Defined in: [api/visual.ts:191](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L191)
 
 Font weight (normal, bold, 100-900).
 
@@ -173,7 +196,7 @@ Font weight (normal, bold, 100-900).
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -189,7 +212,7 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `readonly` `optional` **padding**: `number`
 
-Defined in: [api/visual.ts:182](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L182)
+Defined in: [api/visual.ts:182](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L182)
 
 Optional padding in pixels.
 
@@ -199,7 +222,7 @@ Optional padding in pixels.
 
 > `readonly` `optional` **strokeColor**: `string`
 
-Defined in: [api/visual.ts:185](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L185)
+Defined in: [api/visual.ts:185](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L185)
 
 Text stroke/outline color.
 
@@ -209,7 +232,7 @@ Text stroke/outline color.
 
 > `readonly` `optional` **strokeWidth**: `number`
 
-Defined in: [api/visual.ts:188](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L188)
+Defined in: [api/visual.ts:188](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L188)
 
 Text stroke/outline width in pixels.
 
@@ -219,7 +242,7 @@ Text stroke/outline width in pixels.
 
 > `readonly` **text**: `string`
 
-Defined in: [api/visual.ts:167](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L167)
+Defined in: [api/visual.ts:167](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L167)
 
 Text content to display.
 
@@ -229,7 +252,7 @@ Text content to display.
 
 > `readonly` **type**: `"text"`
 
-Defined in: [api/visual.ts:164](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L164)
+Defined in: [api/visual.ts:164](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L164)
 
 Discriminator for runtime type checking.
 

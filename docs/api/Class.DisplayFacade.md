@@ -4,7 +4,19 @@
 
 # Class: DisplayFacade
 
-Defined in: [api/facades/display-facade.ts:17](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/display-facade.ts#L17)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Methods](#methods)
+  - [setBackgroundColor()](#setbackgroundcolor)
+  - [setFpsCap()](#setfpscap)
+  - [setGridVisible()](#setgridvisible)
+  - [setRasterOpacity()](#setrasteropacity)
+  - [setUpscaleFilter()](#setupscalefilter)
+  - [setZoomSnapThreshold()](#setzoomsnapthreshold)
+
+Defined in: [api/facades/display-facade.ts:17](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/display-facade.ts#L17)
 
 ## Methods
 
@@ -12,7 +24,7 @@ Defined in: [api/facades/display-facade.ts:17](https://github.com/gamingtools/gt
 
 > **setBackgroundColor**(`color`): `void`
 
-Defined in: [api/facades/display-facade.ts:49](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/display-facade.ts#L49)
+Defined in: [api/facades/display-facade.ts:49](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/display-facade.ts#L49)
 
 Set the viewport background color.
 
@@ -32,7 +44,7 @@ Set the viewport background color.
 
 > **setFpsCap**(`v`): `void`
 
-Defined in: [api/facades/display-facade.ts:42](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/display-facade.ts#L42)
+Defined in: [api/facades/display-facade.ts:42](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/display-facade.ts#L42)
 
 Set the maximum frames per second.
 
@@ -52,7 +64,7 @@ Set the maximum frames per second.
 
 > **setGridVisible**(`on`): `void`
 
-Defined in: [api/facades/display-facade.ts:28](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/display-facade.ts#L28)
+Defined in: [api/facades/display-facade.ts:28](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/display-facade.ts#L28)
 
 Show or hide the pixel grid overlay.
 
@@ -72,7 +84,7 @@ Show or hide the pixel grid overlay.
 
 > **setRasterOpacity**(`v`): `void`
 
-Defined in: [api/facades/display-facade.ts:56](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/display-facade.ts#L56)
+Defined in: [api/facades/display-facade.ts:56](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/display-facade.ts#L56)
 
 Set the raster tile opacity.
 
@@ -92,7 +104,7 @@ Set the raster tile opacity.
 
 > **setUpscaleFilter**(`mode`): `void`
 
-Defined in: [api/facades/display-facade.ts:35](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/display-facade.ts#L35)
+Defined in: [api/facades/display-facade.ts:35](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/display-facade.ts#L35)
 
 Set the upscale filtering mode for the base image when zoomed in.
 
@@ -112,7 +124,7 @@ Set the upscale filtering mode for the base image when zoomed in.
 
 > **setZoomSnapThreshold**(`v`): `void`
 
-Defined in: [api/facades/display-facade.ts:64](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/facades/display-facade.ts#L64)
+Defined in: [api/facades/display-facade.ts:64](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/display-facade.ts#L64)
 
 Set the fractional zoom threshold at which the renderer snaps to the next tile zoom level.
 Range: 0 to 1. Default: 0.4.
