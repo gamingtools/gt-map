@@ -5,12 +5,13 @@
  * on mapgl.ts with a cohesive, observable state object.
  */
 import type { ViewState as PublicViewState, MaxBoundsPx } from '../../api/types';
+import { computeImageMaxZoom } from '../map-math';
 
-export type LngLat = { lng: number; lat: number };
+export type PixelPoint = { x: number; y: number };
 
 export class ViewStateStore {
 	// Core view
-	center: LngLat;
+	center: PixelPoint;
 	zoom: number;
 	minZoom: number;
 	maxZoom: number;
@@ -41,6 +42,7 @@ export class ViewStateStore {
 		minZoom: number;
 		maxZoom: number;
 		mapSize: { width: number; height: number };
+		tileSize: number;
 		wrapX: boolean;
 		freePan: boolean;
 		maxBoundsPx: MaxBoundsPx | null;
@@ -49,12 +51,12 @@ export class ViewStateStore {
 		bounceAtZoomLimits: boolean;
 		zoomSnapThreshold: number;
 	}) {
-		this.center = { lng: opts.center.x, lat: opts.center.y };
+		this.center = { x: opts.center.x, y: opts.center.y };
 		this.zoom = Math.max(opts.minZoom, Math.min(opts.maxZoom, opts.zoom));
 		this.minZoom = opts.minZoom;
 		this.maxZoom = opts.maxZoom;
 		this.mapSize = { width: opts.mapSize.width, height: opts.mapSize.height };
-		this.imageMaxZoom = ViewStateStore.computeImageMaxZoom(opts.mapSize.width, opts.mapSize.height);
+		this.imageMaxZoom = computeImageMaxZoom(opts.mapSize.width, opts.mapSize.height, opts.tileSize);
 		this.wrapX = opts.wrapX;
 		this.freePan = opts.freePan;
 		this.maxBoundsPx = opts.maxBoundsPx;
@@ -65,13 +67,8 @@ export class ViewStateStore {
 		this.dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
 	}
 
-	static computeImageMaxZoom(width: number, height: number): number {
-		const maxDim = Math.max(width, height);
-		return Math.max(0, Math.ceil(Math.log2(maxDim / 256)));
-	}
-
-	setCenter(lng: number, lat: number): void {
-		this.center = { lng, lat };
+	setCenter(x: number, y: number): void {
+		this.center = { x, y };
 	}
 
 	setZoom(z: number): void {
@@ -80,7 +77,7 @@ export class ViewStateStore {
 
 	toPublic(): PublicViewState {
 		return {
-			center: { x: this.center.lng, y: this.center.lat },
+			center: { x: this.center.x, y: this.center.y },
 			zoom: this.zoom,
 			minZoom: this.minZoom,
 			maxZoom: this.maxZoom,

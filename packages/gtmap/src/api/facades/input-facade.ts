@@ -4,14 +4,18 @@
  * Wheel speed and inertia options.
  */
 import type { InertiaOptions } from '../types';
-import type { MapEngine } from '../../internal/map-engine';
+
+export interface InputFacadeDeps {
+  setWheelSpeed(v: number): void;
+  setInertiaOptions(opts: InertiaOptions): void;
+}
 
 export class InputFacade {
-	private _engine: MapEngine;
+	private _deps: InputFacadeDeps;
 
 	/** @internal */
-	constructor(engine: MapEngine) {
-		this._engine = engine;
+	constructor(deps: InputFacadeDeps) {
+		this._deps = deps;
 	}
 
 	/**
@@ -19,13 +23,13 @@ export class InputFacade {
 	 * @param v Speed multiplier (0.01-2.0)
 	 */
 	setWheelSpeed(v: number): void {
-		this._engine.setWheelSpeed(v);
+		this._deps.setWheelSpeed(v);
 	}
 
 	/**
 	 * Configure inertia behavior for pan gestures.
 	 */
 	setInertiaOptions(opts: InertiaOptions): void {
-		this._engine.setInertiaOptions(opts);
+		this._deps.setInertiaOptions(opts);
 	}
 }

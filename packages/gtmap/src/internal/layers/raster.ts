@@ -1,6 +1,5 @@
 import type { ProgramLocs } from '../render/screen-cache';
-import { tileKey as tileKeyOf, wrapX as wrapXTile } from '../tiles/source';
-import * as Coords from '../coords';
+import { computeTileBounds, forEachVisibleTile } from '../map-math';
 
 type TileCacheLike = {
   get(key: string): { status: 'ready' | 'loading' | 'error'; tex?: WebGLTexture; width?: number; height?: number } | undefined;
@@ -36,47 +35,18 @@ export class RasterRenderer {
     },
   ) {
     const gl = this.gl;
-    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize: imageSize, zMax, sourceMaxZoom, filterMode } = params;
+    const { zLevel, tlWorld, scale, dpr, widthCSS, heightCSS, wrapX, tileSize, mapSize, zMax, sourceMaxZoom, filterMode } = params;
     const TS = tileSize;
-    const startX = Math.floor(tlWorld.x / TS);
-    const startY = Math.floor(tlWorld.y / TS);
-    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
-    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
+    const { tilesX, tilesY } = computeTileBounds(mapSize, tileSize, zLevel, sourceMaxZoom, zMax);
 
-    let tilesX = Infinity;
-    let tilesY = Infinity;
-    const imgMax = (typeof sourceMaxZoom === 'number' ? sourceMaxZoom : zMax) as number | undefined;
-    if (imageSize && typeof imgMax === 'number') {
-      const s = Coords.sFor(imgMax, zLevel);
-      const levelW = Math.ceil(imageSize.width / s);
-      const levelH = Math.ceil(imageSize.height / s);
-      tilesX = Math.ceil(levelW / TS);
-      tilesY = Math.ceil(levelH / TS);
-    }
-
-    for (let ty = startY; ty <= endY; ty++) {
-      if (!Number.isFinite(tilesY)) {
-        if (ty < 0 || ty >= 1 << zLevel) continue;
-      } else {
-        if (ty < 0 || ty >= tilesY) continue;
-      }
-      for (let tx = startX; tx <= endX; tx++) {
-        if (!Number.isFinite(tilesX)) {
-          if (!wrapX && (tx < 0 || tx >= 1 << zLevel)) continue;
-        } else {
-          if (tx < 0 || tx >= tilesX) continue;
-        }
-        const tileX = wrapX && !Number.isFinite(tilesX) ? wrapXTile(tx, zLevel) : tx;
+    forEachVisibleTile(
+      { tlWorld, scale, widthCSS, heightCSS, tileSize, zLevel, wrapX, tilesX, tilesY },
+      (tileX, ty, tx, key) => {
         const wx = tx * TS;
         const wy = ty * TS;
-        let sxCSS = (wx - tlWorld.x) * scale;
+        const sxCSS = (wx - tlWorld.x) * scale;
         const syCSS = (wy - tlWorld.y) * scale;
-        if (wrapX && !Number.isFinite(tilesX) && tileX !== tx) {
-          const dxTiles = tx - tileX;
-          sxCSS -= dxTiles * TS * scale;
-        }
-        if (typeof sourceMaxZoom === 'number' && zLevel > sourceMaxZoom) continue;
-        const key = tileKeyOf(zLevel, tileX, ty);
+        if (typeof sourceMaxZoom === 'number' && zLevel > sourceMaxZoom) return;
         try {
           params.wantTileKey?.(key);
         } catch {}
@@ -111,8 +81,8 @@ export class RasterRenderer {
           gl.uniform2f(loc.u_uv1!, 1.0, 1.0);
           gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
         }
-      }
-    }
+      },
+    );
   }
 
   /** Compute tile coverage ratio for a zoom level in the current viewport. */
@@ -129,44 +99,19 @@ export class RasterRenderer {
     zMax?: number,
     sourceMaxZoom?: number,
   ): number {
-    const TS = tileSize;
-    const startX = Math.floor(tlWorld.x / TS);
-    const startY = Math.floor(tlWorld.y / TS);
-    const endX = Math.floor((tlWorld.x + widthCSS / scale) / TS) + 1;
-    const endY = Math.floor((tlWorld.y + heightCSS / scale) / TS) + 1;
+    const { tilesX, tilesY } = computeTileBounds(mapSize, tileSize, zLevel, sourceMaxZoom, zMax);
     let total = 0;
     let ready = 0;
-    let tilesX = Infinity;
-    let tilesY = Infinity;
-    const imageSize = mapSize;
-    const imgMax = (typeof sourceMaxZoom === 'number' ? sourceMaxZoom : zMax) as number | undefined;
-    if (imageSize && typeof imgMax === 'number') {
-      const s = Coords.sFor(imgMax, zLevel);
-      const levelW = Math.ceil(imageSize.width / s);
-      const levelH = Math.ceil(imageSize.height / s);
-      tilesX = Math.ceil(levelW / TS);
-      tilesY = Math.ceil(levelH / TS);
-    }
-    for (let ty = startY; ty <= endY; ty++) {
-      if (!Number.isFinite(tilesY)) {
-        if (ty < 0 || ty >= 1 << zLevel) continue;
-      } else {
-        if (ty < 0 || ty >= tilesY) continue;
-      }
-      for (let tx = startX; tx <= endX; tx++) {
-        let tileX = tx;
-        if (!Number.isFinite(tilesX)) {
-          if (wrapX) tileX = wrapXTile(tx, zLevel);
-          else if (tx < 0 || tx >= 1 << zLevel) continue;
-        } else {
-          if (tx < 0 || tx >= tilesX) continue;
-        }
+
+    forEachVisibleTile(
+      { tlWorld, scale, widthCSS, heightCSS, tileSize, zLevel, wrapX, tilesX, tilesY },
+      (_tileX, _ty, _tx, key) => {
         total++;
-        const key = tileKeyOf(zLevel, tileX, ty);
         const rec = tileCache.get(key);
         if (rec?.status === 'ready') ready++;
-      }
-    }
+      },
+    );
+
     if (total === 0) return 1;
     return ready / total;
   }

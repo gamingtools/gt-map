@@ -128,7 +128,7 @@
 		if (!map) return;
 		const count = clampMarkerCount(n);
 		markerCount = count;
-		map?.clearMarkers?.();
+		map?.content?.clearMarkers?.();
 
 		const fallback = createFallbackVisual();
 		const allVisuals = [
@@ -140,7 +140,7 @@
 			const x = rand(0, MAP_TILES.mapSize.width);
 			const y = rand(0, MAP_TILES.mapSize.height);
 			const visual = allVisuals.length > 0 ? allVisuals[i % allVisuals.length] : fallback;
-			map.addMarker(x, y, { visual, data: { id: i } });
+			map.content.addMarker(x, y, { visual, data: { id: i } });
 		}
 		// Always re-add text labels after marker count change
 		addTextLabels();
@@ -152,7 +152,7 @@
 
 	function addVectors(): void {
 		if (!map) return;
-		map.addVector({
+		map.content.addVector({
 			type: 'polyline',
 			points: [
 				{ x: 1000, y: 1000 },
@@ -161,7 +161,7 @@
 			],
 			style: { color: '#1e90ff', weight: 2, opacity: 0.9 }
 		});
-		map.addVector({
+		map.content.addVector({
 			type: 'polygon',
 			points: [
 				{ x: 2600, y: 2600 },
@@ -178,7 +178,7 @@
 				fillOpacity: 0.25
 			}
 		});
-		map.addVector({
+		map.content.addVector({
 			type: 'circle',
 			center: { x: HOME.lng, y: HOME.lat },
 			radius: 10,
@@ -194,7 +194,7 @@
 	}
 
 	function clearVectors(): void {
-		map?.clearVectors?.();
+		map?.content?.clearVectors?.();
 	}
 
 	function addTextLabels(): void {
@@ -212,7 +212,7 @@
 		});
 		label1.anchor = 'top-left';
 		label1.iconScaleFunction = null; // Don't scale with zoom
-		map.addMarker(PAD, PAD, { visual: label1 });
+		map.content.addMarker(PAD, PAD, { visual: label1 });
 
 		// Top-right: Large bold header
 		const label2 = new TextVisual('HEADER', {
@@ -223,7 +223,7 @@
 		});
 		label2.anchor = 'top-right';
 		label2.iconScaleFunction = null; // Don't scale with zoom
-		map.addMarker(MAP_TILES.mapSize.width - PAD, PAD, { visual: label2 });
+		map.content.addMarker(MAP_TILES.mapSize.width - PAD, PAD, { visual: label2 });
 
 		// Bottom-left: Medium serif style
 		const label3 = new TextVisual('Serif Text', {
@@ -235,7 +235,7 @@
 		});
 		label3.anchor = 'bottom-left';
 		label3.iconScaleFunction = null; // Don't scale with zoom
-		map.addMarker(PAD, MAP_TILES.mapSize.height - PAD, { visual: label3 });
+		map.content.addMarker(PAD, MAP_TILES.mapSize.height - PAD, { visual: label3 });
 
 		// Bottom-right: Tiny tag
 		const label4 = new TextVisual('TAG', {
@@ -246,7 +246,7 @@
 		});
 		label4.anchor = 'bottom-right';
 		label4.iconScaleFunction = null; // Don't scale with zoom
-		map.addMarker(MAP_TILES.mapSize.width - PAD, MAP_TILES.mapSize.height - PAD, { visual: label4 });
+		map.content.addMarker(MAP_TILES.mapSize.width - PAD, MAP_TILES.mapSize.height - PAD, { visual: label4 });
 
 		// Center: Large plain text with black stroke (no background)
 		const label5 = new TextVisual('Plain Large Text', {
@@ -257,12 +257,12 @@
 		});
 		label5.anchor = 'center';
 		label5.iconScaleFunction = null; // Don't scale with zoom
-		map.addMarker(HOME.lng, HOME.lat, { visual: label5 });
+		map.content.addMarker(HOME.lng, HOME.lat, { visual: label5 });
 	}
 
 	function setMarkersEnabled(on: boolean): void {
 		if (on) applyMarkerCount(markerCount);
-		else map?.clearMarkers?.();
+		else map?.content?.clearMarkers?.();
 	}
 
 	function setVectorsEnabled(on: boolean): void {
@@ -300,7 +300,7 @@
 
 		applyMarkerCount(markerCount);
 
-		map.setIconScaleFunction((zoom) => {
+		map.view.setIconScaleFunction((zoom) => {
 			const maxScale = 1;
 			const scale = Math.pow(2, zoom - 3);
 			return Math.min(maxScale, Math.max(0.5, scale));

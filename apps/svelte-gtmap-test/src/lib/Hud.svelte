@@ -57,10 +57,10 @@
 
 	function refresh(fromFrame = false, now?: number) {
 		if (!map) return;
-		const c = map.getCenter();
+		const c = map.view.getCenter();
 		center = { lng: c.x, lat: c.y };
-		zoom = map.getZoom();
-		const pAbs = map.getPointerAbs();
+		zoom = map.view.getZoom();
+		const pAbs = map.view.getPointerAbs();
 		mouse = pAbs ? { x: Math.round(pAbs.x), y: Math.round(pAbs.y) } : null;
 		if (fromFrame) {
 			const t = now ?? (performance.now ? performance.now() : Date.now());
@@ -108,13 +108,13 @@
 
 	// Apply controls
 	$effect(() => {
-		map?.setWheelSpeed(wheelSpeed);
+		map?.input?.setWheelSpeed(wheelSpeed);
 	});
 	$effect(() => {
-		map?.setFpsCap(fpsCap);
+		map?.display?.setFpsCap(fpsCap);
 	});
 	$effect(() => {
-		map?.setGridVisible(gridEnabled);
+		map?.display?.setGridVisible(gridEnabled);
 	});
 	$effect(() => {
 		try {
@@ -146,7 +146,7 @@
 					animStartMs = now;
 					animState.clear();
 					// Seed state for existing markers without causing a jump on the next frame
-					for (const mk of map.markers.getAll()) {
+					for (const mk of map.content.markers.getAll()) {
 						const rot0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
 						const phase = Math.random() * Math.PI * 2;
 						const dx0 = ORBIT_AMP * Math.cos(phase);
@@ -158,7 +158,7 @@
                     rotStartMs = now;
                     rotateBase.clear();
                     rotateDir.clear();
-                    for (const mk of map.markers.getAll()) {
+                    for (const mk of map.content.markers.getAll()) {
                         const r0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
                         rotateBase.set(mk.id, r0);
                         rotateDir.set(mk.id, Math.random() < 0.5 ? -1 : 1);
@@ -166,7 +166,7 @@
                 }
 
 				// Track dynamic add/remove while enabled
-				offLayerAdd = map.markers.events.on('entityadd').each(({ entity }: { entity: GTMarker }) => {
+				offLayerAdd = map.content.markers.events.on('entityadd').each(({ entity }: { entity: GTMarker }) => {
 					const mk = entity;
 					if (needPos) {
 						const rot0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
@@ -181,7 +181,7 @@
                         rotateDir.set(mk.id, Math.random() < 0.5 ? -1 : 1);
                     }
                 });
-                offLayerRemove = map.markers.events.on('entityremove').each(({ entity }: { entity: GTMarker }) => {
+                offLayerRemove = map.content.markers.events.on('entityremove').each(({ entity }: { entity: GTMarker }) => {
                     animState.delete(entity.id);
                     rotateBase.delete(entity.id);
                     rotateDir.delete(entity.id);
@@ -218,7 +218,7 @@
         if (!map || !animateMarkers) return;
         const t = (now - animStartMs) / 1000; // seconds
         const omega = 2 * Math.PI * ORBIT_HZ;
-        for (const mk of map.markers.getAll()) {
+        for (const mk of map.content.markers.getAll()) {
             const st = animState.get(mk.id);
             if (!st) continue;
             const dx = ORBIT_AMP * Math.cos(omega * t + st.phase);
@@ -230,7 +230,7 @@
     function rotateMarkersFrame(now: number): void {
         if (!map || !rotateMarkers) return;
         const t = (now - rotStartMs) / 1000; // seconds
-        for (const mk of map.markers.getAll()) {
+        for (const mk of map.content.markers.getAll()) {
             const r0 = rotateBase.get(mk.id);
             if (r0 == null) continue;
             const dir = rotateDir.get(mk.id) ?? 1;
@@ -241,7 +241,7 @@
 
     async function recenter() {
         if (!map || !home) return;
-        await map.transition().center({ x: home.lng, y: home.lat }).apply();
+        await map.view.transition().center({ x: home.lng, y: home.lat }).apply();
     }
 	function onMarkersChange() {
 		const n = Math.max(0, Math.min(999_999, Math.floor(markersLocal)));
