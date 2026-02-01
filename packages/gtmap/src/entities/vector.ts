@@ -12,9 +12,9 @@ export type VectorType = 'polyline' | 'polygon' | 'circle';
  *
  * @public
  */
-export interface VectorOptions<T = unknown> {
+export interface VectorOptions {
 	/** User data attached to the vector. */
-	data?: T;
+	data?: unknown;
 }
 
 let _vidSeq = 0;
@@ -30,10 +30,10 @@ function genVectorId(): string {
  * @remarks
  * Events are minimal for now (`remove`); interaction events can be added later.
  */
-export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
+export class Vector extends EventedEntity<VectorEventMap> {
 	readonly id: string;
 	private _geometry: VectorGeometry;
-	private _data?: T;
+	private _data?: unknown;
 	private _zIndex: number;
 	private _onChange?: () => void;
 
@@ -46,7 +46,7 @@ export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
 	 * @param onChange - Internal callback for renderer sync
 	 * @internal
 	 */
-	constructor(geometry: VectorGeometry, opts: VectorOptions<T> = {}, onChange?: () => void) {
+	constructor(geometry: VectorGeometry, opts: VectorOptions = {}, onChange?: () => void) {
 		super();
 		this.id = genVectorId();
 		this._geometry = geometry;
@@ -70,7 +70,7 @@ export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
 	}
 
 	/** Get user data attached to this vector. */
-	get data(): T | undefined {
+	get data(): unknown {
 		return this._data;
 	}
 
@@ -102,7 +102,7 @@ export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
 	 * vector.setData({ region: 'north', level: 5 });
 	 * ```
 	 */
-	setData(data: T): this {
+	setData(data: unknown): this {
 		this._data = data;
 		return this;
 	}
@@ -112,8 +112,8 @@ export class Vector<T = unknown> extends EventedEntity<VectorEventMap<T>> {
 	 *
 	 * @public
 	 */
-	toData(): VectorData<T> {
-		const result: VectorData<T> = { id: this.id, geometry: this._geometry };
+	toData(): VectorData {
+		const result: VectorData = { id: this.id, geometry: this._geometry };
 		if (this._data !== undefined) result.data = this._data;
 		return result;
 	}

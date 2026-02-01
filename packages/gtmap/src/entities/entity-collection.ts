@@ -110,9 +110,9 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	 * @example
 	 * ```ts
 	 * // Show only resources
-	 * map.markers.setFilter(m => m.data.category === 'resource');
+	 * map.content.markers.setFilter(m => (m.data as MyPOI)?.category === 'resource');
 	 * // Clear filter
-	 * map.markers.setFilter(null);
+	 * map.content.markers.setFilter(null);
 	 * ```
 	 */
 	setFilter(predicate: ((entity: T) => boolean) | null): this {
@@ -143,7 +143,7 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	 * @returns Array of matching entities
 	 * @example
 	 * ```ts
-	 * const rareItems = map.markers.find(m => m.data.tier === 'rare');
+	 * const rareItems = map.content.markers.find(m => (m.data as MyPOI)?.tier === 'rare');
 	 * ```
 	 */
 	find(predicate: (entity: T) => boolean): T[] {
@@ -158,8 +158,8 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	 * @returns Count of matching entities (or total if no predicate)
 	 * @example
 	 * ```ts
-	 * const total = map.markers.count();
-	 * const resourceCount = map.markers.count(m => m.data.category === 'resource');
+	 * const total = map.content.markers.count();
+	 * const resourceCount = map.content.markers.count(m => (m.data as MyPOI)?.category === 'resource');
 	 * ```
 	 */
 	count(predicate?: (entity: T) => boolean): number {

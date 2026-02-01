@@ -407,11 +407,11 @@ export interface IconDefInternal {
 	anchorY?: number;
 }
 
-export interface MarkerEventData<T = unknown> {
+export interface MarkerEventData {
 	now: number;
 	view: ViewState;
 	screen: { x: number; y: number };
-	marker: { id: string; index: number; world: Point; size: { width: number; height: number }; rotation?: number; data?: T | null };
+	marker: { id: string; index: number; world: Point; size: { width: number; height: number }; rotation?: number; data?: unknown | null };
 	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 	originalEvent?: PointerEvent | MouseEvent;
 }
