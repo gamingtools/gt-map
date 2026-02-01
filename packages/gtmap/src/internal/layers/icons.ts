@@ -201,6 +201,9 @@ export class IconRenderer {
 		dpr: number;
 		zoom: number;
 		center: { x: number; y: number };
+		baseZ?: number;
+		levelScale?: number;
+		tlWorld?: { x: number; y: number };
 		minZoom?: number;
 		maxZoom?: number;
 		container: HTMLElement;
@@ -220,11 +223,16 @@ export class IconRenderer {
 			return;
 		}
 		const gl = ctx.gl;
-		const { zInt: baseZ, scale: effScale } = Coords.zParts(ctx.zoom);
+		const { zInt: fallbackZ, scale: fallbackScale } = Coords.zParts(ctx.zoom);
+		const baseZ = ctx.baseZ ?? fallbackZ;
+		const effScale = ctx.levelScale ?? fallbackScale;
 		const widthCSS = ctx.viewport.width;
 		const heightCSS = ctx.viewport.height;
-		const centerLevel = ctx.project(ctx.center.x, ctx.center.y, baseZ);
-		const tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
+		let tlWorld = ctx.tlWorld;
+		if (!tlWorld) {
+			const centerLevel = ctx.project(ctx.center.x, ctx.center.y, baseZ);
+			tlWorld = Coords.tlLevelForWithScale(centerLevel, effScale, { x: widthCSS, y: heightCSS });
+		}
 
 		const minZoom = ctx.minZoom ?? 0;
 		const maxZoom = ctx.maxZoom ?? 19;

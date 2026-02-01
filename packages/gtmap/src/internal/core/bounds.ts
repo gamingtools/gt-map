@@ -19,6 +19,7 @@ export function clampCenterWorld(
 	// If explicit bounds are provided, apply them (Leaflet-like maxBounds behavior)
 	if (maxBoundsPx) {
 		const visc = Math.max(0, Math.min(1, maxBoundsViscosity ?? 0));
+		const viscEff = visc * visc;
 		const s = sFor((zMax ?? zInt) as number, zInt);
 		const minXw = maxBoundsPx.minX / s;
 		const minYw = maxBoundsPx.minY / s;
@@ -36,13 +37,13 @@ export function clampCenterWorld(
 		if (minCx > maxCx) cx = (minXw + maxXw) * 0.5;
 		else {
 			const clampedX = Math.max(minCx, Math.min(maxCx, cx));
-			if (viscous && visc > 0) cx = cx * (1 - visc) + clampedX * visc;
+			if (viscous && viscEff > 0) cx = cx * (1 - viscEff) + clampedX * viscEff;
 			else cx = clampedX;
 		}
 		if (minCy > maxCy) cy = (minYw + maxYw) * 0.5;
 		else {
 			const clampedY = Math.max(minCy, Math.min(maxCy, cy));
-			if (viscous && visc > 0) cy = cy * (1 - visc) + clampedY * visc;
+			if (viscous && viscEff > 0) cy = cy * (1 - viscEff) + clampedY * viscEff;
 			else cy = clampedY;
 		}
 		return { x: cx, y: cy };

@@ -317,6 +317,7 @@
 		{map}
 		fpsCap={60}
 		wheelSpeed={1.0}
+		mapSize={MAP_TILES.mapSize}
 		home={HOME}
 		{markerCount}
 		{setMarkerCount}

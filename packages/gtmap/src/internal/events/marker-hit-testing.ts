@@ -71,8 +71,10 @@ export interface MarkerHitTestingDeps {
 	getZoom(): number;
 	getMinZoom(): number;
 	getMaxZoom(): number;
+	getDpr(): number;
 	getCenter(): { x: number; y: number };
 	getImageMaxZoom(): number;
+	getZoomSnapThreshold(): number;
 	getIcons(): IconRenderer | null;
 	getIconScaleFunction(): ((zoom: number, min: number, max: number) => number) | null;
 }
@@ -113,21 +115,34 @@ export class MarkerHitTesting {
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
 		const zoom = this.deps.getZoom();
+		const dpr = this.deps.getDpr();
 		const center = this.deps.getCenter();
 		const imageMaxZ = this.deps.getImageMaxZoom();
+		const zoomSnapThreshold = this.deps.getZoomSnapThreshold();
 
 		const minZoom = this.deps.getMinZoom();
 		const maxZoom = this.deps.getMaxZoom();
 		const iconScaleFn = this.deps.getIconScaleFunction();
 		const iconScale = iconScaleFn ? iconScaleFn(zoom, minZoom, maxZoom) : 1.0;
 		const info = icons.getMarkerInfo(iconScale, { zoom, minZoom, maxZoom });
+		const view = Coords.computeSnappedLevelTransform({
+			centerWorld: center,
+			zoom,
+			viewportCSS: { x: widthCSS, y: heightCSS },
+			imageMaxZ,
+			dpr,
+			zoomSnapThreshold,
+			minZoom,
+			maxZoom,
+		});
 
 		// Iterate in reverse: last marker rendered is on top, so check it first
 		for (let i = info.length - 1; i >= 0; i--) {
 			const it = info[i]!;
 
 			// Convert marker world position to screen position
-			const css = Coords.worldToCSS({ x: it.x, y: it.y }, zoom, { x: center.x, y: center.y }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+			const level = Coords.worldToLevel({ x: it.x, y: it.y }, imageMaxZ, view.baseZ);
+			const css = { x: (level.x - view.tlLevel.x) * view.scale, y: (level.y - view.tlLevel.y) * view.scale };
 
 			// Compute AABB bounds (anchor offsets from the marker's screen position)
 			const left = css.x - it.anchor.ax;
@@ -213,21 +228,34 @@ export class MarkerHitTesting {
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
 		const zoom = this.deps.getZoom();
+		const dpr = this.deps.getDpr();
 		const center = this.deps.getCenter();
 		const imageMaxZ = this.deps.getImageMaxZoom();
+		const zoomSnapThreshold = this.deps.getZoomSnapThreshold();
 
 		const minZoom = this.deps.getMinZoom();
 		const maxZoom = this.deps.getMaxZoom();
 		const iconScaleFn = this.deps.getIconScaleFunction();
 		const iconScale = iconScaleFn ? iconScaleFn(zoom, minZoom, maxZoom) : 1.0;
 		const info = icons.getMarkerInfo(iconScale, { zoom, minZoom, maxZoom });
+		const view = Coords.computeSnappedLevelTransform({
+			centerWorld: center,
+			zoom,
+			viewportCSS: { x: widthCSS, y: heightCSS },
+			imageMaxZ,
+			dpr,
+			zoomSnapThreshold,
+			minZoom,
+			maxZoom,
+		});
 
 		// Iterate in reverse: top-to-bottom in visual stacking order
 		for (let i = info.length - 1; i >= 0; i--) {
 			const it = info[i]!;
 
 			// Convert marker world position to screen position
-			const css = Coords.worldToCSS({ x: it.x, y: it.y }, zoom, { x: center.x, y: center.y }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+			const level = Coords.worldToLevel({ x: it.x, y: it.y }, imageMaxZ, view.baseZ);
+			const css = { x: (level.x - view.tlLevel.x) * view.scale, y: (level.y - view.tlLevel.y) * view.scale };
 
 			// Compute AABB bounds
 			const left = css.x - it.anchor.ax;

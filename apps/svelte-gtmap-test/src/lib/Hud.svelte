@@ -6,6 +6,23 @@
 		map,
 		fpsCap: fpsCapInitial = 60,
 		wheelSpeed: wheelSpeedInitial = 1.0,
+		inertia: inertiaInitial = true,
+		inertiaDeceleration: inertiaDecelInitial = 3400,
+		inertiaMaxSpeed: inertiaMaxSpeedInitial = 2000,
+		easeLinearity: easeLinearityInitial = 0.2,
+		zoomSnapThreshold: zoomSnapThresholdInitial = 0.4,
+		rasterOpacity: rasterOpacityInitial = 1.0,
+		upscaleFilter: upscaleFilterInitial = 'auto',
+		backgroundColor: backgroundColorInitial = '#ffffff',
+		backgroundTransparent: backgroundTransparentInitial = true,
+		wrapX: wrapXInitial = false,
+		clipToBounds: clipToBoundsInitial = true,
+		autoResize: autoResizeInitial = true,
+		maxBoundsEnabled: maxBoundsEnabledInitial = false,
+		maxBoundsViscosity: maxBoundsViscosityInitial = 0.0,
+		maxBoundsPx: maxBoundsPxInitial = { minX: 0, minY: 0, maxX: 0, maxY: 0 },
+		iconScaleMode: iconScaleModeInitial = 'clamp',
+		mapSize,
 		home,
 		markerCount,
 		setMarkerCount,
@@ -15,6 +32,23 @@
         map: GTMap;
 		fpsCap?: number;
 		wheelSpeed?: number;
+		inertia?: boolean;
+		inertiaDeceleration?: number;
+		inertiaMaxSpeed?: number;
+		easeLinearity?: number;
+		zoomSnapThreshold?: number;
+		rasterOpacity?: number;
+		upscaleFilter?: 'auto' | 'linear' | 'bicubic';
+		backgroundColor?: string;
+		backgroundTransparent?: boolean;
+		wrapX?: boolean;
+		clipToBounds?: boolean;
+		autoResize?: boolean;
+		maxBoundsEnabled?: boolean;
+		maxBoundsViscosity?: number;
+		maxBoundsPx?: { minX: number; minY: number; maxX: number; maxY: number };
+		iconScaleMode?: 'default' | 'screen' | 'world' | 'clamp';
+		mapSize?: { width: number; height: number };
 		home: { lng: number; lat: number };
 		markerCount: number;
 		setMarkerCount: (n: number) => void;
@@ -32,6 +66,23 @@
     let gridEnabled = $state(false);
     let markersEnabled = $state(true);
     let vectorsEnabled = $state(true);
+	let inertiaEnabled = $state(inertiaInitial);
+	let inertiaDecel = $state(inertiaDecelInitial);
+	let inertiaMaxSpeed = $state(inertiaMaxSpeedInitial);
+	let easeLinearity = $state(easeLinearityInitial);
+	let zoomSnapThreshold = $state(zoomSnapThresholdInitial);
+	let rasterOpacity = $state(rasterOpacityInitial);
+	let upscaleFilter = $state<'auto' | 'linear' | 'bicubic'>(upscaleFilterInitial);
+	let backgroundColor = $state(backgroundColorInitial);
+	let backgroundTransparent = $state(backgroundTransparentInitial);
+	let wrapX = $state(wrapXInitial);
+	let clipToBounds = $state(clipToBoundsInitial);
+	let autoResize = $state(autoResizeInitial);
+	let maxBoundsEnabled = $state(maxBoundsEnabledInitial);
+	let maxBoundsViscosity = $state(maxBoundsViscosityInitial);
+	let maxBoundsPx = $state<{ minX: number; minY: number; maxX: number; maxY: number }>(maxBoundsPxInitial);
+	let iconScaleMode = $state<'default' | 'screen' | 'world' | 'clamp'>(iconScaleModeInitial);
+	let boundsSeeded = false;
     // Animate markers (position-only) + optional rotation
     let animateMarkers = $state(false);
     let rotateMarkers = $state(false);
@@ -108,13 +159,92 @@
 
 	// Apply controls
 	$effect(() => {
+		if (boundsSeeded) return;
+		if (!mapSize) return;
+		const zeroBounds = maxBoundsPx.minX === 0 && maxBoundsPx.minY === 0 && maxBoundsPx.maxX === 0 && maxBoundsPx.maxY === 0;
+		if (zeroBounds) {
+			maxBoundsPx = { minX: 0, minY: 0, maxX: mapSize.width, maxY: mapSize.height };
+		}
+		boundsSeeded = true;
+	});
+
+	$effect(() => {
 		map?.input?.setWheelSpeed(wheelSpeed);
+	});
+	$effect(() => {
+		map?.input?.setInertiaOptions({
+			inertia: inertiaEnabled,
+			inertiaDeceleration: inertiaDecel,
+			inertiaMaxSpeed: inertiaMaxSpeed,
+			easeLinearity,
+		});
 	});
 	$effect(() => {
 		map?.display?.setFpsCap(fpsCap);
 	});
 	$effect(() => {
 		map?.display?.setGridVisible(gridEnabled);
+	});
+	$effect(() => {
+		map?.display?.setUpscaleFilter(upscaleFilter);
+	});
+	$effect(() => {
+		map?.display?.setRasterOpacity(rasterOpacity);
+	});
+	$effect(() => {
+		map?.display?.setZoomSnapThreshold(zoomSnapThreshold);
+	});
+	$effect(() => {
+		if (!map) return;
+		if (backgroundTransparent) {
+			map.display?.setBackgroundColor('transparent');
+		} else {
+			map.display?.setBackgroundColor(backgroundColor);
+		}
+	});
+	$effect(() => {
+		map?.view?.setWrapX(wrapX);
+	});
+	$effect(() => {
+		map?.view?.setClipToBounds(clipToBounds);
+	});
+	$effect(() => {
+		map?.view?.setAutoResize(autoResize);
+	});
+	$effect(() => {
+		map?.view?.setMaxBoundsViscosity(maxBoundsViscosity);
+	});
+	$effect(() => {
+		if (!map) return;
+		if (!maxBoundsEnabled) {
+			map.view?.setMaxBoundsPx(null);
+			return;
+		}
+		const minX = Math.min(maxBoundsPx.minX, maxBoundsPx.maxX);
+		const maxX = Math.max(maxBoundsPx.minX, maxBoundsPx.maxX);
+		const minY = Math.min(maxBoundsPx.minY, maxBoundsPx.maxY);
+		const maxY = Math.max(maxBoundsPx.minY, maxBoundsPx.maxY);
+		map.view?.setMaxBoundsPx({ minX, minY, maxX, maxY });
+	});
+	$effect(() => {
+		if (!map) return;
+		if (iconScaleMode === 'default') {
+			map.view?.setIconScaleFunction(null);
+			return;
+		}
+		if (iconScaleMode === 'screen') {
+			map.view?.setIconScaleFunction(() => 1);
+			return;
+		}
+		if (iconScaleMode === 'world') {
+			map.view?.setIconScaleFunction((zoom) => Math.pow(2, zoom - 3));
+			return;
+		}
+		map.view?.setIconScaleFunction((zoom) => {
+			const maxScale = 1;
+			const scale = Math.pow(2, zoom - 3);
+			return Math.min(maxScale, Math.max(0.5, scale));
+		});
 	});
 	$effect(() => {
 		try {
@@ -260,13 +390,28 @@
 			}, 200);
 		} catch {}
 	}
+
+	function applyMapBoundsDefaults() {
+		if (!mapSize) return;
+		maxBoundsPx = { minX: 0, minY: 0, maxX: mapSize.width, maxY: mapSize.height };
+	}
+
+	let hudVisible = $state(true);
 </script>
 
-<div
-	class="pointer-events-none absolute left-2 top-2 z-10 select-none rounded-md border border-gray-200/60 bg-white/80 px-3 py-2 text-xs text-gray-800 shadow backdrop-blur"
->
-	<!-- Status (non-interactive) -->
-	<div class="pointer-events-none grid grid-cols-1 gap-x-6 gap-y-1">
+<div class="absolute left-2 top-2 z-10 flex flex-col gap-2">
+	<button
+		class="pointer-events-auto w-fit rounded border border-gray-300 bg-white/80 px-2 py-1 text-xs text-gray-800 shadow hover:bg-white"
+		onclick={() => (hudVisible = !hudVisible)}
+	>
+		{hudVisible ? 'Hide HUD' : 'Show HUD'}
+	</button>
+	{#if hudVisible}
+		<div
+			class="max-h-[calc(100vh-50px)] select-none overflow-y-auto rounded-md border border-gray-200/60 bg-white/80 px-3 py-2 text-xs text-gray-800 shadow backdrop-blur"
+		>
+			<!-- Status (non-interactive) -->
+			<div class="pointer-events-none grid grid-cols-1 gap-x-6 gap-y-1">
 		<div class="flex items-center gap-2">
 			<span class="font-semibold text-gray-700">Center:</span><span class="tabular-nums"
 				>X: {center.lng.toFixed(2)}, Y: {center.lat.toFixed(2)}</span
@@ -364,5 +509,205 @@
 				/>
 			</div>
 		</div>
+		<div class="my-2 h-px bg-gray-200"></div>
+		<div class="space-y-1">
+			<div class="font-semibold text-gray-700">Display</div>
+			<div class="flex items-center gap-2">
+				<label class="text-gray-700" for="upscale-filter">Upscale</label>
+				<select id="upscale-filter" class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-0.5" bind:value={upscaleFilter}>
+					<option value="auto">auto</option>
+					<option value="linear">linear</option>
+					<option value="bicubic">bicubic</option>
+				</select>
+			</div>
+			<div>
+				<label class="block text-gray-700" for="raster-opacity">Raster opacity</label>
+				<div class="flex items-center gap-2">
+					<input
+						id="raster-opacity"
+						class="pointer-events-auto w-40"
+						type="range"
+						min="0"
+						max="1"
+						step="0.01"
+						bind:value={rasterOpacity}
+					/>
+					<span class="w-10 text-right tabular-nums">{rasterOpacity.toFixed(2)}</span>
+				</div>
+			</div>
+			<div>
+				<label class="block text-gray-700" for="zoom-snap">Zoom snap</label>
+				<div class="flex items-center gap-2">
+					<input
+						id="zoom-snap"
+						class="pointer-events-auto w-40"
+						type="range"
+						min="0"
+						max="1"
+						step="0.01"
+						bind:value={zoomSnapThreshold}
+					/>
+					<span class="w-10 text-right tabular-nums">{zoomSnapThreshold.toFixed(2)}</span>
+				</div>
+			</div>
+			<label class="pointer-events-auto flex items-center gap-2">
+				<input type="checkbox" bind:checked={backgroundTransparent} />
+				<span>Transparent bg</span>
+			</label>
+			<div class="flex items-center gap-2">
+				<label class="text-gray-700" for="bg-color">BG color</label>
+				<input
+					id="bg-color"
+					class="pointer-events-auto h-6 w-10 rounded border border-gray-300 bg-white/70"
+					type="color"
+					bind:value={backgroundColor}
+					disabled={backgroundTransparent}
+				/>
+				<span class="tabular-nums">{backgroundColor}</span>
+			</div>
+		</div>
+		<div class="my-2 h-px bg-gray-200"></div>
+		<div class="space-y-1">
+			<div class="font-semibold text-gray-700">View</div>
+			<label class="pointer-events-auto flex items-center gap-2">
+				<input type="checkbox" bind:checked={wrapX} />
+				<span>Wrap X</span>
+			</label>
+			<label class="pointer-events-auto flex items-center gap-2">
+				<input type="checkbox" bind:checked={clipToBounds} />
+				<span>Clip to bounds</span>
+			</label>
+			<label class="pointer-events-auto flex items-center gap-2">
+				<input type="checkbox" bind:checked={autoResize} />
+				<span>Auto resize</span>
+			</label>
+			<div>
+				<label class="block text-gray-700" for="bounds-viscosity">Bounds viscosity</label>
+				<div class="flex items-center gap-2">
+					<input
+						id="bounds-viscosity"
+						class="pointer-events-auto w-40"
+						type="range"
+						min="0"
+						max="1"
+						step="0.01"
+						bind:value={maxBoundsViscosity}
+					/>
+					<span class="w-10 text-right tabular-nums">{maxBoundsViscosity.toFixed(2)}</span>
+				</div>
+			</div>
+			<label class="pointer-events-auto flex items-center gap-2">
+				<input type="checkbox" bind:checked={maxBoundsEnabled} />
+				<span>Use max bounds</span>
+			</label>
+			<div class="grid grid-cols-2 gap-2">
+				<label class="flex items-center gap-2">
+					<span class="text-gray-700">Min X</span>
+					<input
+						class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
+						type="number"
+						bind:value={maxBoundsPx.minX}
+						disabled={!maxBoundsEnabled}
+					/>
+				</label>
+				<label class="flex items-center gap-2">
+					<span class="text-gray-700">Min Y</span>
+					<input
+						class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
+						type="number"
+						bind:value={maxBoundsPx.minY}
+						disabled={!maxBoundsEnabled}
+					/>
+				</label>
+				<label class="flex items-center gap-2">
+					<span class="text-gray-700">Max X</span>
+					<input
+						class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
+						type="number"
+						bind:value={maxBoundsPx.maxX}
+						disabled={!maxBoundsEnabled}
+					/>
+				</label>
+				<label class="flex items-center gap-2">
+					<span class="text-gray-700">Max Y</span>
+					<input
+						class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
+						type="number"
+						bind:value={maxBoundsPx.maxY}
+						disabled={!maxBoundsEnabled}
+					/>
+				</label>
+			</div>
+			{#if mapSize}
+				<button
+					class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1 text-gray-800 hover:bg-white"
+					onclick={applyMapBoundsDefaults}
+					disabled={!maxBoundsEnabled}
+				>
+					Set bounds to map size
+				</button>
+			{/if}
+			<div class="flex items-center gap-2">
+				<label class="text-gray-700" for="icon-scale">Icon scale</label>
+				<select id="icon-scale" class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-0.5" bind:value={iconScaleMode}>
+					<option value="default">default</option>
+					<option value="screen">screen-fixed</option>
+					<option value="world">world-scaled</option>
+					<option value="clamp">clamped world</option>
+				</select>
+			</div>
+		</div>
+		<div class="my-2 h-px bg-gray-200"></div>
+		<div class="space-y-1">
+			<div class="font-semibold text-gray-700">Inertia</div>
+			<label class="pointer-events-auto flex items-center gap-2">
+				<input type="checkbox" bind:checked={inertiaEnabled} />
+				<span>Enable inertia</span>
+			</label>
+			<div class="flex items-center gap-2">
+				<label class="text-gray-700" for="inertia-decel">Decel</label>
+				<input
+					id="inertia-decel"
+					class="pointer-events-auto w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
+					type="number"
+					min="100"
+					max="20000"
+					step="100"
+					bind:value={inertiaDecel}
+					disabled={!inertiaEnabled}
+				/>
+			</div>
+			<div class="flex items-center gap-2">
+				<label class="text-gray-700" for="inertia-maxspeed">Max speed</label>
+				<input
+					id="inertia-maxspeed"
+					class="pointer-events-auto w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
+					type="number"
+					min="10"
+					max="1000000"
+					step="100"
+					bind:value={inertiaMaxSpeed}
+					disabled={!inertiaEnabled}
+				/>
+			</div>
+			<div>
+				<label class="block text-gray-700" for="inertia-ease">Ease linearity</label>
+				<div class="flex items-center gap-2">
+					<input
+						id="inertia-ease"
+						class="pointer-events-auto w-40"
+						type="range"
+						min="0.01"
+						max="1.00"
+						step="0.01"
+						bind:value={easeLinearity}
+						disabled={!inertiaEnabled}
+					/>
+					<span class="w-10 text-right tabular-nums">{easeLinearity.toFixed(2)}</span>
+				</div>
+			</div>
+		</div>
 	</div>
+	</div>
+	{/if}
 </div>

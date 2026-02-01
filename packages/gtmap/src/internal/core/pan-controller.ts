@@ -40,6 +40,7 @@ import { clampCenterWorld as clampCenterWorldCore } from './bounds';
  * preventing the animation from overshooting into forbidden areas.
  */
 export default class PanController {
+	private static readonly MIN_REMAINING_PX = 0.25;
 	private deps: PanDeps;
 	private anim: null | {
 		start: number;
@@ -134,6 +135,7 @@ export default class PanController {
 		const heightCSS = rect.height;
 
 		const target = { x: a.fromWorld.x + a.offsetWorld.x * p, y: a.fromWorld.y + a.offsetWorld.y * p };
+		const remainingPx = Math.hypot(a.offsetWorld.x * (1 - p) * scale, a.offsetWorld.y * (1 - p) * scale);
 
 		const clamped = clampCenterWorldCore(
 			target,
@@ -152,13 +154,32 @@ export default class PanController {
 
 		const zImg = this.deps.getImageMaxZoom();
 		const s0 = Coords.sFor(zImg, zInt);
-		this.deps.setCenter(clamped.x * s0, clamped.y * s0);
-		this.deps.requestRender();
-
-		if (t >= 1) {
+		const shouldFinish = t >= 1 || remainingPx <= PanController.MIN_REMAINING_PX;
+		if (shouldFinish) {
+			const finalTarget = { x: a.fromWorld.x + a.offsetWorld.x, y: a.fromWorld.y + a.offsetWorld.y };
+			const finalClamped = clampCenterWorldCore(
+				finalTarget,
+				zInt,
+				scale,
+				widthCSS,
+				heightCSS,
+				this.deps.getWrapX(),
+				this.deps.getFreePan(),
+				this.deps.getMapSize(),
+				this.deps.getMaxZoom(),
+				this.deps.getMaxBoundsPx(),
+				this.deps.getMaxBoundsViscosity(),
+				false,
+			);
+			this.deps.setCenter(finalClamped.x * s0, finalClamped.y * s0);
+			this.deps.requestRender();
 			this.anim = null;
 			this.deps.emit('moveend', { view: this.deps.getPublicView() });
+			return false;
 		}
+
+		this.deps.setCenter(clamped.x * s0, clamped.y * s0);
+		this.deps.requestRender();
 		return true;
 	}
 }

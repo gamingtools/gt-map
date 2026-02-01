@@ -78,10 +78,11 @@ export class InputManager {
 			getCanvas: d.getCanvas,
 			getMaxZoom: d.getMaxZoom,
 			getImageMaxZoom: d.getImageMaxZoom,
+			getMaxBoundsViscosity: d.getMaxBoundsViscosity,
 			getView: d.getView,
-			setCenter: (x: number, y: number) => {
+			setCenter: (x: number, y: number, opts?: { skipClamp?: boolean }) => {
 				const maxBoundsPx = d.getMaxBoundsPx();
-				if (maxBoundsPx) {
+				if (maxBoundsPx && !opts?.skipClamp) {
 					const zoom = d.getZoom();
 					const { zInt, scale } = Coords.zParts(zoom);
 					const rect = d.getContainer().getBoundingClientRect();

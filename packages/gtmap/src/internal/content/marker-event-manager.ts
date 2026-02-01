@@ -12,8 +12,10 @@ export interface MarkerEventManagerDeps {
 	getZoom(): number;
 	getMinZoom(): number;
 	getMaxZoom(): number;
+	getDpr(): number;
 	getCenter(): { x: number; y: number };
 	getImageMaxZoom(): number;
+	getZoomSnapThreshold(): number;
 	getIcons(): IconRenderer | null;
 	getIconScaleFunction(): IconScaleFunction | null;
 	debugWarn(msg: string, err?: unknown): void;
@@ -48,8 +50,10 @@ export class MarkerEventManager {
 			getZoom: () => d.getZoom(),
 			getMinZoom: () => d.getMinZoom(),
 			getMaxZoom: () => d.getMaxZoom(),
+			getDpr: () => d.getDpr(),
 			getCenter: () => d.getCenter(),
 			getImageMaxZoom: () => d.getImageMaxZoom(),
+			getZoomSnapThreshold: () => d.getZoomSnapThreshold(),
 			getIcons: () => d.getIcons(),
 			getIconScaleFunction: () => d.getIconScaleFunction(),
 		});
