@@ -199,6 +199,11 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 		return this;
 	}
 
+	setZoomSnapThreshold(v: number): this {
+		this.display.setZoomSnapThreshold(v);
+		return this;
+	}
+
 	setFpsCap(v: number): this {
 		this.display.setFpsCap(v);
 		return this;

@@ -100,6 +100,30 @@ export function zParts(z: number): { zInt: number; scale: number } {
 }
 
 /**
+ * Decompose a continuous zoom for tile-level selection with a configurable snap threshold.
+ *
+ * When the fractional part of the zoom >= threshold, we snap up to the next integer zoom
+ * level (and the scale becomes < 1, meaning downscale). This trades loading more tiles
+ * for sharper imagery at high fractional zooms.
+ *
+ * @param z - Continuous zoom value
+ * @param threshold - Fractional threshold in [0, 1) at which to snap up (e.g. 0.4)
+ * @returns { zInt, scale } decomposition biased toward the sharper tile level
+ *
+ * @example
+ * tileZParts(3.3, 0.4) // => { zInt: 3, scale: 1.23 }  (below threshold, same as floor)
+ * tileZParts(3.4, 0.4) // => { zInt: 4, scale: 0.66 }  (at threshold, snap up)
+ * tileZParts(3.8, 0.4) // => { zInt: 4, scale: 0.87 }  (above threshold, snap up)
+ */
+export function tileZParts(z: number, threshold: number): { zInt: number; scale: number } {
+	const floor = Math.floor(z);
+	const frac = z - floor;
+	const zInt = frac >= threshold ? floor + 1 : floor;
+	const scale = Math.pow(2, z - zInt);
+	return { zInt, scale };
+}
+
+/**
  * Compute the effective scale when rendering a specific level at zoom z.
  *
  * @param z - Current continuous zoom

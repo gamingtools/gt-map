@@ -48,4 +48,12 @@ export class DisplayFacade {
 	setRasterOpacity(v: number): void {
 		this._engine.setRasterOpacity(v);
 	}
+
+	/**
+	 * Set the fractional zoom threshold at which the renderer snaps to the next tile zoom level.
+	 * Range: 0 to 1. Default: 0.4.
+	 */
+	setZoomSnapThreshold(v: number): void {
+		this._engine.setZoomSnapThreshold(v);
+	}
 }

@@ -261,12 +261,14 @@ export class RenderCoordinator {
 		// Draw grid overlay
 		if (this._showGrid) {
 			const rect = ctx.container.getBoundingClientRect();
-			const { zInt: baseZ, scale } = Coords.zParts(vs.zoom);
+			const rawTile = Coords.tileZParts(vs.zoom, vs.zoomSnapThreshold);
+			const baseZ = Math.max(vs.minZoom, Math.min(rawTile.zInt, vs.imageMaxZoom));
+			const scale = Math.pow(2, vs.zoom - baseZ);
 			const widthCSS = rect.width;
 			const heightCSS = rect.height;
 			const s = Coords.sFor(vs.imageMaxZoom, baseZ);
 			const centerLevel = { x: vs.center.lng / s, y: vs.center.lat / s };
-			let tlWorld = Coords.tlLevelFor(centerLevel, vs.zoom, { x: widthCSS, y: heightCSS });
+			let tlWorld = Coords.tlLevelForWithScale(centerLevel, scale, { x: widthCSS, y: heightCSS });
 			const snap = (v: number) => Coords.snapLevelToDevice(v, scale, vs.dpr);
 			tlWorld = { x: snap(tlWorld.x), y: snap(tlWorld.y) };
 			const pal = ctx.bgUI?.getGridPalette() ?? { minor: 'rgba(200,200,200,0.3)', major: 'rgba(200,200,200,0.5)', labelBg: 'rgba(0,0,0,0.55)', labelFg: 'rgba(255,255,255,0.9)' };
@@ -299,6 +301,7 @@ export class RenderCoordinator {
 			imageMaxZoom: vs.imageMaxZoom,
 			mapSize: vs.mapSize,
 			wrapX: vs.wrapX,
+			zoomSnapThreshold: vs.zoomSnapThreshold,
 			useScreenCache: this.useScreenCache,
 			screenCache: this._screenCache,
 			raster: this._raster,
