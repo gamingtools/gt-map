@@ -7,7 +7,6 @@ export default class MapRenderer {
     stepAnimation?: () => boolean;
     zoomVelocityTick?: () => void;
     panVelocityTick?: () => void;
-    prefetchNeighbors?: (z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) => void;
     cancelUnwanted?: () => void;
     clearWanted?: () => void;
   };
@@ -22,7 +21,6 @@ export default class MapRenderer {
       stepAnimation?: () => boolean;
       zoomVelocityTick?: () => void;
       panVelocityTick?: () => void;
-      prefetchNeighbors?: (z: number, tl: { x: number; y: number }, scale: number, w: number, h: number) => void;
       cancelUnwanted?: () => void;
       clearWanted?: () => void;
     },
@@ -144,9 +142,7 @@ export default class MapRenderer {
     const coverage = ctx.raster.coverage(tileCache, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, tileSize, ctx.mapSize, ctx.maxZoom, sourceMaxZoom);
     if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
 
-    const frac = ctx.zoom - baseZ;
     const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
-    const zIntNext = Math.min(ctx.maxZoom, baseZ + 1);
 
     // Backfill lower LODs if coverage is insufficient
     if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
@@ -196,37 +192,6 @@ export default class MapRenderer {
       wantTileKey: ctx.wantTileKey,
     });
 
-    // Prefetch neighbors
-    if (this.hooks.prefetchNeighbors) this.hooks.prefetchNeighbors(baseZ, tlWorld, scale, widthCSS, heightCSS);
-
-    // z+1 overlay blending during fractional zoom
-    if (zIntNext > baseZ && frac > 0) {
-      const centerN = ctx.project(ctx.center.lng, ctx.center.lat, zIntNext);
-      const scaleN = Coords.scaleAtLevel(ctx.zoom, zIntNext);
-      let tlN = Coords.tlLevelForWithScale(centerN, scaleN, { x: widthCSS, y: heightCSS });
-      const snapN = (v: number) => Coords.snapLevelToDevice(v, scaleN, ctx.dpr);
-      tlN = { x: snapN(tlN.x), y: snapN(tlN.y) };
-      const nextCoverage = ctx.raster.coverage(tileCache, zIntNext, tlN, scaleN, widthCSS, heightCSS, ctx.wrapX, tileSize, ctx.mapSize, ctx.maxZoom, sourceMaxZoom);
-      if (nextCoverage > 0.35) {
-        gl.uniform1f(loc.u_alpha!, layerAlpha);
-        ctx.raster.drawTilesForLevel(loc, tileCache, enqueueTile, {
-          zLevel: zIntNext,
-          tlWorld: tlN,
-          scale: scaleN,
-          dpr: ctx.dpr,
-          widthCSS,
-          heightCSS,
-          wrapX: ctx.wrapX,
-          tileSize,
-          mapSize: ctx.mapSize,
-          zMax: ctx.maxZoom,
-          sourceMaxZoom,
-          filterMode: this.levelFilter(scaleN),
-          wantTileKey: ctx.wantTileKey,
-        });
-        gl.uniform1f(loc.u_alpha!, 1.0);
-      }
-    }
   }
 
   private levelFilter(scale: number): 'linear' | 'bicubic' {

@@ -16,6 +16,7 @@ export class TileManager {
 	private _cache: TileCache | null = null;
 	private _packReader: GtpkReader | null = null;
 	private _decoding = new Set<string>();
+	private _missing = new Set<string>();
 	private _destroyed = false;
 
 	private _packUrl: string;
@@ -63,6 +64,7 @@ export class TileManager {
 		const key = tileKeyOf(z, x, y);
 		if (this._cache?.has(key)) return;
 		if (this._decoding.has(key)) return;
+		if (this._missing.has(key)) return;
 		if (!this._packReader?.ready) return;
 		if (!this.inBounds(z, x, y)) return;
 		if (this._decoding.size >= this._maxConcurrentDecodes) return;
@@ -74,6 +76,7 @@ export class TileManager {
 		const blob = this._packReader!.getBlob(key);
 		if (!blob) {
 			this._decoding.delete(key);
+			this._missing.add(key);
 			return;
 		}
 
@@ -136,15 +139,17 @@ export class TileManager {
 			const gl = this.ctx.gl!;
 			const MIP_BUDGET_MS = 2;
 			const start = performance.now();
+			let processed = 0;
 			while (performance.now() - start < MIP_BUDGET_MS && this._pendingMips.length > 0) {
 				const it = this._pendingMips.shift()!;
 				if (!this._cache?.isTileReady(it.key, it.tex)) continue;
 				gl.bindTexture(gl.TEXTURE_2D, it.tex);
 				gl.generateMipmap(gl.TEXTURE_2D);
 				gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+				processed++;
 			}
 			if (this._pendingMips.length > 0) requestAnimationFrame(() => this.scheduleMips());
-			this.ctx.requestRender();
+			if (processed > 0) this.ctx.requestRender();
 		};
 		requestAnimationFrame(process);
 	}
@@ -187,37 +192,6 @@ export class TileManager {
 	/** Run deferred LRU eviction after render has touched all visible tiles. */
 	cancelUnwanted(): void {
 		this._cache?.evictIfNeeded();
-	}
-
-	// -- Prefetch --
-
-	private _prefetchedWhileIdle = false;
-
-	prefetchNeighbors(z: number): void {
-		if (!this.isIdle()) {
-			this._prefetchedWhileIdle = false;
-			return;
-		}
-		if (this._prefetchedWhileIdle) return;
-		this._prefetchedWhileIdle = true;
-
-		const c = this.ctx.viewState.center;
-		const zMax = this.ctx.viewState.imageMaxZoom;
-		const TS = this._tileSize;
-		const s = Coords.sFor(zMax, z);
-		const cx = Math.floor(c.lng / s / TS);
-		const cy = Math.floor(c.lat / s / TS);
-		const R = 2;
-		for (let dy = -R; dy <= R; dy++) {
-			for (let dx = -R; dx <= R; dx++) {
-				const tx = cx + dx;
-				const ty = cy + dy;
-				if (tx < 0 || ty < 0) continue;
-				const key = tileKeyOf(z, tx, ty);
-				this._cache?.pin(key);
-				this.enqueue(z, tx, ty);
-			}
-		}
 	}
 
 	// -- Source change --
@@ -266,6 +240,7 @@ export class TileManager {
 		this._packReader = null;
 		this._cache = null;
 		this._decoding.clear();
+		this._missing.clear();
 		this._pendingMips = [];
 		this._mipsScheduled = false;
 	}
