@@ -4,30 +4,7 @@
 
 # Class: Decal
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Remarks](#remarks)
-- [Extends](#extends)
-- [Properties](#properties)
-  - [id](#id)
-- [Accessors](#accessors)
-  - [events](#events)
-  - [iconScaleFunction](#iconscalefunction)
-  - [opacity](#opacity)
-  - [rotation](#rotation)
-  - [scale](#scale)
-  - [visual](#visual)
-  - [x](#x)
-  - [y](#y)
-  - [zIndex](#zindex)
-- [Methods](#methods)
-  - [moveTo()](#moveto)
-  - [setStyle()](#setstyle)
-  - [toData()](#todata)
-
-Defined in: [entities/decal.ts:50](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L50)
+Defined in: [entities/decal.ts:50](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L50)
 
 Decal - a non-interactive visual anchored at a world pixel coordinate.
 
@@ -47,7 +24,7 @@ Emits `positionchange` and `remove` events.
 
 > `readonly` **id**: `string`
 
-Defined in: [entities/decal.ts:51](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L51)
+Defined in: [entities/decal.ts:51](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L51)
 
 ## Accessors
 
@@ -57,7 +34,7 @@ Defined in: [entities/decal.ts:51](https://github.com/gamingtools/gt-map/blob/1e
 
 > **get** **events**(): [`PublicEvents`](Interface.PublicEvents.md)\<`EventMap`\>
 
-Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/base.ts#L7)
+Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/base.ts#L7)
 
 ##### Returns
 
@@ -75,7 +52,7 @@ Defined in: [entities/base.ts:7](https://github.com/gamingtools/gt-map/blob/1ee8
 
 > **get** **iconScaleFunction**(): `undefined` \| `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [entities/decal.ts:121](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L121)
+Defined in: [entities/decal.ts:121](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L121)
 
 Icon scale function override for this decal (undefined = use visual's or map's).
 
@@ -91,7 +68,7 @@ Icon scale function override for this decal (undefined = use visual's or map's).
 
 > **get** **opacity**(): `number`
 
-Defined in: [entities/decal.ts:111](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L111)
+Defined in: [entities/decal.ts:111](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L111)
 
 Opacity (0-1).
 
@@ -107,7 +84,7 @@ Opacity (0-1).
 
 > **get** **rotation**(): `number`
 
-Defined in: [entities/decal.ts:106](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L106)
+Defined in: [entities/decal.ts:106](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L106)
 
 Clockwise rotation in degrees.
 
@@ -123,7 +100,7 @@ Clockwise rotation in degrees.
 
 > **get** **scale**(): `number`
 
-Defined in: [entities/decal.ts:101](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L101)
+Defined in: [entities/decal.ts:101](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L101)
 
 Scale multiplier (1 = visual's native size).
 
@@ -139,7 +116,7 @@ Scale multiplier (1 = visual's native size).
 
 > **get** **visual**(): [`Visual`](Class.Visual.md)
 
-Defined in: [entities/decal.ts:96](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L96)
+Defined in: [entities/decal.ts:96](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L96)
 
 The visual template for this decal.
 
@@ -155,7 +132,7 @@ The visual template for this decal.
 
 > **get** **x**(): `number`
 
-Defined in: [entities/decal.ts:86](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L86)
+Defined in: [entities/decal.ts:86](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L86)
 
 Get the current world X (pixels).
 
@@ -171,7 +148,7 @@ Get the current world X (pixels).
 
 > **get** **y**(): `number`
 
-Defined in: [entities/decal.ts:91](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L91)
+Defined in: [entities/decal.ts:91](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L91)
 
 Get the current world Y (pixels).
 
@@ -187,7 +164,7 @@ Get the current world Y (pixels).
 
 > **get** **zIndex**(): `number`
 
-Defined in: [entities/decal.ts:116](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L116)
+Defined in: [entities/decal.ts:116](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L116)
 
 Z-index for stacking order (higher values render on top).
 
@@ -201,7 +178,7 @@ Z-index for stacking order (higher values render on top).
 
 > **moveTo**(`x`, `y`): `this`
 
-Defined in: [entities/decal.ts:150](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L150)
+Defined in: [entities/decal.ts:150](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L150)
 
 Move the decal to a new position.
 
@@ -231,7 +208,7 @@ This decal for chaining
 
 > **setStyle**(`opts`): `this`
 
-Defined in: [entities/decal.ts:132](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L132)
+Defined in: [entities/decal.ts:132](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L132)
 
 Update the decal style properties.
 
@@ -273,7 +250,7 @@ This decal for chaining
 
 > **toData**(): [`DecalData`](Interface.DecalData.md)
 
-Defined in: [entities/decal.ts:173](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L173)
+Defined in: [entities/decal.ts:173](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L173)
 
 Get a snapshot for event payloads.
 

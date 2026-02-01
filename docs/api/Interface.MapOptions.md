@@ -4,31 +4,7 @@
 
 # Interface: MapOptions
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [autoResize?](#autoresize)
-  - [backgroundColor?](#backgroundcolor)
-  - [bounceAtZoomLimits?](#bounceatzoomlimits)
-  - [center?](#center)
-  - [clipToBounds?](#cliptobounds)
-  - [debug?](#debug)
-  - [fpsCap?](#fpscap)
-  - [freePan?](#freepan)
-  - [image?](#image)
-  - [maxBoundsPx?](#maxboundspx)
-  - [maxBoundsViscosity?](#maxboundsviscosity)
-  - [maxZoom?](#maxzoom)
-  - [minZoom?](#minzoom)
-  - [preview?](#preview)
-  - [screenCache?](#screencache)
-  - [spinner?](#spinner)
-  - [wrapX?](#wrapx)
-  - [zoom?](#zoom)
-
-Defined in: [api/types.ts:32](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L32)
+Defined in: [api/types.ts:48](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L48)
 
 ## Properties
 
@@ -36,7 +12,7 @@ Defined in: [api/types.ts:32](https://github.com/gamingtools/gt-map/blob/1ee81ca
 
 > `optional` **autoResize**: `boolean`
 
-Defined in: [api/types.ts:51](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L51)
+Defined in: [api/types.ts:59](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L59)
 
 Automatically resize the map when the container size or window DPR changes.
 Enabled by default.
@@ -47,7 +23,7 @@ Enabled by default.
 
 > `optional` **backgroundColor**: `string` \| \{ `a?`: `number`; `b`: `number`; `g`: `number`; `r`: `number`; \}
 
-Defined in: [api/types.ts:56](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L56)
+Defined in: [api/types.ts:64](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L64)
 
 Viewport background: either 'transparent' (default when omitted) or a solid color.
 Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components.
@@ -58,7 +34,7 @@ Alpha on provided colors is ignored; pass a hex like '#0a0a0a' or RGB components
 
 > `optional` **bounceAtZoomLimits**: `boolean`
 
-Defined in: [api/types.ts:73](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L73)
+Defined in: [api/types.ts:81](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L81)
 
 When true, allow a small elastic bounce at zoom limits (visual easing only).
 Defaults to false.
@@ -69,7 +45,7 @@ Defaults to false.
 
 > `optional` **center**: [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:45](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L45)
+Defined in: [api/types.ts:53](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L53)
 
 ***
 
@@ -77,7 +53,7 @@ Defined in: [api/types.ts:45](https://github.com/gamingtools/gt-map/blob/1ee81ca
 
 > `optional` **clipToBounds**: `boolean`
 
-Defined in: [api/types.ts:68](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L68)
+Defined in: [api/types.ts:76](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L76)
 
 When true, clip all rendering (raster, markers, vectors) to the map image bounds.
 Useful to prevent content from appearing outside the actual map area.
@@ -89,7 +65,7 @@ Defaults to false.
 
 > `optional` **debug**: `boolean`
 
-Defined in: [api/types.ts:89](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L89)
+Defined in: [api/types.ts:110](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L110)
 
 Enable debug logging to console for this map instance.
 When true, logs initialization timing, image uploads, and internal events.
@@ -101,7 +77,7 @@ Default: false.
 
 > `optional` **fpsCap**: `number`
 
-Defined in: [api/types.ts:58](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L58)
+Defined in: [api/types.ts:66](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L66)
 
 ***
 
@@ -109,17 +85,7 @@ Defined in: [api/types.ts:58](https://github.com/gamingtools/gt-map/blob/1ee81ca
 
 > `optional` **freePan**: `boolean`
 
-Defined in: [api/types.ts:60](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L60)
-
-***
-
-### image?
-
-> `optional` **image**: [`ImageSourceOptions`](Interface.ImageSourceOptions.md)
-
-Defined in: [api/types.ts:34](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L34)
-
-Single raster image to display (full resolution).
+Defined in: [api/types.ts:68](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L68)
 
 ***
 
@@ -127,7 +93,7 @@ Single raster image to display (full resolution).
 
 > `optional` **maxBoundsPx**: `null` \| \{ `maxX`: `number`; `maxY`: `number`; `minX`: `number`; `minY`: `number`; \}
 
-Defined in: [api/types.ts:61](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L61)
+Defined in: [api/types.ts:69](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L69)
 
 ***
 
@@ -135,7 +101,7 @@ Defined in: [api/types.ts:61](https://github.com/gamingtools/gt-map/blob/1ee81ca
 
 > `optional` **maxBoundsViscosity**: `number`
 
-Defined in: [api/types.ts:62](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L62)
+Defined in: [api/types.ts:70](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L70)
 
 ***
 
@@ -143,7 +109,7 @@ Defined in: [api/types.ts:62](https://github.com/gamingtools/gt-map/blob/1ee81ca
 
 > `optional` **maxZoom**: `number`
 
-Defined in: [api/types.ts:44](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L44)
+Defined in: [api/types.ts:52](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L52)
 
 ***
 
@@ -151,21 +117,7 @@ Defined in: [api/types.ts:44](https://github.com/gamingtools/gt-map/blob/1ee81ca
 
 > `optional` **minZoom**: `number`
 
-Defined in: [api/types.ts:43](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L43)
-
-***
-
-### preview?
-
-> `optional` **preview**: [`ImageSourceOptions`](Interface.ImageSourceOptions.md)
-
-Defined in: [api/types.ts:42](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L42)
-
-Optional low‑resolution preview to render first, then seamlessly upgrade to [MapOptions.image](#image).
-
-When provided, the map shows the preview as soon as it is decoded and uploaded, then loads the
-full‑resolution image in the background and swaps textures atomically without blocking interaction.
-The preview is scaled to the full image dimensions so the swap is visually seamless (only quality improves).
+Defined in: [api/types.ts:51](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L51)
 
 ***
 
@@ -173,7 +125,7 @@ The preview is scaled to the full image dimensions so the swap is visually seaml
 
 > `optional` **screenCache**: `boolean`
 
-Defined in: [api/types.ts:57](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L57)
+Defined in: [api/types.ts:65](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L65)
 
 ***
 
@@ -181,9 +133,9 @@ Defined in: [api/types.ts:57](https://github.com/gamingtools/gt-map/blob/1ee81ca
 
 > `optional` **spinner**: [`SpinnerOptions`](Interface.SpinnerOptions.md)
 
-Defined in: [api/types.ts:83](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L83)
+Defined in: [api/types.ts:91](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L91)
 
-Spinner appearance while loading the full image.
+Spinner appearance while loading tiles.
 
 - size: outer diameter in CSS pixels (default 32)
 - thickness: ring thickness in CSS pixels (default 3)
@@ -193,11 +145,21 @@ Spinner appearance while loading the full image.
 
 ***
 
+### tiles
+
+> **tiles**: [`TileSourceOptions`](Interface.TileSourceOptions.md)
+
+Defined in: [api/types.ts:50](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L50)
+
+Tile pyramid source.
+
+***
+
 ### wrapX?
 
 > `optional` **wrapX**: `boolean`
 
-Defined in: [api/types.ts:59](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L59)
+Defined in: [api/types.ts:67](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L67)
 
 ***
 
@@ -205,4 +167,23 @@ Defined in: [api/types.ts:59](https://github.com/gamingtools/gt-map/blob/1ee81ca
 
 > `optional` **zoom**: `number`
 
-Defined in: [api/types.ts:46](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L46)
+Defined in: [api/types.ts:54](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L54)
+
+***
+
+### zoomSnapThreshold?
+
+> `optional` **zoomSnapThreshold**: `number`
+
+Defined in: [api/types.ts:104](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L104)
+
+Fractional zoom threshold at which the renderer snaps to the next tile zoom level.
+
+At zoom 3.4 with threshold 0.4, the renderer uses z=4 tiles (scaled down ~0.66x)
+instead of z=3 tiles (scaled up ~1.32x). Lower values bias toward sharper tiles
+at the cost of loading more tiles; higher values keep using lower-z tiles longer.
+
+Range: 0 to 1. Default: 0.4.
+- 0 = always use ceil (sharpest, most tiles)
+- 0.5 = equivalent to Math.round
+- 1 = equivalent to Math.floor (current blurriest, fewest tiles)

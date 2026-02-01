@@ -4,15 +4,7 @@
 
 # Interface: LoadEventData
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [size](#size)
-  - [view](#view)
-
-Defined in: [api/types.ts:252](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L252)
+Defined in: [api/types.ts:273](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L273)
 
 Load event payload: fired once after the first frame is scheduled.
 
@@ -22,7 +14,7 @@ Load event payload: fired once after the first frame is scheduled.
 
 > **size**: `object`
 
-Defined in: [api/types.ts:256](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L256)
+Defined in: [api/types.ts:277](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L277)
 
 Final container size and device pixel ratio.
 
@@ -44,6 +36,6 @@ Final container size and device pixel ratio.
 
 > **view**: [`ViewState`](Interface.ViewState.md)
 
-Defined in: [api/types.ts:254](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L254)
+Defined in: [api/types.ts:275](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L275)
 
 Current view state snapshot.

@@ -4,17 +4,9 @@
 
 # Function: isRectVisual()
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Parameters](#parameters)
-  - [v](#v)
-- [Returns](#returns)
-
 > **isRectVisual**(`v`): `v is RectVisual`
 
-Defined in: [api/visual.ts:428](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L428)
+Defined in: [api/visual.ts:493](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L493)
 
 Type guard for RectVisual.
 

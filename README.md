@@ -1,128 +1,89 @@
-WebGL Map (Minimal)
+# gt-map
 
-Minimal, dependency-light WebGL map that renders a single large raster with smooth pan and continuous zoom. Pixel CRS only (image pixel coordinates; no Web Mercator).
+Minimal, zero-dependency WebGL map renderer for tiled raster imagery. Pixel CRS only (image pixel coordinates, no Web Mercator).
 
-Status
+## Quick Start
 
-- Early-stage, pre-release. Everything is subject to change before the initial release. Expect breaking changes as APIs and internals evolve.
-
-Features
-
-- WebGL single-image rendering
-- Smooth pan and wheel/pinch zoom
-- Pixel CRS: image pixel coordinates (no geodetic projection)
-- WrapX support (disabled in Hagga Basin demo)
-- Typed events for input, lifecycle, and per‑frame HUD (frame counter)
-
-Documentation
-
-- Guide: `docs/guide/README.md` (concepts and how-tos)
-- API Reference: `docs/api/README.md` (generated)
-- Quick index: `docs/API_OVERVIEW.md`
-
-Getting Started
-Run locally
-
-1. Install deps: `npm install`
-2. Start dev server: `npm run dev` (SvelteKit app at `http://localhost:5173`)
-3. Open `/map`. Pan with mouse drag; zoom with wheel or pinch (touch).
-
-Files
-
-- `apps/svelte-gtmap-test/src/routes/map/+page.svelte`: Minimal usage in SvelteKit (`/map`).
-- `apps/noframework-gtmap-test/index.html`: No‑framework demo (HTML + TS).
-- `apps/noframework-gtmap-test/src/main.ts`: Plain TS usage and HUD wiring.
-- `packages/gtmap/src/api/map.ts`: Public `GTMap` facade (typed API surface).
-- `packages/gtmap/src/internal/mapgl.ts`: Core WebGL implementation (single-image renderer, input, cache).
-- Pixel CRS only: coordinates are image pixels (x, y) at native resolution.
-
-Public API
-
-- Import `GTMap` via `@gaming.tools/gtmap` (published) or `@gtmap` (Vite alias in demos).
-  - Raster via `image` in `MapOptions`: `{ url, width, height }` plus optional `wrapX` and view limits.
-  - View with Transition Builder: `map.transition().center(...).zoom(...).apply({ animate? })`.
-  - Content: `addIcon`, `addMarker`, `addVector` (or `addVectors` legacy batch).
-  - Events: `map.events.on(name).each(h)` and `map.events.once(name)` (typed payloads). Includes pointer/mouse, lifecycle, frame, and map-level marker events (`markerenter/leave/click/down/up/longpress`).
-  - In demos, `@gtmap` is aliased to the local source for fast iteration.
-
-Coordinate Transforms (world → pixels)
-
-- Initialize once with your external/world bounds: `map.setCoordBounds({ minX, minY, maxX, maxY })`.
-- Convert world points to image pixels: `map.translate(x, y, transform?)`.
-- Supported transforms: `'original' | 'flipVertical' | 'flipHorizontal' | 'flipBoth' | 'rotate90CW' | 'rotate90CCW' | 'rotate180'`.
-- Mapping preserves aspect ratio and centers the bounds within the image.
-
-See the full API reference in `docs/api/README.md`.
-
-Demo apps
-
-- SvelteKit: `apps/svelte-gtmap-test` → open `/map`
-- No‑framework: `apps/noframework-gtmap-test/index.html`
-
-Svelte Docs
-- Svelte v5 docs are mirrored under `docs/svelte/`. Use them as the source of truth (runes, `onclick={...}`, etc.).
-
-Loading Indicator
-
-On load, the map shows a small spinner and blocks rendering and input until the full‑resolution image is decoded and uploaded to the GPU. No preview image is rendered.
-
-Customize the spinner via `spinner` in `MapOptions`:
-
-- `size` (px): outer diameter (default 32)
-- `thickness` (px): ring width (default 3)
-- `color`: active arc (default `rgba(0,0,0,0.6)`)
-- `trackColor`: background ring (default `rgba(0,0,0,0.2)`)
-- `speedMs`: rotation period (default 1000)
-
-Visibility Control (suspend/resume)
-
-If you render multiple maps, suspend offscreen ones to save CPU/network/VRAM:
-
-```ts
-// Suspend a map (stop RAF, input, and rendering)
-map.setActive(false);
-
-// Suspend and also release the WebGL context and VRAM
-map.setActive(false, { releaseGL: true });
-
-// Resume (recreates GL state if it was released)
-map.setActive(true);
+```bash
+npm install
+npm run dev        # SvelteKit app at http://localhost:5173/map
+npm run build      # Build library + apps
 ```
 
-This pairs well with IntersectionObserver or the Page Visibility API.
+## Public API
 
-Image Source
-Hagga Basin (survival_1)
+Import `GTMap` from `@gaming.tools/gtmap` (or `@gtmap` alias in demos).
 
-- URL: `https://gtcdn.info/dune/tiles/hb_8k.webp`
-- Base resolution: 8192 × 8192 (set `minZoom`/`maxZoom` to control view constraints)
-- Wrap: disabled (finite image; no world wrap)
-- Note: Game map (not geo-referenced); renders as a finite raster.
+```ts
+import { GTMap } from '@gaming.tools/gtmap';
 
-Customization
+const map = new GTMap(container, {
+  tiles: {
+    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+    tileSize: 256,
+    mapSize: { width: 8192, height: 8192 },
+    sourceMinZoom: 0,
+    sourceMaxZoom: 5,
+  },
+  zoom: 2,
+  center: { x: 4096, y: 4096 },
+});
+```
 
-- Center/zoom: Set when constructing `GTMap` in the demos.
-- Zoom bounds: `minZoom`/`maxZoom`.
-- Grid overlay: `setGridVisible(true|false)`.
-- Wheel speed: `setWheelSpeed(number)`.
-- Icon scaling: `setIconScaleFunction(fn|null)` where `fn(zoom,min,max) -> scale` (1.0 = screen‑fixed)
+### Facades
 
-Notes and Next Steps
+All functionality is accessed through four facades:
 
-- Single raster currently; markers and vectors are simple overlays.
-- Frame/HUD via `map.events.on('frame')` (frame counter available).
+| Facade | Access | Purpose |
+|--------|--------|---------|
+| **view** | `map.view` | Center, zoom, transitions, bounds, coordinate transforms |
+| **content** | `map.content` | Icons, markers, decals, vectors |
+| **display** | `map.display` | Grid overlay, upscale filter, FPS cap, background color |
+| **input** | `map.input` | Wheel speed, inertia options |
 
-Performance
+```ts
+// Animated view transition
+map.view.transition().center({ x: 1000, y: 2000 }).zoom(4).apply({ animate: { durationMs: 800 } });
 
-- Full textures upload incrementally in small stripes with adaptive time budgets; uploads pause during interaction and resume when idle.
-- Uses `createImageBitmap` where available for off‑main‑thread decode; falls back to `<img>`.
-- Host via a static server for production; dev server is preferred.
+// Add a marker
+const icon = map.content.addIcon({ iconPath: 'pin.png', width: 32, height: 32 });
+map.content.addMarker(500, 500, { icon });
 
-Monorepo & Package Manager
+// Events (typed payloads)
+map.events.on('markerclick').each((e) => console.log(e.marker.id));
+```
 
-- npm workspaces; see root `package.json`.
-- Common commands:
-  - Install: `npm install`
-  - Dev server: `npm run dev`
-  - Build: `npm run build` (builds Svelte app and `packages/gtmap`)
-  - Lint/format: `npm run lint`, `npm run format`
+### Lifecycle
+
+```ts
+map.suspend();                       // pause rendering + input
+map.suspend({ releaseGL: true });    // also free VRAM
+map.resume();                        // resume
+map.destroy();                       // full teardown
+```
+
+## Project Structure
+
+```
+packages/gtmap/          Core WebGL library
+apps/svelte-gtmap-test/  SvelteKit demo app
+apps/noframework-gtmap-test/  Plain HTML+TS demo
+docs/api/                Generated API reference (TypeDoc)
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Dev server (SvelteKit) |
+| `npm run build` | Build all |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
+| `npm run test` | Playwright E2E tests |
+| `npm run check` | svelte-check type checking |
+
+## API Reference
+
+Generated docs: `docs/api/README.md`
+
+Regenerate: `npx typedoc`

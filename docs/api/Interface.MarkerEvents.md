@@ -4,18 +4,7 @@
 
 # Interface: MarkerEvents\<T\>
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Extends](#extends)
-- [Type Parameters](#type-parameters)
-  - [T](#t)
-- [Methods](#methods)
-  - [on()](#on)
-  - [once()](#once)
-
-Defined in: [api/events/public.ts:63](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/public.ts#L63)
+Defined in: [api/events/public.ts:63](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L63)
 
 Marker events surface with typed names and payloads.
 
@@ -37,7 +26,7 @@ Marker events surface with typed names and payloads.
 
 > **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`MarkerEventMap`](Interface.MarkerEventMap.md)\<`T`\>\[`K`\]\>
 
-Defined in: [api/events/public.ts:69](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/public.ts#L69)
+Defined in: [api/events/public.ts:69](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L69)
 
 Subscribe to a marker event.
 
@@ -47,7 +36,7 @@ Supported names: 'click' | 'tap' | 'longpress' | 'pointerdown' | 'pointerup' | '
 
 ###### K
 
-`K` *extends* `"click"` \| `"remove"` \| `"pointerdown"` \| `"pointerup"` \| `"longpress"` \| `"pointerenter"` \| `"pointerleave"` \| `"tap"` \| `"positionchange"`
+`K` *extends* `"click"` \| `"tap"` \| `"longpress"` \| `"pointerdown"` \| `"pointerup"` \| `"pointerenter"` \| `"pointerleave"` \| `"positionchange"` \| `"remove"`
 
 ##### Parameters
 
@@ -67,7 +56,7 @@ Supported names: 'click' | 'tap' | 'longpress' | 'pointerdown' | 'pointerup' | '
 
 > **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:70](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/public.ts#L70)
+Defined in: [api/events/public.ts:70](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L70)
 
 Subscribe to a named event.
 
@@ -75,7 +64,7 @@ Subscribe to a named event.
 
 ###### K
 
-`K` *extends* `"click"` \| `"remove"` \| `"pointerdown"` \| `"pointerup"` \| `"longpress"` \| `"pointerenter"` \| `"pointerleave"` \| `"tap"` \| `"positionchange"`
+`K` *extends* `"click"` \| `"tap"` \| `"longpress"` \| `"pointerdown"` \| `"pointerup"` \| `"pointerenter"` \| `"pointerleave"` \| `"positionchange"` \| `"remove"`
 
 ##### Parameters
 
@@ -113,7 +102,7 @@ marker.events.on('click').each((e) => {
 
 > **once**\<`K`\>(`event`): `Promise`\<[`MarkerEventMap`](Interface.MarkerEventMap.md)\<`T`\>\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 
@@ -121,7 +110,7 @@ Wait for the next event occurrence and resolve with its payload.
 
 ##### K
 
-`K` *extends* `"click"` \| `"remove"` \| `"pointerdown"` \| `"pointerup"` \| `"longpress"` \| `"pointerenter"` \| `"pointerleave"` \| `"tap"` \| `"positionchange"`
+`K` *extends* `"click"` \| `"tap"` \| `"longpress"` \| `"pointerdown"` \| `"pointerup"` \| `"pointerenter"` \| `"pointerleave"` \| `"positionchange"` \| `"remove"`
 
 #### Parameters
 

@@ -4,25 +4,7 @@
 
 # Class: CircleVisual
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Remarks](#remarks)
-- [Example](#example)
-- [Extends](#extends)
-- [Constructors](#constructors)
-  - [Constructor](#constructor)
-- [Properties](#properties)
-  - [anchor](#anchor)
-  - [fill?](#fill)
-  - [iconScaleFunction?](#iconscalefunction)
-  - [radius](#radius)
-  - [stroke?](#stroke)
-  - [strokeWidth?](#strokewidth)
-  - [type](#type)
-
-Defined in: [api/visual.ts:233](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L233)
+Defined in: [api/visual.ts:245](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L245)
 
 Circle shape visual.
 
@@ -46,7 +28,7 @@ const dot = new CircleVisual(8, { fill: '#ff0000' });
 
 > **new CircleVisual**(`radius`, `options`): `CircleVisual`
 
-Defined in: [api/visual.ts:253](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L253)
+Defined in: [api/visual.ts:265](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L265)
 
 Create a circle visual.
 
@@ -88,7 +70,7 @@ Styling options
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -102,7 +84,7 @@ Anchor point for positioning. Defaults to center.
 
 > `readonly` `optional` **fill**: `string`
 
-Defined in: [api/visual.ts:240](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L240)
+Defined in: [api/visual.ts:252](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L252)
 
 Fill color.
 
@@ -112,7 +94,7 @@ Fill color.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -128,7 +110,7 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `readonly` **radius**: `number`
 
-Defined in: [api/visual.ts:237](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L237)
+Defined in: [api/visual.ts:249](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L249)
 
 Radius in pixels.
 
@@ -138,7 +120,7 @@ Radius in pixels.
 
 > `readonly` `optional` **stroke**: `string`
 
-Defined in: [api/visual.ts:243](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L243)
+Defined in: [api/visual.ts:255](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L255)
 
 Stroke color.
 
@@ -148,7 +130,7 @@ Stroke color.
 
 > `readonly` `optional` **strokeWidth**: `number`
 
-Defined in: [api/visual.ts:246](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L246)
+Defined in: [api/visual.ts:258](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L258)
 
 Stroke width in pixels.
 
@@ -158,7 +140,7 @@ Stroke width in pixels.
 
 > `readonly` **type**: `"circle"`
 
-Defined in: [api/visual.ts:234](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/visual.ts#L234)
+Defined in: [api/visual.ts:246](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L246)
 
 Discriminator for runtime type checking.
 

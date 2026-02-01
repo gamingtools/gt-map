@@ -23,6 +23,8 @@ export type {
 	Polygon,
 	Circle,
 	SuspendOptions,
+	UpscaleFilterMode,
+	InertiaOptions,
 	IconScaleFunction,
 	Easing,
 	AnimateOptions,
@@ -62,6 +64,12 @@ export type {
 	PointerModifiers,
 	InputDevice,
 } from './api/events/maps';
+
+// Export facade classes (accessed via map.view, map.content, map.display, map.input)
+export { ViewFacade } from './api/facades/view-facade';
+export { ContentFacade } from './api/facades/content-facade';
+export { DisplayFacade } from './api/facades/display-facade';
+export { InputFacade } from './api/facades/input-facade';
 
 // Export entity option types
 export type { MarkerOptions, MarkerTransition } from './entities/marker';

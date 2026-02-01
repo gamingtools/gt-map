@@ -4,16 +4,7 @@
 
 # Interface: DecalEvents
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Extends](#extends)
-- [Methods](#methods)
-  - [on()](#on)
-  - [once()](#once)
-
-Defined in: [api/events/public.ts:81](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/public.ts#L81)
+Defined in: [api/events/public.ts:81](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L81)
 
 Decal events surface with typed names and payloads.
 
@@ -29,7 +20,7 @@ Decal events surface with typed names and payloads.
 
 > **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`DecalEventMap`](Interface.DecalEventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:83](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/public.ts#L83)
+Defined in: [api/events/public.ts:83](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L83)
 
 Supported names: 'positionchange' | 'remove'
 
@@ -37,7 +28,7 @@ Supported names: 'positionchange' | 'remove'
 
 ###### K
 
-`K` *extends* `"remove"` \| `"positionchange"`
+`K` *extends* `"positionchange"` \| `"remove"`
 
 ##### Parameters
 
@@ -57,7 +48,7 @@ Supported names: 'positionchange' | 'remove'
 
 > **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:84](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/public.ts#L84)
+Defined in: [api/events/public.ts:84](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L84)
 
 Subscribe to a named event.
 
@@ -65,7 +56,7 @@ Subscribe to a named event.
 
 ###### K
 
-`K` *extends* `"remove"` \| `"positionchange"`
+`K` *extends* `"positionchange"` \| `"remove"`
 
 ##### Parameters
 
@@ -103,7 +94,7 @@ marker.events.on('click').each((e) => {
 
 > **once**\<`K`\>(`event`): `Promise`\<[`DecalEventMap`](Interface.DecalEventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 
@@ -111,7 +102,7 @@ Wait for the next event occurrence and resolve with its payload.
 
 ##### K
 
-`K` *extends* `"remove"` \| `"positionchange"`
+`K` *extends* `"positionchange"` \| `"remove"`
 
 #### Parameters
 

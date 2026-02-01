@@ -4,19 +4,7 @@
 
 # Interface: DecalOptions
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [iconScaleFunction?](#iconscalefunction)
-  - [opacity?](#opacity)
-  - [rotation?](#rotation)
-  - [scale?](#scale)
-  - [visual](#visual)
-  - [zIndex?](#zindex)
-
-Defined in: [entities/decal.ts:12](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L12)
+Defined in: [entities/decal.ts:12](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L12)
 
 Options for creating a [Decal](Class.Decal.md).
 
@@ -26,7 +14,7 @@ Options for creating a [Decal](Class.Decal.md).
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [entities/decal.ts:32](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L32)
+Defined in: [entities/decal.ts:32](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L32)
 
 Override the map-level icon scale function for this decal.
 Set to `null` to disable scaling (always use scale=1).
@@ -38,7 +26,7 @@ If undefined, falls back to visual's iconScaleFunction, then map's.
 
 > `optional` **opacity**: `number`
 
-Defined in: [entities/decal.ts:20](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L20)
+Defined in: [entities/decal.ts:20](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L20)
 
 Opacity (0-1).
 
@@ -48,7 +36,7 @@ Opacity (0-1).
 
 > `optional` **rotation**: `number`
 
-Defined in: [entities/decal.ts:18](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L18)
+Defined in: [entities/decal.ts:18](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L18)
 
 Clockwise rotation in degrees.
 
@@ -58,7 +46,7 @@ Clockwise rotation in degrees.
 
 > `optional` **scale**: `number`
 
-Defined in: [entities/decal.ts:16](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L16)
+Defined in: [entities/decal.ts:16](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L16)
 
 Scale multiplier (1 = visual's native size).
 
@@ -68,7 +56,7 @@ Scale multiplier (1 = visual's native size).
 
 > **visual**: [`Visual`](Class.Visual.md)
 
-Defined in: [entities/decal.ts:14](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L14)
+Defined in: [entities/decal.ts:14](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L14)
 
 Visual template for rendering.
 
@@ -78,7 +66,7 @@ Visual template for rendering.
 
 > `optional` **zIndex**: `number`
 
-Defined in: [entities/decal.ts:26](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/entities/decal.ts#L26)
+Defined in: [entities/decal.ts:26](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/decal.ts#L26)
 
 Z-index for stacking order (higher values render on top).
 

@@ -4,19 +4,7 @@
 
 # Interface: MarkerData\<T\>
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Type Parameters](#type-parameters)
-  - [T](#t)
-- [Properties](#properties)
-  - [data?](#data)
-  - [id](#id)
-  - [x](#x)
-  - [y](#y)
-
-Defined in: [api/events/maps.ts:6](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L6)
+Defined in: [api/events/maps.ts:6](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/maps.ts#L6)
 
 Lightweight snapshot of a marker used in event payloads.
 
@@ -32,7 +20,7 @@ Lightweight snapshot of a marker used in event payloads.
 
 > `optional` **data**: `T`
 
-Defined in: [api/events/maps.ts:10](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L10)
+Defined in: [api/events/maps.ts:10](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/maps.ts#L10)
 
 ***
 
@@ -40,7 +28,7 @@ Defined in: [api/events/maps.ts:10](https://github.com/gamingtools/gt-map/blob/1
 
 > **id**: `string`
 
-Defined in: [api/events/maps.ts:7](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L7)
+Defined in: [api/events/maps.ts:7](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/maps.ts#L7)
 
 ***
 
@@ -48,7 +36,7 @@ Defined in: [api/events/maps.ts:7](https://github.com/gamingtools/gt-map/blob/1e
 
 > **x**: `number`
 
-Defined in: [api/events/maps.ts:8](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L8)
+Defined in: [api/events/maps.ts:8](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/maps.ts#L8)
 
 ***
 
@@ -56,4 +44,4 @@ Defined in: [api/events/maps.ts:8](https://github.com/gamingtools/gt-map/blob/1e
 
 > **y**: `number`
 
-Defined in: [api/events/maps.ts:9](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/events/maps.ts#L9)
+Defined in: [api/events/maps.ts:9](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/maps.ts#L9)

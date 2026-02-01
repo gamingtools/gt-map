@@ -4,15 +4,7 @@
 
 # Interface: MarkerHit
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [icon](#icon)
-  - [marker](#marker)
-
-Defined in: [api/types.ts:218](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L218)
+Defined in: [api/types.ts:239](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L239)
 
 Marker hover hit on the map surface (mouse only, when enabled).
 
@@ -22,7 +14,7 @@ Marker hover hit on the map surface (mouse only, when enabled).
 
 > **icon**: `object`
 
-Defined in: [api/types.ts:222](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L222)
+Defined in: [api/types.ts:243](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L243)
 
 Icon metadata associated with the hit marker.
 
@@ -60,7 +52,7 @@ Icon metadata associated with the hit marker.
 
 > **marker**: `object`
 
-Defined in: [api/types.ts:220](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L220)
+Defined in: [api/types.ts:241](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L241)
 
 Lightweight marker snapshot for hover purposes.
 

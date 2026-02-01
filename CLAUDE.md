@@ -2,72 +2,79 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Common Development Commands
+## Commands
 
-### Install and Run
-- `npm install` - Install all dependencies (monorepo with workspaces)
-- `npm run dev` - Start Svelte app dev server at http://localhost:5173
-- `npm run build` - Build both gtmap library and Svelte app
+```bash
+npm install          # Install all (monorepo workspaces)
+npm run build        # Build gtmap library + apps
+npm run dev          # SvelteKit dev server at localhost:5173
+npm run lint         # ESLint
+npm run lint:fix     # ESLint auto-fix
+npm run format       # Prettier
+npm run format:check # Check formatting
+npm run test         # Playwright E2E tests
+npm run check        # svelte-check
+```
 
-### Code Quality
-- `npm run lint` - Run ESLint on packages
-- `npm run lint:fix` - Auto-fix linting issues
-- `npm run format` - Format code with Prettier
-- `npm run format:check` - Check formatting without changes
+## Architecture
 
-### Testing
-- `npm run test` - Run Playwright E2E tests (in svelte-gtmap-test)
-- `npm run check` - Type-check Svelte app with svelte-check
+Monorepo WebGL map renderer. Pixel CRS (image pixel coordinates, no Web Mercator).
 
-## Architecture Overview
+### Packages
 
-This is a monorepo WebGL map renderer with a pixel-based coordinate system (not Web Mercator).
+- **packages/gtmap** -- Core WebGL library (zero external deps)
+- **apps/svelte-gtmap-test** -- SvelteKit demo (Tailwind, Vite)
+- **apps/noframework-gtmap-test** -- Plain HTML+TS demo
 
-### Package Structure
-- **packages/gtmap**: Core WebGL map library
-  - Public API: `GTMap` class in `src/api/map.ts`
-  - Internal implementation: `src/internal/mapgl.ts` and supporting modules
-  - Exports via `src/index.ts`: GTMap, easing helpers, and typed event/option payloads
-  
-- **apps/svelte-gtmap-test**: Main demo app using SvelteKit
-  - Map demo at `/map` route (`src/routes/map/+page.svelte`)
-  - Uses Tailwind CSS and Vite
+### Public API Surface
 
-### Core Concepts
+Entry point: `packages/gtmap/src/index.ts`
 
-1. **Coordinate System**: Pixel CRS where x=lng, y=lat in image pixel coordinates at native resolution. No Web Mercator projections.
+`GTMap` class exposes four facades:
 
-2. **GTMap API**: Main public interface with methods:
-   - View control: Transition Builder `map.transition().center(...).zoom(...).apply({ animate? })`
-   - Tile source: via constructor `tiles: { url, tileSize, mapSize, sourceMinZoom, sourceMaxZoom }` plus optional `wrapX` and view bounds
-   - Content: `addIcon()`, `addMarker()`, `addVectors()`
-   - Lifecycle: `setActive()` for suspend/resume with optional GL release
+- `map.view` (ViewFacade) -- center, zoom, transitions, bounds, coord transforms, icon scaling
+- `map.content` (ContentFacade) -- addIcon, addMarker, addDecal, addVector, entity collections
+- `map.display` (DisplayFacade) -- grid overlay, upscale filter, FPS cap, background, raster opacity
+- `map.input` (InputFacade) -- wheel speed, inertia
 
-3. **Rendering Pipeline**:
-   - WebGL-based tile pyramid renderer with LRU tile cache
-   - Frame loop with FPS capping and RAF batching
-   - Screen cache for optimization
-   - Support for tiled raster imagery, markers/icons, and vector shapes
+Lifecycle: `map.suspend()`, `map.resume()`, `map.destroy()`
 
-4. **Input Handling**: Mouse/touch pan and wheel/pinch zoom via `InputController`
+Events: `map.events.on(name).each(handler)`, `map.events.once(name)`
 
-5. **Imagery**:
-   - Tile pyramid only (single-image source removed)
-   - Default demo: Hagga Basin tiles at `https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp`
-   - Configurable via constructor `tiles` option with URL template using `{z}`, `{x}`, `{y}` placeholders
+View transitions: `map.view.transition().center(...).zoom(...).apply({ animate? })`
+
+### Internal Architecture
+
+```
+src/api/              Public API layer (GTMap, facades, types, events)
+src/api/facades/      Facade classes (view, content, display, input)
+src/internal/         Implementation
+  context/            MapContext (DI root), ViewStateStore, TileConfig
+  core/               ZoomController, PanController, bounds logic
+  render/             RenderCoordinator, TileRenderer, GridOverlay, VectorLayer
+  tiles/              TileManager, TileCache, GTPK pack loader
+  input/              InputManager, InputController
+  events/             TypedEventBus, EventBridge, marker hit testing
+  content/            VisualIconService (visual-to-icon rendering)
+  markers/            MarkerLayer, atlas management
+```
+
+Key patterns:
+- **Narrow DI interfaces** -- each module declares its own deps interface (e.g., ZoomDeps, PanDeps extend ControllerDepsBase)
+- **MapContext** as composition root wiring all modules
+- **TypedEventBus** for type-safe events with `.on()/.each()/.once()` API
+- **Tile pyramid only** -- no single-image source; tiles via URL template `{z}/{x}/{y}` or `.gtpk` pack
+
+### Tile Source
+
+Constructor option: `tiles: { url, packUrl?, tileSize, mapSize, sourceMinZoom, sourceMaxZoom }`
+
+Default demo: Hagga Basin tiles at `https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp`
 
 ## Code Style
 
-- TypeScript with strict mode
-- Indentation: 2 spaces
-- Single quotes, trailing commas, semicolons
-- Max line width: ~200 characters
-- ESLint + Prettier for formatting
-
-## Key Implementation Details
-
-- The library avoids external dependencies (WebGL from scratch)
-- Leaflet compatibility layers have been removed - use GTMap API directly
-- Markers and vectors are batched via requestAnimationFrame for performance
-- GL context can be released when maps are hidden (`setActive(false, {releaseGL: true})`)
- - In demo apps, `@gtmap` is a Vite alias pointing to `packages/gtmap/src`
+- TypeScript strict mode
+- 2-space indentation, single quotes, trailing commas, semicolons
+- ~200 char max line width
+- ESLint + Prettier
+- In demo apps, `@gtmap` is a Vite alias to `packages/gtmap/src`

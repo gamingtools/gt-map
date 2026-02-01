@@ -4,18 +4,9 @@
 
 # Type Alias: Polygon
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [points](#points)
-  - [style?](#style)
-  - [type](#type)
-
 > **Polygon** = `object`
 
-Defined in: [api/types.ts:148](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L148)
+Defined in: [api/types.ts:169](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L169)
 
 ## Properties
 
@@ -23,7 +14,7 @@ Defined in: [api/types.ts:148](https://github.com/gamingtools/gt-map/blob/1ee81c
 
 > **points**: [`Point`](TypeAlias.Point.md)[]
 
-Defined in: [api/types.ts:150](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L150)
+Defined in: [api/types.ts:171](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L171)
 
 ***
 
@@ -31,7 +22,7 @@ Defined in: [api/types.ts:150](https://github.com/gamingtools/gt-map/blob/1ee81c
 
 > `optional` **style**: [`VectorStyle`](Interface.VectorStyle.md)
 
-Defined in: [api/types.ts:151](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L151)
+Defined in: [api/types.ts:172](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L172)
 
 ***
 
@@ -39,4 +30,4 @@ Defined in: [api/types.ts:151](https://github.com/gamingtools/gt-map/blob/1ee81c
 
 > **type**: `"polygon"`
 
-Defined in: [api/types.ts:149](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L149)
+Defined in: [api/types.ts:170](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L170)
