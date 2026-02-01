@@ -17,12 +17,12 @@ import { extractPointerMeta } from '../../internal/events/pointer-meta';
 import { VisualIconService } from '../../internal/content/visual-icon-service';
 
 export interface ContentFacadeDeps {
-  setIconDefs(defs: Record<string, IconDefInternal>): Promise<void>;
-  setMarkers(markers: MarkerInternal[]): void;
-  setDecals(markers: MarkerInternal[]): void;
-  setVectors(vectors: VectorPrimitiveInternal[]): void;
-  setMarkerData(payloads: Record<string, unknown | null | undefined>): void;
-  onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
+	setIconDefs(defs: Record<string, IconDefInternal>): Promise<void>;
+	setMarkers(markers: MarkerInternal[]): void;
+	setDecals(markers: MarkerInternal[]): void;
+	setVectors(vectors: VectorPrimitiveInternal[]): void;
+	setMarkerData(payloads: Record<string, unknown | null | undefined>): void;
+	onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
 }
 
 export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
@@ -48,7 +48,10 @@ export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
 		this._deps = deps;
 		this._vis = new VisualIconService({
 			setIconDefs: (defs) => deps.setIconDefs(defs),
-			onVisualUpdated: () => { this._markMarkersDirtyAndSchedule(); this._markDecalsDirtyAndSchedule(); },
+			onVisualUpdated: () => {
+				this._markMarkersDirtyAndSchedule();
+				this._markDecalsDirtyAndSchedule();
+			},
 		});
 		this._vis.ensureDefaultIcon();
 
@@ -173,7 +176,9 @@ export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
 				const payloads: Record<string, unknown | null | undefined> = {};
 				for (const mk of list) payloads[mk.id] = mk.data;
 				this._deps.setMarkerData(payloads);
-			} catch { /* expected: marker data serialization may fail */ }
+			} catch {
+				/* expected: marker data serialization may fail */
+			}
 		};
 		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
 		else setTimeout(flush, 0);
@@ -266,14 +271,18 @@ export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
 		this.markers.events.on('entityremove').each(({ entity }) => {
 			try {
 				entity.emitFromMap('pointerleave', { x: -1, y: -1, marker: entity.toData() });
-			} catch { /* expected: entity may already be disposed */ }
+			} catch {
+				/* expected: entity may already be disposed */
+			}
 		});
 		this.markers.events.on('visibilitychange').each(({ visible }) => {
 			if (!visible) {
 				for (const mk of this.markers.getAll()) {
 					try {
 						mk.emitFromMap('pointerleave', { x: -1, y: -1, marker: mk.toData() });
-					} catch { /* expected: entity may already be disposed */ }
+					} catch {
+						/* expected: entity may already be disposed */
+					}
 				}
 			}
 		});

@@ -10,17 +10,17 @@ import { GtpkReader } from './gtpk-reader';
 import { tileKey as tileKeyOf } from './source';
 
 export interface TileManagerDeps {
-  getGL(): WebGLRenderingContext;
-  getMapSize(): { width: number; height: number };
-  getImageMaxZoom(): number;
-  debugLog(msg: string): void;
-  requestRender(): void;
-  now(): number;
-  getLastInteractAt(): number;
-  getInteractionIdleMs(): number;
-  isAnimating(): boolean;
-  /** Called when setSource changes view-affecting state. */
-  updateViewForSource(opts: { minZoom: number; maxZoom: number; mapSize: { width: number; height: number }; imageMaxZoom: number }): void;
+	getGL(): WebGLRenderingContext;
+	getMapSize(): { width: number; height: number };
+	getImageMaxZoom(): number;
+	debugLog(msg: string): void;
+	requestRender(): void;
+	now(): number;
+	getLastInteractAt(): number;
+	getInteractionIdleMs(): number;
+	isAnimating(): boolean;
+	/** Called when setSource changes view-affecting state. */
+	updateViewForSource(opts: { minZoom: number; maxZoom: number; mapSize: { width: number; height: number }; imageMaxZoom: number }): void;
 }
 
 export class TileManager {
@@ -60,12 +60,15 @@ export class TileManager {
 		// Load GTPK tile pack
 		this._packReader = new GtpkReader();
 		const packUrl = this._packUrl;
-		this._packReader.load(packUrl).then(() => {
-			d.debugLog(`gtpk: loaded ${this._packReader!.tileCount} tiles from ${packUrl}`);
-			d.requestRender();
-		}).catch((err) => {
-			d.debugLog(`gtpk: failed to load ${packUrl}: ${(err as Error).message}`);
-		});
+		this._packReader
+			.load(packUrl)
+			.then(() => {
+				d.debugLog(`gtpk: loaded ${this._packReader!.tileCount} tiles from ${packUrl}`);
+				d.requestRender();
+			})
+			.catch((err) => {
+				d.debugLog(`gtpk: failed to load ${packUrl}: ${(err as Error).message}`);
+			});
 
 		d.debugLog(`tile-manager: initialized tileSize=${this._tileSize} sourceMaxZoom=${this._sourceMaxZoom}`);
 	}
@@ -85,6 +88,7 @@ export class TileManager {
 	}
 
 	private decode(key: string): void {
+		if (this._destroyed) return;
 		const blob = this._packReader!.getBlob(key);
 		if (!blob) {
 			this._decoding.delete(key);
@@ -115,12 +119,16 @@ export class TileManager {
 					this.scheduleMips();
 					this.deps.requestRender();
 				} finally {
-					try { bmp.close?.(); } catch {}
+					try {
+						bmp.close?.();
+					} catch {}
 				}
 			})
-			.catch(() => {})
+			.catch((err) => {
+				this.deps.debugLog(`tile decode failed ${key}: ${err}`);
+			})
 			.finally(() => {
-				this._decoding.delete(key);
+				if (!this._destroyed) this._decoding.delete(key);
 			});
 	}
 

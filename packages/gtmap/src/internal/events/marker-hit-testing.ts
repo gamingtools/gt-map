@@ -116,9 +116,11 @@ export class MarkerHitTesting {
 		const center = this.deps.getCenter();
 		const imageMaxZ = this.deps.getImageMaxZoom();
 
+		const minZoom = this.deps.getMinZoom();
+		const maxZoom = this.deps.getMaxZoom();
 		const iconScaleFn = this.deps.getIconScaleFunction();
-		const iconScale = iconScaleFn ? iconScaleFn(zoom, this.deps.getMinZoom(), this.deps.getMaxZoom()) : 1.0;
-		const info = icons.getMarkerInfo(iconScale);
+		const iconScale = iconScaleFn ? iconScaleFn(zoom, minZoom, maxZoom) : 1.0;
+		const info = icons.getMarkerInfo(iconScale, { zoom, minZoom, maxZoom });
 
 		// Iterate in reverse: last marker rendered is on top, so check it first
 		for (let i = info.length - 1; i >= 0; i--) {
@@ -214,9 +216,11 @@ export class MarkerHitTesting {
 		const center = this.deps.getCenter();
 		const imageMaxZ = this.deps.getImageMaxZoom();
 
+		const minZoom = this.deps.getMinZoom();
+		const maxZoom = this.deps.getMaxZoom();
 		const iconScaleFn = this.deps.getIconScaleFunction();
-		const iconScale = iconScaleFn ? iconScaleFn(zoom, this.deps.getMinZoom(), this.deps.getMaxZoom()) : 1.0;
-		const info = icons.getMarkerInfo(iconScale);
+		const iconScale = iconScaleFn ? iconScaleFn(zoom, minZoom, maxZoom) : 1.0;
+		const info = icons.getMarkerInfo(iconScale, { zoom, minZoom, maxZoom });
 
 		// Iterate in reverse: top-to-bottom in visual stacking order
 		for (let i = info.length - 1; i >= 0; i--) {

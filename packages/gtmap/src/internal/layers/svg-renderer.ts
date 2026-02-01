@@ -283,10 +283,7 @@ export function renderSvgToDataUrlSync(options: Omit<SvgRenderOptions, 'shadow'>
  * @param options - SVG rendering options
  * @param onComplete - Callback when rendering is complete
  */
-export function renderSvgToCanvasAsync(
-	options: SvgRenderOptions,
-	onComplete: (result: SvgRenderResult) => void,
-): void {
+export function renderSvgToCanvasAsync(options: SvgRenderOptions, onComplete: (result: SvgRenderResult) => void): void {
 	renderSvgToCanvas(options)
 		.then(onComplete)
 		.catch((err) => {

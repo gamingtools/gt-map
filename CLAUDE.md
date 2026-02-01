@@ -63,13 +63,15 @@ Key patterns:
 - **Narrow DI interfaces** -- each module declares its own deps interface (e.g., ZoomDeps, PanDeps extend ControllerDepsBase)
 - **MapContext** as composition root wiring all modules
 - **TypedEventBus** for type-safe events with `.on()/.each()/.once()` API
-- **Tile pyramid only** -- no single-image source; tiles via URL template `{z}/{x}/{y}` or `.gtpk` pack
+- **Tile pyramid only** -- no single-image source; tiles served from `.gtpk` binary packs
 
 ### Tile Source
 
-Constructor option: `tiles: { url, packUrl?, tileSize, mapSize, sourceMinZoom, sourceMaxZoom }`
+Constructor option: `tiles: { packUrl, tileSize, mapSize, sourceMinZoom, sourceMaxZoom }`
 
-Default demo: Hagga Basin tiles at `https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp`
+Tiles served exclusively from `.gtpk` binary packs (no HTTP tile URL templates).
+
+Default demo: Hagga Basin pack at `https://gtcdn.info/dune/tiles/hb_8k.gtpk`
 
 ## Code Style
 

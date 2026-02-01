@@ -48,7 +48,22 @@ export interface TextRenderResult {
  * @returns Rendered text as canvas with dimensions and data URL
  */
 export function renderTextToCanvas(options: TextRenderOptions): TextRenderResult {
-	const { text, fontSize, fontFamily, color, backgroundColor, padding = 4, maxWidth = 0, fontWeight = 'normal', fontStyle = 'normal', borderColor, borderWidth = 0, borderRadius = 0, strokeColor, strokeWidth = 0 } = options;
+	const {
+		text,
+		fontSize,
+		fontFamily,
+		color,
+		backgroundColor,
+		padding = 4,
+		maxWidth = 0,
+		fontWeight = 'normal',
+		fontStyle = 'normal',
+		borderColor,
+		borderWidth = 0,
+		borderRadius = 0,
+		strokeColor,
+		strokeWidth = 0,
+	} = options;
 
 	// Create measurement canvas
 	const measureCanvas = document.createElement('canvas');

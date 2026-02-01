@@ -19,7 +19,7 @@ import { GTMap } from '@gaming.tools/gtmap';
 
 const map = new GTMap(container, {
   tiles: {
-    url: 'https://example.com/tiles/{z}/{x}_{y}.webp',
+    packUrl: 'https://example.com/tiles/map.gtpk',
     tileSize: 256,
     mapSize: { width: 8192, height: 8192 },
     sourceMinZoom: 0,

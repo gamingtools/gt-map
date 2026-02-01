@@ -252,12 +252,12 @@
 					clearTimeout(markersDebounce);
 				} catch {}
 			}
-			markersDebounce = setTimeout(() => {
+			markersDebounce = window.setTimeout(() => {
 				markersDebounce = null;
 				try {
 					setMarkerCount(n);
 				} catch {}
-			}, 200) as unknown as number;
+			}, 200);
 		} catch {}
 	}
 </script>

@@ -142,10 +142,7 @@ export class OptionsManager {
 	/**
 	 * Initialize options from constructor options.
 	 */
-	initFromOptions(opts: {
-		zoomOutCenterBias?: number | boolean;
-		wheelSpeedCtrl?: number;
-	}): void {
+	initFromOptions(opts: { zoomOutCenterBias?: number | boolean; wheelSpeedCtrl?: number }): void {
 		if (typeof opts.zoomOutCenterBias === 'boolean') {
 			this.outCenterBias = opts.zoomOutCenterBias ? 0.15 : 0.0;
 		} else if (Number.isFinite(opts.zoomOutCenterBias as number)) {

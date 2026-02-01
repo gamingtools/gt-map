@@ -23,46 +23,46 @@ const FPS_CLAMP = { min: 15, max: 240 } as const;
 const DPR_CLAMP = 3;
 
 export interface RenderCoordinatorDeps {
-  getGL(): WebGLRenderingContext;
-  getGLResources(): GLResources | null;
-  getCanvas(): HTMLCanvasElement;
-  getContainer(): HTMLDivElement;
-  viewState: ViewStateStore;
-  getOutCenterBias(): number;
-  emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
-  getNeedsRender(): boolean;
-  requestRender(): void;
-  consumeRenderFlag(): boolean;
-  now(): number;
-  debugWarn(msg: string, err?: unknown): void;
-  debugLog(msg: string): void;
-  debugEnabled(): boolean;
-  debugGpuWaitEnabled(): boolean;
-  getGridPalette(): { minor: string; major: string; labelBg: string; labelFg: string };
-  // Cross-cutting: tiles (lazy -- TileManager created after RenderCoordinator)
-  tiles: {
-    cancelUnwanted(): void;
-    clearWanted(): void;
-    getCache(): TileCache;
-    enqueue(z: number, x: number, y: number, priority: number): void;
-    wantKey(key: string): void;
-    getTileSize(): number;
-    getSourceMaxZoom(): number;
-    isIdle(): boolean;
-    setFrame(f: number): void;
-  };
-  // Cross-cutting: content
-  content: {
-    drawVectors(): void;
-    drawVectorOverlay(): void;
-    requestMaskBuild(): void;
-    getIcons(): IconRenderer | null;
-    getRasterOpacity(): number;
-    getUpscaleFilter(): UpscaleFilterMode;
-    getIconScaleFunction(): IconScaleFunction | null;
-    getVectorZIndices(): number[];
-    resizeVectorLayer(w: number, h: number): void;
-  };
+	getGL(): WebGLRenderingContext;
+	getGLResources(): GLResources | null;
+	getCanvas(): HTMLCanvasElement;
+	getContainer(): HTMLDivElement;
+	viewState: ViewStateStore;
+	getOutCenterBias(): number;
+	emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void;
+	getNeedsRender(): boolean;
+	requestRender(): void;
+	consumeRenderFlag(): boolean;
+	now(): number;
+	debugWarn(msg: string, err?: unknown): void;
+	debugLog(msg: string): void;
+	debugEnabled(): boolean;
+	debugGpuWaitEnabled(): boolean;
+	getGridPalette(): { minor: string; major: string; labelBg: string; labelFg: string };
+	// Cross-cutting: tiles (lazy -- TileManager created after RenderCoordinator)
+	tiles: {
+		cancelUnwanted(): void;
+		clearWanted(): void;
+		getCache(): TileCache;
+		enqueue(z: number, x: number, y: number, priority: number): void;
+		wantKey(key: string): void;
+		getTileSize(): number;
+		getSourceMaxZoom(): number;
+		isIdle(): boolean;
+		setFrame(f: number): void;
+	};
+	// Cross-cutting: content
+	content: {
+		drawVectors(): void;
+		drawVectorOverlay(): void;
+		requestMaskBuild(): void;
+		getIcons(): IconRenderer | null;
+		getRasterOpacity(): number;
+		getUpscaleFilter(): UpscaleFilterMode;
+		getIconScaleFunction(): IconScaleFunction | null;
+		getVectorZIndices(): number[];
+		resizeVectorLayer(w: number, h: number): void;
+	};
 }
 
 export class RenderCoordinator {
@@ -209,10 +209,14 @@ export class RenderCoordinator {
 		if (!allowRender) {
 			try {
 				this._zoomCtrl.step();
-			} catch (e) { this.deps.debugWarn('zoom step (throttled)', e); }
+			} catch (e) {
+				this.deps.debugWarn('zoom step (throttled)', e);
+			}
 			try {
 				this._panCtrl.step();
-			} catch (e) { this.deps.debugWarn('pan step (throttled)', e); }
+			} catch (e) {
+				this.deps.debugWarn('pan step (throttled)', e);
+			}
 			this.deps.requestRender();
 			return;
 		}
@@ -253,27 +257,35 @@ export class RenderCoordinator {
 					gl.scissor(scissorX, scissorY, scissorW, scissorH);
 					scissorEnabled = true;
 				}
-			} catch (e) { d.debugWarn('scissor setup', e); }
+			} catch (e) {
+				d.debugWarn('scissor setup', e);
+			}
 		}
 
 		// Upload vector overlay before rendering
 		try {
 			d.content.drawVectors();
-		} catch (e) { d.debugWarn('drawVectors', e); }
+		} catch (e) {
+			d.debugWarn('drawVectors', e);
+		}
 
 		this._renderer.render();
 
 		if (scissorEnabled) {
 			try {
 				gl.disable(gl.SCISSOR_TEST);
-			} catch { /* expected: GL context may be lost */ }
+			} catch {
+				/* expected: GL context may be lost */
+			}
 		}
 
 		if (this._firstRasterDrawAtMs == null) {
 			if (d.debugGpuWaitEnabled()) {
 				try {
 					gl.finish();
-				} catch { /* expected: GL context may be lost */ }
+				} catch {
+					/* expected: GL context may be lost */
+				}
 			}
 			this._firstRasterDrawAtMs = d.now();
 			const dtRender = this._firstRasterDrawAtMs - tR0;
@@ -288,7 +300,9 @@ export class RenderCoordinator {
 			const t = d.now();
 			const stats = { frame: this._frame };
 			d.emit('frame', { now: t, stats });
-		} catch { /* expected: user event handler may throw */ }
+		} catch {
+			/* expected: user event handler may throw */
+		}
 
 		// Draw grid overlay
 		this._grid?.draw();
@@ -337,7 +351,9 @@ export class RenderCoordinator {
 			enqueueTile: (z: number, x: number, y: number, priority?: number) => tiles.enqueue(z, x, y, priority ?? 0),
 			wantTileKey: (key: string) => tiles.wantKey(key),
 			vectorZIndices: content.getVectorZIndices(),
-			drawVectorOverlay: () => { content.drawVectorOverlay(); },
+			drawVectorOverlay: () => {
+				content.drawVectorOverlay();
+			},
 		};
 	}
 
@@ -444,14 +460,18 @@ export class RenderCoordinator {
 	suspend(): void {
 		try {
 			this._frameLoop?.stop?.();
-		} catch { /* expected: frame loop may already be stopped */ }
+		} catch {
+			/* expected: frame loop may already be stopped */
+		}
 	}
 
 	resume(): void {
 		this.deps.requestRender();
 		try {
 			this._frameLoop?.start?.();
-		} catch { /* expected: frame loop may not be initialized */ }
+		} catch {
+			/* expected: frame loop may not be initialized */
+		}
 	}
 
 	rebuildScreenCache(): void {
@@ -468,12 +488,16 @@ export class RenderCoordinator {
 		if (this._frameLoop) {
 			try {
 				this._frameLoop.stop();
-			} catch { /* expected: frame loop may already be stopped */ }
+			} catch {
+				/* expected: frame loop may already be stopped */
+			}
 			this._frameLoop = null;
 		}
 		try {
 			this._renderer?.dispose?.();
-		} catch { /* expected: renderer may already be disposed */ }
+		} catch {
+			/* expected: renderer may already be disposed */
+		}
 		this._screenCache?.dispose();
 		this._screenCache = null;
 		this._grid?.dispose();

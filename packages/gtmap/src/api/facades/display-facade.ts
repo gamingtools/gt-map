@@ -6,12 +6,12 @@
 import type { UpscaleFilterMode } from '../types';
 
 export interface DisplayFacadeDeps {
-  setGridVisible(on: boolean): void;
-  setUpscaleFilter(mode: UpscaleFilterMode): void;
-  setFpsCap(v: number): void;
-  setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): void;
-  setRasterOpacity(v: number): void;
-  setZoomSnapThreshold(v: number): void;
+	setGridVisible(on: boolean): void;
+	setUpscaleFilter(mode: UpscaleFilterMode): void;
+	setFpsCap(v: number): void;
+	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): void;
+	setRasterOpacity(v: number): void;
+	setZoomSnapThreshold(v: number): void;
 }
 
 export class DisplayFacade {
