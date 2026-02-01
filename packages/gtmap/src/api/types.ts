@@ -456,6 +456,127 @@ export type IconScaleFunction = (zoom: number, minZoom: number, maxZoom: number)
 
 // Public event surface: exported via api/events/public
 
+/**
+ * Padding specification for view fitting operations.
+ *
+ * @public
+ * @remarks
+ * When a `number` is provided it is applied uniformly to all four sides.
+ * Pass an object with `top`, `right`, `bottom`, `left` for per-side control.
+ * Negative values are clamped to zero.
+ *
+ * @example
+ * ```ts
+ * // Uniform 50 px padding on every side
+ * const pad: PaddingInput = 50;
+ *
+ * // Asymmetric padding (e.g. to avoid a sidebar)
+ * const pad: PaddingInput = { top: 20, right: 300, bottom: 20, left: 20 };
+ * ```
+ */
+export type PaddingInput = number | { top: number; right: number; bottom: number; left: number };
+
+/**
+ * Options for {@link ViewFacade.setView}.
+ *
+ * @public
+ * @remarks
+ * All fields are optional. Omitting every field is a no-op that resolves with
+ * `{ status: 'complete' }`.
+ *
+ * **Resolution order:**
+ * 1. `bounds` or `points` are converted to a center + zoom via fit logic.
+ * 2. An explicit `center` overrides the center derived from bounds/points.
+ * 3. An explicit `zoom` overrides the zoom derived from bounds/points.
+ * 4. `offset` is added to whichever center was resolved (or the current center).
+ * 5. `padding` is applied only when `bounds` or `points` are used.
+ *
+ * When `animate` is provided the view animates; otherwise the change is instant.
+ *
+ * @example
+ * ```ts
+ * // Instant jump to a position
+ * await map.view.setView({ center: { x: 4096, y: 4096 }, zoom: 3 });
+ *
+ * // Animated fly-to
+ * await map.view.setView({ center: HOME, animate: { durationMs: 800 } });
+ *
+ * // Fit bounds with padding
+ * await map.view.setView({
+ *   bounds: { minX: 100, minY: 100, maxX: 7000, maxY: 7000 },
+ *   padding: 40,
+ *   animate: { durationMs: 600 },
+ * });
+ *
+ * // Fit a set of points
+ * await map.view.setView({
+ *   points: [{ x: 500, y: 500 }, { x: 6000, y: 6000 }],
+ *   padding: { top: 20, right: 20, bottom: 20, left: 200 },
+ * });
+ *
+ * // Offset the current view
+ * await map.view.setView({ offset: { dx: 100, dy: -50 } });
+ * ```
+ */
+export interface SetViewOptions {
+  /**
+   * Target center position in world pixels.
+   *
+   * When combined with `bounds` or `points`, this value takes precedence
+   * for the center while the fitted zoom is kept.
+   */
+  center?: Point;
+
+  /**
+   * Target zoom level (fractional values allowed).
+   *
+   * When combined with `bounds` or `points`, this value takes precedence
+   * for the zoom while the fitted center is kept.
+   */
+  zoom?: number;
+
+  /**
+   * Pixel offset added to the resolved center.
+   *
+   * Applied after `center`, `bounds`, or `points` resolution, making it
+   * useful for nudging the view relative to its computed position.
+   */
+  offset?: { dx: number; dy: number };
+
+  /**
+   * Bounding box in world pixels to fit the viewport to.
+   *
+   * The view is centered and zoomed so the entire box is visible.
+   * Mutually exclusive intent with `points` (if both are set, `bounds` wins).
+   */
+  bounds?: { minX: number; minY: number; maxX: number; maxY: number };
+
+  /**
+   * Array of world-pixel points to fit the viewport around.
+   *
+   * Internally converted to a bounding box and then fitted.
+   * Ignored when `bounds` is also provided.
+   */
+  points?: Point[];
+
+  /**
+   * Padding applied when fitting `bounds` or `points`.
+   *
+   * Has no effect when neither `bounds` nor `points` is specified.
+   * Accepts a uniform number or a per-side object.
+   *
+   * @see {@link PaddingInput}
+   */
+  padding?: PaddingInput;
+
+  /**
+   * Animation parameters. When omitted the view change is applied instantly.
+   *
+   * @see {@link AnimateOptions}
+   */
+  animate?: AnimateOptions;
+}
+
 // Transitions (builder) types
 /**
  * Easing function type.

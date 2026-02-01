@@ -31,6 +31,7 @@
 		"build": "npm run clean && npm run build:types && npm run build:js",
 		"build:types": "node -e \"try{require('fs').rmSync('tsconfig.tsbuildinfo',{force:true})}catch(e){}\" && tsc -p ./tsconfig.types.json",
 		"build:js": "esbuild src/index.ts --bundle --format=esm --platform=browser --minify --outfile=dist/index.js",
+		"build:readable": "esbuild src/index.ts --bundle --format=esm --platform=browser --outfile=dist/index.readable.js",
 		"typecheck": "tsc -p ./tsconfig.json --noEmit",
 		"prepack": "npm run build && node -e \"const fs=require('fs'),p=require('path');try{fs.copyFileSync(p.resolve(__dirname,'..','..','LICENSE'), p.resolve(__dirname,'LICENSE'))}catch(e){}\"",
 		"pack": "npm pack"

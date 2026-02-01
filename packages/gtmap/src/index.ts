@@ -1,7 +1,6 @@
 // New simplified API (pixel CRS only)
 export { GTMap } from './api/map';
 export { Marker, Decal, Vector, EntityCollection } from './api/map';
-export type { ViewTransition } from './api/map';
 export * as easings from './api/easings';
 
 // Export Visual classes and types
@@ -31,6 +30,8 @@ export type {
 	ApplyOptions,
 	ApplyResult,
 	ApplyStatus,
+	SetViewOptions,
+	PaddingInput,
 	EventMap,
 	PointerEventData,
 	MouseEventData,

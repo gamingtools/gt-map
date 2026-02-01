@@ -241,7 +241,7 @@
 
     async function recenter() {
         if (!map || !home) return;
-        await map.view.transition().center({ x: home.lng, y: home.lat }).apply();
+        await map.view.setView({ center: { x: home.lng, y: home.lat } });
     }
 	function onMarkersChange() {
 		const n = Math.max(0, Math.min(999_999, Math.floor(markersLocal)));
