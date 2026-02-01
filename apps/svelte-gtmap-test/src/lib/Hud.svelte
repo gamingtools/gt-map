@@ -92,7 +92,7 @@
     const ROT_DEG_PER_SEC = 360; // degrees per second
     let markersLocal = $state<number>(markerCount ?? 0);
     let markersDebounce: number | null = null;
-    
+
     // Animation bookkeeping
     let animStartMs = 0;   // for position orbit
     let rotStartMs = 0;    // for rotation spin
@@ -105,6 +105,18 @@
 
 	// Perf stats from frame event (frame counter only)
 	let frame = $state<number | null>(null);
+
+	// Section collapse state
+	let sectionsOpen = $state<Record<string, boolean>>({
+		controls: true,
+		display: false,
+		view: false,
+		inertia: false,
+	});
+
+	function toggleSection(key: string) {
+		sectionsOpen[key] = !sectionsOpen[key];
+	}
 
 	function refresh(fromFrame = false, now?: number) {
 		if (!map) return;
@@ -397,317 +409,367 @@
 	}
 
 	let hudVisible = $state(true);
+
+	function fpsColor(v: number): string {
+		if (v >= 55) return 'text-accent-green';
+		if (v >= 30) return 'text-accent-amber';
+		return 'text-accent-red';
+	}
 </script>
 
-<div class="absolute left-2 top-2 z-10 flex flex-col gap-2">
-	<button
-		class="pointer-events-auto w-fit rounded border border-gray-300 bg-white/80 px-2 py-1 text-xs text-gray-800 shadow hover:bg-white"
-		onclick={() => (hudVisible = !hudVisible)}
-	>
-		{hudVisible ? 'Hide HUD' : 'Show HUD'}
-	</button>
-	{#if hudVisible}
-		<div
-			class="max-h-[calc(100vh-50px)] select-none overflow-y-auto rounded-md border border-gray-200/60 bg-white/80 px-3 py-2 text-xs text-gray-800 shadow backdrop-blur"
-		>
-			<!-- Status (non-interactive) -->
-			<div class="pointer-events-none grid grid-cols-1 gap-x-6 gap-y-1">
-		<div class="flex items-center gap-2">
-			<span class="font-semibold text-gray-700">Center:</span><span class="tabular-nums"
-				>X: {center.lng.toFixed(2)}, Y: {center.lat.toFixed(2)}</span
-			>
-		</div>
-		<div class="flex items-center gap-2">
-			<span class="font-semibold text-gray-700">Zoom:</span><span class="tabular-nums"
-				>{zoom.toFixed(2)}</span
-			>
-		</div>
-		<div class="flex items-center gap-2">
-			<span class="font-semibold text-gray-700">FPS:</span><span class="tabular-nums"
-				>{Math.round(fps)}</span
-			>
-		</div>
-		<div class="flex items-center gap-2">
-			<span class="font-semibold text-gray-700">Frame:</span>
-			<span class="tabular-nums">{frame ?? '—'}</span>
-		</div>
-		<div class="flex items-center gap-2">
-			<span class="font-semibold text-gray-700">Mouse:</span><span class="tabular-nums"
-				>{mouse ? `X: ${mouse.x}, Y: ${mouse.y}` : '—'}</span
-			>
-		</div>
-	</div>
-	<div class="my-2 h-px bg-gray-200"></div>
-	<!-- Controls (interactive only on elements) -->
-	<div class="pointer-events-none select-auto space-y-2">
+<!-- HUD -->
+<div class="pointer-events-none absolute left-3 top-3 z-10 flex flex-col items-start gap-2">
+	{#if !hudVisible}
+		<!-- Open button (only visible when HUD is closed) -->
 		<button
-			class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1 text-gray-800 hover:bg-white"
-			onclick={recenter}>Recenter</button
+			class="pointer-events-auto flex h-7 items-center gap-1.5 rounded border border-panel-border-hi bg-panel/90 px-2.5 font-mono text-[10px] font-medium uppercase tracking-widest text-data-dim transition-all hover:border-accent-cyan/40 hover:text-data"
+			onclick={() => (hudVisible = true)}
 		>
-		<div>
-			<label class="block text-gray-700" for="zoom-speed">Zoom speed</label>
-			<div class="flex items-center gap-2">
-				<input
-					id="zoom-speed"
-					class="pointer-events-auto w-40"
-					type="range"
-					min="0.05"
-					max="2.00"
-					step="0.05"
-					bind:value={wheelSpeed}
-				/>
-				<span class="w-10 text-right tabular-nums">{wheelSpeed.toFixed(2)}</span>
-			</div>
-		</div>
-		<label class="pointer-events-auto flex items-center gap-2">
-			<input type="checkbox" bind:checked={gridEnabled} />
-			<span>Show Grid</span>
-		</label>
-			<label class="pointer-events-auto flex items-center gap-2">
-				<input type="checkbox" bind:checked={markersEnabled} />
-				<span>Show Markers</span>
-			</label>
-            <label class="pointer-events-auto flex items-center gap-2">
-                <input type="checkbox" bind:checked={animateMarkers} />
-                <span>Animate Markers</span>
-            </label>
-            <label class="pointer-events-auto flex items-center gap-2">
-                <input type="checkbox" bind:checked={rotateMarkers} />
-                <span>Rotate Markers</span>
-            </label>
-		<label class="pointer-events-auto flex items-center gap-2">
-			<input type="checkbox" bind:checked={vectorsEnabled} />
-			<span>Show Vectors</span>
-		</label>
-		<div>
-			<label class="block text-gray-700" for="marker-count">Markers</label>
-			<div class="flex items-center gap-2">
-				<input
-					id="marker-count"
-					class="pointer-events-auto w-28 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
-					type="number"
-					min="0"
-					max="999999"
-					bind:value={markersLocal}
-					oninput={onMarkersChange}
-				/>
-				<span class="tabular-nums">{markersLocal}</span>
-			</div>
-		</div>
-		<div class="my-2 h-px bg-gray-200"></div>
-		<div class="space-y-1">
-			<div class="font-semibold text-gray-700">More settings</div>
-			<div class="flex items-center gap-2">
-				<label class="text-gray-700" for="fps-cap">FPS cap</label>
-				<input
-					id="fps-cap"
-					class="pointer-events-auto w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
-					type="number"
-					min="15"
-					max="240"
-					bind:value={fpsCap}
-				/>
-			</div>
-		</div>
-		<div class="my-2 h-px bg-gray-200"></div>
-		<div class="space-y-1">
-			<div class="font-semibold text-gray-700">Display</div>
-			<div class="flex items-center gap-2">
-				<label class="text-gray-700" for="upscale-filter">Upscale</label>
-				<select id="upscale-filter" class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-0.5" bind:value={upscaleFilter}>
-					<option value="auto">auto</option>
-					<option value="linear">linear</option>
-					<option value="bicubic">bicubic</option>
-				</select>
-			</div>
-			<div>
-				<label class="block text-gray-700" for="raster-opacity">Raster opacity</label>
-				<div class="flex items-center gap-2">
-					<input
-						id="raster-opacity"
-						class="pointer-events-auto w-40"
-						type="range"
-						min="0"
-						max="1"
-						step="0.01"
-						bind:value={rasterOpacity}
-					/>
-					<span class="w-10 text-right tabular-nums">{rasterOpacity.toFixed(2)}</span>
+			<svg class="h-3 w-3" viewBox="0 0 12 12" fill="none">
+				<path d="M2 3H10M2 6H10M2 9H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+			</svg>
+			HUD
+		</button>
+	{/if}
+
+	{#if hudVisible}
+		<!-- Main Panel -->
+		<div
+			class="hud-scroll pointer-events-auto max-h-[calc(100vh-80px)] w-64 select-none overflow-y-auto rounded border border-panel-border bg-panel/95 font-mono text-[11px] leading-tight text-data shadow-2xl shadow-black/50 backdrop-blur-sm"
+		>
+			<!-- Telemetry Header with close button -->
+			<div class="border-b border-panel-border px-3 py-2.5">
+				<div class="mb-2 flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<div class="h-1.5 w-1.5 rounded-full bg-accent-green shadow-[0_0_4px_theme(--color-accent-green)]"></div>
+						<span class="text-[9px] font-semibold uppercase tracking-[0.2em] text-data-dim">Telemetry</span>
+					</div>
+					<button
+						class="flex h-5 w-5 items-center justify-center rounded text-data-dim transition-colors hover:bg-panel-surface hover:text-accent-red"
+						onclick={() => (hudVisible = false)}
+						title="Close HUD"
+					>
+						<svg class="h-3 w-3" viewBox="0 0 12 12" fill="none">
+							<path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+						</svg>
+					</button>
+				</div>
+				<div class="grid grid-cols-2 gap-x-3 gap-y-1">
+					<div class="flex items-baseline justify-between">
+						<span class="text-data-dim">CTR</span>
+						<span class="tabular-nums text-data-bright">{center.lng.toFixed(0)},{center.lat.toFixed(0)}</span>
+					</div>
+					<div class="flex items-baseline justify-between">
+						<span class="text-data-dim">Z</span>
+						<span class="tabular-nums text-accent-cyan">{zoom.toFixed(2)}</span>
+					</div>
+					<div class="flex items-baseline justify-between">
+						<span class="text-data-dim">FPS</span>
+						<span class="tabular-nums {fpsColor(fps)}">{Math.round(fps)}</span>
+					</div>
+					<div class="flex items-baseline justify-between">
+						<span class="text-data-dim">FRM</span>
+						<span class="tabular-nums text-data-bright">{frame ?? '--'}</span>
+					</div>
+					<div class="col-span-2 flex items-baseline justify-between">
+						<span class="text-data-dim">PTR</span>
+						<span class="tabular-nums text-data-bright">{mouse ? `${mouse.x}, ${mouse.y}` : '--'}</span>
+					</div>
 				</div>
 			</div>
-			<div>
-				<label class="block text-gray-700" for="zoom-snap">Zoom snap</label>
-				<div class="flex items-center gap-2">
-					<input
-						id="zoom-snap"
-						class="pointer-events-auto w-40"
-						type="range"
-						min="0"
-						max="1"
-						step="0.01"
-						bind:value={zoomSnapThreshold}
-					/>
-					<span class="w-10 text-right tabular-nums">{zoomSnapThreshold.toFixed(2)}</span>
+
+			<!-- Controls Section -->
+			<button
+				class="flex w-full items-center gap-2 border-b border-panel-border px-3 py-2 text-left transition-colors hover:bg-panel-surface"
+				onclick={() => toggleSection('controls')}
+			>
+				<svg class="h-2.5 w-2.5 text-data-dim transition-transform {sectionsOpen.controls ? 'rotate-90' : ''}" viewBox="0 0 8 10" fill="currentColor">
+					<path d="M1 0L7 5L1 10Z"/>
+				</svg>
+				<span class="text-[9px] font-semibold uppercase tracking-[0.2em] text-data-dim">Controls</span>
+			</button>
+			{#if sectionsOpen.controls}
+				<div class="space-y-2.5 border-b border-panel-border px-3 py-2.5">
+					<button
+						class="flex h-6 items-center rounded border border-panel-border-hi bg-panel-surface px-2 text-[10px] uppercase tracking-wider text-data transition-all hover:border-accent-cyan/40 hover:text-accent-cyan"
+						onclick={recenter}
+					>Recenter</button>
+
+					<!-- Zoom speed -->
+					<div>
+						<div class="mb-1 flex items-center justify-between">
+							<span class="text-data-dim">Zoom speed</span>
+							<span class="tabular-nums text-accent-cyan">{wheelSpeed.toFixed(2)}</span>
+						</div>
+						<input class="hud-range pointer-events-auto w-full" type="range" min="0.05" max="2.00" step="0.05" bind:value={wheelSpeed} />
+					</div>
+
+					<!-- Toggles row -->
+					<div class="space-y-1.5">
+						<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+							<input type="checkbox" class="hud-check" bind:checked={gridEnabled} />
+							<span class="text-data">Grid</span>
+						</label>
+						<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+							<input type="checkbox" class="hud-check" bind:checked={markersEnabled} />
+							<span class="text-data">Markers</span>
+						</label>
+						<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+							<input type="checkbox" class="hud-check" bind:checked={animateMarkers} />
+							<span class="text-data">Animate pos</span>
+						</label>
+						<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+							<input type="checkbox" class="hud-check" bind:checked={rotateMarkers} />
+							<span class="text-data">Animate rot</span>
+						</label>
+						<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+							<input type="checkbox" class="hud-check" bind:checked={vectorsEnabled} />
+							<span class="text-data">Vectors</span>
+						</label>
+					</div>
+
+					<!-- Marker count -->
+					<div>
+						<div class="mb-1 flex items-center justify-between">
+							<span class="text-data-dim">Markers</span>
+							<span class="tabular-nums text-data-bright">{markersLocal}</span>
+						</div>
+						<input
+							class="hud-number pointer-events-auto w-full rounded border border-input-border bg-input-bg px-2 py-1 tabular-nums text-data-bright outline-none transition-colors focus:border-accent-cyan"
+							type="number"
+							min="0"
+							max="999999"
+							bind:value={markersLocal}
+							oninput={onMarkersChange}
+						/>
+					</div>
+
+					<!-- FPS cap -->
+					<div class="flex items-center justify-between gap-2">
+						<span class="text-data-dim">FPS cap</span>
+						<input
+							class="hud-number pointer-events-auto w-16 rounded border border-input-border bg-input-bg px-2 py-1 text-right tabular-nums text-data-bright outline-none transition-colors focus:border-accent-cyan"
+							type="number"
+							min="15"
+							max="240"
+							bind:value={fpsCap}
+						/>
+					</div>
 				</div>
-			</div>
-			<label class="pointer-events-auto flex items-center gap-2">
-				<input type="checkbox" bind:checked={backgroundTransparent} />
-				<span>Transparent bg</span>
-			</label>
-			<div class="flex items-center gap-2">
-				<label class="text-gray-700" for="bg-color">BG color</label>
-				<input
-					id="bg-color"
-					class="pointer-events-auto h-6 w-10 rounded border border-gray-300 bg-white/70"
-					type="color"
-					bind:value={backgroundColor}
-					disabled={backgroundTransparent}
-				/>
-				<span class="tabular-nums">{backgroundColor}</span>
-			</div>
-		</div>
-		<div class="my-2 h-px bg-gray-200"></div>
-		<div class="space-y-1">
-			<div class="font-semibold text-gray-700">View</div>
-			<label class="pointer-events-auto flex items-center gap-2">
-				<input type="checkbox" bind:checked={wrapX} />
-				<span>Wrap X</span>
-			</label>
-			<label class="pointer-events-auto flex items-center gap-2">
-				<input type="checkbox" bind:checked={clipToBounds} />
-				<span>Clip to bounds</span>
-			</label>
-			<label class="pointer-events-auto flex items-center gap-2">
-				<input type="checkbox" bind:checked={autoResize} />
-				<span>Auto resize</span>
-			</label>
-			<div>
-				<label class="block text-gray-700" for="bounds-viscosity">Bounds viscosity</label>
-				<div class="flex items-center gap-2">
-					<input
-						id="bounds-viscosity"
-						class="pointer-events-auto w-40"
-						type="range"
-						min="0"
-						max="1"
-						step="0.01"
-						bind:value={maxBoundsViscosity}
-					/>
-					<span class="w-10 text-right tabular-nums">{maxBoundsViscosity.toFixed(2)}</span>
-				</div>
-			</div>
-			<label class="pointer-events-auto flex items-center gap-2">
-				<input type="checkbox" bind:checked={maxBoundsEnabled} />
-				<span>Use max bounds</span>
-			</label>
-			<div class="grid grid-cols-2 gap-2">
-				<label class="flex items-center gap-2">
-					<span class="text-gray-700">Min X</span>
-					<input
-						class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
-						type="number"
-						bind:value={maxBoundsPx.minX}
-						disabled={!maxBoundsEnabled}
-					/>
-				</label>
-				<label class="flex items-center gap-2">
-					<span class="text-gray-700">Min Y</span>
-					<input
-						class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
-						type="number"
-						bind:value={maxBoundsPx.minY}
-						disabled={!maxBoundsEnabled}
-					/>
-				</label>
-				<label class="flex items-center gap-2">
-					<span class="text-gray-700">Max X</span>
-					<input
-						class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
-						type="number"
-						bind:value={maxBoundsPx.maxX}
-						disabled={!maxBoundsEnabled}
-					/>
-				</label>
-				<label class="flex items-center gap-2">
-					<span class="text-gray-700">Max Y</span>
-					<input
-						class="pointer-events-auto w-20 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
-						type="number"
-						bind:value={maxBoundsPx.maxY}
-						disabled={!maxBoundsEnabled}
-					/>
-				</label>
-			</div>
-			{#if mapSize}
-				<button
-					class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-1 text-gray-800 hover:bg-white"
-					onclick={applyMapBoundsDefaults}
-					disabled={!maxBoundsEnabled}
-				>
-					Set bounds to map size
-				</button>
 			{/if}
-			<div class="flex items-center gap-2">
-				<label class="text-gray-700" for="icon-scale">Icon scale</label>
-				<select id="icon-scale" class="pointer-events-auto rounded border border-gray-300 bg-white/70 px-2 py-0.5" bind:value={iconScaleMode}>
-					<option value="default">default</option>
-					<option value="screen">screen-fixed</option>
-					<option value="world">world-scaled</option>
-					<option value="clamp">clamped world</option>
-				</select>
-			</div>
-		</div>
-		<div class="my-2 h-px bg-gray-200"></div>
-		<div class="space-y-1">
-			<div class="font-semibold text-gray-700">Inertia</div>
-			<label class="pointer-events-auto flex items-center gap-2">
-				<input type="checkbox" bind:checked={inertiaEnabled} />
-				<span>Enable inertia</span>
-			</label>
-			<div class="flex items-center gap-2">
-				<label class="text-gray-700" for="inertia-decel">Decel</label>
-				<input
-					id="inertia-decel"
-					class="pointer-events-auto w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
-					type="number"
-					min="100"
-					max="20000"
-					step="100"
-					bind:value={inertiaDecel}
-					disabled={!inertiaEnabled}
-				/>
-			</div>
-			<div class="flex items-center gap-2">
-				<label class="text-gray-700" for="inertia-maxspeed">Max speed</label>
-				<input
-					id="inertia-maxspeed"
-					class="pointer-events-auto w-24 rounded border border-gray-300 bg-white/70 px-2 py-0.5"
-					type="number"
-					min="10"
-					max="1000000"
-					step="100"
-					bind:value={inertiaMaxSpeed}
-					disabled={!inertiaEnabled}
-				/>
-			</div>
-			<div>
-				<label class="block text-gray-700" for="inertia-ease">Ease linearity</label>
-				<div class="flex items-center gap-2">
-					<input
-						id="inertia-ease"
-						class="pointer-events-auto w-40"
-						type="range"
-						min="0.01"
-						max="1.00"
-						step="0.01"
-						bind:value={easeLinearity}
-						disabled={!inertiaEnabled}
-					/>
-					<span class="w-10 text-right tabular-nums">{easeLinearity.toFixed(2)}</span>
+
+			<!-- Display Section -->
+			<button
+				class="flex w-full items-center gap-2 border-b border-panel-border px-3 py-2 text-left transition-colors hover:bg-panel-surface"
+				onclick={() => toggleSection('display')}
+			>
+				<svg class="h-2.5 w-2.5 text-data-dim transition-transform {sectionsOpen.display ? 'rotate-90' : ''}" viewBox="0 0 8 10" fill="currentColor">
+					<path d="M1 0L7 5L1 10Z"/>
+				</svg>
+				<span class="text-[9px] font-semibold uppercase tracking-[0.2em] text-data-dim">Display</span>
+			</button>
+			{#if sectionsOpen.display}
+				<div class="space-y-2.5 border-b border-panel-border px-3 py-2.5">
+					<!-- Upscale filter -->
+					<div class="flex items-center justify-between gap-2">
+						<span class="text-data-dim">Upscale</span>
+						<select class="hud-select pointer-events-auto rounded border border-input-border bg-input-bg px-2 py-1 text-data-bright outline-none transition-colors focus:border-accent-cyan" bind:value={upscaleFilter}>
+							<option value="auto">auto</option>
+							<option value="linear">linear</option>
+							<option value="bicubic">bicubic</option>
+						</select>
+					</div>
+
+					<!-- Raster opacity -->
+					<div>
+						<div class="mb-1 flex items-center justify-between">
+							<span class="text-data-dim">Raster opacity</span>
+							<span class="tabular-nums text-accent-cyan">{rasterOpacity.toFixed(2)}</span>
+						</div>
+						<input class="hud-range pointer-events-auto w-full" type="range" min="0" max="1" step="0.01" bind:value={rasterOpacity} />
+					</div>
+
+					<!-- Zoom snap -->
+					<div>
+						<div class="mb-1 flex items-center justify-between">
+							<span class="text-data-dim">Zoom snap</span>
+							<span class="tabular-nums text-accent-cyan">{zoomSnapThreshold.toFixed(2)}</span>
+						</div>
+						<input class="hud-range pointer-events-auto w-full" type="range" min="0" max="1" step="0.01" bind:value={zoomSnapThreshold} />
+					</div>
+
+					<!-- Background -->
+					<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+						<input type="checkbox" class="hud-check" bind:checked={backgroundTransparent} />
+						<span class="text-data">Transparent bg</span>
+					</label>
+					<div class="flex items-center justify-between gap-2">
+						<span class="text-data-dim">BG color</span>
+						<div class="flex items-center gap-2">
+							<input
+								class="pointer-events-auto h-5 w-7 cursor-pointer rounded border border-input-border bg-input-bg"
+								type="color"
+								bind:value={backgroundColor}
+								disabled={backgroundTransparent}
+							/>
+							<span class="tabular-nums text-data-dim" class:opacity-35={backgroundTransparent}>{backgroundColor}</span>
+						</div>
+					</div>
 				</div>
-			</div>
+			{/if}
+
+			<!-- View Section -->
+			<button
+				class="flex w-full items-center gap-2 border-b border-panel-border px-3 py-2 text-left transition-colors hover:bg-panel-surface"
+				onclick={() => toggleSection('view')}
+			>
+				<svg class="h-2.5 w-2.5 text-data-dim transition-transform {sectionsOpen.view ? 'rotate-90' : ''}" viewBox="0 0 8 10" fill="currentColor">
+					<path d="M1 0L7 5L1 10Z"/>
+				</svg>
+				<span class="text-[9px] font-semibold uppercase tracking-[0.2em] text-data-dim">View</span>
+			</button>
+			{#if sectionsOpen.view}
+				<div class="space-y-2.5 border-b border-panel-border px-3 py-2.5">
+					<div class="space-y-1.5">
+						<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+							<input type="checkbox" class="hud-check" bind:checked={wrapX} />
+							<span class="text-data">Wrap X</span>
+						</label>
+						<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+							<input type="checkbox" class="hud-check" bind:checked={clipToBounds} />
+							<span class="text-data">Clip to bounds</span>
+						</label>
+						<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+							<input type="checkbox" class="hud-check" bind:checked={autoResize} />
+							<span class="text-data">Auto resize</span>
+						</label>
+					</div>
+
+					<!-- Bounds viscosity -->
+					<div>
+						<div class="mb-1 flex items-center justify-between">
+							<span class="text-data-dim">Viscosity</span>
+							<span class="tabular-nums text-accent-cyan">{maxBoundsViscosity.toFixed(2)}</span>
+						</div>
+						<input class="hud-range pointer-events-auto w-full" type="range" min="0" max="1" step="0.01" bind:value={maxBoundsViscosity} />
+					</div>
+
+					<!-- Max bounds -->
+					<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+						<input type="checkbox" class="hud-check" bind:checked={maxBoundsEnabled} />
+						<span class="text-data">Max bounds</span>
+					</label>
+					<div class="grid grid-cols-2 gap-1.5" class:opacity-35={!maxBoundsEnabled}>
+						<div class="flex items-center gap-1.5">
+							<span class="w-5 text-right text-data-dim">mX</span>
+							<input
+								class="hud-number pointer-events-auto w-full rounded border border-input-border bg-input-bg px-1.5 py-0.5 tabular-nums text-data-bright outline-none transition-colors focus:border-accent-cyan"
+								type="number"
+								bind:value={maxBoundsPx.minX}
+								disabled={!maxBoundsEnabled}
+							/>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="w-5 text-right text-data-dim">mY</span>
+							<input
+								class="hud-number pointer-events-auto w-full rounded border border-input-border bg-input-bg px-1.5 py-0.5 tabular-nums text-data-bright outline-none transition-colors focus:border-accent-cyan"
+								type="number"
+								bind:value={maxBoundsPx.minY}
+								disabled={!maxBoundsEnabled}
+							/>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="w-5 text-right text-data-dim">MX</span>
+							<input
+								class="hud-number pointer-events-auto w-full rounded border border-input-border bg-input-bg px-1.5 py-0.5 tabular-nums text-data-bright outline-none transition-colors focus:border-accent-cyan"
+								type="number"
+								bind:value={maxBoundsPx.maxX}
+								disabled={!maxBoundsEnabled}
+							/>
+						</div>
+						<div class="flex items-center gap-1.5">
+							<span class="w-5 text-right text-data-dim">MY</span>
+							<input
+								class="hud-number pointer-events-auto w-full rounded border border-input-border bg-input-bg px-1.5 py-0.5 tabular-nums text-data-bright outline-none transition-colors focus:border-accent-cyan"
+								type="number"
+								bind:value={maxBoundsPx.maxY}
+								disabled={!maxBoundsEnabled}
+							/>
+						</div>
+					</div>
+					{#if mapSize}
+						<button
+							class="flex h-6 items-center rounded border border-panel-border-hi bg-panel-surface px-2 text-[10px] uppercase tracking-wider text-data transition-all hover:border-accent-cyan/40 hover:text-accent-cyan disabled:opacity-35 disabled:hover:border-panel-border-hi disabled:hover:text-data"
+							onclick={applyMapBoundsDefaults}
+							disabled={!maxBoundsEnabled}
+						>Reset to map size</button>
+					{/if}
+
+					<!-- Icon scale -->
+					<div class="flex items-center justify-between gap-2">
+						<span class="text-data-dim">Icon scale</span>
+						<select class="hud-select pointer-events-auto rounded border border-input-border bg-input-bg px-2 py-1 text-data-bright outline-none transition-colors focus:border-accent-cyan" bind:value={iconScaleMode}>
+							<option value="default">default</option>
+							<option value="screen">screen</option>
+							<option value="world">world</option>
+							<option value="clamp">clamp</option>
+						</select>
+					</div>
+				</div>
+			{/if}
+
+			<!-- Inertia Section -->
+			<button
+				class="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-panel-surface"
+				onclick={() => toggleSection('inertia')}
+			>
+				<svg class="h-2.5 w-2.5 text-data-dim transition-transform {sectionsOpen.inertia ? 'rotate-90' : ''}" viewBox="0 0 8 10" fill="currentColor">
+					<path d="M1 0L7 5L1 10Z"/>
+				</svg>
+				<span class="text-[9px] font-semibold uppercase tracking-[0.2em] text-data-dim">Inertia</span>
+			</button>
+			{#if sectionsOpen.inertia}
+				<div class="space-y-2.5 border-t border-panel-border px-3 py-2.5">
+					<label class="pointer-events-auto flex cursor-pointer items-center gap-2">
+						<input type="checkbox" class="hud-check" bind:checked={inertiaEnabled} />
+						<span class="text-data">Enable</span>
+					</label>
+
+					<div class="flex items-center justify-between gap-2" class:opacity-35={!inertiaEnabled}>
+						<span class="text-data-dim">Decel</span>
+						<input
+							class="hud-number pointer-events-auto w-20 rounded border border-input-border bg-input-bg px-2 py-1 text-right tabular-nums text-data-bright outline-none transition-colors focus:border-accent-cyan"
+							type="number"
+							min="100"
+							max="20000"
+							step="100"
+							bind:value={inertiaDecel}
+							disabled={!inertiaEnabled}
+						/>
+					</div>
+
+					<div class="flex items-center justify-between gap-2" class:opacity-35={!inertiaEnabled}>
+						<span class="text-data-dim">Max speed</span>
+						<input
+							class="hud-number pointer-events-auto w-20 rounded border border-input-border bg-input-bg px-2 py-1 text-right tabular-nums text-data-bright outline-none transition-colors focus:border-accent-cyan"
+							type="number"
+							min="10"
+							max="1000000"
+							step="100"
+							bind:value={inertiaMaxSpeed}
+							disabled={!inertiaEnabled}
+						/>
+					</div>
+
+					<div class:opacity-35={!inertiaEnabled}>
+						<div class="mb-1 flex items-center justify-between">
+							<span class="text-data-dim">Ease linearity</span>
+							<span class="tabular-nums text-accent-cyan">{easeLinearity.toFixed(2)}</span>
+						</div>
+						<input class="hud-range pointer-events-auto w-full" type="range" min="0.01" max="1.00" step="0.01" bind:value={easeLinearity} disabled={!inertiaEnabled} />
+					</div>
+				</div>
+			{/if}
 		</div>
-	</div>
-	</div>
 	{/if}
 </div>

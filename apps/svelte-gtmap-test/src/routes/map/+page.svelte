@@ -334,5 +334,6 @@
 		touch-action: none;
 		width: 100%;
 		height: calc(100vh - 32px);
+		background: #0a0c10;
 	}
 </style>
