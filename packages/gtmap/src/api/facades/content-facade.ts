@@ -82,10 +82,10 @@ export class ContentFacade {
 	/**
 	 * Create and add a marker.
 	 */
-	addMarker<T = unknown>(x: number, y: number, opts: MarkerOptions<T>): Marker<T> {
+	addMarker(x: number, y: number, opts: MarkerOptions): Marker {
 		this._vis.ensureRegistered(opts.visual);
-		const mk = new Marker<T>(x, y, opts, () => this._markMarkersDirtyAndSchedule());
-		this.markers.add(mk as unknown as Marker);
+		const mk = new Marker(x, y, opts, () => this._markMarkersDirtyAndSchedule());
+		this.markers.add(mk);
 		return mk;
 	}
 
@@ -101,10 +101,10 @@ export class ContentFacade {
 	/**
 	 * Create and add a vector shape.
 	 */
-	addVector<T = unknown>(geometry: VectorGeom, opts?: { data?: T }): Vector<T> {
+	addVector(geometry: VectorGeom, opts?: { data?: unknown }): Vector {
 		const vecOpts = opts?.data !== undefined ? { data: opts.data } : {};
-		const v = new Vector<T>(geometry, vecOpts as import('../../entities/vector').VectorOptions<T>, () => this._flushVectors());
-		this.vectors.add(v as unknown as Vector);
+		const v = new Vector(geometry, vecOpts, () => this._flushVectors());
+		this.vectors.add(v);
 		return v;
 	}
 

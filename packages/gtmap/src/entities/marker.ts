@@ -9,7 +9,7 @@ import { EventedEntity } from './base';
  *
  * @public
  */
-export interface MarkerOptions<T = unknown> {
+export interface MarkerOptions {
 	/** Visual template for rendering. */
 	visual: Visual;
 	/** Scale multiplier (1 = visual's native size). */
@@ -31,7 +31,7 @@ export interface MarkerOptions<T = unknown> {
 	 */
 	iconScaleFunction?: IconScaleFunction | null;
 	/** Arbitrary user data attached to the marker. */
-	data?: T;
+	data?: unknown;
 }
 
 /** Builder for animating a single Marker (position/rotation/scale). */
@@ -60,7 +60,7 @@ function genMarkerId(): string {
  * Emits typed events via {@link Marker.events | marker.events} (`click`,
  * `pointerenter`, `pointerleave`, `positionchange`, `remove`, ...).
  */
-export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
+export class Marker extends EventedEntity<MarkerEventMap> {
 	readonly id: string;
 	private _x: number;
 	private _y: number;
@@ -70,9 +70,9 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	private _opacity: number;
 	private _zIndex: number;
 	private _iconScaleFunction?: IconScaleFunction | null;
-	private _data?: T;
+	private _data?: unknown;
 	private _onChange?: () => void;
-	private _activeTx?: MarkerTransitionImpl<T>;
+	private _activeTx?: MarkerTransitionImpl;
 
 	/**
 	 * Create a marker at the given world pixel coordinate.
@@ -84,7 +84,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * @param onChange - Internal callback to notify the map facade of changes
 	 * @internal
 	 */
-	constructor(x: number, y: number, opts: MarkerOptions<T>, onChange?: () => void) {
+	constructor(x: number, y: number, opts: MarkerOptions, onChange?: () => void) {
 		super();
 		this.id = genMarkerId();
 		this._x = x;
@@ -132,7 +132,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		return this._iconScaleFunction;
 	}
 	/** Arbitrary user data attached to the marker. */
-	get data(): T | undefined {
+	get data(): unknown {
 		return this._data;
 	}
 
@@ -147,7 +147,7 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * marker.setData({ id: 'poi-1', category: 'shop' });
 	 * ```
 	 */
-	setData(data: T): this {
+	setData(data: unknown): this {
 		this._data = data;
 		this._onChange?.();
 		return this;
@@ -206,8 +206,8 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 *
 	 * @public
 	 */
-	toData(): MarkerData<T> {
-		const d: MarkerData<T> = { id: this.id, x: this._x, y: this._y };
+	toData(): MarkerData {
+		const d: MarkerData = { id: this.id, x: this._x, y: this._y };
 		if (this._data !== undefined) d.data = this._data;
 		return d;
 	}
@@ -217,13 +217,13 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 	 * Forward an event from the renderer to this marker's event bus.
 	 * @internal
 	 */
-	emitFromMap<K extends keyof MarkerEventMap<T> & string>(event: K, payload: MarkerEventMap<T>[K]): void {
+	emitFromMap<K extends keyof MarkerEventMap & string>(event: K, payload: MarkerEventMap[K]): void {
 		this.emit(event, payload);
 	}
 
 	/** Start a marker transition (position/rotation/scale/opacity). */
 	transition(): MarkerTransition {
-		return new MarkerTransitionImpl<T>(this);
+		return new MarkerTransitionImpl(this);
 	}
 
 	/** @internal Cancel any active transition for this marker. */
@@ -234,13 +234,13 @@ export class Marker<T = unknown> extends EventedEntity<MarkerEventMap<T>> {
 		delete this._activeTx;
 	}
 	/** @internal Set the active transition for this marker. */
-	_setActiveTransition(tx: MarkerTransitionImpl<T>): void {
+	_setActiveTransition(tx: MarkerTransitionImpl): void {
 		this._activeTx = tx;
 	}
 }
 
-class MarkerTransitionImpl<T> implements MarkerTransition {
-	private marker: Marker<T>;
+class MarkerTransitionImpl implements MarkerTransition {
+	private marker: Marker;
 	private targetX?: number;
 	private targetY?: number;
 	private targetScale?: number;
@@ -251,7 +251,7 @@ class MarkerTransitionImpl<T> implements MarkerTransition {
 	private promise?: Promise<ApplyResult>;
 	private cancelled = false;
 
-	constructor(marker: Marker<T>) {
+	constructor(marker: Marker) {
 		this.marker = marker;
 	}
 

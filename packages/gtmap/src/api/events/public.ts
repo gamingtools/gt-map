@@ -60,21 +60,21 @@ import type { EventMap as MapEventMap } from '../types';
 import type { MarkerEventMap, VectorEventMap, EntityCollectionEventMap } from './maps';
 
 /** Marker events surface with typed names and payloads. */
-export interface MarkerEvents<T = unknown> extends PublicEvents<MarkerEventMap<T>> {
+export interface MarkerEvents extends PublicEvents<MarkerEventMap> {
 	/**
 	 * Subscribe to a marker event.
 	 *
 	 * Supported names: 'click' | 'tap' | 'longpress' | 'pointerdown' | 'pointerup' | 'pointerenter' | 'pointerleave' | 'positionchange' | 'remove'
 	 */
-	on<K extends keyof MarkerEventMap<T> & string>(event: K): EventSubscription<MarkerEventMap<T>[K]>;
-	on<K extends keyof MarkerEventMap<T> & string>(event: K, handler: (value: MarkerEventMap<T>[K]) => void): Unsubscribe;
+	on<K extends keyof MarkerEventMap & string>(event: K): EventSubscription<MarkerEventMap[K]>;
+	on<K extends keyof MarkerEventMap & string>(event: K, handler: (value: MarkerEventMap[K]) => void): Unsubscribe;
 }
 
 /** Vector events surface with typed names and payloads. */
-export interface VectorEvents<T = unknown> extends PublicEvents<VectorEventMap<T>> {
+export interface VectorEvents extends PublicEvents<VectorEventMap> {
 	/** Supported names: 'remove' */
-	on<K extends keyof VectorEventMap<T> & string>(event: K): EventSubscription<VectorEventMap<T>[K]>;
-	on<K extends keyof VectorEventMap<T> & string>(event: K, handler: (value: VectorEventMap<T>[K]) => void): Unsubscribe;
+	on<K extends keyof VectorEventMap & string>(event: K): EventSubscription<VectorEventMap[K]>;
+	on<K extends keyof VectorEventMap & string>(event: K, handler: (value: VectorEventMap[K]) => void): Unsubscribe;
 }
 
 /** EntityCollection events surface with typed names and payloads. */
