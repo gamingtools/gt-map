@@ -1,3 +1,4 @@
+import type { UpscaleFilterMode } from '../../api/types';
 import type { RenderCtx } from '../types';
 import * as Coords from '../coords';
 
@@ -166,7 +167,7 @@ export default class MapRenderer {
 					mapSize: ctx.mapSize,
 					zMax: ctx.maxZoom,
 					sourceMaxZoom,
-					filterMode: this.levelFilter(scaleL),
+					filterMode: this.resolveFilterMode(scaleL, ctx.upscaleFilter),
 					wantTileKey: ctx.wantTileKey,
 				});
 				if (covL >= COVERAGE.backfill) break;
@@ -188,9 +189,21 @@ export default class MapRenderer {
 			mapSize: ctx.mapSize,
 			zMax: ctx.maxZoom,
 			sourceMaxZoom,
-			filterMode: this.levelFilter(scale),
+			filterMode: this.resolveFilterMode(scale, ctx.upscaleFilter),
 			wantTileKey: ctx.wantTileKey,
 		});
+	}
+
+	private resolveFilterMode(scale: number, mode?: UpscaleFilterMode): 'auto' | 'linear' | 'bicubic' {
+		if (mode === 'linear' || mode === 'bicubic') {
+			this._lastFilterMode = mode;
+			return mode;
+		}
+		if (mode === 'auto') {
+			const hysteresis = this.levelFilter(scale);
+			return hysteresis === 'bicubic' ? 'auto' : 'linear';
+		}
+		return this.levelFilter(scale);
 	}
 
 	private levelFilter(scale: number): 'linear' | 'bicubic' {
