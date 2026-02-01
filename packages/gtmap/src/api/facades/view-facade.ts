@@ -9,27 +9,27 @@ import { ViewTransitionImpl, type ViewTransition, type ViewTransitionHost } from
 import { CoordTransformer, type Bounds as SourceBounds, type TransformType } from '../coord-transformer';
 
 export interface ViewFacadeDeps {
-  getCenter(): { x: number; y: number };
-  getZoom(): number;
-  getPointerAbs(): { x: number; y: number } | null;
-  getMapSize(): { width: number; height: number };
-  getMinZoom(): number;
-  getMaxZoom(): number;
-  getImageMaxZoom(): number;
-  getContainer(): HTMLElement;
-  events: { when<K extends keyof EventMap>(event: K): Promise<EventMap[K]> };
-  setCenter(x: number, y: number): void;
-  setZoom(z: number): void;
-  setWrapX(on: boolean): void;
-  setMaxBoundsPx(bounds: MaxBoundsPx | null): void;
-  setMaxBoundsViscosity(v: number): void;
-  setClipToBounds(on: boolean): void;
-  setIconScaleFunction(fn: IconScaleFunction | null): void;
-  setAutoResize(on: boolean): void;
-  resize(): void;
-  flyTo(opts: { x?: number; y?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }): void;
-  cancelPanAnim(): void;
-  cancelZoomAnim(): void;
+	getCenter(): { x: number; y: number };
+	getZoom(): number;
+	getPointerAbs(): { x: number; y: number } | null;
+	getMapSize(): { width: number; height: number };
+	getMinZoom(): number;
+	getMaxZoom(): number;
+	getImageMaxZoom(): number;
+	getContainer(): HTMLElement;
+	events: { when<K extends keyof EventMap>(event: K): Promise<EventMap[K]> };
+	setCenter(x: number, y: number): void;
+	setZoom(z: number): void;
+	setWrapX(on: boolean): void;
+	setMaxBoundsPx(bounds: MaxBoundsPx | null): void;
+	setMaxBoundsViscosity(v: number): void;
+	setClipToBounds(on: boolean): void;
+	setIconScaleFunction(fn: IconScaleFunction | null): void;
+	setAutoResize(on: boolean): void;
+	resize(): void;
+	flyTo(opts: { x?: number; y?: number; zoom?: number; durationMs?: number; easing?: (t: number) => number }): void;
+	cancelPanAnim(): void;
+	cancelZoomAnim(): void;
 }
 
 export class ViewFacade implements ViewTransitionHost {

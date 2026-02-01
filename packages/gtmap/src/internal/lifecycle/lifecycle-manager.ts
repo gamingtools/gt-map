@@ -179,46 +179,51 @@ export class LifecycleManager {
 		const cm = ctx.contentManager!;
 
 		// Render coordinator -- raster + screen cache
-		const coord = new RenderCoordinator({
-			getGL: () => ctx.gl!,
-			getGLResources: () => ctx.glResources,
-			getCanvas: () => ctx.canvas,
-			getContainer: () => ctx.container,
-			viewState: vs,
-			getOutCenterBias: () => ctx.options.outCenterBias,
-			emit: (name, payload) => ctx.events.emit(name, payload),
-			getNeedsRender: () => ctx.needsRender,
-			requestRender: () => ctx.requestRender(),
-			consumeRenderFlag: () => ctx.consumeRenderFlag(),
-			now: () => ctx.now(),
-			debugWarn: (msg, err) => ctx.debug.warn(msg, err),
-			debugLog: (msg) => ctx.debug.log(msg),
-			debugEnabled: () => ctx.debug.enabled,
-			debugGpuWaitEnabled: () => ctx.debug.gpuWaitEnabled(),
-			getGridPalette: () => ctx.bgUI?.getGridPalette() ?? { minor: 'rgba(200,200,200,0.3)', major: 'rgba(200,200,200,0.5)', labelBg: 'rgba(0,0,0,0.55)', labelFg: 'rgba(255,255,255,0.9)' },
-			tiles: {
-				cancelUnwanted: () => ctx.tileManager?.cancelUnwanted(),
-				clearWanted: () => ctx.tileManager?.clearWanted(),
-				getCache: () => ctx.tileManager!.cache,
-				enqueue: (z, x, y, priority) => ctx.tileManager?.enqueue(z, x, y, priority),
-				wantKey: (key) => ctx.tileManager?.wantKey(key),
-				getTileSize: () => ctx.tileManager!.tileSize,
-				getSourceMaxZoom: () => ctx.tileManager!.sourceMaxZoom,
-				isIdle: () => ctx.tileManager?.isIdle() ?? true,
-				setFrame: (f) => { if (ctx.tileManager) ctx.tileManager.frame = f; },
+		const coord = new RenderCoordinator(
+			{
+				getGL: () => ctx.gl!,
+				getGLResources: () => ctx.glResources,
+				getCanvas: () => ctx.canvas,
+				getContainer: () => ctx.container,
+				viewState: vs,
+				getOutCenterBias: () => ctx.options.outCenterBias,
+				emit: (name, payload) => ctx.events.emit(name, payload),
+				getNeedsRender: () => ctx.needsRender,
+				requestRender: () => ctx.requestRender(),
+				consumeRenderFlag: () => ctx.consumeRenderFlag(),
+				now: () => ctx.now(),
+				debugWarn: (msg, err) => ctx.debug.warn(msg, err),
+				debugLog: (msg) => ctx.debug.log(msg),
+				debugEnabled: () => ctx.debug.enabled,
+				debugGpuWaitEnabled: () => ctx.debug.gpuWaitEnabled(),
+				getGridPalette: () => ctx.bgUI?.getGridPalette() ?? { minor: 'rgba(200,200,200,0.3)', major: 'rgba(200,200,200,0.5)', labelBg: 'rgba(0,0,0,0.55)', labelFg: 'rgba(255,255,255,0.9)' },
+				tiles: {
+					cancelUnwanted: () => ctx.tileManager?.cancelUnwanted(),
+					clearWanted: () => ctx.tileManager?.clearWanted(),
+					getCache: () => ctx.tileManager!.cache,
+					enqueue: (z, x, y, priority) => ctx.tileManager?.enqueue(z, x, y, priority),
+					wantKey: (key) => ctx.tileManager?.wantKey(key),
+					getTileSize: () => ctx.tileManager!.tileSize,
+					getSourceMaxZoom: () => ctx.tileManager!.sourceMaxZoom,
+					isIdle: () => ctx.tileManager?.isIdle() ?? true,
+					setFrame: (f) => {
+						if (ctx.tileManager) ctx.tileManager.frame = f;
+					},
+				},
+				content: {
+					drawVectors: () => cm.drawVectors(),
+					drawVectorOverlay: () => cm.drawVectorOverlay(),
+					requestMaskBuild: () => cm.requestMaskBuild(),
+					getIcons: () => cm.icons,
+					getRasterOpacity: () => cm.rasterOpacity,
+					getUpscaleFilter: () => cm.upscaleFilter,
+					getIconScaleFunction: () => cm.iconScaleFunction,
+					getVectorZIndices: () => cm.getVectorZIndices(),
+					resizeVectorLayer: (w, h) => cm.resizeVectorLayer(w, h),
+				},
 			},
-			content: {
-				drawVectors: () => cm.drawVectors(),
-				drawVectorOverlay: () => cm.drawVectorOverlay(),
-				requestMaskBuild: () => cm.requestMaskBuild(),
-				getIcons: () => cm.icons,
-				getRasterOpacity: () => cm.rasterOpacity,
-				getUpscaleFilter: () => cm.upscaleFilter,
-				getIconScaleFunction: () => cm.iconScaleFunction,
-				getVectorZIndices: () => cm.getVectorZIndices(),
-				resizeVectorLayer: (w, h) => cm.resizeVectorLayer(w, h),
-			},
-		}, { fpsCap: ctx.config.fpsCap, screenCache: ctx.config.screenCache });
+			{ fpsCap: ctx.config.fpsCap, screenCache: ctx.config.screenCache },
+		);
 		ctx.renderCoordinator = coord;
 		coord.initRaster();
 		coord.initScreenCache();
@@ -272,7 +277,9 @@ export class LifecycleManager {
 				if (Number.isFinite(x as number) && Number.isFinite(y as number)) ctx.pointerAbs = { x: x as number, y: y as number };
 				else ctx.pointerAbs = null;
 			},
-			setLastInteractAt: (t) => { ctx.lastInteractAt = t; },
+			setLastInteractAt: (t) => {
+				ctx.lastInteractAt = t;
+			},
 			getLastInteractAt: () => ctx.lastInteractAt,
 			getAnchorMode: () => coord.anchorMode,
 			getWheelStep: (ctrl) => ctx.options.getWheelStep(ctrl),
@@ -290,7 +297,9 @@ export class LifecycleManager {
 			computeMarkerHits: (px, py) => cm.computeMarkerHits(px, py),
 			emitMarker: (name, payload) => cm.emitMarker(name, payload),
 			getLastHover: () => cm.lastHover,
-			setLastHover: (h) => { cm.lastHover = h; },
+			setLastHover: (h) => {
+				cm.lastHover = h;
+			},
 			getMarkerDataById: (id) => cm.getMarkerDataById(id),
 		});
 		ctx.inputManager = im;
@@ -331,27 +340,30 @@ export class LifecycleManager {
 
 		// Initialize tile pipeline
 		const vs = ctx.viewState;
-		const tm = new TileManager({
-			getGL: () => ctx.gl!,
-			getMapSize: () => vs.mapSize,
-			getImageMaxZoom: () => vs.imageMaxZoom,
-			debugLog: (msg) => ctx.debug.log(msg),
-			requestRender: () => ctx.requestRender(),
-			now: () => ctx.now(),
-			getLastInteractAt: () => ctx.lastInteractAt,
-			getInteractionIdleMs: () => ctx.options.interactionIdleMs,
-			isAnimating: () => ctx.renderCoordinator?.isAnimating() ?? false,
-			updateViewForSource: (opts) => {
-				vs.minZoom = opts.minZoom;
-				vs.mapSize = opts.mapSize;
-				vs.imageMaxZoom = opts.imageMaxZoom;
-				vs.maxZoom = opts.maxZoom;
+		const tm = new TileManager(
+			{
+				getGL: () => ctx.gl!,
+				getMapSize: () => vs.mapSize,
+				getImageMaxZoom: () => vs.imageMaxZoom,
+				debugLog: (msg) => ctx.debug.log(msg),
+				requestRender: () => ctx.requestRender(),
+				now: () => ctx.now(),
+				getLastInteractAt: () => ctx.lastInteractAt,
+				getInteractionIdleMs: () => ctx.options.interactionIdleMs,
+				isAnimating: () => ctx.renderCoordinator?.isAnimating() ?? false,
+				updateViewForSource: (opts) => {
+					vs.minZoom = opts.minZoom;
+					vs.mapSize = opts.mapSize;
+					vs.imageMaxZoom = opts.imageMaxZoom;
+					vs.maxZoom = opts.maxZoom;
+				},
 			},
-		}, {
-			packUrl: ctx.config.tiles.packUrl!,
-			tileSize: ctx.config.tiles.tileSize,
-			sourceMaxZoom: ctx.config.tiles.sourceMaxZoom,
-		});
+			{
+				packUrl: ctx.config.tiles.packUrl,
+				tileSize: ctx.config.tiles.tileSize,
+				sourceMaxZoom: ctx.config.tiles.sourceMaxZoom,
+			},
+		);
 		ctx.tileManager = tm;
 		tm.init();
 

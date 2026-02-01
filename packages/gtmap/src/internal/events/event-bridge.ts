@@ -117,6 +117,15 @@ export default class EventBridge {
 		this.d = deps;
 	}
 
+	dispose(): void {
+		if (this.longPressTimer != null) {
+			clearTimeout(this.longPressTimer);
+			this.longPressTimer = null;
+		}
+		this.downAt = null;
+		this.pressTarget = null;
+	}
+
 	attach(): void {
 		const bus = this.d.events;
 		// pointerdown
@@ -134,7 +143,9 @@ export default class EventBridge {
 				this.d.emitMarker('down', payload);
 				try {
 					this.d.events.emit('markerdown', payload);
-				} catch { /* expected: user event handler may throw */ }
+				} catch {
+					/* expected: user event handler may throw */
+				}
 				this.pressTarget = { id: hit.id, idx: hit.idx };
 				this.longPressed = false;
 				if (device === 'touch') {
@@ -148,7 +159,9 @@ export default class EventBridge {
 							this.d.emitMarker('longpress', pl);
 							try {
 								this.d.events.emit('markerlongpress', pl);
-							} catch { /* expected: user event handler may throw */ }
+							} catch {
+								/* expected: user event handler may throw */
+							}
 						}
 					}, 500);
 				}
@@ -179,7 +192,9 @@ export default class EventBridge {
 					this.d.emitMarker('leave', leavePayload);
 					try {
 						this.d.events.emit('markerleave', leavePayload);
-					} catch { /* expected: user event handler may throw */ }
+					} catch {
+						/* expected: user event handler may throw */
+					}
 					this.d.setLastHover(null);
 				}
 				return;
@@ -196,7 +211,9 @@ export default class EventBridge {
 					this.d.emitMarker('enter', enterPayload);
 					try {
 						this.d.events.emit('markerenter', enterPayload);
-					} catch { /* expected: user event handler may throw */ }
+					} catch {
+						/* expected: user event handler may throw */
+					}
 					this.d.setLastHover({ idx: hit.idx, type: hit.type, id: hit.id });
 				}
 			} else if (prev) {
@@ -204,7 +221,9 @@ export default class EventBridge {
 				this.d.emitMarker('leave', leavePayload);
 				try {
 					this.d.events.emit('markerleave', leavePayload);
-				} catch { /* expected: user event handler may throw */ }
+				} catch {
+					/* expected: user event handler may throw */
+				}
 				this.d.setLastHover(null);
 			}
 		});
@@ -225,7 +244,9 @@ export default class EventBridge {
 				this.d.emitMarker('up', payload);
 				try {
 					this.d.events.emit('markerup', payload);
-				} catch { /* expected: user event handler may throw */ }
+				} catch {
+					/* expected: user event handler may throw */
+				}
 			}
 			if (this.longPressTimer != null) {
 				clearTimeout(this.longPressTimer);
@@ -239,7 +260,9 @@ export default class EventBridge {
 				this.d.emitMarker('click', payload);
 				try {
 					this.d.events.emit('markerclick', payload);
-				} catch { /* expected: user event handler may throw */ }
+				} catch {
+					/* expected: user event handler may throw */
+				}
 			}
 			this.pressTarget = null;
 			if (this.longPressed) this.longPressed = false;
@@ -276,7 +299,9 @@ export default class EventBridge {
 						}));
 						payload = { ...payload, markers: mapped } as MouseEventData;
 					}
-				} catch { /* expected: hit test may fail during transitions */ }
+				} catch {
+					/* expected: hit test may fail during transitions */
+				}
 			}
 			this.d.events.emit(name, payload);
 		};

@@ -46,7 +46,7 @@ npx typedoc          # Regenerate API docs to docs/api/
 - **Narrow DI interfaces**: Each module declares its own `*Deps` interface (ZoomDeps, PanDeps extend ControllerDepsBase)
 - **MapContext** as composition root wiring all modules
 - **TypedEventBus** with `.on(name).each(handler)` and `.once(name)` for type-safe events
-- **Tile pyramid only**: tiles via URL template `{z}/{x}/{y}` or `.gtpk` pack file
+- **Tile pyramid only**: tiles served from `.gtpk` binary packs (no HTTP tile URL templates)
 - **Lifecycle**: `map.suspend(opts?)`, `map.resume()`, `map.destroy()`
 
 ## Coding Style

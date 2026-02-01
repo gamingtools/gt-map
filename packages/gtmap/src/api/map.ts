@@ -54,7 +54,7 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	constructor(container: HTMLElement, options: MapOptions) {
 		const tiles = options?.tiles;
 		if (!tiles) throw new Error('GTMap: tiles is required in MapOptions');
-		if (!tiles.url || typeof tiles.url !== 'string') throw new Error('GTMap: tiles.url must be a non-empty string');
+		if (!tiles.packUrl || typeof tiles.packUrl !== 'string') throw new Error('GTMap: tiles.packUrl must be a non-empty string');
 		if (!Number.isFinite(tiles.tileSize) || tiles.tileSize <= 0) throw new Error('GTMap: tiles.tileSize must be a positive number');
 		if (!tiles.mapSize || !Number.isFinite(tiles.mapSize.width) || !Number.isFinite(tiles.mapSize.height)) throw new Error('GTMap: tiles.mapSize must have width and height');
 		if (Number.isFinite(options.minZoom as number) && Number.isFinite(options.maxZoom as number) && (options.minZoom as number) > (options.maxZoom as number)) {
@@ -80,7 +80,13 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			debugWarn: (msg, err) => ctx.debug.warn(msg, err),
 			debugLog: (msg) => ctx.debug.log(msg),
 			requestRender: () => ctx.requestRender(),
-			clearScreenCache: () => { try { ctx.renderCoordinator?.screenCache?.clear?.(); } catch { /* expected: render coordinator may be disposed */ } },
+			clearScreenCache: () => {
+				try {
+					ctx.renderCoordinator?.screenCache?.clear?.();
+				} catch {
+					/* expected: render coordinator may be disposed */
+				}
+			},
 			now: () => ctx.now(),
 		});
 
@@ -102,12 +108,34 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			getImageMaxZoom: () => vs.imageMaxZoom,
 			getContainer: () => ctx.container,
 			events: { when: <K extends keyof EventMap>(event: K) => ctx.events.when(event) },
-			setCenter: (x, y) => { vs.setCenter(x, y); ctx.requestRender(); },
-			setZoom: (z) => { vs.setZoom(z); ctx.requestRender(); },
-			setWrapX: (on) => { if (!!on !== vs.wrapX) { vs.wrapX = !!on; ctx.requestRender(); } },
-			setMaxBoundsPx: (bounds) => { vs.maxBoundsPx = bounds ? { ...bounds } : null; ctx.requestRender(); },
-			setMaxBoundsViscosity: (v) => { vs.maxBoundsViscosity = Math.max(0, Math.min(1, v)); ctx.requestRender(); },
-			setClipToBounds: (on) => { if (!!on !== vs.clipToBounds) { vs.clipToBounds = !!on; ctx.requestRender(); } },
+			setCenter: (x, y) => {
+				vs.setCenter(x, y);
+				ctx.requestRender();
+			},
+			setZoom: (z) => {
+				vs.setZoom(z);
+				ctx.requestRender();
+			},
+			setWrapX: (on) => {
+				if (!!on !== vs.wrapX) {
+					vs.wrapX = !!on;
+					ctx.requestRender();
+				}
+			},
+			setMaxBoundsPx: (bounds) => {
+				vs.maxBoundsPx = bounds ? { ...bounds } : null;
+				ctx.requestRender();
+			},
+			setMaxBoundsViscosity: (v) => {
+				vs.maxBoundsViscosity = Math.max(0, Math.min(1, v));
+				ctx.requestRender();
+			},
+			setClipToBounds: (on) => {
+				if (!!on !== vs.clipToBounds) {
+					vs.clipToBounds = !!on;
+					ctx.requestRender();
+				}
+			},
 			setIconScaleFunction: (fn) => cm.setIconScaleFunction(fn),
 			setAutoResize: (on) => lm.setAutoResize(on),
 			resize: () => ctx.renderCoordinator?.resize(),
@@ -139,7 +167,13 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			setFpsCap: (v) => ctx.renderCoordinator?.setFpsCap(v),
 			setBackgroundColor: (color) => lm.setBackgroundColor(color),
 			setRasterOpacity: (v) => cm.setRasterOpacity(v),
-			setZoomSnapThreshold: (v) => { const c = Math.max(0, Math.min(1, v)); if (c !== vs.zoomSnapThreshold) { vs.zoomSnapThreshold = c; ctx.requestRender(); } },
+			setZoomSnapThreshold: (v) => {
+				const c = Math.max(0, Math.min(1, v));
+				if (c !== vs.zoomSnapThreshold) {
+					vs.zoomSnapThreshold = c;
+					ctx.requestRender();
+				}
+			},
 		});
 	}
 
@@ -162,12 +196,15 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	// -- Events --
 
 	get events(): MapEvents<TMarkerData> {
+		const bus = this._ctx.events;
+		// The internal bus uses EventMap<unknown>; the public surface narrows TMarkerData.
+		// The outer cast is required because TypeScript cannot verify the generic narrowing.
 		return {
-			on: (name: string, handler?: (value: unknown) => void) => {
-				const stream = this._ctx.events.on(name as keyof EventMap);
+			on: <K extends keyof EventMap & string>(name: K, handler?: (value: EventMap[K]) => void) => {
+				const stream = bus.on(name);
 				return handler ? stream.each(handler) : stream;
 			},
-			once: (name: string) => this._ctx.events.when(name as keyof EventMap),
+			once: <K extends keyof EventMap & string>(name: K) => bus.when(name),
 		} as MapEvents<TMarkerData>;
 	}
 }

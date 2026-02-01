@@ -1,11 +1,4 @@
-import type {
-	EventMap,
-	ViewState as PublicViewState,
-	VectorStyle as VectorStyleAPI,
-	VectorPrimitiveInternal,
-	UpscaleFilterMode,
-	IconScaleFunction,
-} from '../api/types';
+import type { EventMap, ViewState as PublicViewState, VectorStyle as VectorStyleAPI, VectorPrimitiveInternal, UpscaleFilterMode, IconScaleFunction } from '../api/types';
 
 import type { PixelPoint } from './context/view-state';
 import type { ProgramLocs } from './render/screen-cache';

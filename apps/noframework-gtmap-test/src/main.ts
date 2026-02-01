@@ -5,7 +5,6 @@ const hud = document.getElementById('hud') as HTMLDivElement;
 const attribution = document.getElementById('attribution') as HTMLDivElement;
 
 const MAP_TILES = {
-  url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
   packUrl: 'https://gtcdn.info/dune/tiles/hb_8k.gtpk',
   tileSize: 256,
   mapSize: { width: 8192, height: 8192 },

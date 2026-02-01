@@ -84,6 +84,7 @@ export class EventStream<T> {
 	}
 
 	take(n: number): EventStream<T> {
+		if (n <= 0) return new EventStream<T>(() => () => {});
 		return new EventStream<T>((next) => {
 			let count = 0;
 			const unsub = this.each((v) => {

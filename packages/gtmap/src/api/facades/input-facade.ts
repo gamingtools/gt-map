@@ -6,8 +6,8 @@
 import type { InertiaOptions } from '../types';
 
 export interface InputFacadeDeps {
-  setWheelSpeed(v: number): void;
-  setInertiaOptions(opts: InertiaOptions): void;
+	setWheelSpeed(v: number): void;
+	setInertiaOptions(opts: InertiaOptions): void;
 }
 
 export class InputFacade {
