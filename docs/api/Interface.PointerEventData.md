@@ -4,19 +4,7 @@
 
 # Interface: PointerEventData
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Remarks](#remarks)
-- [Properties](#properties)
-  - [originalEvent](#originalevent)
-  - [view](#view)
-  - [world](#world)
-  - [x](#x)
-  - [y](#y)
-
-Defined in: [api/types.ts:182](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L182)
+Defined in: [api/types.ts:203](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L203)
 
 Map‑level pointer event payload.
 
@@ -30,7 +18,7 @@ Includes screen coordinates (CSS pixels), best‑effort world position, and the 
 
 > **originalEvent**: `PointerEvent`
 
-Defined in: [api/types.ts:192](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L192)
+Defined in: [api/types.ts:213](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L213)
 
 Original DOM pointer event.
 
@@ -40,7 +28,7 @@ Original DOM pointer event.
 
 > **view**: [`ViewState`](Interface.ViewState.md)
 
-Defined in: [api/types.ts:190](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L190)
+Defined in: [api/types.ts:211](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L211)
 
 Current view state snapshot.
 
@@ -50,7 +38,7 @@ Current view state snapshot.
 
 > **world**: `null` \| [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:188](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L188)
+Defined in: [api/types.ts:209](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L209)
 
 World position in pixels at current zoom, or `null` if the pointer is outside.
 
@@ -60,7 +48,7 @@ World position in pixels at current zoom, or `null` if the pointer is outside.
 
 > **x**: `number`
 
-Defined in: [api/types.ts:184](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L184)
+Defined in: [api/types.ts:205](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L205)
 
 Screen X in CSS pixels relative to the container.
 
@@ -70,6 +58,6 @@ Screen X in CSS pixels relative to the container.
 
 > **y**: `number`
 
-Defined in: [api/types.ts:186](https://github.com/gamingtools/gt-map/blob/1ee81ca74138d650b25917e14b4f82162e73963e/packages/gtmap/src/api/types.ts#L186)
+Defined in: [api/types.ts:207](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L207)
 
 Screen Y in CSS pixels relative to the container.
