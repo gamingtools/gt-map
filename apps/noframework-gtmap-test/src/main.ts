@@ -88,7 +88,7 @@ Object.assign(centerBtn.style, {
   zIndex: '11',
 } as CSSStyleDeclaration);
 centerBtn.addEventListener('click', async () => {
-  await map.view.transition().center(HOME).apply({ animate: { durationMs: 600 } });
+  await map.view.setView({ center: HOME, animate: { durationMs: 600 } });
 });
 container.appendChild(centerBtn);
 

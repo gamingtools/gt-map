@@ -7,8 +7,6 @@
  *   map.content -- markers, decals, vectors, icons
  *   map.display -- background, grid, upscale filter, FPS
  */
-import type { ViewTransition } from '../internal/core/view-transition';
-
 import type { MapEvents } from './events/public';
 import type { MapOptions, SuspendOptions, EventMap } from './types';
 import { MapConfig } from '../internal/context/map-config';
@@ -31,9 +29,6 @@ export { EntityCollection } from '../entities/entity-collection';
 export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual } from './visual';
 export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual } from './visual';
 export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow } from './visual';
-
-// Re-export ViewTransition interface
-export type { ViewTransition };
 
 /**
  * @group Overview

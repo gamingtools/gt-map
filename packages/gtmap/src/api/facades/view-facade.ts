@@ -1,11 +1,10 @@
 /**
  * ViewFacade -- map.view sub-object.
  *
- * Center/zoom getters, transition builder, bounds control, coord transforms,
+ * Center/zoom getters, setView, bounds control, coord transforms,
  * icon scale, resize, wrapX, freePan, clipToBounds.
  */
-import type { Point, IconScaleFunction, MaxBoundsPx, ApplyResult, EventMap } from '../types';
-import { ViewTransitionImpl, type ViewTransition, type ViewTransitionHost } from '../../internal/core/view-transition';
+import type { Point, IconScaleFunction, MaxBoundsPx, ApplyResult, EventMap, SetViewOptions, PaddingInput } from '../types';
 import { CoordTransformer, type Bounds as SourceBounds, type TransformType } from '../coord-transformer';
 
 export interface ViewFacadeDeps {
@@ -32,22 +31,14 @@ export interface ViewFacadeDeps {
 	cancelZoomAnim(): void;
 }
 
-export class ViewFacade implements ViewTransitionHost {
+export class ViewFacade {
 	private _deps: ViewFacadeDeps;
 	private _coordTransformer: CoordTransformer | null = null;
+	private _activeCancel: (() => void) | null = null;
 
 	/** @internal */
 	constructor(deps: ViewFacadeDeps) {
 		this._deps = deps;
-	}
-
-	/**
-	 * Events surface (needed by ViewTransitionHost).
-	 */
-	get events(): ViewTransitionHost['events'] {
-		return {
-			once: (event: string) => this._deps.events.when(event as keyof EventMap),
-		} as ViewTransitionHost['events'];
 	}
 
 	/**
@@ -73,10 +64,154 @@ export class ViewFacade implements ViewTransitionHost {
 	}
 
 	/**
-	 * Start a chainable view transition.
+	 * Set the map view (center, zoom, bounds) instantly or with animation.
+	 *
+	 * Calling `setView` while a previous call is still in-flight automatically
+	 * cancels the earlier one (its promise resolves with `{ status: 'canceled' }`).
+	 * Use {@link cancelView} to cancel without starting a new transition.
+	 *
+	 * @param opts - Describes the target view state and optional animation.
+	 * @returns A promise that resolves with an {@link ApplyResult}:
+	 *
+	 * | `status`      | Meaning |
+	 * |---------------|---------|
+	 * | `'instant'`   | View was applied without animation. |
+	 * | `'animated'`  | Animation completed normally. |
+	 * | `'canceled'`  | Transition was superseded or explicitly cancelled. |
+	 * | `'complete'`  | No-op -- the view was already at the target. |
+	 * | `'error'`     | An unexpected error occurred (see `result.error`). |
+	 *
+	 * @example
+	 * ```ts
+	 * // Instant jump
+	 * await map.view.setView({ center: { x: 4096, y: 4096 }, zoom: 3 });
+	 *
+	 * // Animated fly-to with easing
+	 * await map.view.setView({
+	 *   center: HOME,
+	 *   zoom: 5,
+	 *   animate: { durationMs: 800, easing: easings.easeInOutCubic },
+	 * });
+	 *
+	 * // Fit to bounds with padding
+	 * await map.view.setView({
+	 *   bounds: { minX: 100, minY: 100, maxX: 7000, maxY: 7000 },
+	 *   padding: 40,
+	 *   animate: { durationMs: 600 },
+	 * });
+	 * ```
+	 *
+	 * @see {@link SetViewOptions} for full option reference.
 	 */
-	transition(): ViewTransition {
-		return new ViewTransitionImpl(this);
+	async setView(opts: SetViewOptions): Promise<ApplyResult> {
+		// Cancel any active transition
+		this._activeCancel?.();
+		this._activeCancel = null;
+
+		let cancelled = false;
+		this._activeCancel = () => { cancelled = true; };
+
+		try {
+			// Handle optional delay
+			if (opts.animate?.delayMs && opts.animate.delayMs > 0) {
+				await new Promise<void>((res) => setTimeout(res, opts.animate!.delayMs));
+				if (cancelled) return { status: 'canceled' };
+			}
+
+			// Resolve padding
+			const pad = this._resolvePadding(opts.padding);
+
+			// Compute final targets
+			const currentCenter = this.getCenter();
+			const currentZoom = this.getZoom();
+			let finalCenter: Point | undefined;
+			let finalZoom: number | undefined;
+
+			// Bounds/points -> center+zoom
+			if (opts.bounds) {
+				const fit = this._fitBounds(opts.bounds, pad);
+				finalCenter = fit.center;
+				finalZoom = fit.zoom;
+			} else if (opts.points && opts.points.length > 0) {
+				const b = this._pointsToBounds(opts.points);
+				const fit = this._fitBounds(b, pad);
+				finalCenter = fit.center;
+				finalZoom = fit.zoom;
+			}
+
+			// Explicit center (overrides bounds-derived center)
+			if (opts.center) {
+				finalCenter = { x: opts.center.x, y: opts.center.y };
+			}
+
+			// Explicit zoom (overrides bounds-derived zoom)
+			if (opts.zoom !== undefined) {
+				finalZoom = opts.zoom;
+			}
+
+			// Apply offset
+			if (opts.offset) {
+				const base = finalCenter ?? currentCenter;
+				finalCenter = { x: base.x + opts.offset.dx, y: base.y + opts.offset.dy };
+			}
+
+			// Default to current values if not specified
+			if (!finalCenter) finalCenter = currentCenter;
+			if (finalZoom === undefined) finalZoom = currentZoom;
+
+			// No-op detection
+			const centerEpsilon = 0.1;
+			const zoomEpsilon = 0.001;
+			const centerChanged = Math.abs(finalCenter.x - currentCenter.x) > centerEpsilon || Math.abs(finalCenter.y - currentCenter.y) > centerEpsilon;
+			const zoomChanged = Math.abs(finalZoom - currentZoom) > zoomEpsilon;
+
+			if (!centerChanged && !zoomChanged) {
+				return { status: 'complete' };
+			}
+
+			if (cancelled) return { status: 'canceled' };
+
+			// Delegate to instant or animated
+			if (opts.animate) {
+				this._animateView({
+					center: finalCenter,
+					zoom: finalZoom,
+					durationMs: opts.animate.durationMs,
+					...(opts.animate.easing != null ? { easing: opts.animate.easing } : {}),
+				});
+				const result = await this._deps.events.when('moveend' as keyof EventMap).then(() => ({ status: 'animated' as const }));
+				if (cancelled) return { status: 'canceled' };
+				return result;
+			} else {
+				this._applyInstant(finalCenter, finalZoom);
+				return { status: 'instant' };
+			}
+		} catch (error) {
+			if (cancelled) return { status: 'canceled' };
+			return { status: 'error', error };
+		} finally {
+			// Clear active cancel if it's still ours
+			if (!cancelled) this._activeCancel = null;
+		}
+	}
+
+	/**
+	 * Cancel an active {@link setView} transition without starting a new one.
+	 *
+	 * If no transition is in-flight this is a no-op.
+	 * The cancelled `setView` promise resolves with `{ status: 'canceled' }`.
+	 *
+	 * @example
+	 * ```ts
+	 * const p = map.view.setView({ center: FAR_AWAY, animate: { durationMs: 2000 } });
+	 * // ...user presses Escape
+	 * map.view.cancelView();
+	 * const result = await p; // { status: 'canceled' }
+	 * ```
+	 */
+	cancelView(): void {
+		this._activeCancel?.();
+		this._activeCancel = null;
 	}
 
 	/**
@@ -153,13 +288,13 @@ export class ViewFacade implements ViewTransitionHost {
 	}
 
 	/** @internal Apply instant center/zoom change. */
-	_applyInstant(center?: Point, zoom?: number): void {
+	private _applyInstant(center?: Point, zoom?: number): void {
 		if (center) this._deps.setCenter(center.x, center.y);
 		if (typeof zoom === 'number') this._deps.setZoom(zoom);
 	}
 
 	/** @internal Animate to a view. */
-	_animateView(opts: { center?: Point; zoom?: number; durationMs: number; easing?: (t: number) => number }): void {
+	private _animateView(opts: { center?: Point; zoom?: number; durationMs: number; easing?: (t: number) => number }): void {
 		const { center, zoom, durationMs, easing } = opts;
 		this._deps.flyTo({
 			...(center != null ? { x: center.x, y: center.y } : {}),
@@ -169,18 +304,8 @@ export class ViewFacade implements ViewTransitionHost {
 		});
 	}
 
-	/** @internal Cancel ongoing pan+zoom animations. */
-	_cancelPanZoom(): void {
-		try {
-			this._deps.cancelPanAnim();
-		} catch {}
-		try {
-			this._deps.cancelZoomAnim();
-		} catch {}
-	}
-
 	/** @internal Fit bounds calculation. */
-	_fitBounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding: { top: number; right: number; bottom: number; left: number }): { center: Point; zoom: number } {
+	private _fitBounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding: { top: number; right: number; bottom: number; left: number }): { center: Point; zoom: number } {
 		const rect = this._deps.getContainer().getBoundingClientRect();
 		const pad = padding || { top: 0, right: 0, bottom: 0, left: 0 };
 		const availW = Math.max(1, rect.width - (pad.left + pad.right));
@@ -195,19 +320,31 @@ export class ViewFacade implements ViewTransitionHost {
 		return { center, zoom: z };
 	}
 
-	/** @internal Set view (instant or animated). */
-	_setView(center: Point, zoom: number, opts?: { animate?: { durationMs: number; delayMs?: number; easing?: (t: number) => number } }): Promise<ApplyResult> {
-		if (opts?.animate) {
-			this._animateView({
-				center,
-				zoom,
-				durationMs: opts.animate.durationMs,
-				...(opts.animate.easing != null ? { easing: opts.animate.easing } : {}),
-			});
-			return this._deps.events.when('moveend' as keyof EventMap).then(() => ({ status: 'animated' }));
-		} else {
-			this._applyInstant(center, zoom);
-			return Promise.resolve({ status: 'instant' });
+	/** @internal Convert a list of points to a bounding box. */
+	private _pointsToBounds(list: Point[]): { minX: number; minY: number; maxX: number; maxY: number } {
+		let minX = Number.POSITIVE_INFINITY, minY = Number.POSITIVE_INFINITY;
+		let maxX = Number.NEGATIVE_INFINITY, maxY = Number.NEGATIVE_INFINITY;
+		for (const p of list) {
+			if (p.x < minX) minX = p.x;
+			if (p.y < minY) minY = p.y;
+			if (p.x > maxX) maxX = p.x;
+			if (p.y > maxY) maxY = p.y;
 		}
+		return { minX, minY, maxX, maxY };
+	}
+
+	/** @internal Resolve PaddingInput to uniform object. */
+	private _resolvePadding(padding?: PaddingInput): { top: number; right: number; bottom: number; left: number } {
+		if (padding === undefined || padding === null) return { top: 0, right: 0, bottom: 0, left: 0 };
+		if (typeof padding === 'number') {
+			const p = Math.max(0, padding);
+			return { top: p, right: p, bottom: p, left: p };
+		}
+		return {
+			top: Math.max(0, padding.top),
+			right: Math.max(0, padding.right),
+			bottom: Math.max(0, padding.bottom),
+			left: Math.max(0, padding.left),
+		};
 	}
 }
