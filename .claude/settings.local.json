@@ -18,7 +18,8 @@
       "mcp__chrome__list_pages",
       "mcp__chrome__navigate_page",
       "mcp__chrome__wait_for",
-      "mcp__codex__codex"
+      "mcp__codex__codex",
+      "Bash(npx typedoc)"
     ],
     "deny": [],
     "ask": []
