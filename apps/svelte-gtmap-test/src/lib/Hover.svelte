@@ -1,12 +1,17 @@
 <script lang="ts">
 	import type { GTMap, MarkerEventData } from '@gtmap';
 
+	type EventOn = (event: string) => { each: (cb: (e: any) => void) => () => void };
+
 	const { map } = $props<{ map: GTMap }>();
 
 	let hovered = $state<MarkerEventData | null>(null);
+	let pinned = $state<string | null>(null); // pinned marker id (for touch tap)
+	let dismissTimer: ReturnType<typeof setTimeout> | null = null;
 	let tooltipX = $state(0);
 	let tooltipY = $state(0);
 	let tooltipEl: HTMLDivElement | null = $state(null);
+	let pendingCursor: { x: number; y: number } | null = null;
 
 	const OFFSET = 16; // gap between cursor and tooltip
 	const MARGIN = 8;  // minimum distance from container edge
@@ -15,10 +20,13 @@
 		const el = tooltipEl;
 		const container = el?.parentElement;
 		if (!el || !container) {
+			// Element not rendered yet; store raw position and defer
 			tooltipX = cursorX;
 			tooltipY = cursorY;
+			pendingCursor = { x: cursorX, y: cursorY };
 			return;
 		}
+		pendingCursor = null;
 
 		const cw = container.clientWidth;
 		const ch = container.clientHeight;
@@ -30,7 +38,6 @@
 		if (x + tw + MARGIN > cw) {
 			x = cursorX - OFFSET - tw;
 		}
-		// Clamp horizontal to stay within container
 		x = Math.max(MARGIN, Math.min(x, cw - tw - MARGIN));
 
 		// Prefer aligned with cursor top; shift up if it overflows bottom
@@ -44,36 +51,75 @@
 		tooltipY = y;
 	}
 
+	// Re-clamp once the tooltip element mounts (first render after show)
+	$effect(() => {
+		if (tooltipEl && pendingCursor) {
+			clampPosition(pendingCursor.x, pendingCursor.y);
+		}
+	});
+
+	function show(e: MarkerEventData) {
+		hovered = e;
+		clampPosition(e.screen.x, e.screen.y);
+	}
+
+	function dismiss() {
+		hovered = null;
+		pinned = null;
+	}
+
 	$effect(() => {
 		if (!map) return;
-		const offEnter = (
-			map.events.on as (
-				event: string
-			) => { each: (cb: (e: MarkerEventData) => void) => () => void }
-		)('markerenter').each((e) => {
-			hovered = e;
-			clampPosition(e.screen.x, e.screen.y);
+		const on = map.events.on as EventOn;
+
+		// Mouse hover (ignored while pinned)
+		const offEnter = on('markerenter').each((e: MarkerEventData) => {
+			if (!pinned) show(e);
 		});
-		const offLeave = (
-			map.events.on as (
-				event: string
-			) => { each: (cb: (e: MarkerEventData) => void) => () => void }
-		)('markerleave').each(() => {
-			hovered = null;
+		const offLeave = on('markerleave').each(() => {
+			if (!pinned) hovered = null;
 		});
-		const offMove = (
-			map.events.on as (
-				event: string
-			) => { each: (cb: (e: { x: number; y: number }) => void) => () => void }
-		)('pointermove').each((e) => {
-			if (hovered) {
+
+		// Touch tap: always dismiss first, then open new marker if different
+		// pointerup fires before markerclick, so schedule dismiss and let markerclick cancel it
+		const offPointerUp = on('pointerup').each((e: { originalEvent?: PointerEvent }) => {
+			const ptrType = e.originalEvent && 'pointerType' in e.originalEvent
+				? (e.originalEvent as PointerEvent).pointerType : 'mouse';
+			if (ptrType !== 'touch') return;
+			dismissTimer = setTimeout(() => { dismissTimer = null; dismiss(); }, 60);
+		});
+		const offClick = on('markerclick').each((e: MarkerEventData) => {
+			const ptrType = e.originalEvent && 'pointerType' in e.originalEvent
+				? (e.originalEvent as PointerEvent).pointerType : 'mouse';
+			if (ptrType !== 'touch') return;
+			if (dismissTimer != null) { clearTimeout(dismissTimer); dismissTimer = null; }
+			const wasSame = pinned === e.marker.id;
+			dismiss();
+			if (!wasSame) {
+				pinned = e.marker.id;
+				show(e);
+			}
+		});
+
+		// Map movement (pan/zoom) dismisses pinned tooltip
+		const offMapMove = on('move').each(() => {
+			if (pinned) dismiss();
+		});
+
+		// Mouse cursor tracking (only while hovering, not pinned)
+		const offPointerMove = on('pointermove').each((e: { x: number; y: number }) => {
+			if (hovered && !pinned) {
 				clampPosition(e.x, e.y);
 			}
 		});
+
 		return () => {
 			try { offEnter?.(); } catch {}
 			try { offLeave?.(); } catch {}
-			try { offMove?.(); } catch {}
+			try { offClick?.(); } catch {}
+			try { offPointerUp?.(); } catch {}
+			try { offMapMove?.(); } catch {}
+			try { offPointerMove?.(); } catch {}
 		};
 	});
 
