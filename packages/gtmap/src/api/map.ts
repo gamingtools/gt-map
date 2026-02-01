@@ -68,6 +68,7 @@ export class GTMap {
 			getMinZoom: () => ctx.viewState.minZoom,
 			getMaxZoom: () => ctx.viewState.maxZoom,
 			getDpr: () => ctx.viewState.dpr,
+			getZoomSnapThreshold: () => ctx.viewState.zoomSnapThreshold,
 			getCenter: () => ctx.viewState.center,
 			getImageMaxZoom: () => ctx.viewState.imageMaxZoom,
 			getView: () => ctx.viewState.toPublic(),

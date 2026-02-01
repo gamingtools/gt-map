@@ -143,7 +143,7 @@ export default class InputController {
 			newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS, true);
 			const nx = newCenter.x * s0;
 			const ny = newCenter.y * s0;
-			deps.setCenter(nx, ny);
+			deps.setCenter(nx, ny, { skipClamp: true });
 			if (DEBUG)
 				try {
 					console.debug('[center] drag', { x: nx, y: ny, z: view.zoom });
@@ -172,7 +172,11 @@ export default class InputController {
 			// mouseup/click derived in mapgl
 			if (DEBUG) console.debug('[inertia] pointerup');
 			this.inertiaActive = false;
-			this._maybeStartInertia();
+			if (this._maybeBounceToBounds()) {
+				this.inertiaActive = true;
+			} else {
+				this._maybeStartInertia();
+			}
 			if (this.inertiaActive) {
 				if (DEBUG) console.debug('[inertia] started');
 			} else {
@@ -359,7 +363,7 @@ export default class InputController {
 				newCenter = deps.clampCenterWorld(newCenter, zInt, scale, widthCSS, heightCSS, true);
 				const nx = newCenter.x * s0;
 				const ny = newCenter.y * s0;
-				deps.setCenter(nx, ny);
+				deps.setCenter(nx, ny, { skipClamp: true });
 				deps.emit('move', { view: deps.getView() });
 			} else if (touchState.mode === 'pinch' && e.touches.length === 2) {
 				// Update cooldown on every pinch frame and mark as interaction
@@ -397,7 +401,7 @@ export default class InputController {
 				centerWorld2 = deps.clampCenterWorld(centerWorld2, zInt2, s2, widthCSS, heightCSS, true);
 				const centerNative = { x: centerWorld2.x * s2f, y: centerWorld2.y * s2f };
 				deps.setZoom(nextZoom);
-				deps.setCenter(centerNative.x, centerNative.y);
+				deps.setCenter(centerNative.x, centerNative.y, { skipClamp: true });
 				deps.emit('zoom', { view: deps.getView() });
 				deps.emit('move', { view: deps.getView() });
 				touchState.dist = dist;
@@ -415,7 +419,10 @@ export default class InputController {
 			}
 			// Check if inertia will start (similar to pointer up handler)
 			this.inertiaActive = false;
-			if (this.touchState?.mode === 'pan') this._maybeStartInertia();
+			if (this.touchState?.mode === 'pan') {
+				if (this._maybeBounceToBounds()) this.inertiaActive = true;
+				else this._maybeStartInertia();
+			}
 			this.touchState = null;
 			// Only emit end events if inertia is NOT active (inertia will emit when done)
 			if (!this.inertiaActive) {
@@ -527,7 +534,7 @@ export default class InputController {
 		if (touchRecent) decelDuration = Math.max(0.5, Math.min(1.8, decelDuration));
 		else decelDuration = Math.max(0.3, Math.min(1.2, decelDuration));
 		// offset is negative half of deceleration impulse
-		const offset = { x: Math.round(limitedVec.x * (-decelDuration / 2)), y: Math.round(limitedVec.y * (-decelDuration / 2)) };
+		const offset = { x: limitedVec.x * (-decelDuration / 2), y: limitedVec.y * (-decelDuration / 2) };
 		if (DEBUG) console.debug('[inertia] offset', { offset, decelDuration });
 		if (!offset.x && !offset.y) return;
 		this.inertiaActive = true;
@@ -535,5 +542,29 @@ export default class InputController {
 		// reset samples
 		this._positions = [];
 		this._times = [];
+	}
+
+	private _maybeBounceToBounds(): boolean {
+		const deps = this.deps;
+		const view = deps.getView();
+		const { zInt, scale } = Coords.zParts(view.zoom);
+		const rect = deps.getContainer().getBoundingClientRect();
+		const widthCSS = rect.width;
+		const heightCSS = rect.height;
+		const zImg = deps.getImageMaxZoom();
+		const s0 = Coords.sFor(zImg, zInt);
+		const centerWorld = { x: view.center.x / s0, y: view.center.y / s0 };
+		const clamped = deps.clampCenterWorld(centerWorld, zInt, scale, widthCSS, heightCSS, false);
+		const dxWorld = clamped.x - centerWorld.x;
+		const dyWorld = clamped.y - centerWorld.y;
+		const dxPx = dxWorld * scale;
+		const dyPx = dyWorld * scale;
+		const distPx = Math.hypot(dxPx, dyPx);
+		if (!Number.isFinite(distPx) || distPx < 0.5) return false;
+		const visc = Math.max(0, Math.min(1, deps.getMaxBoundsViscosity?.() ?? 0));
+		const baseDur = Math.max(0.12, Math.min(0.45, distPx / 1200 + 0.05));
+		const dur = Math.max(0.1, baseDur * (1 - 0.4 * visc));
+		deps.startPanBy(dxPx, dyPx, dur);
+		return true;
 	}
 }

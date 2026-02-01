@@ -58,13 +58,19 @@ export default class MapRenderer {
 		const rect = ctx.container.getBoundingClientRect();
 		const widthCSS = rect.width;
 		const heightCSS = rect.height;
-		const rawTile = Coords.tileZParts(ctx.zoom, ctx.zoomSnapThreshold);
-		const baseZ = Math.max(ctx.minZoom, Math.min(rawTile.zInt, ctx.sourceMaxZoom));
-		const levelScale = Math.pow(2, ctx.zoom - baseZ);
-		const centerLevel = ctx.project(ctx.center.x, ctx.center.y, baseZ);
-		let tlLevel = Coords.tlLevelForWithScale(centerLevel, levelScale, { x: widthCSS, y: heightCSS });
-		const snap = (v: number) => Coords.snapLevelToDevice(v, levelScale, ctx.dpr);
-		tlLevel = { x: snap(tlLevel.x), y: snap(tlLevel.y) };
+		const view = Coords.computeSnappedLevelTransform({
+			centerWorld: ctx.center,
+			zoom: ctx.zoom,
+			viewportCSS: { x: widthCSS, y: heightCSS },
+			imageMaxZ: ctx.imageMaxZoom,
+			dpr: ctx.dpr,
+			zoomSnapThreshold: ctx.zoomSnapThreshold,
+			minZoom: ctx.minZoom,
+			maxZoom: ctx.sourceMaxZoom,
+		});
+		const baseZ = view.baseZ;
+		const levelScale = view.scale;
+		const tlLevel = view.tlLevel;
 
 		this.renderTiles(ctx, gl, baseZ, levelScale, widthCSS, heightCSS, tlLevel);
 
@@ -84,6 +90,9 @@ export default class MapRenderer {
 				dpr: ctx.dpr,
 				zoom: ctx.zoom,
 				center: ctx.center,
+				baseZ,
+				levelScale,
+				tlWorld: tlLevel,
 				minZoom: ctx.minZoom,
 				maxZoom: ctx.maxZoom,
 				container: ctx.container,

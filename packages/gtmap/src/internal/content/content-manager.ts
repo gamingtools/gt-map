@@ -19,6 +19,7 @@ export interface ContentManagerDeps {
 	getMinZoom(): number;
 	getMaxZoom(): number;
 	getDpr(): number;
+	getZoomSnapThreshold(): number;
 	getCenter(): { x: number; y: number };
 	getImageMaxZoom(): number;
 	getView(): { center: { x: number; y: number }; zoom: number; minZoom: number; maxZoom: number; wrapX: boolean };
@@ -59,8 +60,10 @@ export class ContentManager {
 			getZoom: deps.getZoom,
 			getMinZoom: deps.getMinZoom,
 			getMaxZoom: deps.getMaxZoom,
+			getDpr: deps.getDpr,
 			getCenter: deps.getCenter,
 			getImageMaxZoom: deps.getImageMaxZoom,
+			getZoomSnapThreshold: deps.getZoomSnapThreshold,
 			getIcons: () => this.iconMgr.icons,
 			getIconScaleFunction: () => this.iconMgr.iconScaleFunction,
 			debugWarn: deps.debugWarn,

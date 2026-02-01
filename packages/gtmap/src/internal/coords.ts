@@ -342,6 +342,32 @@ export function snapLevelToDevice(levelCoord: number, scale: number, dpr: number
 }
 
 /**
+ * Compute a snapped view transform (base level, scale, and top-left) for rendering.
+ *
+ * Uses tile zoom snapping to choose an integer level and aligns the top-left
+ * to the device pixel grid to reduce shimmer.
+ */
+export function computeSnappedLevelTransform(opts: {
+	centerWorld: XY;
+	zoom: number;
+	viewportCSS: XY;
+	imageMaxZ: number;
+	dpr: number;
+	zoomSnapThreshold: number;
+	minZoom: number;
+	maxZoom: number;
+}): { baseZ: number; scale: number; tlLevel: XY } {
+	const raw = tileZParts(opts.zoom, opts.zoomSnapThreshold);
+	const baseZ = Math.max(opts.minZoom, Math.min(raw.zInt, opts.maxZoom));
+	const scale = Math.pow(2, opts.zoom - baseZ);
+	const centerLevel = worldToLevel(opts.centerWorld, opts.imageMaxZ, baseZ);
+	let tlLevel = tlLevelForWithScale(centerLevel, scale, opts.viewportCSS);
+	const snap = (v: number) => snapLevelToDevice(v, scale, opts.dpr);
+	tlLevel = { x: snap(tlLevel.x), y: snap(tlLevel.y) };
+	return { baseZ, scale, tlLevel };
+}
+
+/**
  * Compute the relative scale factor between two integer zoom levels.
  *
  * Used for tile LOD calculations and cross-level coordinate conversion.

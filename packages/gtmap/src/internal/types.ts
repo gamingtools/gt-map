@@ -59,8 +59,9 @@ export interface InputDeps {
 	getCanvas(): HTMLCanvasElement;
 	getMaxZoom(): number;
 	getImageMaxZoom(): number;
+	getMaxBoundsViscosity(): number;
 	getView(): PublicViewState;
-	setCenter(x: number, y: number): void;
+	setCenter(x: number, y: number, opts?: { skipClamp?: boolean }): void;
 	setZoom(zoom: number): void;
 	clampCenterWorld(centerWorld: { x: number; y: number }, zInt: number, scale: number, widthCSS: number, heightCSS: number, viscous?: boolean): { x: number; y: number };
 	updatePointerAbs(x: number | null, y: number | null): void;
