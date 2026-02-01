@@ -229,8 +229,8 @@ export interface MouseEventData {
 	world: Point | null;
 	/** Current view state snapshot. */
 	view: ViewState;
-	/** Original DOM mouse event. */
-	originalEvent: MouseEvent;
+	/** Original DOM pointer/mouse event. */
+	originalEvent: PointerEvent | MouseEvent;
 	/** Optional hover hits under the cursor (when enabled). */
 	markers?: MarkerHit[];
 }
@@ -384,17 +384,17 @@ export interface SuspendOptions {
 	releaseGL?: boolean;
 }
 
-// Internal vector primitive (with lng/lat)
+// Internal vector primitive (pixel coordinates)
 // Vectors always render at z=0. Markers/decals default to z=1.
 export type VectorPrimitiveInternal =
-	| { type: 'polyline'; points: { lng: number; lat: number }[]; style?: VectorStyle }
-	| { type: 'polygon'; points: { lng: number; lat: number }[]; style?: VectorStyle }
-	| { type: 'circle'; center: { lng: number; lat: number }; radius: number; style?: VectorStyle };
+	| { type: 'polyline'; points: { x: number; y: number }[]; style?: VectorStyle }
+	| { type: 'polygon'; points: { x: number; y: number }[]; style?: VectorStyle }
+	| { type: 'circle'; center: { x: number; y: number }; radius: number; style?: VectorStyle };
 
 // Marker internal representation
 export interface MarkerInternal {
-	lng: number;
-	lat: number;
+	x: number;
+	y: number;
 	type: string;
 	size?: number;
 	rotation?: number;

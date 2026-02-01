@@ -1,21 +1,20 @@
 /**
  * GTMap - A high-performance WebGL map renderer with a pixel-based coordinate system.
  *
- * Decomposed public API: `map.view`, `map.input`, `map.content`, `map.display`.
- * Root-level shorthands delegate to the appropriate facade.
+ * Public API is organized into four facades:
+ *   map.view    -- center, zoom, transitions, bounds, coordinates
+ *   map.input   -- wheel speed, inertia
+ *   map.content -- markers, decals, vectors, icons
+ *   map.display -- background, grid, upscale filter, FPS
  */
-import { MapEngine } from '../internal/map-engine';
 import type { ViewTransition } from '../internal/core/view-transition';
-import type { MarkerOptions } from '../entities/marker';
-import type { DecalOptions } from '../entities/decal';
-import type { Marker } from '../entities/marker';
-import type { Decal } from '../entities/decal';
-import type { Vector } from '../entities/vector';
-import type { EntityCollection } from '../entities/entity-collection';
 
 import type { MapEvents } from './events/public';
-import type { VectorGeometry as VectorGeom } from './events/maps';
-import type { Point, MapOptions, IconDef, IconHandle, SuspendOptions, IconScaleFunction, MaxBoundsPx, UpscaleFilterMode } from './types';
+import type { MapOptions, SuspendOptions, EventMap } from './types';
+import { MapConfig } from '../internal/context/map-config';
+import { MapContext } from '../internal/context/map-context';
+import { ContentManager } from '../internal/content/content-manager';
+import { LifecycleManager } from '../internal/lifecycle/lifecycle-manager';
 import { ViewFacade } from './facades/view-facade';
 import { InputFacade } from './facades/input-facade';
 import { ContentFacade } from './facades/content-facade';
@@ -36,13 +35,12 @@ export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShad
 // Re-export ViewTransition interface
 export type { ViewTransition };
 
-import type { Bounds as SourceBounds, TransformType } from './coord-transformer';
-
 /**
  * @group Overview
  */
 export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
-	private _engine: MapEngine;
+	private _ctx: MapContext;
+	private _lifecycle: LifecycleManager;
 
 	/** View control: center, zoom, transitions, bounds, coordinates. */
 	readonly view: ViewFacade;
@@ -63,178 +61,102 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 			throw new Error('GTMap: minZoom must be <= maxZoom');
 		}
 
-		this._engine = new MapEngine(container as HTMLDivElement, options);
-		this.view = new ViewFacade(this._engine);
-		this.input = new InputFacade(this._engine);
-		this.content = new ContentFacade<TMarkerData, TVectorData>(this._engine);
-		this.display = new DisplayFacade(this._engine);
-	}
+		const config = new MapConfig(options);
+		const ctx = new MapContext(container as HTMLDivElement, config);
+		this._ctx = ctx;
 
-	// -- Shorthand: Entity collections (delegate to content) --
+		// Create ContentManager eagerly so icon defs and markers can be buffered
+		// before async init completes (prevents silent drops).
+		ctx.contentManager = new ContentManager({
+			getGL: () => ctx.gl!,
+			getContainer: () => ctx.container,
+			getZoom: () => ctx.viewState.zoom,
+			getMinZoom: () => ctx.viewState.minZoom,
+			getMaxZoom: () => ctx.viewState.maxZoom,
+			getDpr: () => ctx.viewState.dpr,
+			getCenter: () => ctx.viewState.center,
+			getImageMaxZoom: () => ctx.viewState.imageMaxZoom,
+			getView: () => ctx.viewState.toPublic(),
+			debugWarn: (msg, err) => ctx.debug.warn(msg, err),
+			debugLog: (msg) => ctx.debug.log(msg),
+			requestRender: () => ctx.requestRender(),
+			clearScreenCache: () => { try { ctx.renderCoordinator?.screenCache?.clear?.(); } catch { /* expected: render coordinator may be disposed */ } },
+			now: () => ctx.now(),
+		});
 
-	/** Marker collection. */
-	get markers(): EntityCollection<Marker<TMarkerData>> {
-		return this.content.markers;
-	}
+		this._lifecycle = new LifecycleManager(ctx);
+		this._lifecycle.init();
 
-	/** Decal collection. */
-	get decals(): EntityCollection<Decal> {
-		return this.content.decals;
-	}
+		const vs = ctx.viewState;
+		const lm = this._lifecycle;
+		const cm = ctx.contentManager!;
 
-	/** Vector collection. */
-	get vectors(): EntityCollection<Vector<TVectorData>> {
-		return this.content.vectors;
-	}
+		// Wire ViewFacade deps
+		this.view = new ViewFacade({
+			getCenter: () => vs.center,
+			getZoom: () => vs.zoom,
+			getPointerAbs: () => ctx.pointerAbs,
+			getMapSize: () => vs.mapSize,
+			getMinZoom: () => vs.minZoom,
+			getMaxZoom: () => vs.maxZoom,
+			getImageMaxZoom: () => vs.imageMaxZoom,
+			getContainer: () => ctx.container,
+			events: { when: <K extends keyof EventMap>(event: K) => ctx.events.when(event) },
+			setCenter: (x, y) => { vs.setCenter(x, y); ctx.requestRender(); },
+			setZoom: (z) => { vs.setZoom(z); ctx.requestRender(); },
+			setWrapX: (on) => { if (!!on !== vs.wrapX) { vs.wrapX = !!on; ctx.requestRender(); } },
+			setMaxBoundsPx: (bounds) => { vs.maxBoundsPx = bounds ? { ...bounds } : null; ctx.requestRender(); },
+			setMaxBoundsViscosity: (v) => { vs.maxBoundsViscosity = Math.max(0, Math.min(1, v)); ctx.requestRender(); },
+			setClipToBounds: (on) => { if (!!on !== vs.clipToBounds) { vs.clipToBounds = !!on; ctx.requestRender(); } },
+			setIconScaleFunction: (fn) => cm.setIconScaleFunction(fn),
+			setAutoResize: (on) => lm.setAutoResize(on),
+			resize: () => ctx.renderCoordinator?.resize(),
+			flyTo: (opts) => ctx.renderCoordinator?.flyTo(opts),
+			cancelPanAnim: () => ctx.renderCoordinator?.panController.cancel(),
+			cancelZoomAnim: () => ctx.renderCoordinator?.zoomController.cancel(),
+		});
 
-	// -- Shorthand: View --
+		// Wire InputFacade deps
+		this.input = new InputFacade({
+			setWheelSpeed: (v) => ctx.options.setWheelSpeed(v),
+			setInertiaOptions: (opts) => ctx.options.setInertiaOptions(opts),
+		});
 
-	getCenter(): Point {
-		return this.view.getCenter();
-	}
+		// Wire ContentFacade deps
+		this.content = new ContentFacade<TMarkerData, TVectorData>({
+			setIconDefs: (defs) => cm.setIconDefs(defs),
+			setMarkers: (markers) => cm.setMarkers(markers),
+			setDecals: (markers) => cm.setDecals(markers),
+			setVectors: (vectors) => cm.setVectors(vectors),
+			setMarkerData: (payloads) => cm.setMarkerData(payloads),
+			onMarkerEvent: (name, handler) => cm.onMarkerEvent(name, handler),
+		});
 
-	getZoom(): number {
-		return this.view.getZoom();
-	}
-
-	getPointerAbs(): { x: number; y: number } | null {
-		return this.view.getPointerAbs();
-	}
-
-	transition(): ViewTransition {
-		return this.view.transition();
-	}
-
-	setWrapX(on: boolean): this {
-		this.view.setWrapX(on);
-		return this;
-	}
-
-	setMaxBoundsPx(bounds: MaxBoundsPx | null): this {
-		this.view.setMaxBoundsPx(bounds);
-		return this;
-	}
-
-	setMaxBoundsViscosity(v: number): this {
-		this.view.setMaxBoundsViscosity(v);
-		return this;
-	}
-
-	setClipToBounds(on: boolean): this {
-		this.view.setClipToBounds(on);
-		return this;
-	}
-
-	setIconScaleFunction(fn: IconScaleFunction | null): this {
-		this.view.setIconScaleFunction(fn);
-		return this;
-	}
-
-	resetIconScale(): this {
-		this.view.resetIconScale();
-		return this;
-	}
-
-	setAutoResize(on: boolean): this {
-		this.view.setAutoResize(on);
-		return this;
-	}
-
-	invalidateSize(): this {
-		this.view.invalidateSize();
-		return this;
-	}
-
-	setCoordBounds(bounds: SourceBounds): this {
-		this.view.setCoordBounds(bounds);
-		return this;
-	}
-
-	translate(x: number, y: number, type: TransformType = 'original'): { x: number; y: number } {
-		return this.view.translate(x, y, type);
-	}
-
-	// -- Shorthand: Content --
-
-	addIcon(def: IconDef, id?: string): IconHandle {
-		return this.content.addIcon(def, id);
-	}
-
-	addMarker(x: number, y: number, opts: MarkerOptions<TMarkerData>): Marker<TMarkerData> {
-		return this.content.addMarker(x, y, opts);
-	}
-
-	addDecal(x: number, y: number, opts: DecalOptions): Decal {
-		return this.content.addDecal(x, y, opts);
-	}
-
-	addVector(geometry: VectorGeom, opts?: { data?: TVectorData }): Vector<TVectorData> {
-		return this.content.addVector(geometry, opts);
-	}
-
-	clearMarkers(): this {
-		this.content.clearMarkers();
-		return this;
-	}
-
-	clearDecals(): this {
-		this.content.clearDecals();
-		return this;
-	}
-
-	clearVectors(): this {
-		this.content.clearVectors();
-		return this;
-	}
-
-	// -- Shorthand: Display --
-
-	setGridVisible(on: boolean): this {
-		this.display.setGridVisible(on);
-		return this;
-	}
-
-	setUpscaleFilter(mode: UpscaleFilterMode): this {
-		this.display.setUpscaleFilter(mode);
-		return this;
-	}
-
-	setZoomSnapThreshold(v: number): this {
-		this.display.setZoomSnapThreshold(v);
-		return this;
-	}
-
-	setFpsCap(v: number): this {
-		this.display.setFpsCap(v);
-		return this;
-	}
-
-	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): this {
-		this.display.setBackgroundColor(color);
-		return this;
-	}
-
-	// -- Shorthand: Input --
-
-	setWheelSpeed(v: number): this {
-		this.input.setWheelSpeed(v);
-		return this;
+		// Wire DisplayFacade deps
+		this.display = new DisplayFacade({
+			setGridVisible: (on) => ctx.renderCoordinator?.setGridVisible(on),
+			setUpscaleFilter: (mode) => cm.setUpscaleFilter(mode),
+			setFpsCap: (v) => ctx.renderCoordinator?.setFpsCap(v),
+			setBackgroundColor: (color) => lm.setBackgroundColor(color),
+			setRasterOpacity: (v) => cm.setRasterOpacity(v),
+			setZoomSnapThreshold: (v) => { const c = Math.max(0, Math.min(1, v)); if (c !== vs.zoomSnapThreshold) { vs.zoomSnapThreshold = c; ctx.requestRender(); } },
+		});
 	}
 
 	// -- Lifecycle --
 
 	suspend(opts?: SuspendOptions): this {
-		this._engine.setActive(false, opts);
+		this._lifecycle.setActive(false, opts);
 		return this;
 	}
 
 	resume(): this {
-		this._engine.setActive(true);
+		this._lifecycle.setActive(true);
 		return this;
 	}
 
 	destroy(): void {
-		this._engine.destroy();
+		this._lifecycle.destroy();
 	}
 
 	// -- Events --
@@ -242,37 +164,10 @@ export class GTMap<TMarkerData = unknown, TVectorData = unknown> {
 	get events(): MapEvents<TMarkerData> {
 		return {
 			on: (name: string, handler?: (value: unknown) => void) => {
-				const stream = this._engine.events.on(name as keyof import('./types').EventMap);
+				const stream = this._ctx.events.on(name as keyof EventMap);
 				return handler ? stream.each(handler) : stream;
 			},
-			once: (name: string) => this._engine.events.when(name as keyof import('./types').EventMap),
+			once: (name: string) => this._ctx.events.when(name as keyof EventMap),
 		} as MapEvents<TMarkerData>;
-	}
-
-	// -- Internal helpers (used by ViewTransition) --
-
-	/** @internal */
-	_applyInstant(center?: Point, zoom?: number): void {
-		this.view._applyInstant(center, zoom);
-	}
-
-	/** @internal */
-	_animateView(opts: { center?: Point; zoom?: number; durationMs: number; easing?: (t: number) => number }): void {
-		this.view._animateView(opts);
-	}
-
-	/** @internal */
-	_cancelPanZoom(): void {
-		this.view._cancelPanZoom();
-	}
-
-	/** @internal */
-	_fitBounds(b: { minX: number; minY: number; maxX: number; maxY: number }, padding: { top: number; right: number; bottom: number; left: number }): { center: Point; zoom: number } {
-		return this.view._fitBounds(b, padding);
-	}
-
-	/** @internal */
-	_setView(center: Point, zoom: number, opts?: { animate?: { durationMs: number; delayMs?: number; easing?: (t: number) => number } }): Promise<import('./types').ApplyResult> {
-		return this.view._setView(center, zoom, opts);
 	}
 }

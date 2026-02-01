@@ -24,6 +24,14 @@ export interface LoaderOptions {
 	interactionIdleMs?: number;
 }
 
+/** Wheel speed -> immediate step mapping ranges */
+const WHEEL_SPEED = {
+	minSlow: 0.05,
+	maxSlow: 1.75,
+	minFast: 0.1,
+	maxFast: 1.9,
+} as const;
+
 export class OptionsManager {
 	// Wheel options
 	wheelSpeed = 1.0;
@@ -54,12 +62,12 @@ export class OptionsManager {
 			this.wheelSpeed = Math.max(0.01, Math.min(2, speed));
 			const t = Math.max(0, Math.min(1, this.wheelSpeed / 2));
 			// Map speed to immediate step size; velocity gain removed in DI path
-			this.wheelImmediate = 0.05 + t * (1.75 - 0.05);
+			this.wheelImmediate = WHEEL_SPEED.minSlow + t * (WHEEL_SPEED.maxSlow - WHEEL_SPEED.minSlow);
 			this._deps.requestRender();
 		}
 		// Keep ctrl-step in sync if desired
 		const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
-		this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
+		this.wheelImmediateCtrl = WHEEL_SPEED.minFast + t2 * (WHEEL_SPEED.maxFast - WHEEL_SPEED.minFast);
 	}
 
 	/**
@@ -70,7 +78,7 @@ export class OptionsManager {
 		if (Number.isFinite(speed)) {
 			this.wheelSpeedCtrl = Math.max(0.01, Math.min(2, speed));
 			const t2 = Math.max(0, Math.min(1, (this.wheelSpeedCtrl || 0.4) / 2));
-			this.wheelImmediateCtrl = 0.1 + t2 * (1.9 - 0.1);
+			this.wheelImmediateCtrl = WHEEL_SPEED.minFast + t2 * (WHEEL_SPEED.maxFast - WHEEL_SPEED.minFast);
 		}
 	}
 

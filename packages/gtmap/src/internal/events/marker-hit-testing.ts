@@ -71,7 +71,7 @@ export interface MarkerHitTestingDeps {
 	getZoom(): number;
 	getMinZoom(): number;
 	getMaxZoom(): number;
-	getCenter(): { lng: number; lat: number };
+	getCenter(): { x: number; y: number };
 	getImageMaxZoom(): number;
 	getIcons(): IconRenderer | null;
 	getIconScaleFunction(): ((zoom: number, min: number, max: number) => number) | null;
@@ -125,7 +125,7 @@ export class MarkerHitTesting {
 			const it = info[i]!;
 
 			// Convert marker world position to screen position
-			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, zoom, { x: center.lng, y: center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+			const css = Coords.worldToCSS({ x: it.x, y: it.y }, zoom, { x: center.x, y: center.y }, { x: widthCSS, y: heightCSS }, imageMaxZ);
 
 			// Compute AABB bounds (anchor offsets from the marker's screen position)
 			const left = css.x - it.anchor.ax;
@@ -172,7 +172,7 @@ export class MarkerHitTesting {
 					idx: it.index,
 					id: it.id,
 					type: it.type,
-					world: { x: it.lng, y: it.lat },
+					world: { x: it.x, y: it.y },
 					screen: { x: css.x, y: css.y },
 					size: { width: it.w, height: it.h },
 					...(it.rotation !== undefined ? { rotation: it.rotation } : {}),
@@ -223,7 +223,7 @@ export class MarkerHitTesting {
 			const it = info[i]!;
 
 			// Convert marker world position to screen position
-			const css = Coords.worldToCSS({ x: it.lng, y: it.lat }, zoom, { x: center.lng, y: center.lat }, { x: widthCSS, y: heightCSS }, imageMaxZ);
+			const css = Coords.worldToCSS({ x: it.x, y: it.y }, zoom, { x: center.x, y: center.y }, { x: widthCSS, y: heightCSS }, imageMaxZ);
 
 			// Compute AABB bounds
 			const left = css.x - it.anchor.ax;
@@ -263,7 +263,7 @@ export class MarkerHitTesting {
 			out.push({
 				id: it.id,
 				idx: it.index,
-				world: { x: it.lng, y: it.lat },
+				world: { x: it.x, y: it.y },
 				size: { width: it.w, height: it.h },
 				...(it.rotation !== undefined ? { rotation: it.rotation } : {}),
 				icon: {

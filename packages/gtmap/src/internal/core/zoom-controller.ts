@@ -2,6 +2,25 @@ import type { ZoomDeps } from '../types';
 import { DEBUG } from '../../debug';
 import * as Coords from '../coords';
 
+/** Zoom easing timing defaults (ms) */
+const ZOOM_EASE = {
+	baseMs: 150,
+	perUnitMs: 240,
+	minMs: 120,
+	maxMs: 420,
+} as const;
+
+/** easeOutBack overshoot constants (Penner) */
+const BOUNCE = {
+	c1: 1.70158,
+	c3: 1.70158 + 1,
+} as const;
+
+/** Zoom-out center bias: blends pointer anchor toward center when zooming out */
+const ZOOM_OUT_BIAS = {
+	maxBias: 0.6,
+} as const;
+
 /**
  * ZoomController manages zoom animations with anchor-point stability.
  *
@@ -47,10 +66,10 @@ import * as Coords from '../coords';
  */
 export default class ZoomController {
 	private deps: ZoomDeps;
-	private easeBaseMs = 150;
-	private easePerUnitMs = 240;
-	private easeMinMs = 120;
-	private easeMaxMs = 420;
+	private easeBaseMs: number = ZOOM_EASE.baseMs;
+	private easePerUnitMs: number = ZOOM_EASE.perUnitMs;
+	private easeMinMs: number = ZOOM_EASE.minMs;
+	private easeMaxMs: number = ZOOM_EASE.maxMs;
 	private zoomAnim: null | {
 		from: number;
 		to: number;
@@ -110,7 +129,7 @@ export default class ZoomController {
 		let bounce = false;
 		try {
 			const rect = this.deps.getContainer()?.getBoundingClientRect?.();
-			const mb = this.deps.getBoundsPx?.();
+			const mb = this.deps.getMaxBoundsPx?.();
 			if (mb && rect) {
 				const widthCSS = rect.width;
 				const heightCSS = rect.height;
@@ -162,8 +181,7 @@ export default class ZoomController {
 		let z = a.from + (a.to - a.from) * ef(t);
 		if (a.bounce) {
 			// easeOutBack to create a slight overshoot and return
-			const c1 = 1.70158,
-				c3 = c1 + 1;
+			const { c1, c3 } = BOUNCE;
 			const tb = t - 1;
 			const outBack = 1 + c3 * (tb * tb * tb) + c1 * (tb * tb);
 			z = a.from + (a.to - a.from) * outBack;
@@ -230,7 +248,7 @@ export default class ZoomController {
 		let zClamped = Math.max(this.deps.getMinZoom(), Math.min(this.deps.getMaxZoom(), targetZoom));
 		// If maxBounds are set, prevent zooming out beyond bounds (Leaflet-like)
 		try {
-			const mb = this.deps.getBoundsPx?.();
+			const mb = this.deps.getMaxBoundsPx?.();
 			if (mb) {
 				const rect = this.deps.getContainer().getBoundingClientRect();
 				const widthCSS = rect.width;
@@ -258,7 +276,7 @@ export default class ZoomController {
 			if (zClamped < this.deps.getZoom()) {
 				const centerScaled = { x: centerNow.x * factor, y: centerNow.y * factor };
 				const dz = Math.max(0, this.deps.getZoom() - zClamped);
-				const bias = Math.max(0, Math.min(0.6, (this.deps.getOutCenterBias() ?? 0.15) * dz));
+				const bias = Math.max(0, Math.min(ZOOM_OUT_BIAS.maxBias, (this.deps.getOutCenterBias() ?? 0.15) * dz));
 				center2 = {
 					x: pointerCenter.x * (1 - bias) + centerScaled.x * bias,
 					y: pointerCenter.y * (1 - bias) + centerScaled.y * bias,
@@ -269,11 +287,11 @@ export default class ZoomController {
 		}
 		center2 = this.deps.clampCenterWorld(center2, zInt2, s2, widthCSS, heightCSS);
 		const s2f = Coords.sFor(zImg, zInt2);
-		this.deps.setCenterLngLat(center2.x * s2f, center2.y * s2f);
+		this.deps.setCenter(center2.x * s2f, center2.y * s2f);
 		this.deps.setZoom(zClamped);
 		if (DEBUG)
 			try {
-				console.debug('[center] zoom', { lng: center2.x * s2f, lat: center2.y * s2f, z: zClamped });
+				console.debug('[center] zoom', { x: center2.x * s2f, y: center2.y * s2f, z: zClamped });
 			} catch {}
 		this.deps.requestRender();
 	}

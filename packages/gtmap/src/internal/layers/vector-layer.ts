@@ -7,12 +7,26 @@ import type { VectorPrimitive, VectorStyle } from '../types';
 
 import { OverlayRenderer } from './vectors/overlay-renderer';
 
+/** Vector stroke scaling defaults */
+const VECTOR_DEFAULTS = {
+	/** Reference zoom level for stroke scaling (scale = 1.0 at this zoom) */
+	refZoom: 2,
+	/** Minimum stroke scale factor */
+	minScale: 0.6,
+	/** Maximum stroke scale factor */
+	maxScale: 1.8,
+	/** Stroke scale change per zoom level */
+	scalePerZoom: 0.08,
+	defaultStrokeColor: 'rgba(0,0,0,0.85)',
+	defaultFillColor: 'rgba(0,0,0,0.25)',
+} as const;
+
 export interface VectorLayerDeps {
 	getContainer(): HTMLDivElement;
 	getGL(): WebGLRenderingContext;
 	getDpr(): number;
 	getZoom(): number;
-	getCenter(): { lng: number; lat: number };
+	getCenter(): { x: number; y: number };
 	getImageMaxZoom(): number;
 }
 
@@ -124,14 +138,14 @@ export class VectorLayer {
 			const center = this.deps.getCenter();
 
 			// Subtle zoom-based stroke scaling: ~8% per zoom level, clamped
-			const refZoom = 2;
-			const zoomScale = Math.max(0.6, Math.min(1.8, 1 + (z - refZoom) * 0.08));
+			const refZoom = VECTOR_DEFAULTS.refZoom;
+			const zoomScale = Math.max(VECTOR_DEFAULTS.minScale, Math.min(VECTOR_DEFAULTS.maxScale, 1 + (z - refZoom) * VECTOR_DEFAULTS.scalePerZoom));
 
 			for (const prim of this._vectors) {
 				const style = (prim.style ?? {}) as VectorStyle;
 				const baseWeight = style.weight ?? 2;
 				ctx.lineWidth = Math.max(1, baseWeight * zoomScale);
-				ctx.strokeStyle = style.color || 'rgba(0,0,0,0.85)';
+				ctx.strokeStyle = style.color || VECTOR_DEFAULTS.defaultStrokeColor;
 				ctx.globalAlpha = style.opacity ?? 1;
 
 				const begin = () => ctx.beginPath();
@@ -139,19 +153,19 @@ export class VectorLayer {
 				const finishFill = () => {
 					if (style.fill) {
 						ctx.globalAlpha = style.fillOpacity ?? 0.25;
-						ctx.fillStyle = style.fillColor || style.color || 'rgba(0,0,0,0.25)';
+						ctx.fillStyle = style.fillColor || style.color || VECTOR_DEFAULTS.defaultFillColor;
 						ctx.fill();
 						ctx.globalAlpha = style.opacity ?? 1;
 					}
 				};
 
 				if (prim.type === 'polyline' || prim.type === 'polygon') {
-					const pts = prim.points as Array<{ lng: number; lat: number }>;
+					const pts = prim.points as Array<{ x: number; y: number }>;
 					if (!pts.length) continue;
 					begin();
 					for (let i = 0; i < pts.length; i++) {
 						const p = pts[i]!;
-						const css = Coords.worldToCSS({ x: p.lng, y: p.lat }, z, { x: center.lng, y: center.lat }, viewport, imageMaxZ);
+						const css = Coords.worldToCSS({ x: p.x, y: p.y }, z, { x: center.x, y: center.y }, viewport, imageMaxZ);
 						if (i === 0) ctx.moveTo(css.x, css.y);
 						else ctx.lineTo(css.x, css.y);
 					}
@@ -159,8 +173,8 @@ export class VectorLayer {
 					finishStroke();
 					finishFill();
 				} else if (prim.type === 'circle') {
-					const c = prim.center as { lng: number; lat: number };
-					const css = Coords.worldToCSS({ x: c.lng, y: c.lat }, z, { x: center.lng, y: center.lat }, viewport, imageMaxZ);
+					const c = prim.center as { x: number; y: number };
+					const css = Coords.worldToCSS({ x: c.x, y: c.y }, z, { x: center.x, y: center.y }, viewport, imageMaxZ);
 					// Radius: specified in native px; convert to CSS using current zInt/scale
 					const { zInt, scale } = Coords.zParts(z);
 					const s = Coords.sFor(imageMaxZ as number, zInt);

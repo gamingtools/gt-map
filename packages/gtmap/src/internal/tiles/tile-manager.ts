@@ -4,15 +4,27 @@
  * All tiles are served from an in-memory GTPK binary pack.
  * Decode path: getBlob() -> createImageBitmap() -> GL upload -> cache.
  */
-import type { MapContext } from '../context/map-context';
-import * as Coords from '../coords';
-
+import { computeImageMaxZoom, computeTileBounds } from '../map-math';
 import { TileCache } from './cache';
 import { GtpkReader } from './gtpk-reader';
 import { tileKey as tileKeyOf } from './source';
 
+export interface TileManagerDeps {
+  getGL(): WebGLRenderingContext;
+  getMapSize(): { width: number; height: number };
+  getImageMaxZoom(): number;
+  debugLog(msg: string): void;
+  requestRender(): void;
+  now(): number;
+  getLastInteractAt(): number;
+  getInteractionIdleMs(): number;
+  isAnimating(): boolean;
+  /** Called when setSource changes view-affecting state. */
+  updateViewForSource(opts: { minZoom: number; maxZoom: number; mapSize: { width: number; height: number }; imageMaxZoom: number }): void;
+}
+
 export class TileManager {
-	private ctx: MapContext;
+	private deps: TileManagerDeps;
 	private _cache: TileCache | null = null;
 	private _packReader: GtpkReader | null = null;
 	private _decoding = new Set<string>();
@@ -31,31 +43,31 @@ export class TileManager {
 	// Frame counter (shared with render coordinator)
 	frame = 0;
 
-	constructor(ctx: MapContext) {
-		this.ctx = ctx;
-		this._packUrl = ctx.config.tiles.packUrl!;
-		this._tileSize = ctx.config.tiles.tileSize;
-		this._sourceMaxZoom = ctx.config.tiles.sourceMaxZoom;
+	constructor(deps: TileManagerDeps, tileConfig: { packUrl: string; tileSize: number; sourceMaxZoom: number }) {
+		this.deps = deps;
+		this._packUrl = tileConfig.packUrl;
+		this._tileSize = tileConfig.tileSize;
+		this._sourceMaxZoom = tileConfig.sourceMaxZoom;
 		const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2;
 		this._maxConcurrentDecodes = Math.max(2, Math.min(Math.floor(cores / 2), 8));
 	}
 
 	init(): void {
-		const ctx = this.ctx;
+		const d = this.deps;
 		this._destroyed = false;
-		this._cache = new TileCache(ctx.gl!);
+		this._cache = new TileCache(d.getGL());
 
 		// Load GTPK tile pack
 		this._packReader = new GtpkReader();
 		const packUrl = this._packUrl;
 		this._packReader.load(packUrl).then(() => {
-			ctx.debug.log(`gtpk: loaded ${this._packReader!.tileCount} tiles from ${packUrl}`);
-			ctx.requestRender();
+			d.debugLog(`gtpk: loaded ${this._packReader!.tileCount} tiles from ${packUrl}`);
+			d.requestRender();
 		}).catch((err) => {
-			ctx.debug.log(`gtpk: failed to load ${packUrl}: ${(err as Error).message}`);
+			d.debugLog(`gtpk: failed to load ${packUrl}: ${(err as Error).message}`);
 		});
 
-		ctx.debug.log(`tile-manager: initialized tileSize=${this._tileSize} sourceMaxZoom=${this._sourceMaxZoom}`);
+		d.debugLog(`tile-manager: initialized tileSize=${this._tileSize} sourceMaxZoom=${this._sourceMaxZoom}`);
 	}
 
 	// -- Decode pipeline --
@@ -87,7 +99,7 @@ export class TileManager {
 			.then((bmp: ImageBitmap) => {
 				try {
 					if (this._destroyed) return;
-					const gl = this.ctx.gl!;
+					const gl = this.deps.getGL();
 					const tex = this._cache?.acquireTexture();
 					if (!tex) return;
 					gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -101,7 +113,7 @@ export class TileManager {
 					this._cache!.setReady(key, tex, bmp.width, bmp.height, this.frame);
 					this._pendingMips.push({ key, tex });
 					this.scheduleMips();
-					this.ctx.requestRender();
+					this.deps.requestRender();
 				} finally {
 					try { bmp.close?.(); } catch {}
 				}
@@ -116,12 +128,7 @@ export class TileManager {
 
 	private inBounds(z: number, x: number, y: number): boolean {
 		if (x < 0 || y < 0) return false;
-		const zMax = this.ctx.viewState.imageMaxZoom;
-		const TS = this._tileSize;
-		const mapSize = this.ctx.viewState.mapSize;
-		const s = Coords.sFor(zMax, z);
-		const tilesX = Math.ceil(Math.ceil(mapSize.width / s) / TS);
-		const tilesY = Math.ceil(Math.ceil(mapSize.height / s) / TS);
+		const { tilesX, tilesY } = computeTileBounds(this.deps.getMapSize(), this._tileSize, z, this.deps.getImageMaxZoom(), undefined);
 		return x < tilesX && y < tilesY;
 	}
 
@@ -136,7 +143,7 @@ export class TileManager {
 				requestAnimationFrame(() => this.scheduleMips());
 				return;
 			}
-			const gl = this.ctx.gl!;
+			const gl = this.deps.getGL();
 			const MIP_BUDGET_MS = 2;
 			const start = performance.now();
 			let processed = 0;
@@ -149,7 +156,7 @@ export class TileManager {
 				processed++;
 			}
 			if (this._pendingMips.length > 0) requestAnimationFrame(() => this.scheduleMips());
-			if (processed > 0) this.ctx.requestRender();
+			if (processed > 0) this.deps.requestRender();
 		};
 		requestAnimationFrame(process);
 	}
@@ -158,12 +165,10 @@ export class TileManager {
 
 	isIdle(): boolean {
 		try {
-			const ctx = this.ctx;
-			const now = ctx.now();
-			const idleByTime = now - ctx.lastInteractAt > ctx.options.interactionIdleMs;
-			const coord = ctx.renderCoordinator;
-			const anim = coord ? coord.isAnimating() : false;
-			return idleByTime && !anim;
+			const d = this.deps;
+			const now = d.now();
+			const idleByTime = now - d.getLastInteractAt() > d.getInteractionIdleMs();
+			return idleByTime && !d.isAnimating();
 		} catch {
 			return true;
 		}
@@ -171,10 +176,9 @@ export class TileManager {
 
 	isMoving(): boolean {
 		try {
-			const ctx = this.ctx;
-			const recentInteraction = ctx.now() - ctx.lastInteractAt < 50;
-			const anim = ctx.renderCoordinator ? ctx.renderCoordinator.isAnimating() : false;
-			return recentInteraction || anim;
+			const d = this.deps;
+			const recentInteraction = d.now() - d.getLastInteractAt() < 50;
+			return recentInteraction || d.isAnimating();
 		} catch {
 			return false;
 		}
@@ -203,11 +207,14 @@ export class TileManager {
 		this._tileSize = opts.tileSize;
 		this._sourceMaxZoom = opts.sourceMaxZoom;
 
-		const vs = this.ctx.viewState;
-		vs.minZoom = opts.sourceMinZoom;
-		vs.mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
-		vs.imageMaxZoom = ViewStateStoreCompute(vs.mapSize.width, vs.mapSize.height);
-		vs.maxZoom = Math.max(vs.minZoom, this._sourceMaxZoom);
+		const mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
+		const imageMaxZoom = computeImageMaxZoom(mapSize.width, mapSize.height, opts.tileSize);
+		this.deps.updateViewForSource({
+			minZoom: opts.sourceMinZoom,
+			maxZoom: Math.max(opts.sourceMinZoom, this._sourceMaxZoom),
+			mapSize,
+			imageMaxZoom,
+		});
 
 		this.init();
 	}
@@ -250,10 +257,4 @@ export class TileManager {
 			this._teardown();
 		} catch {}
 	}
-}
-
-// Inline helper to avoid circular import
-function ViewStateStoreCompute(width: number, height: number): number {
-	const maxDim = Math.max(width, height);
-	return Math.max(0, Math.ceil(Math.log2(maxDim / 256)));
 }

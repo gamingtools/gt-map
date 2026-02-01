@@ -146,7 +146,7 @@ export default class InputController {
 			deps.setCenter(nx, ny);
 			if (DEBUG)
 				try {
-					console.debug('[center] drag', { lng: nx, lat: ny, z: view.zoom });
+					console.debug('[center] drag', { x: nx, y: ny, z: view.zoom });
 				} catch {}
 			deps.emit('move', { view: deps.getView() });
 		};

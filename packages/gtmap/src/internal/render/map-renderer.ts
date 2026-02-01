@@ -1,11 +1,18 @@
 import type { RenderCtx } from '../types';
 import * as Coords from '../coords';
 
+/** Coverage thresholds for tile pyramid rendering */
+const COVERAGE = {
+	/** Minimum coverage before backfill from lower LODs stops */
+	backfill: 0.995,
+	/** Minimum coverage to unlock icon/marker rendering */
+	iconUnlock: 0.5,
+} as const;
+
 export default class MapRenderer {
   private getCtx: () => RenderCtx;
   private hooks: {
     stepAnimation?: () => boolean;
-    zoomVelocityTick?: () => void;
     panVelocityTick?: () => void;
     cancelUnwanted?: () => void;
     clearWanted?: () => void;
@@ -14,12 +21,12 @@ export default class MapRenderer {
   // Hysteresis for level-wide filter decisions to prevent flicker near scale ~= 1
   private static readonly FILTER_ENTER = 1.02;
   private static readonly FILTER_EXIT = 0.99;
+  private _lastFilterMode: 'linear' | 'bicubic' = 'linear';
 
   constructor(
     getCtx: () => RenderCtx,
     hooks?: {
       stepAnimation?: () => boolean;
-      zoomVelocityTick?: () => void;
       panVelocityTick?: () => void;
       cancelUnwanted?: () => void;
       clearWanted?: () => void;
@@ -37,7 +44,6 @@ export default class MapRenderer {
 
     if (this.hooks.clearWanted) this.hooks.clearWanted();
     this.hooks.stepAnimation?.();
-    this.hooks.zoomVelocityTick?.();
     this.hooks.panVelocityTick?.();
 
     gl.useProgram(ctx.prog);
@@ -54,7 +60,7 @@ export default class MapRenderer {
     const rawTile = Coords.tileZParts(ctx.zoom, ctx.zoomSnapThreshold);
     const baseZ = Math.max(ctx.minZoom, Math.min(rawTile.zInt, ctx.sourceMaxZoom));
     const levelScale = Math.pow(2, ctx.zoom - baseZ);
-    const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
+    const centerLevel = ctx.project(ctx.center.x, ctx.center.y, baseZ);
     let tlLevel = Coords.tlLevelForWithScale(centerLevel, levelScale, { x: widthCSS, y: heightCSS });
     const snap = (v: number) => Coords.snapLevelToDevice(v, levelScale, ctx.dpr);
     tlLevel = { x: snap(tlLevel.x), y: snap(tlLevel.y) };
@@ -142,14 +148,14 @@ export default class MapRenderer {
     }
 
     const coverage = ctx.raster.coverage(tileCache, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, tileSize, ctx.mapSize, ctx.maxZoom, sourceMaxZoom);
-    if (!this.iconsUnlocked && coverage >= 0.5) this.iconsUnlocked = true;
+    if (!this.iconsUnlocked && coverage >= COVERAGE.iconUnlock) this.iconsUnlocked = true;
 
     const zIntPrev = Math.max(ctx.minZoom, baseZ - 1);
 
     // Backfill lower LODs if coverage is insufficient
-    if (coverage < 0.995 && zIntPrev >= ctx.minZoom) {
+    if (coverage < COVERAGE.backfill && zIntPrev >= ctx.minZoom) {
       for (let lvl = zIntPrev; lvl >= ctx.minZoom; lvl--) {
-        const centerL = ctx.project(ctx.center.lng, ctx.center.lat, lvl);
+        const centerL = ctx.project(ctx.center.x, ctx.center.y, lvl);
         const scaleL = Coords.scaleAtLevel(ctx.zoom, lvl);
         let tlL = Coords.tlLevelForWithScale(centerL, scaleL, { x: widthCSS, y: heightCSS });
         const snapL = (v: number) => Coords.snapLevelToDevice(v, scaleL, ctx.dpr);
@@ -171,7 +177,7 @@ export default class MapRenderer {
           filterMode: this.levelFilter(scaleL),
           wantTileKey: ctx.wantTileKey,
         });
-        if (covL >= 0.995) break;
+        if (covL >= COVERAGE.backfill) break;
       }
     }
 
@@ -199,9 +205,10 @@ export default class MapRenderer {
   private levelFilter(scale: number): 'linear' | 'bicubic' {
     const enter = MapRenderer.FILTER_ENTER;
     const exit = MapRenderer.FILTER_EXIT;
-    if (scale > enter) return 'bicubic';
-    if (scale < exit) return 'linear';
-    return 'bicubic';
+    if (scale > enter) this._lastFilterMode = 'bicubic';
+    else if (scale < exit) this._lastFilterMode = 'linear';
+    // Inside the dead zone [exit, enter]: retain previous mode (true hysteresis)
+    return this._lastFilterMode;
   }
 
   dispose() {}

@@ -2,79 +2,120 @@
  * InputManager -- owns InputController wiring, EventBridge setup,
  * and the InputDeps assembly.
  */
-import type { EventMap } from '../../api/types';
+import type { EventMap, MarkerEventData } from '../../api/types';
 import type { InputDeps } from '../types';
-import type { MapContext } from '../context/map-context';
+import type { TypedEventBus } from '../events/typed-stream';
+import type { HitResult, AllHitsResult } from '../events/marker-hit-testing';
 import EventBridge from '../events/event-bridge';
 import { clampCenterWorld as clampCenterWorldCore } from '../core/bounds';
 import * as Coords from '../coords';
 
 import InputController from './input-controller';
 
+export interface InputManagerDeps {
+  getContainer(): HTMLDivElement;
+  getCanvas(): HTMLCanvasElement;
+  events: TypedEventBus<EventMap>;
+  // View state
+  getZoom(): number;
+  getMaxZoom(): number;
+  getImageMaxZoom(): number;
+  getMapSize(): { width: number; height: number };
+  getWrapX(): boolean;
+  getFreePan(): boolean;
+  getMaxBoundsPx(): { minX: number; minY: number; maxX: number; maxY: number } | null;
+  getMaxBoundsViscosity(): number;
+  getView(): { center: { x: number; y: number }; zoom: number; minZoom: number; maxZoom: number; wrapX: boolean };
+  setCenter(x: number, y: number): void;
+  setZoom(z: number): void;
+  requestRender(): void;
+  now(): number;
+  debugWarn(msg: string, err?: unknown): void;
+  // Pointer / interaction state
+  updatePointerAbs(x: number | null, y: number | null): void;
+  setLastInteractAt(t: number): void;
+  getLastInteractAt(): number;
+  // Zoom controller
+  getAnchorMode(): 'pointer' | 'center';
+  getWheelStep(ctrl: boolean): number;
+  startEase(dz: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
+  cancelZoomAnim(): void;
+  applyAnchoredZoom(targetZoom: number, px: number, py: number, anchor: 'pointer' | 'center'): void;
+  // Pan controller
+  getInertia(): boolean;
+  getInertiaDecel(): number;
+  getInertiaMaxSpeed(): number;
+  getEaseLinearity(): number;
+  startPanBy(dxPx: number, dyPx: number, durSec: number): void;
+  cancelPanAnim(): void;
+  // Animation state
+  isAnimating(): boolean;
+  // Marker hit testing (EventBridge deps)
+  hitTestMarker(px: number, py: number, requireAlpha: boolean): HitResult | null;
+  computeMarkerHits(px: number, py: number): AllHitsResult[];
+  emitMarker(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', payload: MarkerEventData): void;
+  getLastHover(): { type: string; idx: number; id?: string } | null;
+  setLastHover(h: { type: string; idx: number; id?: string } | null): void;
+  getMarkerDataById(id: string): unknown | undefined;
+}
+
 export class InputManager {
-	private ctx: MapContext;
+	private deps: InputManagerDeps;
 	private _input: InputController | null = null;
 	private _bridge: EventBridge | null = null;
 	private _attached = false;
 
-	constructor(ctx: MapContext) {
-		this.ctx = ctx;
+	constructor(deps: InputManagerDeps) {
+		this.deps = deps;
 	}
 
 	init(): void {
-		const ctx = this.ctx;
-		const vs = ctx.viewState;
-		const coord = ctx.renderCoordinator!;
-		const cm = ctx.contentManager!;
+		const d = this.deps;
 		const hitTestDebounceMs = 75;
 
 		const inputDeps: InputDeps = {
-			getContainer: () => ctx.container,
-			getCanvas: () => ctx.canvas,
-			getMaxZoom: () => vs.maxZoom,
-			getImageMaxZoom: () => vs.imageMaxZoom,
-			getView: () => vs.toPublic(),
-			setCenter: (lng: number, lat: number) => {
-				// Bounds clamping
-				if (vs.maxBoundsPx) {
-					const { zInt, scale } = Coords.zParts(vs.zoom);
-					const rect = ctx.container.getBoundingClientRect();
+			getContainer: d.getContainer,
+			getCanvas: d.getCanvas,
+			getMaxZoom: d.getMaxZoom,
+			getImageMaxZoom: d.getImageMaxZoom,
+			getView: d.getView,
+			setCenter: (x: number, y: number) => {
+				const maxBoundsPx = d.getMaxBoundsPx();
+				if (maxBoundsPx) {
+					const zoom = d.getZoom();
+					const { zInt, scale } = Coords.zParts(zoom);
+					const rect = d.getContainer().getBoundingClientRect();
 					const wCSS = rect.width;
 					const hCSS = rect.height;
-					const s0 = Coords.sFor(vs.imageMaxZoom, zInt);
-					const cw = { x: lng / s0, y: lat / s0 };
-					const clamped = clampCenterWorldCore(cw, zInt, scale, wCSS, hCSS, vs.wrapX, vs.freePan, vs.mapSize, vs.maxZoom, vs.maxBoundsPx, vs.maxBoundsViscosity, false);
-					vs.setCenter(clamped.x * s0, clamped.y * s0);
+					const s0 = Coords.sFor(d.getImageMaxZoom(), zInt);
+					const cw = { x: x / s0, y: y / s0 };
+					const clamped = clampCenterWorldCore(cw, zInt, scale, wCSS, hCSS, d.getWrapX(), d.getFreePan(), d.getMapSize(), d.getMaxZoom(), maxBoundsPx, d.getMaxBoundsViscosity(), false);
+					d.setCenter(clamped.x * s0, clamped.y * s0);
 				} else {
-					vs.setCenter(lng, lat);
+					d.setCenter(x, y);
 				}
-				ctx.requestRender();
+				d.requestRender();
 			},
 			setZoom: (z: number) => {
-				vs.setZoom(z);
-				ctx.requestRender();
+				d.setZoom(z);
+				d.requestRender();
 			},
 			clampCenterWorld: (cw, zInt, scale, w, h, viscous?: boolean) =>
-				clampCenterWorldCore(cw, zInt, scale, w, h, vs.wrapX, vs.freePan, vs.mapSize, vs.maxZoom, vs.maxBoundsPx, vs.maxBoundsViscosity, !!viscous),
-			updatePointerAbs: (x: number | null, y: number | null) => {
-				if (Number.isFinite(x as number) && Number.isFinite(y as number)) ctx.pointerAbs = { x: x as number, y: y as number };
-				else ctx.pointerAbs = null;
-			},
-			emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => ctx.events.emit(name, payload),
-			setLastInteractAt: (t: number) => {
-				ctx.lastInteractAt = t;
-			},
-			getAnchorMode: () => coord.anchorMode,
-			getWheelStep: (ctrl: boolean) => ctx.options.getWheelStep(ctrl),
-			startEase: (dz, px, py, anchor) => coord.zoomController.startEase(dz, px, py, anchor),
-			cancelZoomAnim: () => coord.zoomController.cancel(),
-			applyAnchoredZoom: (targetZoom, px, py, anchor) => coord.zoomController.applyAnchoredZoom(targetZoom, px, py, anchor),
-			getInertia: () => ctx.options.inertia,
-			getInertiaDecel: () => ctx.options.inertiaDeceleration,
-			getInertiaMaxSpeed: () => ctx.options.inertiaMaxSpeed,
-			getEaseLinearity: () => ctx.options.easeLinearity,
-			startPanBy: (dxPx: number, dyPx: number, durSec: number) => coord.startPanBy(dxPx, dyPx, durSec),
-			cancelPanAnim: () => coord.panController.cancel(),
+				clampCenterWorldCore(cw, zInt, scale, w, h, d.getWrapX(), d.getFreePan(), d.getMapSize(), d.getMaxZoom(), d.getMaxBoundsPx(), d.getMaxBoundsViscosity(), !!viscous),
+			updatePointerAbs: d.updatePointerAbs,
+			emit: <K extends keyof EventMap>(name: K, payload: EventMap[K]) => d.events.emit(name, payload),
+			setLastInteractAt: d.setLastInteractAt,
+			getAnchorMode: d.getAnchorMode,
+			getWheelStep: d.getWheelStep,
+			startEase: d.startEase,
+			cancelZoomAnim: d.cancelZoomAnim,
+			applyAnchoredZoom: d.applyAnchoredZoom,
+			getInertia: d.getInertia,
+			getInertiaDecel: d.getInertiaDecel,
+			getInertiaMaxSpeed: d.getInertiaMaxSpeed,
+			getEaseLinearity: d.getEaseLinearity,
+			startPanBy: d.startPanBy,
+			cancelPanAnim: d.cancelPanAnim,
 		};
 
 		this._input = new InputController(inputDeps);
@@ -84,24 +125,22 @@ export class InputManager {
 		// Wire event bridge for marker hover/click and mouse derivations
 		try {
 			this._bridge = new EventBridge({
-				events: ctx.events,
-				getView: () => vs.toPublic(),
-				now: () => ctx.now(),
-				isMoving: () => coord.isAnimating(),
-				getLastInteractAt: () => ctx.lastInteractAt,
+				events: d.events,
+				getView: d.getView,
+				now: d.now,
+				isMoving: d.isAnimating,
+				getLastInteractAt: d.getLastInteractAt,
 				getHitTestDebounceMs: () => hitTestDebounceMs,
-				hitTest: (x, y, alpha) => cm.hitTestMarker(x, y, alpha),
-				computeHits: (x, y) => cm.computeMarkerHits(x, y),
-				emitMarker: (name, payload) => cm.emitMarker(name, payload),
-				getLastHover: () => cm.lastHover,
-				setLastHover: (h) => {
-					cm.lastHover = h;
-				},
-				getMarkerDataById: (id: string) => cm.getMarkerDataById(id),
+				hitTest: (x, y, alpha) => d.hitTestMarker(x, y, alpha),
+				computeHits: (x, y) => d.computeMarkerHits(x, y),
+				emitMarker: (name, payload) => d.emitMarker(name, payload),
+				getLastHover: d.getLastHover,
+				setLastHover: d.setLastHover,
+				getMarkerDataById: d.getMarkerDataById,
 			});
 			this._bridge.attach();
 		} catch (e) {
-			ctx.debug.warn('Event bridge attach', e);
+			d.debugWarn('Event bridge attach', e);
 		}
 	}
 

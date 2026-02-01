@@ -4,26 +4,23 @@ const container = document.getElementById('map') as HTMLDivElement;
 const hud = document.getElementById('hud') as HTMLDivElement;
 const attribution = document.getElementById('attribution') as HTMLDivElement;
 
-const HAGGA = {
-  image: {
-    url: 'https://gtcdn.info/dune/tiles/hb_8k.webp',
-    width: 8192,
-    height: 8192,
-  },
-  minZoom: 0,
-  maxZoom: 5,
-  wrapX: false,
+const MAP_TILES = {
+  url: 'https://gtcdn.info/dune/tiles/hb_8k/{z}/{x}_{y}.webp',
+  packUrl: 'https://gtcdn.info/dune/tiles/hb_8k.gtpk',
+  tileSize: 256,
+  mapSize: { width: 8192, height: 8192 },
+  sourceMinZoom: 0,
+  sourceMaxZoom: 5,
 };
-const HOME = { x: HAGGA.image.width / 2, y: HAGGA.image.height / 2 };
+const HOME = { x: MAP_TILES.mapSize.width / 2, y: MAP_TILES.mapSize.height / 2 };
 const map = new GTMap(container, {
-  // Initial view
   center: HOME,
   zoom: 2,
-  minZoom: HAGGA.minZoom,
+  minZoom: MAP_TILES.sourceMinZoom,
   maxZoom: 10,
   fpsCap: 60,
-  image: HAGGA.image,
-  wrapX: HAGGA.wrapX,
+  tiles: MAP_TILES,
+  wrapX: false,
 });
 
 // HUD updates on actual render frames (engine emits 'frame')
@@ -39,10 +36,10 @@ const map = new GTMap(container, {
       const alpha = 0.2;
       state.fps = (1 - alpha) * state.fps + alpha * inst;
     }
-    const c = map.getCenter();
-    const p = map.getPointerAbs();
+    const c = map.view.getCenter();
+    const p = map.view.getPointerAbs();
     const pText = p ? ` | x ${Math.round(p.x)}, y ${Math.round(p.y)}` : '';
-    const z = map.getZoom();
+    const z = map.view.getZoom();
     hud.textContent = `x ${c.x.toFixed(2)}, y ${c.y.toFixed(2)} | zoom ${z.toFixed(2)} | fps ${Math.round(state.fps)}${pText}`;
   };
   map.events.on('frame').each((e) => renderHud({ now: e?.now, fromFrame: true }));
@@ -59,7 +56,7 @@ attribution.textContent = 'Hagga Basin imagery © respective owners (game map)';
     const handles: string[] = [];
     Object.keys(defs).forEach((k) => {
       const d = defs[k];
-      const h = map.addIcon({ iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height });
+      const h = map.content.addIcon({ iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height });
       handles.push(h.id);
     });
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
@@ -67,7 +64,7 @@ attribution.textContent = 'Hagga Basin imagery © respective owners (game map)';
     for (let i = 0; i < COUNT; i++) {
       const iconId = handles[(Math.random() * handles.length) | 0];
       const rotation = Math.random() < 0.3 ? Math.round(rand(0, 360)) : undefined;
-      map.addMarker(rand(0, HAGGA.image.width), rand(0, HAGGA.image.height), { icon: { id: iconId }, rotation });
+      map.content.addMarker(rand(0, MAP_TILES.mapSize.width), rand(0, MAP_TILES.mapSize.height), { icon: { id: iconId }, rotation });
     }
   } catch (err) {
     console.warn('Icon demo load failed:', err);
@@ -92,7 +89,7 @@ Object.assign(centerBtn.style, {
   zIndex: '11',
 } as CSSStyleDeclaration);
 centerBtn.addEventListener('click', async () => {
-  await map.transition().center(HOME).apply({ animate: { durationMs: 600 } });
+  await map.view.transition().center(HOME).apply({ animate: { durationMs: 600 } });
 });
 container.appendChild(centerBtn);
 
@@ -130,7 +127,7 @@ speedInput.value = '1.00';
 speedInput.style.width = '140px';
 speedInput.addEventListener('input', () => {
   const val = parseFloat(speedInput.value);
-  map.setWheelSpeed(val);
+  map.input.setWheelSpeed(val);
   speedValue.textContent = val.toFixed(2);
 });
 speedRow.appendChild(speedInput);
@@ -161,9 +158,9 @@ gridLabel.style.gap = '6px';
 const gridToggle = document.createElement('input');
 gridToggle.type = 'checkbox';
 gridToggle.checked = true;
-map.setGridVisible(true);
+map.display.setGridVisible(true);
 gridToggle.addEventListener('change', () => {
-  map.setGridVisible(gridToggle.checked);
+  map.display.setGridVisible(gridToggle.checked);
 });
 gridLabel.appendChild(gridToggle);
 gridWrap.appendChild(gridLabel);
@@ -177,9 +174,9 @@ map.events.on('markerclick').each((e) => console.log('markerclick', e));
 // Invalidate map size when the container resizes
 try {
   const ro = new ResizeObserver(() => {
-    map.invalidateSize();
+    map.view.invalidateSize();
   });
   ro.observe(container);
 } catch {
-  window.addEventListener('resize', () => map.invalidateSize());
+  window.addEventListener('resize', () => map.view.invalidateSize());
 }

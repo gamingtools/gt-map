@@ -72,6 +72,7 @@ export class MapContext {
 			minZoom: config.minZoom,
 			maxZoom: config.maxZoom,
 			mapSize: config.tiles.mapSize,
+			tileSize: config.tiles.tileSize,
 			wrapX: config.wrapX,
 			freePan: config.freePan,
 			maxBoundsPx: config.maxBoundsPx,

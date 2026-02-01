@@ -2,52 +2,27 @@
  * LifecycleManager -- orchestrates async multi-step initialization,
  * suspend/resume with optional GL release, and destroy.
  *
- * Owns AsyncInitManager, BackgroundUIManager, Graphics, AutoResizeManager.
+ * Owns AsyncInitManager, BackgroundUIManager, GLManager, AutoResizeManager.
  */
-import type { WebGLLoseContext, SpinnerOptions as SpinnerOpts } from '../../api/types';
+import type { SpinnerOptions as SpinnerOpts } from '../../api/types';
 import type { MapContext } from '../context/map-context';
-import { GLResources } from '../context/gl-resources';
-import Graphics, { type GraphicsHost } from '../gl/graphics';
 import { AsyncInitManager, type InitProgress } from '../core/async-init-manager';
 import { BackgroundUIManager } from '../core/background-ui';
 import AutoResizeManager from '../core/auto-resize-manager';
 import { TileManager } from '../tiles/tile-manager';
+import { GLManager } from './gl-manager';
 
 import { RenderCoordinator } from '../render/render-coordinator';
 import { InputManager } from '../input/input-manager';
 
-/**
- * Lightweight GraphicsHost adapter so Graphics can write prog/quad/loc
- * into our GLResources rather than the old god-class fields.
- */
-class GLHostAdapter implements GraphicsHost {
-	canvas: HTMLCanvasElement;
-	gl!: WebGLRenderingContext;
-	_screenTexFormat = 0;
-	_prog: WebGLProgram | null = null;
-	_loc: import('../../api/types').ShaderLocations | null = null;
-	_quad: WebGLBuffer | null = null;
-
-	constructor(canvas: HTMLCanvasElement) {
-		this.canvas = canvas;
-	}
-
-	/** Build a GLResources bundle from what Graphics wrote. */
-	toResources(): GLResources {
-		return new GLResources(this._prog!, this._quad!, this._loc!, this._screenTexFormat);
-	}
-}
-
 export class LifecycleManager {
 	private ctx: MapContext;
 	private _asyncInit: AsyncInitManager;
-	private _gfx!: Graphics;
-	private _host!: GLHostAdapter;
+	private _glMgr!: GLManager;
 	private _resizeMgr: AutoResizeManager | null = null;
 	private _autoResize: boolean;
 	private _resizeDebounceMs = 150;
 	private _active = true;
-	private _glReleased = false;
 
 	// Pending background color (may be set before init completes)
 	private _pendingBackgroundColor: string | { r: number; g: number; b: number; a?: number } | null = null;
@@ -170,8 +145,7 @@ export class LifecycleManager {
 
 	private _initGraphics(config: MapContext['config']): void {
 		const ctx = this.ctx;
-		this._host = new GLHostAdapter(ctx.canvas);
-		this._gfx = new Graphics(this._host);
+		this._glMgr = new GLManager(ctx.canvas);
 
 		// BackgroundUI
 		const bgUI = new BackgroundUIManager({
@@ -188,9 +162,7 @@ export class LifecycleManager {
 		bgUI.parseBackground(bgColor);
 		const bg = bgUI.getBackground();
 
-		this._gfx.init(true, [bg.r, bg.g, bg.b, bg.a]);
-		// Copy GL context up to MapContext
-		ctx.gl = this._host.gl;
+		ctx.gl = this._glMgr.initContext([bg.r, bg.g, bg.b, bg.a]);
 
 		// Prepare loading indicator
 		bgUI.ensureSpinnerCss();
@@ -198,23 +170,62 @@ export class LifecycleManager {
 	}
 
 	private _initPrograms(): void {
-		this._gfx.initPrograms();
-		// Build GLResources from what Graphics wrote to the host adapter
-		this.ctx.glResources = this._host.toResources();
+		this.ctx.glResources = this._glMgr.initPrograms();
 	}
 
 	private _initRenderers(): void {
 		const ctx = this.ctx;
+		const vs = ctx.viewState;
+		const cm = ctx.contentManager!;
 
 		// Render coordinator -- raster + screen cache
-		const coord = new RenderCoordinator(ctx);
+		const coord = new RenderCoordinator({
+			getGL: () => ctx.gl!,
+			getGLResources: () => ctx.glResources,
+			getCanvas: () => ctx.canvas,
+			getContainer: () => ctx.container,
+			viewState: vs,
+			getOutCenterBias: () => ctx.options.outCenterBias,
+			emit: (name, payload) => ctx.events.emit(name, payload),
+			getNeedsRender: () => ctx.needsRender,
+			requestRender: () => ctx.requestRender(),
+			consumeRenderFlag: () => ctx.consumeRenderFlag(),
+			now: () => ctx.now(),
+			debugWarn: (msg, err) => ctx.debug.warn(msg, err),
+			debugLog: (msg) => ctx.debug.log(msg),
+			debugEnabled: () => ctx.debug.enabled,
+			debugGpuWaitEnabled: () => ctx.debug.gpuWaitEnabled(),
+			getGridPalette: () => ctx.bgUI?.getGridPalette() ?? { minor: 'rgba(200,200,200,0.3)', major: 'rgba(200,200,200,0.5)', labelBg: 'rgba(0,0,0,0.55)', labelFg: 'rgba(255,255,255,0.9)' },
+			tiles: {
+				cancelUnwanted: () => ctx.tileManager?.cancelUnwanted(),
+				clearWanted: () => ctx.tileManager?.clearWanted(),
+				getCache: () => ctx.tileManager!.cache,
+				enqueue: (z, x, y, priority) => ctx.tileManager?.enqueue(z, x, y, priority),
+				wantKey: (key) => ctx.tileManager?.wantKey(key),
+				getTileSize: () => ctx.tileManager!.tileSize,
+				getSourceMaxZoom: () => ctx.tileManager!.sourceMaxZoom,
+				isIdle: () => ctx.tileManager?.isIdle() ?? true,
+				setFrame: (f) => { if (ctx.tileManager) ctx.tileManager.frame = f; },
+			},
+			content: {
+				drawVectors: () => cm.drawVectors(),
+				drawVectorOverlay: () => cm.drawVectorOverlay(),
+				requestMaskBuild: () => cm.requestMaskBuild(),
+				getIcons: () => cm.icons,
+				getRasterOpacity: () => cm.rasterOpacity,
+				getUpscaleFilter: () => cm.upscaleFilter,
+				getIconScaleFunction: () => cm.iconScaleFunction,
+				getVectorZIndices: () => cm.getVectorZIndices(),
+				resizeVectorLayer: (w, h) => cm.resizeVectorLayer(w, h),
+			},
+		}, { fpsCap: ctx.config.fpsCap, screenCache: ctx.config.screenCache });
 		ctx.renderCoordinator = coord;
 		coord.initRaster();
 		coord.initScreenCache();
 
 		// Content manager -- initialize GL-dependent renderers on the
 		// instance created eagerly by MapEngine (so buffered icon defs survive).
-		ctx.contentManager!.initRenderers();
+		cm.initRenderers();
 	}
 
 	private _initControllers(): void {
@@ -234,10 +245,54 @@ export class LifecycleManager {
 
 	private _initEvents(): void {
 		const ctx = this.ctx;
+		const vs = ctx.viewState;
 		const cm = ctx.contentManager!;
+		const coord = ctx.renderCoordinator!;
 		cm.initHitTesting();
 
-		const im = new InputManager(ctx);
+		const im = new InputManager({
+			getContainer: () => ctx.container,
+			getCanvas: () => ctx.canvas,
+			events: ctx.events,
+			getZoom: () => vs.zoom,
+			getMaxZoom: () => vs.maxZoom,
+			getImageMaxZoom: () => vs.imageMaxZoom,
+			getMapSize: () => vs.mapSize,
+			getWrapX: () => vs.wrapX,
+			getFreePan: () => vs.freePan,
+			getMaxBoundsPx: () => vs.maxBoundsPx,
+			getMaxBoundsViscosity: () => vs.maxBoundsViscosity,
+			getView: () => vs.toPublic(),
+			setCenter: (x, y) => vs.setCenter(x, y),
+			setZoom: (z) => vs.setZoom(z),
+			requestRender: () => ctx.requestRender(),
+			now: () => ctx.now(),
+			debugWarn: (msg, err) => ctx.debug.warn(msg, err),
+			updatePointerAbs: (x, y) => {
+				if (Number.isFinite(x as number) && Number.isFinite(y as number)) ctx.pointerAbs = { x: x as number, y: y as number };
+				else ctx.pointerAbs = null;
+			},
+			setLastInteractAt: (t) => { ctx.lastInteractAt = t; },
+			getLastInteractAt: () => ctx.lastInteractAt,
+			getAnchorMode: () => coord.anchorMode,
+			getWheelStep: (ctrl) => ctx.options.getWheelStep(ctrl),
+			startEase: (dz, px, py, anchor) => coord.zoomController.startEase(dz, px, py, anchor),
+			cancelZoomAnim: () => coord.zoomController.cancel(),
+			applyAnchoredZoom: (targetZoom, px, py, anchor) => coord.zoomController.applyAnchoredZoom(targetZoom, px, py, anchor),
+			getInertia: () => ctx.options.inertia,
+			getInertiaDecel: () => ctx.options.inertiaDeceleration,
+			getInertiaMaxSpeed: () => ctx.options.inertiaMaxSpeed,
+			getEaseLinearity: () => ctx.options.easeLinearity,
+			startPanBy: (dxPx, dyPx, durSec) => coord.startPanBy(dxPx, dyPx, durSec),
+			cancelPanAnim: () => coord.panController.cancel(),
+			isAnimating: () => coord.isAnimating(),
+			hitTestMarker: (px, py, alpha) => cm.hitTestMarker(px, py, alpha),
+			computeMarkerHits: (px, py) => cm.computeMarkerHits(px, py),
+			emitMarker: (name, payload) => cm.emitMarker(name, payload),
+			getLastHover: () => cm.lastHover,
+			setLastHover: (h) => { cm.lastHover = h; },
+			getMarkerDataById: (id) => cm.getMarkerDataById(id),
+		});
 		ctx.inputManager = im;
 		im.init();
 	}
@@ -275,7 +330,28 @@ export class LifecycleManager {
 		}
 
 		// Initialize tile pipeline
-		const tm = new TileManager(ctx);
+		const vs = ctx.viewState;
+		const tm = new TileManager({
+			getGL: () => ctx.gl!,
+			getMapSize: () => vs.mapSize,
+			getImageMaxZoom: () => vs.imageMaxZoom,
+			debugLog: (msg) => ctx.debug.log(msg),
+			requestRender: () => ctx.requestRender(),
+			now: () => ctx.now(),
+			getLastInteractAt: () => ctx.lastInteractAt,
+			getInteractionIdleMs: () => ctx.options.interactionIdleMs,
+			isAnimating: () => ctx.renderCoordinator?.isAnimating() ?? false,
+			updateViewForSource: (opts) => {
+				vs.minZoom = opts.minZoom;
+				vs.mapSize = opts.mapSize;
+				vs.imageMaxZoom = opts.imageMaxZoom;
+				vs.maxZoom = opts.maxZoom;
+			},
+		}, {
+			packUrl: ctx.config.tiles.packUrl!,
+			tileSize: ctx.config.tiles.tileSize,
+			sourceMaxZoom: ctx.config.tiles.sourceMaxZoom,
+		});
 		ctx.tileManager = tm;
 		tm.init();
 
@@ -287,7 +363,8 @@ export class LifecycleManager {
 	// ---------------------------------------------------------------
 
 	setActive(active: boolean, opts?: { releaseGL?: boolean }): void {
-		if (active === this._active && !(active && this._glReleased)) return;
+		const glReleased = this._glMgr?.glReleased ?? false;
+		if (active === this._active && !(active && glReleased)) return;
 		const ctx = this.ctx;
 
 		if (!active) {
@@ -299,36 +376,18 @@ export class LifecycleManager {
 				try {
 					ctx.renderCoordinator?.screenCache?.dispose();
 				} catch {}
-				try {
-					const ext = ctx.gl.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
-					ext?.loseContext();
-					this._glReleased = true;
-				} catch {}
+				this._glMgr.releaseContext(ctx.gl);
 			}
 			return;
 		}
 
 		// -- Resume --
-		if (this._glReleased) {
-			try {
-				const ext = ctx.gl?.getExtension?.('WEBGL_lose_context') as WebGLLoseContext | null;
-				ext?.restoreContext();
-			} catch (e) {
-				ctx.debug.warn('GL restore context', e);
-			}
-			try {
-				const bg = ctx.bgUI?.getBackground() ?? { r: 0, g: 0, b: 0, a: 0 };
-				this._gfx.init(true, [bg.r, bg.g, bg.b, bg.a]);
-				ctx.gl = this._host.gl;
-			} catch (e) {
-				ctx.debug.warn('GL reinit graphics', e);
-			}
-			try {
-				this._gfx.initPrograms();
-				ctx.glResources = this._host.toResources();
-			} catch (e) {
-				ctx.debug.warn('GL reinit programs', e);
-			}
+		if (glReleased) {
+			const bg = ctx.bgUI?.getBackground() ?? { r: 0, g: 0, b: 0, a: 0 };
+			const result = this._glMgr.reinit(ctx.gl ?? null, [bg.r, bg.g, bg.b, bg.a], (msg, err) => ctx.debug.warn(msg, err));
+			ctx.gl = result.gl;
+			ctx.glResources = result.glResources;
+
 			try {
 				ctx.renderCoordinator?.rebuildScreenCache();
 			} catch (e) {
@@ -344,7 +403,6 @@ export class LifecycleManager {
 			} catch (e) {
 				ctx.debug.warn('GL reload tiles', e);
 			}
-			this._glReleased = false;
 		}
 
 		ctx.inputManager?.attach();
