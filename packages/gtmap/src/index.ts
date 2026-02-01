@@ -1,6 +1,6 @@
 // New simplified API (pixel CRS only)
 export { GTMap } from './api/map';
-export { Marker, Decal, Vector, EntityCollection } from './api/map';
+export { Marker, Vector, EntityCollection } from './api/map';
 export * as easings from './api/easings';
 
 // Export Visual classes and types
@@ -50,15 +50,13 @@ export type {
 export { isPolyline, isPolygon, isCircle } from './api/types';
 
 // Export public event surface types
-export type { PublicEvents, EventSubscription, MarkerEvents, DecalEvents, VectorEvents, EntityCollectionEvents, MapEvents, Unsubscribe } from './api/events/public';
+export type { PublicEvents, EventSubscription, MarkerEvents, VectorEvents, EntityCollectionEvents, MapEvents, Unsubscribe } from './api/events/public';
 
 export type {
 	MarkerData,
-	DecalData,
 	VectorData,
 	VectorGeometry,
 	MarkerEventMap,
-	DecalEventMap,
 	VectorEventMap,
 	EntityCollectionEventMap,
 	PointerMeta,
@@ -74,7 +72,6 @@ export { InputFacade } from './api/facades/input-facade';
 
 // Export entity option types
 export type { MarkerOptions, MarkerTransition } from './entities/marker';
-export type { DecalOptions } from './entities/decal';
 export type { VectorOptions } from './entities/vector';
 export { CoordTransformer } from './api/coord-transformer';
 export type { Bounds as SourceBounds, TransformType } from './api/coord-transformer';

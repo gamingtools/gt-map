@@ -279,7 +279,7 @@ export interface ResizeEventData {
 }
 
 // Event map for type-safe event handling
-export interface EventMap<TMarkerData = unknown> {
+export interface EventMap {
 	/** Fired once after the first frame is scheduled. */
 	load: LoadEventData;
 	/** Fired after a debounced resize completes with final size + DPR. */
@@ -301,17 +301,17 @@ export interface EventMap<TMarkerData = unknown> {
 	/** Per‑frame hook with optional stats (HUD/diagnostics). */
 	frame: FrameEventData;
 	/** Marker hover enter (top‑most). */
-	markerenter: MarkerEventData<TMarkerData>;
+	markerenter: MarkerEventData;
 	/** Marker hover leave. */
-	markerleave: MarkerEventData<TMarkerData>;
+	markerleave: MarkerEventData;
 	/** Marker click (device‑agnostic). */
-	markerclick: MarkerEventData<TMarkerData>;
+	markerclick: MarkerEventData;
 	/** Marker pointer down. */
-	markerdown: MarkerEventData<TMarkerData>;
+	markerdown: MarkerEventData;
 	/** Marker pointer up. */
-	markerup: MarkerEventData<TMarkerData>;
+	markerup: MarkerEventData;
 	/** Marker long‑press (~500ms). */
-	markerlongpress: MarkerEventData<TMarkerData>;
+	markerlongpress: MarkerEventData;
 	/** Mouse down (derived from pointer). */
 	mousedown: MouseEventData;
 	/** Mouse move (derived from pointer); may include `markers?` hover hits. */
@@ -378,7 +378,7 @@ export interface SuspendOptions {
 }
 
 // Internal vector primitive (pixel coordinates)
-// Vectors always render at z=0. Markers/decals default to z=1.
+// Vectors always render at z=0. Markers default to z=1.
 export type VectorPrimitiveInternal =
 	| { type: 'polyline'; points: { x: number; y: number }[]; style?: VectorStyle }
 	| { type: 'polygon'; points: { x: number; y: number }[]; style?: VectorStyle }

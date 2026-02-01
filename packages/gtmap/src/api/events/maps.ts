@@ -23,15 +23,6 @@ export interface VectorData<T = unknown> {
 	data?: T;
 }
 
-/**
- * Lightweight snapshot of a decal used in event payloads.
- */
-export interface DecalData {
-	id: string;
-	x: number;
-	y: number;
-}
-
 // Pointer metadata for device-specific behavior
 export type InputDevice = 'mouse' | 'touch' | 'pen';
 
@@ -83,14 +74,6 @@ export interface MarkerEventMap<T = unknown> {
 export interface VectorEventMap<T = unknown> {
 	/** Vector was removed. */
 	remove: { vector: VectorData<T> };
-}
-
-/** Events emitted by a Decal instance. */
-export interface DecalEventMap {
-	/** Position changed via Decal.moveTo; includes deltas. */
-	positionchange: { x: number; y: number; dx: number; dy: number; decal: DecalData };
-	/** Decal was removed. */
-	remove: { decal: DecalData };
 }
 
 /** Events emitted by an EntityCollection for entity management and visibility. */

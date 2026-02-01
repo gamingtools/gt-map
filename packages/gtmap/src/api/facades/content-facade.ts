@@ -1,7 +1,7 @@
 /**
  * ContentFacade -- map.content sub-object.
  *
- * Entity collections (markers, decals, vectors), icon registration,
+ * Entity collections (markers, vectors), icon registration,
  * dirty batching, and marker event wiring.
  */
 import type { Point, IconDef, IconHandle, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, MarkerEventData } from '../types';
@@ -9,8 +9,6 @@ import type { VectorGeometry as VectorGeom } from '../events/maps';
 import { EntityCollection } from '../../entities/entity-collection';
 import { Marker } from '../../entities/marker';
 import type { MarkerOptions } from '../../entities/marker';
-import { Decal } from '../../entities/decal';
-import type { DecalOptions } from '../../entities/decal';
 import { Vector } from '../../entities/vector';
 import { getVectorTypeSymbol, isPolylineSymbol, isPolygonSymbol } from '../../internal/core/vector-types';
 import { extractPointerMeta } from '../../internal/events/pointer-meta';
@@ -19,29 +17,24 @@ import { VisualIconService } from '../../internal/content/visual-icon-service';
 export interface ContentFacadeDeps {
 	setIconDefs(defs: Record<string, IconDefInternal>): Promise<void>;
 	setMarkers(markers: MarkerInternal[]): void;
-	setDecals(markers: MarkerInternal[]): void;
 	setVectors(vectors: VectorPrimitiveInternal[]): void;
 	setMarkerData(payloads: Record<string, unknown | null | undefined>): void;
 	onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
 }
 
-export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
+export class ContentFacade {
 	private _deps: ContentFacadeDeps;
 	private _vis: VisualIconService;
 
 	/** Marker collection for this map. */
-	readonly markers: EntityCollection<Marker<TMarkerData>>;
-	/** Decal collection for this map. */
-	readonly decals: EntityCollection<Decal>;
+	readonly markers: EntityCollection<Marker>;
 	/** Vector collection for this map. */
-	readonly vectors: EntityCollection<Vector<TVectorData>>;
+	readonly vectors: EntityCollection<Vector>;
 
 	private _icons: Map<string, IconDef> = new Map();
 	private _iconIdSeq = 0;
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
-	private _decalsDirty = false;
-	private _decalsFlushScheduled = false;
 
 	/** @internal */
 	constructor(deps: ContentFacadeDeps) {
@@ -50,18 +43,15 @@ export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
 			setIconDefs: (defs) => deps.setIconDefs(defs),
 			onVisualUpdated: () => {
 				this._markMarkersDirtyAndSchedule();
-				this._markDecalsDirtyAndSchedule();
 			},
 		});
 		this._vis.ensureDefaultIcon();
 
 		// Entity collections
 		const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
-		const onDecalsChanged = () => this._markDecalsDirtyAndSchedule();
 		const onVectorsChanged = () => this._flushVectors();
-		this.markers = new EntityCollection<Marker<TMarkerData>>({ id: 'markers', onChange: onMarkersChanged });
-		this.decals = new EntityCollection<Decal>({ id: 'decals', onChange: onDecalsChanged });
-		this.vectors = new EntityCollection<Vector<TVectorData>>({ id: 'vectors', onChange: onVectorsChanged });
+		this.markers = new EntityCollection<Marker>({ id: 'markers', onChange: onMarkersChanged });
+		this.vectors = new EntityCollection<Vector>({ id: 'vectors', onChange: onVectorsChanged });
 
 		this._wireMarkerEvents();
 	}
@@ -92,10 +82,10 @@ export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
 	/**
 	 * Create and add a marker.
 	 */
-	addMarker(x: number, y: number, opts: MarkerOptions<TMarkerData>): Marker<TMarkerData> {
+	addMarker<T = unknown>(x: number, y: number, opts: MarkerOptions<T>): Marker<T> {
 		this._vis.ensureRegistered(opts.visual);
-		const mk = new Marker<TMarkerData>(x, y, opts, () => this._markMarkersDirtyAndSchedule());
-		this.markers.add(mk);
+		const mk = new Marker<T>(x, y, opts, () => this._markMarkersDirtyAndSchedule());
+		this.markers.add(mk as unknown as Marker);
 		return mk;
 	}
 
@@ -106,35 +96,15 @@ export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
 		this.markers.clear();
 	}
 
-	// -- Decal management --
-
-	/**
-	 * Create and add a decal (non-interactive visual).
-	 */
-	addDecal(x: number, y: number, opts: DecalOptions): Decal {
-		this._vis.ensureRegistered(opts.visual);
-		const d = new Decal(x, y, opts, () => this._markDecalsDirtyAndSchedule());
-		this.decals.add(d);
-		return d;
-	}
-
-	/**
-	 * Remove all decals.
-	 */
-	clearDecals(): void {
-		this.decals.clear();
-		this._deps.setDecals([]);
-	}
-
 	// -- Vector management --
 
 	/**
 	 * Create and add a vector shape.
 	 */
-	addVector(geometry: VectorGeom, opts?: { data?: TVectorData }): Vector<TVectorData> {
+	addVector<T = unknown>(geometry: VectorGeom, opts?: { data?: T }): Vector<T> {
 		const vecOpts = opts?.data !== undefined ? { data: opts.data } : {};
-		const v = new Vector<TVectorData>(geometry, vecOpts as import('../../entities/vector').VectorOptions<TVectorData>, () => this._flushVectors());
-		this.vectors.add(v);
+		const v = new Vector<T>(geometry, vecOpts as import('../../entities/vector').VectorOptions<T>, () => this._flushVectors());
+		this.vectors.add(v as unknown as Vector);
 		return v;
 	}
 
@@ -179,35 +149,6 @@ export class ContentFacade<TMarkerData = unknown, TVectorData = unknown> {
 			} catch {
 				/* expected: marker data serialization may fail */
 			}
-		};
-		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
-		else setTimeout(flush, 0);
-	}
-
-	private _markDecalsDirtyAndSchedule(): void {
-		this._decalsDirty = true;
-		if (this._decalsFlushScheduled) return;
-		this._decalsFlushScheduled = true;
-		const flush = () => {
-			this._decalsFlushScheduled = false;
-			if (!this._decalsDirty) return;
-			this._decalsDirty = false;
-			const list = this.decals.getFiltered();
-			const internalDecals: MarkerInternal[] = list.map((d) => {
-				const scaledSize = this._vis.getScaledSize(d.visual, d.scale);
-				const iconScaleFn = d.iconScaleFunction !== undefined ? d.iconScaleFunction : d.visual.iconScaleFunction;
-				return {
-					x: d.x,
-					y: d.y,
-					type: this._vis.getIconId(d.visual),
-					...(scaledSize !== undefined ? { size: scaledSize } : {}),
-					rotation: d.rotation,
-					zIndex: d.zIndex,
-					id: d.id,
-					...(iconScaleFn !== undefined ? { iconScaleFunction: iconScaleFn } : {}),
-				};
-			});
-			this._deps.setDecals(internalDecals);
 		};
 		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(flush);
 		else setTimeout(flush, 0);

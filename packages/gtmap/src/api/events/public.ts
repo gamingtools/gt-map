@@ -57,7 +57,7 @@ export interface PublicEvents<EventMap> {
 
 import type { EventMap as MapEventMap } from '../types';
 
-import type { MarkerEventMap, VectorEventMap, DecalEventMap, EntityCollectionEventMap } from './maps';
+import type { MarkerEventMap, VectorEventMap, EntityCollectionEventMap } from './maps';
 
 /** Marker events surface with typed names and payloads. */
 export interface MarkerEvents<T = unknown> extends PublicEvents<MarkerEventMap<T>> {
@@ -77,13 +77,6 @@ export interface VectorEvents<T = unknown> extends PublicEvents<VectorEventMap<T
 	on<K extends keyof VectorEventMap<T> & string>(event: K, handler: (value: VectorEventMap<T>[K]) => void): Unsubscribe;
 }
 
-/** Decal events surface with typed names and payloads. */
-export interface DecalEvents extends PublicEvents<DecalEventMap> {
-	/** Supported names: 'positionchange' | 'remove' */
-	on<K extends keyof DecalEventMap & string>(event: K): EventSubscription<DecalEventMap[K]>;
-	on<K extends keyof DecalEventMap & string>(event: K, handler: (value: DecalEventMap[K]) => void): Unsubscribe;
-}
-
 /** EntityCollection events surface with typed names and payloads. */
 export interface EntityCollectionEvents<T> extends PublicEvents<EntityCollectionEventMap<T>> {
 	/** Supported names: 'entityadd' | 'entityremove' | 'clear' | 'visibilitychange' */
@@ -92,12 +85,12 @@ export interface EntityCollectionEvents<T> extends PublicEvents<EntityCollection
 }
 
 /** Map events surface with typed names and payloads. */
-export interface MapEvents<T = unknown> extends PublicEvents<MapEventMap<T>> {
+export interface MapEvents extends PublicEvents<MapEventMap> {
 	/**
 	 * Subscribe to a map event.
 	 *
 	 * Common names: 'load' | 'resize' | 'move' | 'moveend' | 'zoom' | 'zoomend' | 'pointerdown' | 'pointermove' | 'pointerup' | 'mousedown' | 'mousemove' | 'mouseup' | 'click' | 'dblclick' | 'contextmenu' | 'frame' | 'markerenter' | 'markerleave' | 'markerclick' | 'markerdown' | 'markerup' | 'markerlongpress'
 	 */
-	on<K extends keyof MapEventMap<T> & string>(event: K): EventSubscription<MapEventMap<T>[K]>;
-	on<K extends keyof MapEventMap<T> & string>(event: K, handler: (value: MapEventMap<T>[K]) => void): Unsubscribe;
+	on<K extends keyof MapEventMap & string>(event: K): EventSubscription<MapEventMap[K]>;
+	on<K extends keyof MapEventMap & string>(event: K, handler: (value: MapEventMap[K]) => void): Unsubscribe;
 }
