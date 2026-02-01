@@ -29,6 +29,9 @@ export class ViewStateStore {
 	clipToBounds: boolean;
 	bounceAtZoomLimits: boolean;
 
+	// Tile zoom snap threshold
+	zoomSnapThreshold: number;
+
 	// Canvas / viewport
 	dpr: number;
 
@@ -44,6 +47,7 @@ export class ViewStateStore {
 		maxBoundsViscosity: number;
 		clipToBounds: boolean;
 		bounceAtZoomLimits: boolean;
+		zoomSnapThreshold: number;
 	}) {
 		this.center = { lng: opts.center.x, lat: opts.center.y };
 		this.zoom = Math.max(opts.minZoom, Math.min(opts.maxZoom, opts.zoom));
@@ -57,6 +61,7 @@ export class ViewStateStore {
 		this.maxBoundsViscosity = opts.maxBoundsViscosity;
 		this.clipToBounds = opts.clipToBounds;
 		this.bounceAtZoomLimits = opts.bounceAtZoomLimits;
+		this.zoomSnapThreshold = opts.zoomSnapThreshold;
 		this.dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
 	}
 

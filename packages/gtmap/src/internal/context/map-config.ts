@@ -21,6 +21,7 @@ export class MapConfig {
 	readonly clipToBounds: boolean;
 	readonly bounceAtZoomLimits: boolean;
 	readonly spinner: SpinnerOptions | undefined;
+	readonly zoomSnapThreshold: number;
 	readonly debug: boolean;
 
 	constructor(opts: MapOptions) {
@@ -42,6 +43,7 @@ export class MapConfig {
 		this.clipToBounds = opts.clipToBounds ?? false;
 		this.bounceAtZoomLimits = opts.bounceAtZoomLimits ?? false;
 		this.spinner = opts.spinner;
+		this.zoomSnapThreshold = Math.max(0, Math.min(1, opts.zoomSnapThreshold ?? 0.4));
 		this.debug = opts.debug ?? false;
 	}
 }

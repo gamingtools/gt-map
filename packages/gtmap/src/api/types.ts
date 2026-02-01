@@ -90,6 +90,19 @@ export interface MapOptions {
 	 */
 	spinner?: SpinnerOptions;
 	/**
+	 * Fractional zoom threshold at which the renderer snaps to the next tile zoom level.
+	 *
+	 * At zoom 3.4 with threshold 0.4, the renderer uses z=4 tiles (scaled down ~0.66x)
+	 * instead of z=3 tiles (scaled up ~1.32x). Lower values bias toward sharper tiles
+	 * at the cost of loading more tiles; higher values keep using lower-z tiles longer.
+	 *
+	 * Range: 0 to 1. Default: 0.4.
+	 * - 0 = always use ceil (sharpest, most tiles)
+	 * - 0.5 = equivalent to Math.round
+	 * - 1 = equivalent to Math.floor (current blurriest, fewest tiles)
+	 */
+	zoomSnapThreshold?: number;
+	/**
 	 * Enable debug logging to console for this map instance.
 	 * When true, logs initialization timing, image uploads, and internal events.
 	 * Default: false.

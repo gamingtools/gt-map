@@ -190,6 +190,15 @@ export class MapEngine implements MapImpl {
 		}
 	}
 
+	setZoomSnapThreshold(v: number): void {
+		const clamped = Math.max(0, Math.min(1, v));
+		const vs = this._ctx.viewState;
+		if (clamped !== vs.zoomSnapThreshold) {
+			vs.zoomSnapThreshold = clamped;
+			this._ctx.requestRender();
+		}
+	}
+
 	setInertiaOptions(opts: InertiaOptions): void {
 		this._ctx.options.setInertiaOptions(opts);
 	}

@@ -51,9 +51,11 @@ export default class MapRenderer {
     const rect = ctx.container.getBoundingClientRect();
     const widthCSS = rect.width;
     const heightCSS = rect.height;
-    const { zInt: baseZ, scale: levelScale } = Coords.zParts(ctx.zoom);
+    const rawTile = Coords.tileZParts(ctx.zoom, ctx.zoomSnapThreshold);
+    const baseZ = Math.max(ctx.minZoom, Math.min(rawTile.zInt, ctx.sourceMaxZoom));
+    const levelScale = Math.pow(2, ctx.zoom - baseZ);
     const centerLevel = ctx.project(ctx.center.lng, ctx.center.lat, baseZ);
-    let tlLevel = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
+    let tlLevel = Coords.tlLevelForWithScale(centerLevel, levelScale, { x: widthCSS, y: heightCSS });
     const snap = (v: number) => Coords.snapLevelToDevice(v, levelScale, ctx.dpr);
     tlLevel = { x: snap(tlLevel.x), y: snap(tlLevel.y) };
 

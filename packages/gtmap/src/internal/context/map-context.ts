@@ -78,6 +78,7 @@ export class MapContext {
 			maxBoundsViscosity: config.maxBoundsViscosity,
 			clipToBounds: config.clipToBounds,
 			bounceAtZoomLimits: config.bounceAtZoomLimits,
+			zoomSnapThreshold: config.zoomSnapThreshold,
 		});
 
 		// Interaction timestamp

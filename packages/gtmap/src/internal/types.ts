@@ -51,6 +51,7 @@ export interface RenderCtx {
 	imageMaxZoom: number;
 	mapSize: { width: number; height: number };
 	wrapX: boolean;
+	zoomSnapThreshold: number;
 	useScreenCache: boolean;
 	screenCache: ScreenCache | null;
 	raster: RasterRenderer;
