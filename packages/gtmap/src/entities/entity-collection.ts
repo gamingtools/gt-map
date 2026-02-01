@@ -107,16 +107,17 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	 * @public
 	 * @param predicate - Filter function or null to clear
 	 * @returns This collection for chaining
+	 * @typeParam TData - Optional data type for narrowing `entity.data` in the predicate
 	 * @example
 	 * ```ts
-	 * // Show only resources
-	 * map.content.markers.setFilter(m => (m.data as MyPOI)?.category === 'resource');
+	 * // Show only resources (with typed data)
+	 * map.content.markers.setFilter<MyPOI>(m => m.data.category === 'resource');
 	 * // Clear filter
 	 * map.content.markers.setFilter(null);
 	 * ```
 	 */
-	setFilter(predicate: ((entity: T) => boolean) | null): this {
-		this._filter = predicate;
+	setFilter<TData = unknown>(predicate: ((entity: T & { data: TData }) => boolean) | null): this {
+		this._filter = predicate as ((entity: T) => boolean) | null;
 		this._onChange?.();
 		return this;
 	}
@@ -141,13 +142,14 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	 * @public
 	 * @param predicate - Filter function
 	 * @returns Array of matching entities
+	 * @typeParam TData - Optional data type for narrowing `entity.data` in the predicate
 	 * @example
 	 * ```ts
-	 * const rareItems = map.content.markers.find(m => (m.data as MyPOI)?.tier === 'rare');
+	 * const rareItems = map.content.markers.find<MyPOI>(m => m.data.tier === 'rare');
 	 * ```
 	 */
-	find(predicate: (entity: T) => boolean): T[] {
-		return Array.from(this._entities.values()).filter(predicate);
+	find<TData = unknown>(predicate: (entity: T & { data: TData }) => boolean): T[] {
+		return Array.from(this._entities.values()).filter(predicate as (entity: T) => boolean);
 	}
 
 	/**
@@ -156,17 +158,19 @@ export class EntityCollection<T extends { id: string; _emitRemove(): void }> {
 	 * @public
 	 * @param predicate - Optional filter function
 	 * @returns Count of matching entities (or total if no predicate)
+	 * @typeParam TData - Optional data type for narrowing `entity.data` in the predicate
 	 * @example
 	 * ```ts
 	 * const total = map.content.markers.count();
-	 * const resourceCount = map.content.markers.count(m => (m.data as MyPOI)?.category === 'resource');
+	 * const resourceCount = map.content.markers.count<MyPOI>(m => m.data.category === 'resource');
 	 * ```
 	 */
-	count(predicate?: (entity: T) => boolean): number {
+	count<TData = unknown>(predicate?: (entity: T & { data: TData }) => boolean): number {
 		if (!predicate) return this._entities.size;
+		const pred = predicate as (entity: T) => boolean;
 		let n = 0;
 		for (const ent of this._entities.values()) {
-			if (predicate(ent)) n++;
+			if (pred(ent)) n++;
 		}
 		return n;
 	}
