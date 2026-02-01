@@ -224,9 +224,7 @@ export class IconRenderer {
 		const widthCSS = ctx.viewport.width;
 		const heightCSS = ctx.viewport.height;
 		const centerLevel = ctx.project(ctx.center.x, ctx.center.y, baseZ);
-		let tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
-		const snapTL = (v: number) => Coords.snapLevelToDevice(v, effScale, ctx.dpr);
-		tlWorld = { x: snapTL(tlWorld.x), y: snapTL(tlWorld.y) };
+		const tlWorld = Coords.tlLevelFor(centerLevel, ctx.zoom, { x: widthCSS, y: heightCSS });
 
 		const minZoom = ctx.minZoom ?? 0;
 		const maxZoom = ctx.maxZoom ?? 19;
@@ -460,7 +458,7 @@ export class IconRenderer {
         void main(){
           vec2 world = a_i_native * u_invS;
           vec2 css = (world - u_tlWorld) * u_scale;
-          vec2 basePx = floor(css * u_dpr + 0.5);
+          vec2 basePx = css * u_dpr;
           float effectiveScale = a_i_iconScale * u_iconScale;
           vec2 sizePx = a_i_size * effectiveScale * u_dpr;
           vec2 anchorPx = a_i_anchor * effectiveScale * u_dpr;
