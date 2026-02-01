@@ -4,6 +4,7 @@
 	import iconDefs from '$lib/sample-data/MapIcons.json';
 	const typedIconDefs: Record<string, IconDef> = iconDefs;
 	import Hud from '$lib/Hud.svelte';
+	import Hover from '$lib/Hover.svelte';
 
 	let container: HTMLDivElement | null = null;
 	let map: GTMap;
@@ -324,6 +325,7 @@
 		{setMarkersEnabled}
 		{setVectorsEnabled}
 	/>
+	<Hover {map} />
 </div>
 
 <style>
