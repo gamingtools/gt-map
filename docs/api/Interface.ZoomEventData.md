@@ -4,7 +4,14 @@
 
 # Interface: ZoomEventData
 
-Defined in: [api/types.ts:253](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L253)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [view](#view)
+
+Defined in: [api/types.ts:246](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L246)
 
 Zoom event payload: zoom changed.
 
@@ -14,6 +21,6 @@ Zoom event payload: zoom changed.
 
 > **view**: [`ViewState`](Interface.ViewState.md)
 
-Defined in: [api/types.ts:255](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L255)
+Defined in: [api/types.ts:248](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L248)
 
 Current view state snapshot.

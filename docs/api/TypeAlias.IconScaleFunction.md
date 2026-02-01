@@ -4,9 +4,20 @@
 
 # Type Alias: IconScaleFunction()
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Parameters](#parameters)
+  - [zoom](#zoom)
+  - [minZoom](#minzoom)
+  - [maxZoom](#maxzoom)
+- [Returns](#returns)
+- [Remarks](#remarks)
+
 > **IconScaleFunction** = (`zoom`, `minZoom`, `maxZoom`) => `number`
 
-Defined in: [api/types.ts:462](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L462)
+Defined in: [api/types.ts:455](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L455)
 
 Icon scaling policy.
 

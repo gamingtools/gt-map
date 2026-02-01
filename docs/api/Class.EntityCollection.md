@@ -4,7 +4,32 @@
 
 # Class: EntityCollection\<T\>
 
-Defined in: [entities/entity-collection.ts:24](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L24)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Remarks](#remarks)
+- [Type Parameters](#type-parameters)
+  - [T](#t)
+- [Properties](#properties)
+  - [id](#id)
+- [Accessors](#accessors)
+  - [events](#events)
+  - [filter](#filter)
+  - [visible](#visible)
+- [Methods](#methods)
+  - [add()](#add)
+  - [clear()](#clear)
+  - [count()](#count)
+  - [find()](#find)
+  - [get()](#get)
+  - [getAll()](#getall)
+  - [getFiltered()](#getfiltered)
+  - [remove()](#remove)
+  - [setFilter()](#setfilter)
+  - [setVisible()](#setvisible)
+
+Defined in: [entities/entity-collection.ts:24](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L24)
 
 EntityCollection<T> - a collection of entities with lifecycle and visibility.
 
@@ -24,7 +49,7 @@ Emits typed events on add/remove/clear/visibility change.
 
 > `readonly` **id**: `string`
 
-Defined in: [entities/entity-collection.ts:25](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L25)
+Defined in: [entities/entity-collection.ts:25](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L25)
 
 ## Accessors
 
@@ -34,7 +59,7 @@ Defined in: [entities/entity-collection.ts:25](https://github.com/gamingtools/gt
 
 > **get** **events**(): [`EntityCollectionEvents`](Interface.EntityCollectionEvents.md)\<`T`\>
 
-Defined in: [entities/entity-collection.ts:28](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L28)
+Defined in: [entities/entity-collection.ts:28](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L28)
 
 Read-only typed events for this collection.
 
@@ -50,7 +75,7 @@ Read-only typed events for this collection.
 
 > **get** **filter**(): `null` \| (`entity`) => `boolean`
 
-Defined in: [entities/entity-collection.ts:125](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L125)
+Defined in: [entities/entity-collection.ts:126](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L126)
 
 Get the current filter predicate, or null if none.
 
@@ -66,7 +91,7 @@ Get the current filter predicate, or null if none.
 
 > **get** **visible**(): `boolean`
 
-Defined in: [entities/entity-collection.ts:98](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L98)
+Defined in: [entities/entity-collection.ts:98](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L98)
 
 Current visibility state.
 
@@ -80,7 +105,7 @@ Current visibility state.
 
 > **add**(`entity`): `T`
 
-Defined in: [entities/entity-collection.ts:55](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L55)
+Defined in: [entities/entity-collection.ts:55](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L55)
 
 Add an entity and emit `entityadd`.
 
@@ -100,7 +125,7 @@ Add an entity and emit `entityadd`.
 
 > **clear**(): `void`
 
-Defined in: [entities/entity-collection.ts:74](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L74)
+Defined in: [entities/entity-collection.ts:74](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L74)
 
 Remove all entities and emit `clear`.
 
@@ -112,11 +137,19 @@ Remove all entities and emit `clear`.
 
 ### count()
 
-> **count**(`predicate?`): `number`
+> **count**\<`TData`\>(`predicate?`): `number`
 
-Defined in: [entities/entity-collection.ts:165](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L165)
+Defined in: [entities/entity-collection.ts:168](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L168)
 
 Count entities, optionally matching a predicate.
+
+#### Type Parameters
+
+##### TData
+
+`TData` = `unknown`
+
+Optional data type for narrowing `entity.data` in the predicate
 
 #### Parameters
 
@@ -135,19 +168,27 @@ Count of matching entities (or total if no predicate)
 #### Example
 
 ```ts
-const total = map.markers.count();
-const resourceCount = map.markers.count(m => m.data.category === 'resource');
+const total = map.content.markers.count();
+const resourceCount = map.content.markers.count<MyPOI>(m => m.data.category === 'resource');
 ```
 
 ***
 
 ### find()
 
-> **find**(`predicate`): `T`[]
+> **find**\<`TData`\>(`predicate`): `T`[]
 
-Defined in: [entities/entity-collection.ts:149](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L149)
+Defined in: [entities/entity-collection.ts:151](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L151)
 
 Find entities matching a predicate.
+
+#### Type Parameters
+
+##### TData
+
+`TData` = `unknown`
+
+Optional data type for narrowing `entity.data` in the predicate
 
 #### Parameters
 
@@ -166,7 +207,7 @@ Array of matching entities
 #### Example
 
 ```ts
-const rareItems = map.markers.find(m => m.data.tier === 'rare');
+const rareItems = map.content.markers.find<MyPOI>(m => m.data.tier === 'rare');
 ```
 
 ***
@@ -175,7 +216,7 @@ const rareItems = map.markers.find(m => m.data.tier === 'rare');
 
 > **get**(`id`): `undefined` \| `T`
 
-Defined in: [entities/entity-collection.ts:90](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L90)
+Defined in: [entities/entity-collection.ts:90](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L90)
 
 Get an entity by id.
 
@@ -195,7 +236,7 @@ Get an entity by id.
 
 > **getAll**(): `T`[]
 
-Defined in: [entities/entity-collection.ts:94](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L94)
+Defined in: [entities/entity-collection.ts:94](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L94)
 
 Get a snapshot array of all entities.
 
@@ -209,7 +250,7 @@ Get a snapshot array of all entities.
 
 > **getFiltered**(): `T`[]
 
-Defined in: [entities/entity-collection.ts:133](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L133)
+Defined in: [entities/entity-collection.ts:134](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L134)
 
 Get entities that pass the current filter (or all if no filter).
 Used internally by the renderer.
@@ -224,7 +265,7 @@ Used internally by the renderer.
 
 > **remove**(`entityOrId`): `void`
 
-Defined in: [entities/entity-collection.ts:63](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L63)
+Defined in: [entities/entity-collection.ts:63](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L63)
 
 Remove an entity (by instance or id) and emit `entityremove`.
 
@@ -242,13 +283,21 @@ Remove an entity (by instance or id) and emit `entityremove`.
 
 ### setFilter()
 
-> **setFilter**(`predicate`): `this`
+> **setFilter**\<`TData`\>(`predicate`): `this`
 
-Defined in: [entities/entity-collection.ts:118](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L118)
+Defined in: [entities/entity-collection.ts:119](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L119)
 
 Set a filter predicate to control entity visibility.
 Entities not matching the predicate will be hidden from rendering.
 Pass `null` to clear the filter and show all entities.
+
+#### Type Parameters
+
+##### TData
+
+`TData` = `unknown`
+
+Optional data type for narrowing `entity.data` in the predicate
 
 #### Parameters
 
@@ -267,10 +316,10 @@ This collection for chaining
 #### Example
 
 ```ts
-// Show only resources
-map.markers.setFilter(m => m.data.category === 'resource');
+// Show only resources (with typed data)
+map.content.markers.setFilter<MyPOI>(m => m.data.category === 'resource');
 // Clear filter
-map.markers.setFilter(null);
+map.content.markers.setFilter(null);
 ```
 
 ***
@@ -279,7 +328,7 @@ map.markers.setFilter(null);
 
 > **setVisible**(`visible`): `void`
 
-Defined in: [entities/entity-collection.ts:82](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/entity-collection.ts#L82)
+Defined in: [entities/entity-collection.ts:82](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/entity-collection.ts#L82)
 
 Set collection visibility and emit `visibilitychange` when it changes.
 

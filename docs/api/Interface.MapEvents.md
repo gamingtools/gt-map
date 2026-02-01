@@ -2,21 +2,24 @@
 
 ***
 
-# Interface: MapEvents\<T\>
+# Interface: MapEvents
 
-Defined in: [api/events/public.ts:95](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L95)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Extends](#extends)
+- [Methods](#methods)
+  - [on()](#on)
+  - [once()](#once)
+
+Defined in: [api/events/public.ts:88](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/events/public.ts#L88)
 
 Map events surface with typed names and payloads.
 
 ## Extends
 
-- [`PublicEvents`](Interface.PublicEvents.md)\<[`EventMap`](Interface.EventMap.md)\<`T`\>\>
-
-## Type Parameters
-
-### T
-
-`T` = `unknown`
+- [`PublicEvents`](Interface.PublicEvents.md)\<[`EventMap`](Interface.EventMap.md)\>
 
 ## Methods
 
@@ -24,9 +27,9 @@ Map events surface with typed names and payloads.
 
 #### Call Signature
 
-> **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`EventMap`](Interface.EventMap.md)\<`T`\>\[`K`\]\>
+> **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`EventMap`](Interface.EventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:101](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L101)
+Defined in: [api/events/public.ts:94](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/events/public.ts#L94)
 
 Subscribe to a map event.
 
@@ -36,7 +39,7 @@ Common names: 'load' | 'resize' | 'move' | 'moveend' | 'zoom' | 'zoomend' | 'poi
 
 ###### K
 
-`K` *extends* `"moveend"` \| `"zoomend"` \| `"click"` \| `"pointerdown"` \| `"pointerup"` \| `"load"` \| `"resize"` \| `"move"` \| `"zoom"` \| `"pointermove"` \| `"frame"` \| `"markerenter"` \| `"markerleave"` \| `"markerclick"` \| `"markerdown"` \| `"markerup"` \| `"markerlongpress"` \| `"mousedown"` \| `"mousemove"` \| `"mouseup"` \| `"dblclick"` \| `"contextmenu"`
+`K` *extends* `"click"` \| `"pointerdown"` \| `"pointerup"` \| `"load"` \| `"resize"` \| `"move"` \| `"moveend"` \| `"zoom"` \| `"zoomend"` \| `"pointermove"` \| `"frame"` \| `"markerenter"` \| `"markerleave"` \| `"markerclick"` \| `"markerdown"` \| `"markerup"` \| `"markerlongpress"` \| `"mousedown"` \| `"mousemove"` \| `"mouseup"` \| `"dblclick"` \| `"contextmenu"`
 
 ##### Parameters
 
@@ -46,7 +49,7 @@ Common names: 'load' | 'resize' | 'move' | 'moveend' | 'zoom' | 'zoomend' | 'poi
 
 ##### Returns
 
-[`EventSubscription`](Interface.EventSubscription.md)\<[`EventMap`](Interface.EventMap.md)\<`T`\>\[`K`\]\>
+[`EventSubscription`](Interface.EventSubscription.md)\<[`EventMap`](Interface.EventMap.md)\[`K`\]\>
 
 ##### Overrides
 
@@ -56,7 +59,7 @@ Common names: 'load' | 'resize' | 'move' | 'moveend' | 'zoom' | 'zoomend' | 'poi
 
 > **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:102](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L102)
+Defined in: [api/events/public.ts:95](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/events/public.ts#L95)
 
 Subscribe to a named event.
 
@@ -64,7 +67,7 @@ Subscribe to a named event.
 
 ###### K
 
-`K` *extends* `"moveend"` \| `"zoomend"` \| `"click"` \| `"pointerdown"` \| `"pointerup"` \| `"load"` \| `"resize"` \| `"move"` \| `"zoom"` \| `"pointermove"` \| `"frame"` \| `"markerenter"` \| `"markerleave"` \| `"markerclick"` \| `"markerdown"` \| `"markerup"` \| `"markerlongpress"` \| `"mousedown"` \| `"mousemove"` \| `"mouseup"` \| `"dblclick"` \| `"contextmenu"`
+`K` *extends* `"click"` \| `"pointerdown"` \| `"pointerup"` \| `"load"` \| `"resize"` \| `"move"` \| `"moveend"` \| `"zoom"` \| `"zoomend"` \| `"pointermove"` \| `"frame"` \| `"markerenter"` \| `"markerleave"` \| `"markerclick"` \| `"markerdown"` \| `"markerup"` \| `"markerlongpress"` \| `"mousedown"` \| `"mousemove"` \| `"mouseup"` \| `"dblclick"` \| `"contextmenu"`
 
 ##### Parameters
 
@@ -100,9 +103,9 @@ marker.events.on('click').each((e) => {
 
 ### once()
 
-> **once**\<`K`\>(`event`): `Promise`\<[`EventMap`](Interface.EventMap.md)\<`T`\>\[`K`\]\>
+> **once**\<`K`\>(`event`): `Promise`\<[`EventMap`](Interface.EventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 
@@ -110,7 +113,7 @@ Wait for the next event occurrence and resolve with its payload.
 
 ##### K
 
-`K` *extends* `"moveend"` \| `"zoomend"` \| `"click"` \| `"pointerdown"` \| `"pointerup"` \| `"load"` \| `"resize"` \| `"move"` \| `"zoom"` \| `"pointermove"` \| `"frame"` \| `"markerenter"` \| `"markerleave"` \| `"markerclick"` \| `"markerdown"` \| `"markerup"` \| `"markerlongpress"` \| `"mousedown"` \| `"mousemove"` \| `"mouseup"` \| `"dblclick"` \| `"contextmenu"`
+`K` *extends* `"click"` \| `"pointerdown"` \| `"pointerup"` \| `"load"` \| `"resize"` \| `"move"` \| `"moveend"` \| `"zoom"` \| `"zoomend"` \| `"pointermove"` \| `"frame"` \| `"markerenter"` \| `"markerleave"` \| `"markerclick"` \| `"markerdown"` \| `"markerup"` \| `"markerlongpress"` \| `"mousedown"` \| `"mousemove"` \| `"mouseup"` \| `"dblclick"` \| `"contextmenu"`
 
 #### Parameters
 
@@ -122,7 +125,7 @@ Event name (typed)
 
 #### Returns
 
-`Promise`\<[`EventMap`](Interface.EventMap.md)\<`T`\>\[`K`\]\>
+`Promise`\<[`EventMap`](Interface.EventMap.md)\[`K`\]\>
 
 Promise that resolves with the payload of the next event.
 

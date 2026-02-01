@@ -4,7 +4,17 @@
 
 # Interface: MarkerTransition
 
-Defined in: [entities/marker.ts:38](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L38)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Methods](#methods)
+  - [apply()](#apply)
+  - [cancel()](#cancel)
+  - [moveTo()](#moveto)
+  - [setStyle()](#setstyle)
+
+Defined in: [entities/marker.ts:38](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L38)
 
 Builder for animating a single Marker (position/rotation/scale).
 
@@ -14,7 +24,7 @@ Builder for animating a single Marker (position/rotation/scale).
 
 > **apply**(`opts?`): `Promise`\<[`ApplyResult`](Interface.ApplyResult.md)\>
 
-Defined in: [entities/marker.ts:44](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L44)
+Defined in: [entities/marker.ts:44](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L44)
 
 Commit the transition (instant or animated).
 
@@ -34,7 +44,7 @@ Commit the transition (instant or animated).
 
 > **cancel**(): `void`
 
-Defined in: [entities/marker.ts:46](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L46)
+Defined in: [entities/marker.ts:46](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L46)
 
 Cancel a pending or running transition.
 
@@ -48,7 +58,7 @@ Cancel a pending or running transition.
 
 > **moveTo**(`x`, `y`): `this`
 
-Defined in: [entities/marker.ts:40](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L40)
+Defined in: [entities/marker.ts:40](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L40)
 
 Target a new position in world pixels.
 
@@ -72,7 +82,7 @@ Target a new position in world pixels.
 
 > **setStyle**(`opts`): `this`
 
-Defined in: [entities/marker.ts:42](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/entities/marker.ts#L42)
+Defined in: [entities/marker.ts:42](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L42)
 
 Target style properties (scale, rotation, opacity).
 

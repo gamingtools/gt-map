@@ -4,13 +4,26 @@
 
 # Abstract Class: Visual
 
-Defined in: [api/visual.ts:89](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L89)
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Remarks](#remarks)
+- [Extended by](#extended-by)
+- [Constructors](#constructors)
+  - [Constructor](#constructor)
+- [Properties](#properties)
+  - [anchor](#anchor)
+  - [iconScaleFunction?](#iconscalefunction)
+  - [type](#type)
+
+Defined in: [api/visual.ts:89](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L89)
 
 Abstract base class for all visuals.
 
 ## Remarks
 
-Visuals define appearance only. Use with Marker (interactive) or Decal (non-interactive).
+Visuals define appearance only. Use with Marker for screen-sized interactive entities.
 
 ## Extended by
 
@@ -37,7 +50,7 @@ Visuals define appearance only. Use with Marker (interactive) or Decal (non-inte
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -47,7 +60,7 @@ Anchor point for positioning. Defaults to center.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -59,6 +72,6 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `abstract` `readonly` **type**: [`VisualType`](TypeAlias.VisualType.md)
 
-Defined in: [api/visual.ts:91](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/visual.ts#L91)
+Defined in: [api/visual.ts:91](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L91)
 
 Discriminator for runtime type checking.

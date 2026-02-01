@@ -4,9 +4,18 @@
 
 # Type Alias: Polyline
 
+[← Back to API index](./README.md)
+
+## Contents
+
+- [Properties](#properties)
+  - [points](#points)
+  - [style?](#style)
+  - [type](#type)
+
 > **Polyline** = `object`
 
-Defined in: [api/types.ts:163](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L163)
+Defined in: [api/types.ts:156](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L156)
 
 ## Properties
 
@@ -14,7 +23,7 @@ Defined in: [api/types.ts:163](https://github.com/gamingtools/gt-map/blob/a4029f
 
 > **points**: [`Point`](TypeAlias.Point.md)[]
 
-Defined in: [api/types.ts:165](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L165)
+Defined in: [api/types.ts:158](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L158)
 
 ***
 
@@ -22,7 +31,7 @@ Defined in: [api/types.ts:165](https://github.com/gamingtools/gt-map/blob/a4029f
 
 > `optional` **style**: [`VectorStyle`](Interface.VectorStyle.md)
 
-Defined in: [api/types.ts:166](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L166)
+Defined in: [api/types.ts:159](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L159)
 
 ***
 
@@ -30,4 +39,4 @@ Defined in: [api/types.ts:166](https://github.com/gamingtools/gt-map/blob/a4029f
 
 > **type**: `"polyline"`
 
-Defined in: [api/types.ts:164](https://github.com/gamingtools/gt-map/blob/a4029f6df3cc8a6f91da4a56273e036d6e335d81/packages/gtmap/src/api/types.ts#L164)
+Defined in: [api/types.ts:157](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L157)
