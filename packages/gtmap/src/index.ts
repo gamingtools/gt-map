@@ -52,17 +52,7 @@ export { isPolyline, isPolygon, isCircle } from './api/types';
 // Export public event surface types
 export type { PublicEvents, EventSubscription, MarkerEvents, VectorEvents, EntityCollectionEvents, MapEvents, Unsubscribe } from './api/events/public';
 
-export type {
-	MarkerData,
-	VectorData,
-	VectorGeometry,
-	MarkerEventMap,
-	VectorEventMap,
-	EntityCollectionEventMap,
-	PointerMeta,
-	PointerModifiers,
-	InputDevice,
-} from './api/events/maps';
+export type { MarkerData, VectorData, VectorGeometry, MarkerEventMap, VectorEventMap, EntityCollectionEventMap, PointerMeta, PointerModifiers, InputDevice } from './api/events/maps';
 
 // Export facade classes (accessed via map.view, map.content, map.display, map.input)
 export { ViewFacade } from './api/facades/view-facade';

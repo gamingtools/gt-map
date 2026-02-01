@@ -109,7 +109,9 @@ export class ViewFacade {
 		this._activeCancel = null;
 
 		let cancelled = false;
-		this._activeCancel = () => { cancelled = true; };
+		this._activeCancel = () => {
+			cancelled = true;
+		};
 
 		try {
 			// Handle optional delay
@@ -322,8 +324,10 @@ export class ViewFacade {
 
 	/** @internal Convert a list of points to a bounding box. */
 	private _pointsToBounds(list: Point[]): { minX: number; minY: number; maxX: number; maxY: number } {
-		let minX = Number.POSITIVE_INFINITY, minY = Number.POSITIVE_INFINITY;
-		let maxX = Number.NEGATIVE_INFINITY, maxY = Number.NEGATIVE_INFINITY;
+		let minX = Number.POSITIVE_INFINITY,
+			minY = Number.POSITIVE_INFINITY;
+		let maxX = Number.NEGATIVE_INFINITY,
+			maxY = Number.NEGATIVE_INFINITY;
 		for (const p of list) {
 			if (p.x < minX) minX = p.x;
 			if (p.y < minY) minY = p.y;

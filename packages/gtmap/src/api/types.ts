@@ -519,62 +519,62 @@ export type PaddingInput = number | { top: number; right: number; bottom: number
  * ```
  */
 export interface SetViewOptions {
-  /**
-   * Target center position in world pixels.
-   *
-   * When combined with `bounds` or `points`, this value takes precedence
-   * for the center while the fitted zoom is kept.
-   */
-  center?: Point;
+	/**
+	 * Target center position in world pixels.
+	 *
+	 * When combined with `bounds` or `points`, this value takes precedence
+	 * for the center while the fitted zoom is kept.
+	 */
+	center?: Point;
 
-  /**
-   * Target zoom level (fractional values allowed).
-   *
-   * When combined with `bounds` or `points`, this value takes precedence
-   * for the zoom while the fitted center is kept.
-   */
-  zoom?: number;
+	/**
+	 * Target zoom level (fractional values allowed).
+	 *
+	 * When combined with `bounds` or `points`, this value takes precedence
+	 * for the zoom while the fitted center is kept.
+	 */
+	zoom?: number;
 
-  /**
-   * Pixel offset added to the resolved center.
-   *
-   * Applied after `center`, `bounds`, or `points` resolution, making it
-   * useful for nudging the view relative to its computed position.
-   */
-  offset?: { dx: number; dy: number };
+	/**
+	 * Pixel offset added to the resolved center.
+	 *
+	 * Applied after `center`, `bounds`, or `points` resolution, making it
+	 * useful for nudging the view relative to its computed position.
+	 */
+	offset?: { dx: number; dy: number };
 
-  /**
-   * Bounding box in world pixels to fit the viewport to.
-   *
-   * The view is centered and zoomed so the entire box is visible.
-   * Mutually exclusive intent with `points` (if both are set, `bounds` wins).
-   */
-  bounds?: { minX: number; minY: number; maxX: number; maxY: number };
+	/**
+	 * Bounding box in world pixels to fit the viewport to.
+	 *
+	 * The view is centered and zoomed so the entire box is visible.
+	 * Mutually exclusive intent with `points` (if both are set, `bounds` wins).
+	 */
+	bounds?: { minX: number; minY: number; maxX: number; maxY: number };
 
-  /**
-   * Array of world-pixel points to fit the viewport around.
-   *
-   * Internally converted to a bounding box and then fitted.
-   * Ignored when `bounds` is also provided.
-   */
-  points?: Point[];
+	/**
+	 * Array of world-pixel points to fit the viewport around.
+	 *
+	 * Internally converted to a bounding box and then fitted.
+	 * Ignored when `bounds` is also provided.
+	 */
+	points?: Point[];
 
-  /**
-   * Padding applied when fitting `bounds` or `points`.
-   *
-   * Has no effect when neither `bounds` nor `points` is specified.
-   * Accepts a uniform number or a per-side object.
-   *
-   * @see {@link PaddingInput}
-   */
-  padding?: PaddingInput;
+	/**
+	 * Padding applied when fitting `bounds` or `points`.
+	 *
+	 * Has no effect when neither `bounds` nor `points` is specified.
+	 * Accepts a uniform number or a per-side object.
+	 *
+	 * @see {@link PaddingInput}
+	 */
+	padding?: PaddingInput;
 
-  /**
-   * Animation parameters. When omitted the view change is applied instantly.
-   *
-   * @see {@link AnimateOptions}
-   */
-  animate?: AnimateOptions;
+	/**
+	 * Animation parameters. When omitted the view change is applied instantly.
+	 *
+	 * @see {@link AnimateOptions}
+	 */
+	animate?: AnimateOptions;
 }
 
 // Transitions (builder) types
