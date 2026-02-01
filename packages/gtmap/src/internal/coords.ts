@@ -347,16 +347,11 @@ export function snapLevelToDevice(levelCoord: number, scale: number, dpr: number
  * Uses tile zoom snapping to choose an integer level and aligns the top-left
  * to the device pixel grid to reduce shimmer.
  */
-export function computeSnappedLevelTransform(opts: {
-	centerWorld: XY;
-	zoom: number;
-	viewportCSS: XY;
-	imageMaxZ: number;
-	dpr: number;
-	zoomSnapThreshold: number;
-	minZoom: number;
-	maxZoom: number;
-}): { baseZ: number; scale: number; tlLevel: XY } {
+export function computeSnappedLevelTransform(opts: { centerWorld: XY; zoom: number; viewportCSS: XY; imageMaxZ: number; dpr: number; zoomSnapThreshold: number; minZoom: number; maxZoom: number }): {
+	baseZ: number;
+	scale: number;
+	tlLevel: XY;
+} {
 	const raw = tileZParts(opts.zoom, opts.zoomSnapThreshold);
 	const baseZ = Math.max(opts.minZoom, Math.min(raw.zInt, opts.maxZoom));
 	const scale = Math.pow(2, opts.zoom - baseZ);
