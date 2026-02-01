@@ -4,7 +4,6 @@ export type TileRecord = {
   width: number;
   height: number;
   lastUsed: number;
-  pinned?: boolean;
 };
 
 export class TileCache {
@@ -63,12 +62,7 @@ export class TileCache {
   setReady(key: string, tex: WebGLTexture, width: number, height: number, frame: number) {
     const existing = this.map.get(key);
     if (existing && existing.tex !== tex) this.releaseTexture(existing.tex);
-    this.map.set(key, { status: 'ready', tex, width, height, lastUsed: frame, ...(existing?.pinned ? { pinned: true } : {}) });
-  }
-
-  pin(key: string) {
-    const rec = this.map.get(key);
-    if (rec) rec.pinned = true;
+    this.map.set(key, { status: 'ready', tex, width, height, lastUsed: frame });
   }
 
   delete(key: string) {
@@ -100,7 +94,6 @@ export class TileCache {
     if (this.map.size <= this.maxTiles) return;
     const candidates: Array<{ key: string; used: number }> = [];
     for (const [k, rec] of this.map) {
-      if (rec.pinned) continue;
       candidates.push({ key: k, used: rec.lastUsed });
     }
     candidates.sort((a, b) => a.used - b.used);

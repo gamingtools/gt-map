@@ -128,7 +128,6 @@ export class RenderCoordinator {
 			panVelocityTick: () => {
 				this._panCtrl.step();
 			},
-			prefetchNeighbors: (z) => ctx.tileManager?.prefetchNeighbors(z),
 			cancelUnwanted: () => ctx.tileManager?.cancelUnwanted(),
 			clearWanted: () => ctx.tileManager?.clearWanted(),
 		});
