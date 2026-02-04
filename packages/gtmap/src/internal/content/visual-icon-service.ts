@@ -6,7 +6,7 @@
  * visual-to-size mappings.
  */
 import type { IconDefInternal } from '../../api/types';
-import { Visual, isImageVisual, isTextVisual, isSvgVisual, resolveAnchor } from '../../api/visual';
+import { Visual, isImageVisual, isTextVisual, isSvgVisual, isSpriteVisual, resolveAnchor, resolveSize } from '../../api/visual';
 import { renderTextToCanvas } from '../layers/text-renderer';
 import { renderSvgToDataUrlSync, renderSvgToCanvasAsync } from '../layers/svg-renderer';
 
@@ -57,6 +57,13 @@ export class VisualIconService {
 	ensureRegistered(visual: Visual): string {
 		const cached = this._visualToIconId.get(visual);
 		if (cached) return cached;
+
+		// Sprite visuals are pre-registered via loadSpriteAtlas; just map the visual to its icon ID.
+		if (isSpriteVisual(visual)) {
+			const iconId = visual.getIconId();
+			this._visualToIconId.set(visual, iconId);
+			return iconId;
+		}
 
 		this._visualIdSeq = (this._visualIdSeq + 1) % Number.MAX_SAFE_INTEGER;
 		const iconId = `v_${this._visualIdSeq.toString(36)}`;
@@ -167,6 +174,10 @@ export class VisualIconService {
 	}
 
 	getScaledSize(visual: Visual, scale: number): number | undefined {
+		if (isSpriteVisual(visual) && visual.size !== undefined) {
+			const sz = resolveSize(visual.size);
+			return Math.max(sz.width, sz.height) * scale;
+		}
 		if (scale === 1) return undefined;
 		const cachedSize = this._visualToSize.get(visual);
 		if (cachedSize) return Math.max(cachedSize.width, cachedSize.height) * scale;

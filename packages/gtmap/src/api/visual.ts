@@ -6,13 +6,13 @@
  * They are separate from entities (Marker) which define position and interactivity.
  */
 
-import type { IconScaleFunction } from './types';
+import type { IconScaleFunction, SpriteAtlasHandle } from './types';
 
 /**
  * Discriminator for Visual subclasses.
  * @public
  */
-export type VisualType = 'image' | 'text' | 'circle' | 'rect' | 'svg' | 'html';
+export type VisualType = 'image' | 'text' | 'circle' | 'rect' | 'svg' | 'html' | 'sprite';
 
 /**
  * Anchor presets for positioning visuals relative to their point.
@@ -460,6 +460,64 @@ export class HtmlVisual extends Visual {
 	getSize(): { width: number; height: number } {
 		return resolveSize(this.size);
 	}
+}
+
+/**
+ * Sprite-based visual referencing a sub-region of a loaded sprite atlas.
+ *
+ * @public
+ * @remarks
+ * Use after calling `map.content.addSpriteAtlas()` to get a `SpriteAtlasHandle`.
+ *
+ * @example
+ * ```ts
+ * const atlas = await map.content.addSpriteAtlas(url, descriptor);
+ * const sprite = new SpriteVisual(atlas, 'sword', 32);
+ * map.content.addMarker(100, 200, { visual: sprite });
+ * ```
+ */
+export class SpriteVisual extends Visual {
+	readonly type = 'sprite' as const;
+
+	/** Handle to the loaded sprite atlas. */
+	readonly atlasHandle: SpriteAtlasHandle;
+
+	/** Name of the sprite within the atlas. */
+	readonly spriteName: string;
+
+	/** Optional display size override. */
+	readonly size?: VisualSize;
+
+	/**
+	 * Create a sprite visual.
+	 * @param atlasHandle - Handle returned from addSpriteAtlas
+	 * @param spriteName - Name of the sprite in the atlas descriptor
+	 * @param size - Optional display size override (number for square, or {width, height})
+	 */
+	constructor(atlasHandle: SpriteAtlasHandle, spriteName: string, size?: VisualSize) {
+		super();
+		this.atlasHandle = atlasHandle;
+		this.spriteName = spriteName;
+		if (size !== undefined) this.size = size;
+	}
+
+	/** Get the icon ID for this sprite (atlasId/spriteName). */
+	getIconId(): string {
+		return `${this.atlasHandle.atlasId}/${this.spriteName}`;
+	}
+
+	/** Get resolved size as {width, height} if size is specified. */
+	getSize(): { width: number; height: number } | undefined {
+		return this.size !== undefined ? resolveSize(this.size) : undefined;
+	}
+}
+
+/**
+ * Type guard for SpriteVisual.
+ * @public
+ */
+export function isSpriteVisual(v: Visual): v is SpriteVisual {
+	return v.type === 'sprite';
 }
 
 /**

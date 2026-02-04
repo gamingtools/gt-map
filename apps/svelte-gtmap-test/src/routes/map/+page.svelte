@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { GTMap, ImageVisual, TextVisual, SvgVisual, type IconDef } from '@gtmap';
-	import iconDefs from '$lib/sample-data/MapIcons.json';
-	const typedIconDefs: Record<string, IconDef> = iconDefs;
+	import { GTMap, TextVisual, SvgVisual, SpriteVisual, type SpriteAtlasDescriptor, type SpriteAtlasHandle } from '@gtmap';
 	import Hud from '$lib/Hud.svelte';
 	import Hover from '$lib/Hover.svelte';
 
@@ -30,8 +28,31 @@
 		return Math.random() * (max - min) + min;
 	}
 
-	let iconVisuals: ImageVisual[] | null = null;
 	let svgVisuals: SvgVisual[] | null = null;
+	let spriteVisuals: SpriteVisual[] | null = null;
+
+	const ATLAS_CDN = 'https://cdn.gaming.tools/dune/images';
+
+	async function loadSpriteAtlas(): Promise<void> {
+		if (!map) return;
+		try {
+			const resp = await fetch(`${ATLAS_CDN}/atlas.json`);
+			const descriptor: SpriteAtlasDescriptor = await resp.json();
+			const handle: SpriteAtlasHandle = await map.content.addSpriteAtlas(`${ATLAS_CDN}/atlas.png`, descriptor, 'dune');
+			const names = Object.keys(handle.spriteIds);
+			spriteVisuals = names.map((name) => {
+				const entry = descriptor.sprites[name];
+				const sp = new SpriteVisual(handle, name, {
+					width: entry.width / 1.6,
+					height: entry.height / 1.6,
+				});
+				sp.anchor = 'center';
+				return sp;
+			});
+		} catch (err) {
+			console.warn('Sprite atlas load failed:', err);
+		}
+	}
 
 	const SVG_CDN = 'https://cdn.gaming.tools/gt/game-icons/lorc';
 
@@ -101,25 +122,12 @@
 		return icons;
 	}
 
-	function createFallbackVisual(): ImageVisual {
-		const size = 32;
-		const cnv = document.createElement('canvas');
-		cnv.width = size;
-		cnv.height = size;
-		const ctx = cnv.getContext('2d')!;
-		ctx.clearRect(0, 0, size, size);
-		ctx.fillStyle = '#ef4444';
-		ctx.strokeStyle = '#111827';
-		ctx.lineWidth = 2;
-		ctx.beginPath();
-		ctx.moveTo(size * 0.50, size * 0.10);
-		ctx.lineTo(size * 0.85, size * 0.90);
-		ctx.lineTo(size * 0.15, size * 0.90);
-		ctx.closePath();
-		ctx.fill();
-		ctx.stroke();
-		const url = cnv.toDataURL('image/png');
-		const visual = new ImageVisual(url, size);
+	function createFallbackVisual(): SvgVisual {
+		const visual = new SvgVisual(`${SVG_CDN}/broadsword.svg`, 32, {
+			fill: '#ef4444',
+			stroke: '#111827',
+			strokeWidth: 2,
+		});
 		visual.anchor = 'center';
 		return visual;
 	}
@@ -132,8 +140,8 @@
 
 		const fallback = createFallbackVisual();
 		const allVisuals = [
-			...(iconVisuals || []),
-			...(svgVisuals || [])
+			...(svgVisuals || []),
+			...(spriteVisuals || []),
 		];
 
 		for (let i = 0; i < markerCount; i++) {
@@ -286,19 +294,11 @@
 			debug: true,
 		});
 
-		// Create ImageVisual instances from icon definitions
-		for (const key in typedIconDefs) {
-			const def = typedIconDefs[key];
-			iconVisuals = iconVisuals || [];
-			const visual = new ImageVisual(def.iconPath, { width: def.width, height: def.height }, def.x2IconPath);
-			visual.anchor = 'center';
-			iconVisuals.push(visual);
-		}
-
 		// Create SvgVisual instances
 		svgVisuals = createSvgVisuals();
 
-		applyMarkerCount(markerCount);
+		// Load sprite atlas then apply markers
+		loadSpriteAtlas().then(() => applyMarkerCount(markerCount));
 
 		map.view.setIconScaleFunction((zoom) => {
 			const maxScale = 1;

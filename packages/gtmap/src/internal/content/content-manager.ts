@@ -1,7 +1,7 @@
 /**
  * ContentManager -- thin coordinator for IconManager, VectorManager, and MarkerEventManager.
  */
-import type { MarkerEventData, MarkerInternal, UpscaleFilterMode, IconScaleFunction } from '../../api/types';
+import type { MarkerEventData, MarkerInternal, UpscaleFilterMode, IconScaleFunction, SpriteAtlasDescriptor } from '../../api/types';
 import type { VectorPrimitive } from '../types';
 import type { IconRenderer } from '../layers/icons';
 
@@ -88,6 +88,10 @@ export class ContentManager {
 
 	async setIconDefs(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number }>): Promise<void> {
 		return this.iconMgr.setIconDefs(defs);
+	}
+
+	async loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>> {
+		return this.iconMgr.loadSpriteAtlas(url, descriptor, atlasId);
 	}
 
 	setMarkers(markers: MarkerInternal[]): void {

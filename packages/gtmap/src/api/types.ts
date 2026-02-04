@@ -363,6 +363,60 @@ export interface WebGLLoseContext {
 	restoreContext(): void;
 }
 
+// Sprite atlas types
+
+/** A single sprite entry within a sprite atlas descriptor. */
+export interface SpriteAtlasEntry {
+	/** X offset in the atlas image (pixels). */
+	x: number;
+	/** Y offset in the atlas image (pixels). */
+	y: number;
+	/** Sprite width in the atlas image (pixels). */
+	width: number;
+	/** Sprite height in the atlas image (pixels). */
+	height: number;
+	/** Anchor X in pixels from the left (defaults to width/2). */
+	anchorX?: number;
+	/** Anchor Y in pixels from the top (defaults to height/2). */
+	anchorY?: number;
+	/** Optional tags for user extensibility (ignored by library). */
+	tags?: string[];
+	/** Optional metadata for user extensibility (ignored by library). */
+	metadata?: Record<string, unknown>;
+}
+
+/** Informational metadata about a sprite atlas. */
+export interface SpriteAtlasMeta {
+	/** Filename of the atlas image (informational). */
+	image?: string;
+	/** Total atlas image dimensions (required for UV computation). */
+	size: { width: number; height: number };
+	/** Pixel format (informational, e.g. 'RGBA8888'). */
+	format?: string;
+	/** Generator tool name (informational). */
+	generator?: string;
+	/** ISO timestamp of generation (informational). */
+	generatedAt?: string;
+}
+
+/** Full sprite atlas JSON descriptor. */
+export interface SpriteAtlasDescriptor {
+	/** Format version (currently 1). */
+	version: 1;
+	/** Atlas metadata. */
+	meta: SpriteAtlasMeta;
+	/** Map of sprite name to its atlas entry. */
+	sprites: Record<string, SpriteAtlasEntry>;
+}
+
+/** Opaque handle returned after loading a sprite atlas. */
+export interface SpriteAtlasHandle {
+	/** Stable atlas identifier. */
+	atlasId: string;
+	/** Map of sprite name to its resolved icon ID. */
+	spriteIds: Record<string, string>;
+}
+
 // Branded types for type safety
 export type IconID = string & { __brand: 'IconID' };
 

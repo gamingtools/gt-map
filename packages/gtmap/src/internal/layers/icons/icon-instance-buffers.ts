@@ -52,10 +52,10 @@ export class IconInstanceBuffers {
 			let j = 0;
 			let minZ = Infinity;
 			for (const m of list) {
-				const w = m.size || sz.w;
-				const h = m.size || sz.h;
-				const scaleX = m.size ? m.size / sz.w : 1;
-				const scaleY = m.size ? m.size / sz.h : 1;
+				const w = m.size ?? sz.w;
+				const h = m.size ?? sz.h;
+				const scaleX = m.size != null ? m.size / sz.w : 1;
+				const scaleY = m.size != null ? m.size / sz.h : 1;
 				const ax = anc.ax * scaleX;
 				const ay = anc.ay * scaleY;
 				let iconScale = 1.0;

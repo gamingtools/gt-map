@@ -25,8 +25,8 @@ export { Vector } from '../entities/vector';
 export { EntityCollection } from '../entities/entity-collection';
 
 // Re-export Visual classes and types
-export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual } from './visual';
-export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual } from './visual';
+export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual, SpriteVisual } from './visual';
+export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual, isSpriteVisual } from './visual';
 export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow } from './visual';
 
 /**
@@ -152,6 +152,7 @@ export class GTMap {
 			setVectors: (vectors) => cm.setVectors(vectors),
 			setMarkerData: (payloads) => cm.setMarkerData(payloads),
 			onMarkerEvent: (name, handler) => cm.onMarkerEvent(name, handler),
+			loadSpriteAtlas: (url, desc, id) => cm.loadSpriteAtlas(url, desc, id),
 		});
 
 		// Wire DisplayFacade deps

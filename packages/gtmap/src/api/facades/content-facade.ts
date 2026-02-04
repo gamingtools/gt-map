@@ -4,7 +4,7 @@
  * Entity collections (markers, vectors), icon registration,
  * dirty batching, and marker event wiring.
  */
-import type { Point, IconDef, IconHandle, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, MarkerEventData } from '../types';
+import type { Point, IconDef, IconHandle, IconDefInternal, MarkerInternal, VectorPrimitiveInternal, MarkerEventData, SpriteAtlasDescriptor, SpriteAtlasHandle } from '../types';
 import type { VectorGeometry as VectorGeom } from '../events/maps';
 import { EntityCollection } from '../../entities/entity-collection';
 import { Marker } from '../../entities/marker';
@@ -20,6 +20,7 @@ export interface ContentFacadeDeps {
 	setVectors(vectors: VectorPrimitiveInternal[]): void;
 	setMarkerData(payloads: Record<string, unknown | null | undefined>): void;
 	onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
+	loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>>;
 }
 
 export class ContentFacade {
@@ -32,6 +33,7 @@ export class ContentFacade {
 	readonly vectors: EntityCollection<Vector>;
 
 	private _icons: Map<string, IconDef> = new Map();
+	private _atlasIdSeq = 0;
 	private _iconIdSeq = 0;
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
@@ -75,6 +77,20 @@ export class ContentFacade {
 		};
 		this._deps.setIconDefs(Object.fromEntries([[iconId, iconDefInternal]]));
 		return { id: iconId };
+	}
+
+	/**
+	 * Load a sprite atlas (single image + JSON descriptor) and register all sprites.
+	 * @param atlasImageUrl - URL to the atlas image (PNG, WebP, JPEG)
+	 * @param descriptor - JSON descriptor defining sprite regions
+	 * @param atlasId - Optional custom atlas identifier (auto-generated if omitted)
+	 * @returns Handle with atlasId and mapping of sprite names to icon IDs
+	 */
+	async addSpriteAtlas(atlasImageUrl: string, descriptor: SpriteAtlasDescriptor, atlasId?: string): Promise<SpriteAtlasHandle> {
+		this._atlasIdSeq = (this._atlasIdSeq + 1) % Number.MAX_SAFE_INTEGER;
+		const id = atlasId || `atlas_${this._atlasIdSeq.toString(36)}`;
+		const spriteIds = await this._deps.loadSpriteAtlas(atlasImageUrl, descriptor, id);
+		return { atlasId: id, spriteIds };
 	}
 
 	// -- Marker management --

@@ -15,5 +15,20 @@
 				Open &rarr;
 			</div>
 		</a>
+		<a
+			href="/sprites"
+			class="group block rounded-lg border border-neutral-700 bg-neutral-800/80 px-4 py-3 shadow-sm transition hover:border-neutral-600 hover:shadow-md"
+		>
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold text-neutral-100">Sprite Atlas Generator</h2>
+				<span class="rounded bg-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300">/sprites</span>
+			</div>
+			<p class="mt-2 text-sm text-neutral-400">
+				Pack individual images into a sprite atlas with JSON descriptor for use with GTMap.
+			</p>
+			<div class="mt-3 text-sm font-medium text-neutral-300 group-hover:text-neutral-100">
+				Open &rarr;
+			</div>
+		</a>
 	</div>
 </div>
