@@ -266,7 +266,8 @@ export class IconAtlasManager implements IconSizeProvider {
 				const r = await fetch(url, { mode: 'cors', credentials: 'omit' });
 				if (!r.ok) throw new Error(`HTTP ${r.status}`);
 				const blob = await r.blob();
-				const bmp = await createImageBitmap(blob, { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+				const bmp = await createImageBitmap(blob);
+				if (bmp.width === 0 || bmp.height === 0) throw new Error('Empty bitmap');
 				return bmp;
 			} catch (err) {
 				if (typeof console !== 'undefined' && console.debug) {
