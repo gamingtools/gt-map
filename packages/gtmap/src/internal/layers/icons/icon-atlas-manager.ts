@@ -183,7 +183,22 @@ export class IconAtlasManager implements IconSizeProvider {
 		const src = await this.loadImageSource(atlasImageUrl);
 		if (!src) return {};
 
-		// Create a single WebGL texture from the full atlas image
+		const atlasW = descriptor.meta.size.width;
+		const atlasH = descriptor.meta.size.height;
+
+		// Draw to intermediary Canvas for cross-browser compatibility.
+		// Direct ImageBitmap -> texImage2D can produce empty textures on Safari/iOS.
+		const canvas = document.createElement('canvas');
+		canvas.width = atlasW;
+		canvas.height = atlasH;
+		const ctx2d = canvas.getContext('2d');
+		if (!ctx2d) return {};
+		ctx2d.clearRect(0, 0, atlasW, atlasH);
+		const sw = src instanceof ImageBitmap ? src.width : (src as HTMLImageElement).naturalWidth;
+		const sh = src instanceof ImageBitmap ? src.height : (src as HTMLImageElement).naturalHeight;
+		ctx2d.drawImage(src as CanvasImageSource, 0, 0, sw, sh, 0, 0, atlasW, atlasH);
+
+		// Create a single WebGL texture from the canvas
 		const tex = gl.createTexture();
 		if (!tex) return {};
 		gl.bindTexture(gl.TEXTURE_2D, tex);
@@ -193,10 +208,7 @@ export class IconAtlasManager implements IconSizeProvider {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src as TexImageSource);
-
-		const atlasW = descriptor.meta.size.width;
-		const atlasH = descriptor.meta.size.height;
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
 		const spriteIds: Record<string, string> = {};
 
 		for (const [name, entry] of Object.entries(descriptor.sprites)) {
