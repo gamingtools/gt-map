@@ -1,5 +1,5 @@
 import * as Coords from '../coords';
-import type { ANGLEInstancedArrays, IconScaleFunction } from '../../api/types';
+import type { ANGLEInstancedArrays, IconScaleFunction, SpriteAtlasDescriptor } from '../../api/types';
 import type { ProgramLocs } from '../render/screen-cache';
 
 import { IconAtlasManager } from './icons/icon-atlas-manager';
@@ -65,6 +65,10 @@ export class IconRenderer {
 
 	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>, opts?: { replaceAll?: boolean }) {
 		await this.atlas.loadIcons(this.gl, defs, opts);
+	}
+
+	async loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>> {
+		return this.atlas.loadSpriteAtlas(this.gl, url, descriptor, atlasId);
 	}
 
 	startMaskBuild() {

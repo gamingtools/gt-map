@@ -1,6 +1,7 @@
 /**
  * IconAtlasManager -- texture loading, atlas management, UV rects, retina handling.
  */
+import type { SpriteAtlasDescriptor } from '../../../api/types';
 import type { IconMeta, IconSizeProvider } from './types';
 import { IconMaskBuilder } from './icon-mask-builder';
 import { createAtlas } from './icon-atlas';
@@ -171,6 +172,70 @@ export class IconAtlasManager implements IconSizeProvider {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Load a sprite atlas: single image + JSON descriptor.
+	 * Creates one WebGL texture from the full image and registers each sprite
+	 * with correct UV rects, sizes, anchors, and masks.
+	 */
+	async loadSpriteAtlas(gl: WebGLRenderingContext, atlasImageUrl: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>> {
+		const src = await this.loadImageSource(atlasImageUrl);
+		if (!src) return {};
+
+		// Create a single WebGL texture from the full atlas image
+		const tex = gl.createTexture();
+		if (!tex) return {};
+		gl.bindTexture(gl.TEXTURE_2D, tex);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src as TexImageSource);
+
+		const atlasW = descriptor.meta.size.width;
+		const atlasH = descriptor.meta.size.height;
+		const spriteIds: Record<string, string> = {};
+
+		for (const [name, entry] of Object.entries(descriptor.sprites)) {
+			const iconId = `${atlasId}/${name}`;
+			spriteIds[name] = iconId;
+
+			// Compute UV rect
+			const u0 = entry.x / atlasW;
+			const v0 = entry.y / atlasH;
+			const u1 = (entry.x + entry.width) / atlasW;
+			const v1 = (entry.y + entry.height) / atlasH;
+
+			this.textures.set(iconId, tex);
+			this.uvRect.set(iconId, { u0, v0, u1, v1 });
+			this.texSize.set(iconId, { w: entry.width, h: entry.height });
+
+			const ax = entry.anchorX ?? entry.width / 2;
+			const ay = entry.anchorY ?? entry.height / 2;
+			this.texAnchor.set(iconId, { ax, ay });
+			this._iconMeta.set(iconId, {
+				iconPath: atlasImageUrl,
+				width: entry.width,
+				height: entry.height,
+				anchorX: ax,
+				anchorY: ay,
+			});
+			this.hasRetina.set(iconId, false);
+
+			// Enqueue mask building with crop rect for this sprite
+			this.maskBuilder.enqueue(iconId, src, entry.width, entry.height, {
+				sx: entry.x,
+				sy: entry.y,
+				sw: entry.width,
+				sh: entry.height,
+			});
+		}
+
+		this.maskBuilder.start();
+		return spriteIds;
 	}
 
 	startMaskBuild() {

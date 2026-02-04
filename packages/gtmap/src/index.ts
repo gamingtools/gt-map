@@ -4,8 +4,8 @@ export { Marker, Vector, EntityCollection } from './api/map';
 export * as easings from './api/easings';
 
 // Export Visual classes and types
-export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual } from './api/map';
-export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual } from './api/map';
+export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual, SpriteVisual } from './api/map';
+export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual, isSpriteVisual } from './api/map';
 export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow } from './api/map';
 
 // Export all public types
@@ -44,6 +44,10 @@ export type {
 	MarkerEventData,
 	RenderStats,
 	ViewState,
+	SpriteAtlasEntry,
+	SpriteAtlasMeta,
+	SpriteAtlasDescriptor,
+	SpriteAtlasHandle,
 } from './api/types';
 
 // Export type guard functions (not types)

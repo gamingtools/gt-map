@@ -1,7 +1,7 @@
 /**
  * IconManager -- icon, marker, and decal rendering lifecycle.
  */
-import type { MarkerInternal, UpscaleFilterMode, IconScaleFunction } from '../../api/types';
+import type { MarkerInternal, UpscaleFilterMode, IconScaleFunction, SpriteAtlasDescriptor } from '../../api/types';
 import { IconRenderer } from '../layers/icons';
 
 export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
@@ -23,6 +23,7 @@ export class IconManager {
 	private _pendingDecals: MarkerInternal[] | null = null;
 	private _lastMarkers: MarkerInternal[] = [];
 	private _lastDecals: MarkerInternal[] = [];
+	private _spriteAtlases: Array<{ url: string; descriptor: SpriteAtlasDescriptor; atlasId: string }> = [];
 	private _maskBuildRequested = false;
 	rasterOpacity = 1.0;
 	upscaleFilter: UpscaleFilterMode = 'linear';
@@ -61,6 +62,10 @@ export class IconManager {
 			this._pendingDecals = null;
 			this.setDecals(d);
 		}
+		// Replay sprite atlas loads queued before GL init
+		for (const sa of this._spriteAtlases) {
+			this._icons.loadSpriteAtlas(sa.url, sa.descriptor, sa.atlasId).catch((err) => this.deps.debugWarn('sprite atlas init load', err));
+		}
 	}
 
 	// -- Icon defs --
@@ -81,6 +86,26 @@ export class IconManager {
 		}
 		this.deps.clearScreenCache();
 		this.deps.requestRender();
+	}
+
+	// -- Sprite atlas --
+
+	async loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>> {
+		this._spriteAtlases.push({ url, descriptor, atlasId });
+		if (!this._icons) {
+			return {};
+		}
+		try {
+			const result = await this._icons.loadSpriteAtlas(url, descriptor, atlasId);
+			this.deps.clearScreenCache();
+			this.deps.requestRender();
+			return result;
+		} catch (err) {
+			if (typeof console !== 'undefined' && console.warn) {
+				console.warn('[GTMap] Sprite atlas loading failed:', err);
+			}
+			return {};
+		}
 	}
 
 	// -- Markers --
@@ -168,6 +193,10 @@ export class IconManager {
 			const defs = this._allIconDefs;
 			if (defs && Object.keys(defs).length) {
 				this._icons.loadIcons(defs).catch((err) => this.deps.debugWarn('icon rebuild load', err));
+			}
+			// Replay sprite atlas loads
+			for (const sa of this._spriteAtlases) {
+				this._icons.loadSpriteAtlas(sa.url, sa.descriptor, sa.atlasId).catch((err) => this.deps.debugWarn('sprite atlas rebuild load', err));
 			}
 			if (this._lastMarkers && this._lastMarkers.length) {
 				this._icons.setMarkers(this._lastMarkers);

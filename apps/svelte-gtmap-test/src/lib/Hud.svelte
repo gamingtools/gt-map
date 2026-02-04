@@ -249,10 +249,10 @@
 			return;
 		}
 		if (iconScaleMode === 'world') {
-			map.view?.setIconScaleFunction((zoom) => Math.pow(2, zoom - 3));
+			map.view?.setIconScaleFunction((zoom: number) => Math.pow(2, zoom - 3));
 			return;
 		}
-		map.view?.setIconScaleFunction((zoom) => {
+		map.view?.setIconScaleFunction((zoom: number) => {
 			const maxScale = 1;
 			const scale = Math.pow(2, zoom - 3);
 			return Math.min(maxScale, Math.max(0.5, scale));
@@ -448,6 +448,7 @@
 						class="flex h-5 w-5 items-center justify-center rounded text-data-dim transition-colors hover:bg-panel-surface hover:text-accent-red"
 						onclick={() => (hudVisible = false)}
 						title="Close HUD"
+						aria-label="Close HUD"
 					>
 						<svg class="h-3 w-3" viewBox="0 0 12 12" fill="none">
 							<path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
