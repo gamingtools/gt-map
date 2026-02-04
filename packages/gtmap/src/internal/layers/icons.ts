@@ -242,7 +242,15 @@ export class IconRenderer {
 		const maxZoom = ctx.maxZoom ?? 19;
 		const mapIconScale = ctx.iconScaleFunction ? ctx.iconScaleFunction(ctx.zoom, minZoom, maxZoom) : 1.0;
 
-		if (this.buffers.hasCustomIconScale && ctx.zoom !== this.buffers.lastBuildZoom) {
+		if (
+			this.buffers.hasCustomIconScale &&
+			(
+				this.buffers.iconScaleDirty ||
+				ctx.zoom !== this.buffers.lastBuildZoom ||
+				minZoom !== this.buffers.lastBuildMinZoom ||
+				maxZoom !== this.buffers.lastBuildMaxZoom
+			)
+		) {
 			this.buffers.updateIconScales(ctx.zoom, minZoom, maxZoom, mapIconScale);
 		}
 

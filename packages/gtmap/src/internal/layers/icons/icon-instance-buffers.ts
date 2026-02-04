@@ -9,6 +9,7 @@ export class IconInstanceBuffers {
 	private typeMarkers = new Map<string, MarkerRenderData[]>();
 	private instBuffers = new Map<string, { buf: WebGLBuffer; count: number; version: number; uploaded: number; capacityBytes: number }>();
 	hasCustomIconScale = false;
+	iconScaleDirty = false;
 	lastBuildZoom = 0;
 	lastBuildMinZoom = 0;
 	lastBuildMaxZoom = 19;
@@ -38,6 +39,7 @@ export class IconInstanceBuffers {
 			if (m.iconScaleFunction !== undefined) hasCustom = true;
 		}
 		this.hasCustomIconScale = hasCustom;
+		this.iconScaleDirty = hasCustom;
 		this.typeMarkers = byType;
 
 		this.typeMinZ.clear();
@@ -109,6 +111,7 @@ export class IconInstanceBuffers {
 		this.lastBuildZoom = zoom;
 		this.lastBuildMinZoom = minZoom;
 		this.lastBuildMaxZoom = maxZoom;
+		this.iconScaleDirty = false;
 	}
 
 	// -- Accessors --
