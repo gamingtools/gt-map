@@ -23,6 +23,12 @@ export default class MapRenderer {
 	private static readonly FILTER_ENTER = 1.02;
 	private static readonly FILTER_EXIT = 0.99;
 	private _lastFilterMode: 'linear' | 'bicubic' = 'linear';
+	// FBO for opacity compositing (avoids double-alpha when backfill + base tiles overlap)
+	private _gl: WebGLRenderingContext | null = null;
+	private _fbo: WebGLFramebuffer | null = null;
+	private _fboTex: WebGLTexture | null = null;
+	private _fboW = 0;
+	private _fboH = 0;
 
 	constructor(
 		getCtx: () => RenderCtx,
@@ -35,6 +41,56 @@ export default class MapRenderer {
 	) {
 		this.getCtx = getCtx;
 		this.hooks = hooks || {};
+	}
+
+	/** Lazily create / resize the offscreen FBO used when rasterOpacity < 1. */
+	private ensureFbo(gl: WebGLRenderingContext, w: number, h: number): boolean {
+		// Reset FBO state if the GL context changed (e.g. after context loss/restore)
+		if (this._gl && this._gl !== gl) {
+			this._fbo = null;
+			this._fboTex = null;
+			this._fboW = 0;
+			this._fboH = 0;
+		}
+		this._gl = gl;
+
+		// Clamp to MAX_TEXTURE_SIZE to avoid incomplete FBO on large canvases
+		const maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number;
+		if (w > maxSize || h > maxSize) return false;
+
+		if (!this._fbo) {
+			const fbo = gl.createFramebuffer();
+			const tex = gl.createTexture();
+			if (!fbo || !tex) {
+				// Clean up partial allocation
+				if (fbo) try { gl.deleteFramebuffer(fbo); } catch { /* noop */ }
+				if (tex) try { gl.deleteTexture(tex); } catch { /* noop */ }
+				return false;
+			}
+			this._fbo = fbo;
+			this._fboTex = tex;
+			gl.bindTexture(gl.TEXTURE_2D, this._fboTex);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+			gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+			this._fboW = 0;
+		}
+		if (this._fboW !== w || this._fboH !== h) {
+			gl.bindTexture(gl.TEXTURE_2D, this._fboTex!);
+			gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo);
+			gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this._fboTex, 0);
+			const status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			if (status !== gl.FRAMEBUFFER_COMPLETE) {
+				// FBO incomplete -- fall back to direct rendering
+				return false;
+			}
+			this._fboW = w;
+			this._fboH = h;
+		}
+		return true;
 	}
 
 	render() {
@@ -149,6 +205,20 @@ export default class MapRenderer {
 			}
 		}
 
+		// Render tiles into an offscreen FBO when opacity < 1 to prevent
+		// double-alpha artifacts from backfill + base tile overlap.
+		const layerAlpha = Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0));
+		const useFbo = layerAlpha < 1.0 && this.ensureFbo(gl, ctx.canvas.width, ctx.canvas.height);
+		if (useFbo) {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo!);
+			const pc = gl.getParameter(gl.COLOR_CLEAR_VALUE) as Float32Array;
+			const pcR = pc[0] ?? 0, pcG = pc[1] ?? 0, pcB = pc[2] ?? 0, pcA = pc[3] ?? 0;
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.clearColor(pcR, pcG, pcB, pcA);
+		}
+		const tileAlpha = useFbo ? 1.0 : layerAlpha;
+
 		const coverage = ctx.raster.coverage(tileCache, baseZ, tlWorld, scale, widthCSS, heightCSS, ctx.wrapX, tileSize, ctx.mapSize, ctx.maxZoom, sourceMaxZoom);
 		if (!this.iconsUnlocked && coverage >= COVERAGE.iconUnlock) this.iconsUnlocked = true;
 
@@ -163,7 +233,7 @@ export default class MapRenderer {
 				const snapL = (v: number) => Coords.snapLevelToDevice(v, scaleL, ctx.dpr);
 				tlL = { x: snapL(tlL.x), y: snapL(tlL.y) };
 				const covL = ctx.raster.coverage(tileCache, lvl, tlL, scaleL, widthCSS, heightCSS, ctx.wrapX, tileSize, ctx.mapSize, ctx.maxZoom, sourceMaxZoom);
-				gl.uniform1f(loc.u_alpha!, Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0)));
+				gl.uniform1f(loc.u_alpha!, tileAlpha);
 				ctx.raster.drawTilesForLevel(loc, tileCache, enqueueTile, {
 					zLevel: lvl,
 					tlWorld: tlL,
@@ -184,8 +254,7 @@ export default class MapRenderer {
 		}
 
 		// Draw base level
-		const layerAlpha = Math.max(0, Math.min(1, ctx.rasterOpacity ?? 1.0));
-		gl.uniform1f(loc.u_alpha!, layerAlpha);
+		gl.uniform1f(loc.u_alpha!, tileAlpha);
 		ctx.raster.drawTilesForLevel(loc, tileCache, enqueueTile, {
 			zLevel: baseZ,
 			tlWorld,
@@ -201,6 +270,24 @@ export default class MapRenderer {
 			filterMode: this.resolveFilterMode(scale, ctx.upscaleFilter),
 			wantTileKey: ctx.wantTileKey,
 		});
+
+		// Composite FBO onto the canvas at the desired raster opacity
+		if (useFbo) {
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, this._fboTex!);
+			gl.uniform1f(loc.u_alpha!, layerAlpha);
+			gl.uniform2f(loc.u_translate!, 0, 0);
+			gl.uniform2f(loc.u_size!, ctx.canvas.width, ctx.canvas.height);
+			gl.uniform2f(loc.u_uv0!, 0.0, 1.0);
+			gl.uniform2f(loc.u_uv1!, 1.0, 0.0);
+			if (loc.u_filterMode) gl.uniform1i(loc.u_filterMode, 0);
+			if (loc.u_texel) gl.uniform2f(loc.u_texel, 1.0, 1.0);
+			gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+			// Restore UVs for subsequent draws
+			gl.uniform2f(loc.u_uv0!, 0.0, 0.0);
+			gl.uniform2f(loc.u_uv1!, 1.0, 1.0);
+		}
 	}
 
 	private resolveFilterMode(scale: number, mode?: UpscaleFilterMode): 'auto' | 'linear' | 'bicubic' {
@@ -224,5 +311,15 @@ export default class MapRenderer {
 		return this._lastFilterMode;
 	}
 
-	dispose() {}
+	dispose() {
+		const gl = this._gl;
+		if (gl) {
+			if (this._fboTex) try { gl.deleteTexture(this._fboTex); } catch { /* GL context may be lost */ }
+			if (this._fbo) try { gl.deleteFramebuffer(this._fbo); } catch { /* GL context may be lost */ }
+		}
+		this._fbo = null;
+		this._fboTex = null;
+		this._fboW = 0;
+		this._fboH = 0;
+	}
 }
