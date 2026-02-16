@@ -1,9 +1,11 @@
 <script lang="ts">
 	// Single status widget: subscribes to map events and shows key values
-    import type { GTMap, Marker as GTMarker } from '@gtmap';
+    import type { GTMap, Marker as GTMarker, InteractiveLayer, TileLayer } from '@gtmap';
 
 	const {
 		map,
+		markerLayer = undefined as unknown as InteractiveLayer,
+		tileLayer = undefined as unknown as TileLayer,
 		fpsCap: fpsCapInitial = 60,
 		wheelSpeed: wheelSpeedInitial = 1.0,
 		inertia: inertiaInitial = true,
@@ -11,7 +13,6 @@
 		inertiaMaxSpeed: inertiaMaxSpeedInitial = 2000,
 		easeLinearity: easeLinearityInitial = 0.2,
 		zoomSnapThreshold: zoomSnapThresholdInitial = 0.4,
-		rasterOpacity: rasterOpacityInitial = 1.0,
 		upscaleFilter: upscaleFilterInitial = 'auto',
 		backgroundColor: backgroundColorInitial = '#ffffff',
 		backgroundTransparent: backgroundTransparentInitial = true,
@@ -30,6 +31,8 @@
 		setVectorsEnabled
 	} = $props<{
         map: GTMap;
+		markerLayer?: InteractiveLayer;
+		tileLayer?: TileLayer;
 		fpsCap?: number;
 		wheelSpeed?: number;
 		inertia?: boolean;
@@ -37,7 +40,6 @@
 		inertiaMaxSpeed?: number;
 		easeLinearity?: number;
 		zoomSnapThreshold?: number;
-		rasterOpacity?: number;
 		upscaleFilter?: 'auto' | 'linear' | 'bicubic';
 		backgroundColor?: string;
 		backgroundTransparent?: boolean;
@@ -71,7 +73,7 @@
 	let inertiaMaxSpeed = $state(inertiaMaxSpeedInitial);
 	let easeLinearity = $state(easeLinearityInitial);
 	let zoomSnapThreshold = $state(zoomSnapThresholdInitial);
-	let rasterOpacity = $state(rasterOpacityInitial);
+	let rasterOpacity = $state(1.0);
 	let upscaleFilter = $state<'auto' | 'linear' | 'bicubic'>(upscaleFilterInitial);
 	let backgroundColor = $state(backgroundColorInitial);
 	let backgroundTransparent = $state(backgroundTransparentInitial);
@@ -201,7 +203,7 @@
 		map?.display?.setUpscaleFilter(upscaleFilter);
 	});
 	$effect(() => {
-		map?.display?.setRasterOpacity(rasterOpacity);
+		if (tileLayer) map?.setLayerOpacity?.(tileLayer, rasterOpacity);
 	});
 	$effect(() => {
 		map?.display?.setZoomSnapThreshold(zoomSnapThreshold);
@@ -288,7 +290,7 @@
 					animStartMs = now;
 					animState.clear();
 					// Seed state for existing markers without causing a jump on the next frame
-					for (const mk of map.content.markers.getAll()) {
+					for (const mk of markerLayer?.markers?.getAll() ?? []) {
 						const rot0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
 						const phase = Math.random() * Math.PI * 2;
 						const dx0 = ORBIT_AMP * Math.cos(phase);
@@ -300,7 +302,7 @@
                     rotStartMs = now;
                     rotateBase.clear();
                     rotateDir.clear();
-                    for (const mk of map.content.markers.getAll()) {
+                    for (const mk of markerLayer?.markers?.getAll() ?? []) {
                         const r0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
                         rotateBase.set(mk.id, r0);
                         rotateDir.set(mk.id, Math.random() < 0.5 ? -1 : 1);
@@ -308,7 +310,7 @@
                 }
 
 				// Track dynamic add/remove while enabled
-				offLayerAdd = map.content.markers.events.on('entityadd').each(({ entity }: { entity: GTMarker }) => {
+				offLayerAdd = markerLayer?.markers?.events?.on('entityadd').each(({ entity }: { entity: GTMarker }) => {
 					const mk = entity;
 					if (needPos) {
 						const rot0 = typeof mk.rotation === 'number' ? mk.rotation : 0;
@@ -323,7 +325,7 @@
                         rotateDir.set(mk.id, Math.random() < 0.5 ? -1 : 1);
                     }
                 });
-                offLayerRemove = map.content.markers.events.on('entityremove').each(({ entity }: { entity: GTMarker }) => {
+                offLayerRemove = markerLayer?.markers?.events?.on('entityremove').each(({ entity }: { entity: GTMarker }) => {
                     animState.delete(entity.id);
                     rotateBase.delete(entity.id);
                     rotateDir.delete(entity.id);
@@ -360,7 +362,7 @@
         if (!map || !animateMarkers) return;
         const t = (now - animStartMs) / 1000; // seconds
         const omega = 2 * Math.PI * ORBIT_HZ;
-        for (const mk of map.content.markers.getAll()) {
+        for (const mk of markerLayer?.markers?.getAll() ?? []) {
             const st = animState.get(mk.id);
             if (!st) continue;
             const dx = ORBIT_AMP * Math.cos(omega * t + st.phase);
@@ -372,7 +374,7 @@
     function rotateMarkersFrame(now: number): void {
         if (!map || !rotateMarkers) return;
         const t = (now - rotStartMs) / 1000; // seconds
-        for (const mk of map.content.markers.getAll()) {
+        for (const mk of markerLayer?.markers?.getAll() ?? []) {
             const r0 = rotateBase.get(mk.id);
             if (r0 == null) continue;
             const dir = rotateDir.get(mk.id) ?? 1;

@@ -29,8 +29,6 @@ export interface TileSourceOptions {
 	packUrl: string;
 	/** Tile size in pixels (tiles are always square). */
 	tileSize: number;
-	/** Full map dimensions in pixels at the source's maximum zoom level. */
-	mapSize: { width: number; height: number };
 	/** Minimum zoom level available in the tile set. */
 	sourceMinZoom: number;
 	/** Maximum zoom level available in the tile set. */
@@ -39,8 +37,8 @@ export interface TileSourceOptions {
 
 // Map configuration
 export interface MapOptions {
-	/** Tile pyramid source. */
-	tiles: TileSourceOptions;
+	/** Map bounds in pixels (defines the coordinate space). */
+	mapSize: { width: number; height: number };
 	minZoom?: number;
 	maxZoom?: number;
 	center?: Point;
@@ -445,7 +443,6 @@ export interface MarkerInternal {
 	type: string;
 	size?: number;
 	rotation?: number;
-	zIndex?: number;
 	id: string;
 	/** Per-marker icon scale function override (undefined = use map's, null = no scaling) */
 	iconScaleFunction?: IconScaleFunction | null;

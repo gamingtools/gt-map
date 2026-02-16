@@ -4,7 +4,7 @@
  * All tiles are served from an in-memory GTPK binary pack.
  * Decode path: getBlob() -> createImageBitmap() -> GL upload -> cache.
  */
-import { computeImageMaxZoom, computeTileBounds } from '../map-math';
+import { computeTileBounds } from '../map-math';
 import { TileCache } from './cache';
 import { GtpkReader } from './gtpk-reader';
 import { tileKey as tileKeyOf } from './source';
@@ -208,20 +208,18 @@ export class TileManager {
 
 	// -- Source change --
 
-	setSource(opts: { packUrl: string; tileSize: number; mapSize: { width: number; height: number }; sourceMinZoom: number; sourceMaxZoom: number }): void {
+	setSource(opts: { packUrl: string; tileSize: number; sourceMinZoom: number; sourceMaxZoom: number }): void {
 		this._teardown();
 
 		this._packUrl = opts.packUrl;
 		this._tileSize = opts.tileSize;
 		this._sourceMaxZoom = opts.sourceMaxZoom;
 
-		const mapSize = { width: Math.max(1, opts.mapSize.width), height: Math.max(1, opts.mapSize.height) };
-		const imageMaxZoom = computeImageMaxZoom(mapSize.width, mapSize.height, opts.tileSize);
 		this.deps.updateViewForSource({
 			minZoom: opts.sourceMinZoom,
 			maxZoom: Math.max(opts.sourceMinZoom, this._sourceMaxZoom),
-			mapSize,
-			imageMaxZoom,
+			mapSize: this.deps.getMapSize(),
+			imageMaxZoom: this.deps.getImageMaxZoom(),
 		});
 
 		this.init();

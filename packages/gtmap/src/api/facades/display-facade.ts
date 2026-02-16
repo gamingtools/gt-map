@@ -10,7 +10,6 @@ export interface DisplayFacadeDeps {
 	setUpscaleFilter(mode: UpscaleFilterMode): void;
 	setFpsCap(v: number): void;
 	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): void;
-	setRasterOpacity(v: number): void;
 	setZoomSnapThreshold(v: number): void;
 }
 
@@ -48,13 +47,6 @@ export class DisplayFacade {
 	 */
 	setBackgroundColor(color: string | { r: number; g: number; b: number; a?: number }): void {
 		this._deps.setBackgroundColor(color);
-	}
-
-	/**
-	 * Set the raster tile opacity.
-	 */
-	setRasterOpacity(v: number): void {
-		this._deps.setRasterOpacity(v);
 	}
 
 	/**

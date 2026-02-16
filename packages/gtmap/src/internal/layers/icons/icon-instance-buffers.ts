@@ -25,7 +25,6 @@ export class IconInstanceBuffers {
 	 */
 	rebuildTypeData(markers: MarkerRenderData[], decals: MarkerRenderData[], sizes: IconSizeProvider): void {
 		const all = [...markers, ...decals];
-		all.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
 
 		const byType = new Map<string, MarkerRenderData[]>();
 		let hasCustom = false;
@@ -52,7 +51,6 @@ export class IconInstanceBuffers {
 			const anc = sizes.getAnchor(type);
 			const data = new Float32Array(list.length * 8);
 			let j = 0;
-			let minZ = Infinity;
 			for (const m of list) {
 				const w = m.size ?? sz.w;
 				const h = m.size ?? sz.h;
@@ -74,13 +72,11 @@ export class IconInstanceBuffers {
 				data[j++] = ay;
 				data[j++] = (m.rotation || 0) * (Math.PI / 180);
 				data[j++] = iconScale;
-				const z = m.zIndex ?? 0;
-				if (z < minZ) minZ = z;
 			}
 			const prev = this.typeData.get(type);
 			const version = (prev?.version || 0) + 1;
 			this.typeData.set(type, { data, version });
-			this.typeMinZ.set(type, minZ);
+			this.typeMinZ.set(type, 0);
 		}
 	}
 

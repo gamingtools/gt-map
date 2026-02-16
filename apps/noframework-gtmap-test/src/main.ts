@@ -4,23 +4,28 @@ const container = document.getElementById('map') as HTMLDivElement;
 const hud = document.getElementById('hud') as HTMLDivElement;
 const attribution = document.getElementById('attribution') as HTMLDivElement;
 
+const MAP_SIZE = { width: 8192, height: 8192 };
 const MAP_TILES = {
   packUrl: 'https://gtcdn.info/dune/tiles/hb_8k.gtpk',
   tileSize: 256,
-  mapSize: { width: 8192, height: 8192 },
   sourceMinZoom: 0,
   sourceMaxZoom: 5,
 };
-const HOME = { x: MAP_TILES.mapSize.width / 2, y: MAP_TILES.mapSize.height / 2 };
+const HOME = { x: MAP_SIZE.width / 2, y: MAP_SIZE.height / 2 };
 const map = new GTMap(container, {
+  mapSize: MAP_SIZE,
   center: HOME,
   zoom: 2,
   minZoom: MAP_TILES.sourceMinZoom,
   maxZoom: 10,
   fpsCap: 60,
-  tiles: MAP_TILES,
   wrapX: false,
 });
+
+const tileLayer = map.createTileLayer(MAP_TILES);
+map.addLayer(tileLayer, { z: 0 });
+const markerLayer = map.createInteractiveLayer();
+map.addLayer(markerLayer, { z: 10 });
 
 // HUD updates on actual render frames (engine emits 'frame')
 (() => {
@@ -55,7 +60,7 @@ attribution.textContent = 'Hagga Basin imagery © respective owners (game map)';
     const handles: string[] = [];
     Object.keys(defs).forEach((k) => {
       const d = defs[k];
-      const h = map.content.addIcon({ iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height });
+      const h = markerLayer.addIcon({ iconPath: d.iconPath, x2IconPath: d.x2IconPath, width: d.width, height: d.height });
       handles.push(h.id);
     });
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
@@ -63,7 +68,7 @@ attribution.textContent = 'Hagga Basin imagery © respective owners (game map)';
     for (let i = 0; i < COUNT; i++) {
       const iconId = handles[(Math.random() * handles.length) | 0];
       const rotation = Math.random() < 0.3 ? Math.round(rand(0, 360)) : undefined;
-      map.content.addMarker(rand(0, MAP_TILES.mapSize.width), rand(0, MAP_TILES.mapSize.height), { icon: { id: iconId }, rotation });
+      markerLayer.addMarker(rand(0, MAP_SIZE.width), rand(0, MAP_SIZE.height), { icon: { id: iconId }, rotation });
     }
   } catch (err) {
     console.warn('Icon demo load failed:', err);

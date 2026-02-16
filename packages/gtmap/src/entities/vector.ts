@@ -34,7 +34,6 @@ export class Vector extends EventedEntity<VectorEventMap> {
 	readonly id: string;
 	private _geometry: VectorGeometry;
 	private _data?: unknown;
-	private _zIndex: number;
 	private _onChange?: () => void;
 
 	/**
@@ -42,7 +41,7 @@ export class Vector extends EventedEntity<VectorEventMap> {
 	 *
 	 * @public
 	 * @param geometry - Discriminated union of vector shapes
-	 * @param opts - Options including user data and zIndex
+	 * @param opts - Options including user data
 	 * @param onChange - Internal callback for renderer sync
 	 * @internal
 	 */
@@ -51,17 +50,7 @@ export class Vector extends EventedEntity<VectorEventMap> {
 		this.id = genVectorId();
 		this._geometry = geometry;
 		if (opts.data !== undefined) this._data = opts.data;
-		this._zIndex = 0; // Vectors always render at z=0
 		if (onChange !== undefined) this._onChange = onChange;
-	}
-
-	/**
-	 * Get z-index for rendering order.
-	 * @remarks Vectors always render at z=0. Markers default to z=1.
-	 * Use negative zIndex on markers to place them behind vectors.
-	 */
-	get zIndex(): number {
-		return this._zIndex;
 	}
 
 	/** Get current geometry. */

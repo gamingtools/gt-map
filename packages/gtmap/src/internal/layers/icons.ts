@@ -81,14 +81,14 @@ export class IconRenderer {
 
 	// -- Marker data --
 
-	setMarkers(markers: Array<MarkerRenderData | { x: number; y: number; type: string; size?: number; rotation?: number; zIndex?: number; iconScaleFunction?: IconScaleFunction | null }>) {
+	setMarkers(markers: Array<MarkerRenderData | { x: number; y: number; type: string; size?: number; rotation?: number; iconScaleFunction?: IconScaleFunction | null }>) {
 		let idx = 0;
 		const norm: MarkerRenderData[] = [];
 		for (const m of markers || []) {
 			if ('id' in (m as Record<string, unknown>)) {
 				norm.push(m as MarkerRenderData);
 			} else {
-				const mm = m as { x: number; y: number; type: string; size?: number; rotation?: number; zIndex?: number };
+				const mm = m as { x: number; y: number; type: string; size?: number; rotation?: number };
 				norm.push({
 					id: `m${idx++}`,
 					x: mm.x,
@@ -96,7 +96,6 @@ export class IconRenderer {
 					type: mm.type,
 					...(mm.size !== undefined ? { size: mm.size } : {}),
 					...(mm.rotation !== undefined ? { rotation: mm.rotation } : {}),
-					...(mm.zIndex !== undefined ? { zIndex: mm.zIndex } : {}),
 				});
 			}
 		}
@@ -104,14 +103,14 @@ export class IconRenderer {
 		this.buffers.rebuildTypeData(this.markers, this.decals, this.atlas);
 	}
 
-	setDecals(decals: Array<MarkerRenderData | { x: number; y: number; type: string; size?: number; rotation?: number; zIndex?: number }>) {
+	setDecals(decals: Array<MarkerRenderData | { x: number; y: number; type: string; size?: number; rotation?: number }>) {
 		let idx = 0;
 		const norm: MarkerRenderData[] = [];
 		for (const d of decals || []) {
 			if ('id' in (d as Record<string, unknown>)) {
 				norm.push(d as MarkerRenderData);
 			} else {
-				const dd = d as { x: number; y: number; type: string; size?: number; rotation?: number; zIndex?: number };
+				const dd = d as { x: number; y: number; type: string; size?: number; rotation?: number };
 				norm.push({
 					id: `d${idx++}`,
 					x: dd.x,
@@ -119,7 +118,6 @@ export class IconRenderer {
 					type: dd.type,
 					...(dd.size !== undefined ? { size: dd.size } : {}),
 					...(dd.rotation !== undefined ? { rotation: dd.rotation } : {}),
-					...(dd.zIndex !== undefined ? { zIndex: dd.zIndex } : {}),
 				});
 			}
 		}

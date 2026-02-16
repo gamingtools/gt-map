@@ -2,10 +2,10 @@
  * MapConfig -- immutable configuration snapshot from constructor options.
  * Holds the initial values that don't change after construction.
  */
-import type { MapOptions, TileSourceOptions, SpinnerOptions } from '../../api/types';
+import type { MapOptions, SpinnerOptions } from '../../api/types';
 
 export class MapConfig {
-	readonly tiles: TileSourceOptions;
+	readonly mapSize: { width: number; height: number };
 	readonly initialCenter: { x: number; y: number };
 	readonly initialZoom: number;
 	readonly minZoom: number;
@@ -25,13 +25,11 @@ export class MapConfig {
 	readonly debug: boolean;
 
 	constructor(opts: MapOptions) {
-		this.tiles = opts.tiles;
-		const w = opts.tiles.mapSize.width;
-		const h = opts.tiles.mapSize.height;
-		this.initialCenter = opts.center ?? { x: w / 2, y: h / 2 };
+		this.mapSize = { width: opts.mapSize.width, height: opts.mapSize.height };
+		this.initialCenter = opts.center ?? { x: this.mapSize.width / 2, y: this.mapSize.height / 2 };
 		this.initialZoom = opts.zoom ?? 0;
 		this.minZoom = opts.minZoom ?? 0;
-		this.maxZoom = opts.maxZoom ?? opts.tiles.sourceMaxZoom;
+		this.maxZoom = opts.maxZoom ?? 0;
 		this.autoResize = opts.autoResize !== false;
 		this.backgroundColor = opts.backgroundColor;
 		this.screenCache = opts.screenCache !== false;

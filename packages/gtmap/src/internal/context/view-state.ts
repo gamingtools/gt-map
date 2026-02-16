@@ -42,7 +42,6 @@ export class ViewStateStore {
 		minZoom: number;
 		maxZoom: number;
 		mapSize: { width: number; height: number };
-		tileSize: number;
 		wrapX: boolean;
 		freePan: boolean;
 		maxBoundsPx: MaxBoundsPx | null;
@@ -56,7 +55,7 @@ export class ViewStateStore {
 		this.minZoom = opts.minZoom;
 		this.maxZoom = opts.maxZoom;
 		this.mapSize = { width: opts.mapSize.width, height: opts.mapSize.height };
-		this.imageMaxZoom = computeImageMaxZoom(opts.mapSize.width, opts.mapSize.height, opts.tileSize);
+		this.imageMaxZoom = computeImageMaxZoom(opts.mapSize.width, opts.mapSize.height);
 		this.wrapX = opts.wrapX;
 		this.freePan = opts.freePan;
 		this.maxBoundsPx = opts.maxBoundsPx;

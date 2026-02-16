@@ -8,11 +8,10 @@ import type { EventMap } from '../../api/types';
 import { TypedEventBus, setEventBusDebug } from '../events/typed-stream';
 import { OptionsManager } from '../core/options-manager';
 // Forward references -- these are set during initialization phases.
-import type { TileManager } from '../tiles/tile-manager';
-import type { ContentManager } from '../content/content-manager';
 import type { RenderCoordinator } from '../render/render-coordinator';
 import type { InputManager } from '../input/input-manager';
 import type { BackgroundUIManager } from '../core/background-ui';
+import type { LayerRegistry } from '../layers/layer-registry';
 
 import { DebugLogger } from './debug-logger';
 import { GLResources } from './gl-resources';
@@ -38,11 +37,10 @@ export class MapContext {
 	glResources: GLResources | null = null;
 
 	// -- Sub-systems (set during init phases) --
-	tileManager: TileManager | null = null;
-	contentManager: ContentManager | null = null;
 	renderCoordinator: RenderCoordinator | null = null;
 	inputManager: InputManager | null = null;
 	bgUI: BackgroundUIManager | null = null;
+	layerRegistry: LayerRegistry | null = null;
 
 	// -- Shared interaction state --
 	lastInteractAt: number;
@@ -71,8 +69,7 @@ export class MapContext {
 			zoom: config.initialZoom,
 			minZoom: config.minZoom,
 			maxZoom: config.maxZoom,
-			mapSize: config.tiles.mapSize,
-			tileSize: config.tiles.tileSize,
+			mapSize: config.mapSize,
 			wrapX: config.wrapX,
 			freePan: config.freePan,
 			maxBoundsPx: config.maxBoundsPx,

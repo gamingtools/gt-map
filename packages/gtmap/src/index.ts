@@ -58,11 +58,14 @@ export type { PublicEvents, EventSubscription, MarkerEvents, VectorEvents, Entit
 
 export type { MarkerData, VectorData, VectorGeometry, MarkerEventMap, VectorEventMap, EntityCollectionEventMap, PointerMeta, PointerModifiers, InputDevice } from './api/events/maps';
 
-// Export facade classes (accessed via map.view, map.content, map.display, map.input)
+// Export facade classes (accessed via map.view, map.display, map.input)
 export { ViewFacade } from './api/facades/view-facade';
-export { ContentFacade } from './api/facades/content-facade';
 export { DisplayFacade } from './api/facades/display-facade';
 export { InputFacade } from './api/facades/input-facade';
+
+// Export layer classes and types
+export { TileLayer, InteractiveLayer, StaticLayer } from './api/layers/index';
+export type { TileLayerOptions, AddLayerOptions } from './api/layers/types';
 
 // Export entity option types
 export type { MarkerOptions, MarkerTransition } from './entities/marker';

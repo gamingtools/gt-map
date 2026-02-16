@@ -19,12 +19,6 @@ export interface MarkerOptions {
 	/** Opacity (0-1). */
 	opacity?: number;
 	/**
-	 * Z-index for stacking order (higher values render on top).
-	 * @defaultValue 1
-	 * @remarks Vectors always render at z=0. Use negative zIndex to place markers behind vectors.
-	 */
-	zIndex?: number;
-	/**
 	 * Override the map-level icon scale function for this marker.
 	 * Set to `null` to disable scaling (always use scale=1).
 	 * If undefined, falls back to visual's iconScaleFunction, then map's.
@@ -68,7 +62,6 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 	private _scale: number;
 	private _rotation: number;
 	private _opacity: number;
-	private _zIndex: number;
 	private _iconScaleFunction?: IconScaleFunction | null;
 	private _data?: unknown;
 	private _onChange?: () => void;
@@ -93,7 +86,6 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 		this._scale = opts.scale ?? 1;
 		this._rotation = opts.rotation ?? 0;
 		this._opacity = opts.opacity ?? 1;
-		this._zIndex = opts.zIndex ?? 1;
 		if (opts.iconScaleFunction !== undefined) this._iconScaleFunction = opts.iconScaleFunction;
 		if (opts.data !== undefined) this._data = opts.data;
 		if (onChange !== undefined) this._onChange = onChange;
@@ -122,10 +114,6 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 	/** Opacity (0-1). */
 	get opacity(): number {
 		return this._opacity;
-	}
-	/** Z-index for stacking order (higher values render on top). */
-	get zIndex(): number {
-		return this._zIndex;
 	}
 	/** Icon scale function override for this marker (undefined = use visual's or map's). */
 	get iconScaleFunction(): IconScaleFunction | null | undefined {
@@ -160,12 +148,11 @@ export class Marker extends EventedEntity<MarkerEventMap> {
 	 * @param opts - Partial style options
 	 * @returns This marker for chaining
 	 */
-	setStyle(opts: { visual?: Visual; scale?: number; rotation?: number; opacity?: number; zIndex?: number }): this {
+	setStyle(opts: { visual?: Visual; scale?: number; rotation?: number; opacity?: number }): this {
 		if (opts.visual !== undefined) this._visual = opts.visual;
 		if (opts.scale !== undefined) this._scale = opts.scale;
 		if (opts.rotation !== undefined) this._rotation = opts.rotation;
 		if (opts.opacity !== undefined) this._opacity = opts.opacity;
-		if (opts.zIndex !== undefined) this._zIndex = opts.zIndex;
 		this._onChange?.();
 		return this;
 	}

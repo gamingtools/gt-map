@@ -2,20 +2,17 @@
  * RenderCoordinator -- owns frame loop, render tick, animation stepping,
  * screen cache, and MapRenderer orchestration.
  */
-import type { EventMap, UpscaleFilterMode, IconScaleFunction } from '../../api/types';
-import type { RenderCtx } from '../types';
+import type { EventMap } from '../../api/types';
 import type { ViewStateStore } from '../context/view-state';
 import type { GLResources } from '../context/gl-resources';
-import type { TileCache } from '../tiles/cache';
-import type { IconRenderer } from '../layers/icons';
+import type { LayerRegistry } from '../layers/layer-registry';
 import { FrameLoop } from '../core/frame-loop';
 import ZoomController from '../core/zoom-controller';
 import PanController from '../core/pan-controller';
-import { RasterRenderer } from '../layers/raster';
 import { clampCenterWorld as clampCenterWorldCore } from '../core/bounds';
 import * as Coords from '../coords';
 
-import MapRenderer from './map-renderer';
+import MapRenderer, { type FrameCtx } from './map-renderer';
 import { ScreenCache } from './screen-cache';
 import { GridOverlay } from './grid-overlay';
 
@@ -39,37 +36,14 @@ export interface RenderCoordinatorDeps {
 	debugEnabled(): boolean;
 	debugGpuWaitEnabled(): boolean;
 	getGridPalette(): { minor: string; major: string; labelBg: string; labelFg: string };
-	// Cross-cutting: tiles (lazy -- TileManager created after RenderCoordinator)
-	tiles: {
-		cancelUnwanted(): void;
-		clearWanted(): void;
-		getCache(): TileCache;
-		enqueue(z: number, x: number, y: number, priority: number): void;
-		wantKey(key: string): void;
-		getTileSize(): number;
-		getSourceMaxZoom(): number;
-		isIdle(): boolean;
-		setFrame(f: number): void;
-	};
-	// Cross-cutting: content
-	content: {
-		drawVectors(): void;
-		drawVectorOverlay(): void;
-		requestMaskBuild(): void;
-		getIcons(): IconRenderer | null;
-		getRasterOpacity(): number;
-		getUpscaleFilter(): UpscaleFilterMode;
-		getIconScaleFunction(): IconScaleFunction | null;
-		getVectorZIndices(): number[];
-		resizeVectorLayer(w: number, h: number): void;
-	};
+	/** Tile size for the grid overlay (defaults to 256). */
+	getGridTileSize(): number;
 }
 
 export class RenderCoordinator {
 	private deps: RenderCoordinatorDeps;
 	private _frameLoop: FrameLoop | null = null;
 	private _renderer!: MapRenderer;
-	private _raster!: RasterRenderer;
 	private _screenCache: ScreenCache | null = null;
 
 	// Zoom
@@ -92,6 +66,9 @@ export class RenderCoordinator {
 	// FPS
 	private _targetFps = 60;
 
+	// Layer registry for user-created layers
+	private _layerRegistry: LayerRegistry | null = null;
+
 	// Anchor mode for zoom (read by input-manager)
 	anchorMode: 'pointer' | 'center' = 'pointer';
 
@@ -102,10 +79,6 @@ export class RenderCoordinator {
 	}
 
 	// -- Init phases --
-
-	initRaster(): void {
-		this._raster = new RasterRenderer(this.deps.getGL());
-	}
 
 	initScreenCache(): void {
 		const gl = this.deps.getGL();
@@ -155,15 +128,23 @@ export class RenderCoordinator {
 	}
 
 	initRenderer(): void {
-		const d = this.deps;
-		this._renderer = new MapRenderer(() => this.buildRenderCtx(), {
+		this._renderer = new MapRenderer(() => this.buildFrameCtx(), {
 			stepAnimation: () => this._zoomCtrl.step(),
 			panVelocityTick: () => {
 				this._panCtrl.step();
 			},
-			cancelUnwanted: () => d.tiles.cancelUnwanted(),
-			clearWanted: () => d.tiles.clearWanted(),
 		});
+		if (this._layerRegistry) {
+			this._renderer.setLayerRegistry(this._layerRegistry);
+		}
+	}
+
+	/** Set the layer registry for user-created layers. */
+	setLayerRegistry(registry: LayerRegistry): void {
+		this._layerRegistry = registry;
+		if (this._renderer) {
+			this._renderer.setLayerRegistry(this._layerRegistry);
+		}
 	}
 
 	initGridCanvas(): void {
@@ -176,7 +157,7 @@ export class RenderCoordinator {
 			getImageMaxZoom: () => vs.imageMaxZoom,
 			getMinZoom: () => vs.minZoom,
 			getMapSize: () => vs.mapSize,
-			getTileSize: () => d.tiles.getTileSize(),
+			getTileSize: () => d.getGridTileSize(),
 			getDpr: () => vs.dpr,
 			getZoomSnapThreshold: () => vs.zoomSnapThreshold,
 			getGridPalette: () => d.getGridPalette(),
@@ -197,8 +178,12 @@ export class RenderCoordinator {
 
 	private tick(now: number, allowRender: boolean): void {
 		this._frame++;
-		// Sync frame counter to tile manager
-		this.deps.tiles.setFrame(this._frame);
+		// Sync frame counter to user-created tile layers
+		if (this._layerRegistry) {
+			for (const entry of this._layerRegistry.entries()) {
+				entry.renderer?.setFrame?.(this._frame);
+			}
+		}
 
 		if (this._lastTS == null) this._lastTS = now;
 		this._lastTS = now;
@@ -262,11 +247,15 @@ export class RenderCoordinator {
 			}
 		}
 
-		// Upload vector overlay before rendering
-		try {
-			d.content.drawVectors();
-		} catch (e) {
-			d.debugWarn('drawVectors', e);
+		// Prepare user-created static layers (rasterize vectors to canvas)
+		if (this._layerRegistry) {
+			for (const entry of this._layerRegistry.entries()) {
+				try {
+					entry.renderer?.prepareFrame?.();
+				} catch (e) {
+					d.debugWarn('layer prepareFrame', e);
+				}
+			}
 		}
 
 		this._renderer.render();
@@ -292,8 +281,16 @@ export class RenderCoordinator {
 			d.debugLog(`first-render done dtRender=${dtRender.toFixed(1)}ms`);
 		}
 
-		// Deferred icon mask build
-		d.content.requestMaskBuild();
+		// Deferred mask build for user-created interactive layers
+		if (this._layerRegistry) {
+			for (const entry of this._layerRegistry.entries()) {
+				try {
+					entry.renderer?.requestMaskBuild?.();
+				} catch (e) {
+					d.debugWarn('layer requestMaskBuild', e);
+				}
+			}
+		}
 
 		// Emit frame event for HUD/diagnostics
 		try {
@@ -308,17 +305,13 @@ export class RenderCoordinator {
 		this._grid?.draw();
 	}
 
-	// -- Build RenderCtx --
+	// -- Build frame context --
 
-	buildRenderCtx(): RenderCtx {
+	private buildFrameCtx(): FrameCtx {
 		const d = this.deps;
 		const vs = d.viewState;
 		const gl = d.getGL();
 		const res = d.getGLResources()!;
-		const tiles = d.tiles;
-		const content = d.content;
-
-		const iconScaleFunction = content.getIconScaleFunction();
 
 		return {
 			gl,
@@ -338,22 +331,7 @@ export class RenderCoordinator {
 			zoomSnapThreshold: vs.zoomSnapThreshold,
 			useScreenCache: this.useScreenCache,
 			screenCache: this._screenCache,
-			raster: this._raster,
-			rasterOpacity: content.getRasterOpacity(),
-			upscaleFilter: content.getUpscaleFilter(),
-			...(iconScaleFunction !== undefined ? { iconScaleFunction } : {}),
-			icons: content.getIcons(),
-			isIdle: () => tiles.isIdle(),
 			project: (x: number, y: number, z: number) => Coords.worldToLevel({ x, y }, vs.imageMaxZoom, Math.floor(z)),
-			tileCache: tiles.getCache(),
-			tileSize: tiles.getTileSize(),
-			sourceMaxZoom: tiles.getSourceMaxZoom(),
-			enqueueTile: (z: number, x: number, y: number, priority?: number) => tiles.enqueue(z, x, y, priority ?? 0),
-			wantTileKey: (key: string) => tiles.wantKey(key),
-			vectorZIndices: content.getVectorZIndices(),
-			drawVectorOverlay: () => {
-				content.drawVectorOverlay();
-			},
 		};
 	}
 
@@ -369,10 +347,6 @@ export class RenderCoordinator {
 
 	get screenCache(): ScreenCache | null {
 		return this._screenCache;
-	}
-
-	get raster(): RasterRenderer {
-		return this._raster;
 	}
 
 	get frame(): number {
@@ -424,8 +398,16 @@ export class RenderCoordinator {
 			d.requestRender();
 		}
 		this._grid?.resize(w, h, cssW, cssH);
-		// Resize vector layer
-		d.content.resizeVectorLayer(w, h);
+		// Resize user-created static layers
+		if (this._layerRegistry) {
+			for (const entry of this._layerRegistry.entries()) {
+				try {
+					entry.renderer?.resize?.(w, h);
+				} catch (e) {
+					d.debugWarn('layer resize', e);
+				}
+			}
+		}
 	}
 
 	// -- Pan helpers --
@@ -492,11 +474,6 @@ export class RenderCoordinator {
 				/* expected: frame loop may already be stopped */
 			}
 			this._frameLoop = null;
-		}
-		try {
-			this._renderer?.dispose?.();
-		} catch {
-			/* expected: renderer may already be disposed */
 		}
 		this._screenCache?.dispose();
 		this._screenCache = null;

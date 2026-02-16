@@ -1,20 +1,23 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { GTMap, TextVisual, SvgVisual, SpriteVisual, type SpriteAtlasDescriptor, type SpriteAtlasHandle } from '@gtmap';
+	import { GTMap, InteractiveLayer, StaticLayer, TextVisual, SvgVisual, SpriteVisual, type SpriteAtlasDescriptor, type SpriteAtlasHandle } from '@gtmap';
 	import Hud from '$lib/Hud.svelte';
 	import Hover from '$lib/Hover.svelte';
 
 	let container: HTMLDivElement | null = null;
 	let map: GTMap;
+	let tileLayer: import('@gtmap').TileLayer;
+	let markerLayer: InteractiveLayer;
+	let vectorLayer: StaticLayer;
 
+	const MAP_SIZE = { width: 8192, height: 8192 };
 	const MAP_TILES = {
 		packUrl: 'https://gtcdn.info/dune/tiles/hb_8k.gtpk',
 		tileSize: 256,
-		mapSize: { width: 8192, height: 8192 },
 		sourceMinZoom: 0,
 		sourceMaxZoom: 5,
 	};
-	const HOME = { lng: MAP_TILES.mapSize.width / 2, lat: MAP_TILES.mapSize.height / 2 };
+	const HOME = { lng: MAP_SIZE.width / 2, lat: MAP_SIZE.height / 2 };
 
 	let markerCount = 1000;
 
@@ -38,7 +41,7 @@
 		try {
 			const resp = await fetch(`${ATLAS_CDN}/atlas.json`);
 			const descriptor: SpriteAtlasDescriptor = await resp.json();
-			const handle: SpriteAtlasHandle = await map.content.addSpriteAtlas(`${ATLAS_CDN}/atlas.png`, descriptor, 'dune');
+			const handle: SpriteAtlasHandle = await markerLayer.loadSpriteAtlas(`${ATLAS_CDN}/atlas.png`, descriptor, 'dune');
 			const names = Object.keys(handle.spriteIds);
 			spriteVisuals = names.map((name) => {
 				const entry = descriptor.sprites[name];
@@ -136,7 +139,7 @@
 		if (!map) return;
 		const count = clampMarkerCount(n);
 		markerCount = count;
-		map?.content?.clearMarkers?.();
+		markerLayer?.clearMarkers?.();
 
 		const fallback = createFallbackVisual();
 		const allVisuals = [
@@ -145,10 +148,10 @@
 		];
 
 		for (let i = 0; i < markerCount; i++) {
-			const x = rand(0, MAP_TILES.mapSize.width);
-			const y = rand(0, MAP_TILES.mapSize.height);
+			const x = rand(0, MAP_SIZE.width);
+			const y = rand(0, MAP_SIZE.height);
 			const visual = allVisuals.length > 0 ? allVisuals[i % allVisuals.length] : fallback;
-			map.content.addMarker(x, y, { visual, data: { id: i } });
+			markerLayer.addMarker(x, y, { visual, data: { id: i } });
 		}
 		// Always re-add text labels after marker count change
 		addTextLabels();
@@ -160,49 +163,36 @@
 
 	function addVectors(): void {
 		if (!map) return;
-		map.content.addVector({
-			type: 'polyline',
-			points: [
-				{ x: 1000, y: 1000 },
-				{ x: 2000, y: 1400 },
-				{ x: 3000, y: 1200 }
-			],
-			style: { color: '#1e90ff', weight: 2, opacity: 0.9 }
+		vectorLayer.addPolyline([
+			{ x: 1000, y: 1000 },
+			{ x: 2000, y: 1400 },
+			{ x: 3000, y: 1200 },
+		], { color: '#1e90ff', weight: 2, opacity: 0.9 });
+		vectorLayer.addPolygon([
+			{ x: 2600, y: 2600 },
+			{ x: 3000, y: 3000 },
+			{ x: 2600, y: 3200 },
+			{ x: 2300, y: 3000 },
+		], {
+			color: '#10b981',
+			weight: 2,
+			opacity: 0.9,
+			fill: true,
+			fillColor: '#10b981',
+			fillOpacity: 0.25,
 		});
-		map.content.addVector({
-			type: 'polygon',
-			points: [
-				{ x: 2600, y: 2600 },
-				{ x: 3000, y: 3000 },
-				{ x: 2600, y: 3200 },
-				{ x: 2300, y: 3000 }
-			],
-			style: {
-				color: '#10b981',
-				weight: 2,
-				opacity: 0.9,
-				fill: true,
-				fillColor: '#10b981',
-				fillOpacity: 0.25
-			}
-		});
-		map.content.addVector({
-			type: 'circle',
-			center: { x: HOME.lng, y: HOME.lat },
-			radius: 10,
-			style: {
-				color: '#f59e0b',
-				weight: 2,
-				opacity: 0.9,
-				fill: true,
-				fillColor: '#f59e0b',
-				fillOpacity: 0.5
-			}
+		vectorLayer.addCircle({ x: HOME.lng, y: HOME.lat }, 10, {
+			color: '#f59e0b',
+			weight: 2,
+			opacity: 0.9,
+			fill: true,
+			fillColor: '#f59e0b',
+			fillOpacity: 0.5,
 		});
 	}
 
 	function clearVectors(): void {
-		map?.content?.clearVectors?.();
+		vectorLayer?.clearVectors?.();
 	}
 
 	function addTextLabels(): void {
@@ -220,7 +210,7 @@
 		});
 		label1.anchor = 'top-left';
 		label1.iconScaleFunction = null; // Don't scale with zoom
-		map.content.addMarker(PAD, PAD, { visual: label1 });
+		markerLayer.addMarker(PAD, PAD, { visual: label1 });
 
 		// Top-right: Large bold header
 		const label2 = new TextVisual('HEADER', {
@@ -231,7 +221,7 @@
 		});
 		label2.anchor = 'top-right';
 		label2.iconScaleFunction = null; // Don't scale with zoom
-		map.content.addMarker(MAP_TILES.mapSize.width - PAD, PAD, { visual: label2 });
+		markerLayer.addMarker(MAP_SIZE.width - PAD, PAD, { visual: label2 });
 
 		// Bottom-left: Medium serif style
 		const label3 = new TextVisual('Serif Text', {
@@ -243,7 +233,7 @@
 		});
 		label3.anchor = 'bottom-left';
 		label3.iconScaleFunction = null; // Don't scale with zoom
-		map.content.addMarker(PAD, MAP_TILES.mapSize.height - PAD, { visual: label3 });
+		markerLayer.addMarker(PAD, MAP_SIZE.height - PAD, { visual: label3 });
 
 		// Bottom-right: Tiny tag
 		const label4 = new TextVisual('TAG', {
@@ -254,7 +244,7 @@
 		});
 		label4.anchor = 'bottom-right';
 		label4.iconScaleFunction = null; // Don't scale with zoom
-		map.content.addMarker(MAP_TILES.mapSize.width - PAD, MAP_TILES.mapSize.height - PAD, { visual: label4 });
+		markerLayer.addMarker(MAP_SIZE.width - PAD, MAP_SIZE.height - PAD, { visual: label4 });
 
 		// Center: Large plain text with black stroke (no background)
 		const label5 = new TextVisual('Plain Large Text', {
@@ -265,12 +255,12 @@
 		});
 		label5.anchor = 'center';
 		label5.iconScaleFunction = null; // Don't scale with zoom
-		map.content.addMarker(HOME.lng, HOME.lat, { visual: label5 });
+		markerLayer.addMarker(HOME.lng, HOME.lat, { visual: label5 });
 	}
 
 	function setMarkersEnabled(on: boolean): void {
 		if (on) applyMarkerCount(markerCount);
-		else map?.content?.clearMarkers?.();
+		else markerLayer?.clearMarkers?.();
 	}
 
 	function setVectorsEnabled(on: boolean): void {
@@ -282,17 +272,24 @@
 		if (!container) return;
 
 		map = new GTMap(container, {
+			mapSize: MAP_SIZE,
 			center: { x: HOME.lng, y: HOME.lat },
 			zoom: 2,
 			minZoom: 0,
 			maxZoom: 5,
 			fpsCap: 60,
 			autoResize: true,
-			tiles: MAP_TILES,
 			wrapX: false,
 			clipToBounds: true,
 			debug: true,
 		});
+
+		tileLayer = map.createTileLayer(MAP_TILES);
+		map.addLayer(tileLayer, { z: 0 });
+		markerLayer = map.createInteractiveLayer();
+		map.addLayer(markerLayer, { z: 10 });
+		vectorLayer = map.createStaticLayer();
+		map.addLayer(vectorLayer, { z: 5 });
 
 		// Create SvgVisual instances
 		svgVisuals = createSvgVisuals();
@@ -316,9 +313,11 @@
 <div bind:this={container} class="map">
 	<Hud
 		{map}
+		{markerLayer}
+		{tileLayer}
 		fpsCap={60}
 		wheelSpeed={1.0}
-		mapSize={MAP_TILES.mapSize}
+		mapSize={MAP_SIZE}
 		home={HOME}
 		{markerCount}
 		{setMarkerCount}
