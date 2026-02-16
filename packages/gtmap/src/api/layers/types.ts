@@ -1,7 +1,6 @@
 /**
  * Layer system type definitions.
  */
-import type { TileSourceOptions } from '../types';
 
 /** Discriminator for layer types. */
 export type LayerType = 'tile' | 'interactive' | 'static';
@@ -26,16 +25,6 @@ export interface TileLayerOptions {
   sourceMinZoom: number;
   /** Maximum zoom level available in the tile set. */
   sourceMaxZoom: number;
-}
-
-/** Convert TileLayerOptions to TileSourceOptions. */
-export function toTileSourceOptions(opts: TileLayerOptions): TileSourceOptions {
-  return {
-    packUrl: opts.packUrl,
-    tileSize: opts.tileSize,
-    sourceMinZoom: opts.sourceMinZoom,
-    sourceMaxZoom: opts.sourceMaxZoom,
-  };
 }
 
 /** Internal layer state managed by the registry. */

@@ -415,14 +415,6 @@ export interface SpriteAtlasHandle {
 	spriteIds: Record<string, string>;
 }
 
-// Branded types for type safety
-export type IconID = string & { __brand: 'IconID' };
-
-// Helper functions to create branded types
-export function iconID(id: string): IconID {
-	return id as IconID;
-}
-
 // Lifecycle options
 export interface SuspendOptions {
 	/** If true, release WebGL context and textures to free VRAM */

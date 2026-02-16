@@ -232,23 +232,6 @@ export async function renderSvgToCanvas(options: SvgRenderOptions): Promise<SvgR
 }
 
 /**
- * Create an ImageBitmap from SVG (async version for better performance).
- */
-export async function renderSvgToImageBitmap(options: SvgRenderOptions): Promise<{
-	bitmap: ImageBitmap;
-	width: number;
-	height: number;
-}> {
-	const result = await renderSvgToCanvas(options);
-	const bitmap = await createImageBitmap(result.canvas);
-	return {
-		bitmap,
-		width: result.width,
-		height: result.height,
-	};
-}
-
-/**
  * Synchronously render inline SVG to a data URL (without shadow).
  * For SVG with shadows, use renderSvgToCanvas which is async.
  *

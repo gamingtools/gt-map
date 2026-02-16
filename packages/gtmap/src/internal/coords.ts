@@ -287,14 +287,6 @@ export function cssToWorld(css: XY, z: number, centerWorld: XY, viewportCSS: XY,
 }
 
 /**
- * Alias for worldToLevel with center-specific naming.
- * @deprecated Use worldToLevel directly
- */
-export function worldToLevelCenter(centerWorld: XY, imageMaxZ: number, zInt: number): XY {
-	return worldToLevel(centerWorld, imageMaxZ, zInt);
-}
-
-/**
  * Convert CSS coordinates to level space given a known top-left.
  *
  * Useful when the viewport TL is already computed (avoids recomputation).

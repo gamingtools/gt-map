@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { GTMap, InteractiveLayer, StaticLayer, TextVisual, SvgVisual, SpriteVisual, type SpriteAtlasDescriptor, type SpriteAtlasHandle } from '@gtmap';
+	import { GTMap, InteractiveLayer, StaticLayer, TextVisual, SvgVisual, SpriteVisual, type SpriteAtlasDescriptor, type SpriteAtlasHandle, TileLayer } from '@gtmap';
 	import Hud from '$lib/Hud.svelte';
 	import Hover from '$lib/Hover.svelte';
 
 	let container: HTMLDivElement | null = null;
 	let map: GTMap;
-	let tileLayer: import('@gtmap').TileLayer;
+	let tileLayer: TileLayer;
 	let markerLayer: InteractiveLayer;
 	let vectorLayer: StaticLayer;
 
-	const MAP_SIZE = { width: 8192, height: 8192 };
+	const MAP_SIZE = { width: 8192, height: 6192 };
 	const MAP_TILES = {
 		packUrl: 'https://gtcdn.info/dune/tiles/hb_8k.gtpk',
 		tileSize: 256,
@@ -113,11 +113,10 @@
 		icons.push(chest);
 
 		// Diamond - cyan with dark stroke
-		const diamond = new SvgVisual(`${SVG_CDN}/cut-diamond.svg`, 28, {
+		const diamond = new SvgVisual(`${SVG_CDN}/cut-diamond.svg`, 66, {
 			fill: '#06b6d4',
-			stroke: '#164e63',
-			strokeWidth: 2,
-			shadow: { blur: 4, offsetY: 2, color: 'rgba(6,182,212,0.4)' }
+			stroke: '#000000',
+			strokeWidth: 3,
 		});
 		diamond.anchor = 'center';
 		icons.push(diamond);
@@ -276,7 +275,7 @@
 			center: { x: HOME.lng, y: HOME.lat },
 			zoom: 2,
 			minZoom: 0,
-			maxZoom: 5,
+			maxZoom: 6,
 			fpsCap: 60,
 			autoResize: true,
 			wrapX: false,

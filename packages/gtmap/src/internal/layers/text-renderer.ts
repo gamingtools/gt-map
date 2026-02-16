@@ -213,19 +213,3 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
 	ctx.closePath();
 }
 
-/**
- * Create an ImageBitmap from text (async version for better performance).
- */
-export async function renderTextToImageBitmap(options: TextRenderOptions): Promise<{
-	bitmap: ImageBitmap;
-	width: number;
-	height: number;
-}> {
-	const result = renderTextToCanvas(options);
-	const bitmap = await createImageBitmap(result.canvas);
-	return {
-		bitmap,
-		width: result.width,
-		height: result.height,
-	};
-}
