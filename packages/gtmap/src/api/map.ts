@@ -1,18 +1,12 @@
 /**
  * GTMap - A high-performance WebGL map renderer with a pixel-based coordinate system.
  *
- * Public API is organized into four facades:
+ * Public API is organized into five facades:
  *   map.view    -- center, zoom, transitions, bounds, coordinates
- *   map.input   -- wheel speed, inertia
- *   map.content -- markers, vectors, icons (legacy, use layers API for new code)
+ *   map.layers  -- layer creation, attachment, removal, per-layer display
  *   map.display -- background, grid, upscale filter, FPS
- *
- * Layer API:
- *   map.createTileLayer(opts) -> TileLayer
- *   map.createInteractiveLayer() -> InteractiveLayer
- *   map.createStaticLayer() -> StaticLayer
- *   map.addLayer(layer, opts)
- *   map.removeLayer(layer)
+ *   map.input   -- wheel speed, inertia
+ *   map.events  -- typed event subscriptions
  */
 import type { MapEvents } from './events/public';
 import type { MapOptions, SuspendOptions, EventMap } from './types';
@@ -22,12 +16,12 @@ import { LifecycleManager } from '../internal/lifecycle/lifecycle-manager';
 import { ViewFacade } from './facades/view-facade';
 import { InputFacade } from './facades/input-facade';
 import { DisplayFacade } from './facades/display-facade';
+import { LayersFacade } from './facades/layers-facade';
 
 // Layer system imports
 import { TileLayer } from './layers/tile-layer';
 import { InteractiveLayer } from './layers/interactive-layer';
 import { StaticLayer } from './layers/static-layer';
-import type { TileLayerOptions, AddLayerOptions } from './layers/types';
 import { LayerRegistry } from '../internal/layers/layer-registry';
 import type { AnyLayer } from '../internal/layers/layer-registry';
 import { VisualIconService } from '../internal/markers/visual-icon-service';
@@ -55,6 +49,8 @@ export class GTMap {
 
 	/** View control: center, zoom, transitions, bounds, coordinates. */
 	readonly view: ViewFacade;
+	/** Layer management: creation, attachment, removal, per-layer display. */
+	readonly layers: LayersFacade;
 	/** Input settings: wheel speed, inertia. */
 	readonly input: InputFacade;
 	/** Display settings: background, grid, upscale filter, FPS. */
@@ -165,180 +161,160 @@ export class GTMap {
 				}
 			},
 		});
-	}
 
-	// -- Layer API --
-
-	/** Create a tile layer (not yet added to the map). */
-	createTileLayer(opts: TileLayerOptions): TileLayer {
-		const layer = new TileLayer(opts);
-		this._createdLayers.push(layer);
-		return layer;
-	}
-
-	/** Create an interactive layer for markers (not yet added to the map). */
-	createInteractiveLayer(): InteractiveLayer {
-		const ctx = this._ctx;
-		const vs = ctx.viewState;
-		const layer = new InteractiveLayer();
-
-		// Share VisualIconService across interactive layers
-		if (!this._sharedVis) {
-			this._sharedVis = new VisualIconService({
-				setIconDefs: (defs) => layer._renderer!.setIconDefs(defs),
-				onVisualUpdated: () => ctx.requestRender(),
-			});
-			this._sharedVis.ensureDefaultIcon();
-		}
-
-		// Create own InteractiveLayerRenderer (buffers state before GL init)
-		const renderer = new InteractiveLayerRenderer({
-			getGL: () => ctx.gl!,
-			getContainer: () => ctx.container,
-			getDpr: () => vs.dpr,
-			getZoom: () => vs.zoom,
-			getMinZoom: () => vs.minZoom,
-			getMaxZoom: () => vs.maxZoom,
-			getCenter: () => vs.center,
-			getImageMaxZoom: () => vs.imageMaxZoom,
-			getZoomSnapThreshold: () => vs.zoomSnapThreshold,
-			debugWarn: (msg, err) => ctx.debug.warn(msg, err),
-			debugLog: (msg) => ctx.debug.log(msg),
-			requestRender: () => ctx.requestRender(),
-			clearScreenCache: () => {
-				try { ctx.renderCoordinator?.screenCache?.clear?.(); } catch { /* noop */ }
+		// Wire LayersFacade deps
+		this.layers = new LayersFacade({
+			createTileLayer: (opts) => {
+				const layer = new TileLayer(opts);
+				this._createdLayers.push(layer);
+				return layer;
 			},
-			now: () => ctx.now(),
-			getView: () => vs.toPublic(),
-		});
-		layer._renderer = renderer;
+			createInteractiveLayer: () => {
+				const layer = new InteractiveLayer();
 
-		layer._wire(this._sharedVis, {
-			setIconDefs: (defs) => renderer.setIconDefs(defs),
-			setMarkers: (markers) => renderer.setMarkers(markers),
-			setMarkerData: (payloads) => renderer.setMarkerData(payloads),
-			onMarkerEvent: (name, handler) => renderer.onMarkerEvent(name, handler),
-			loadSpriteAtlas: (url, desc, id) => renderer.loadSpriteAtlas(url, desc, id),
-		});
-		this._createdLayers.push(layer);
-		return layer;
-	}
+				// Share VisualIconService across interactive layers
+				if (!this._sharedVis) {
+					this._sharedVis = new VisualIconService({
+						setIconDefs: (defs) => layer._renderer!.setIconDefs(defs),
+						onVisualUpdated: () => ctx.requestRender(),
+					});
+					this._sharedVis.ensureDefaultIcon();
+				}
 
-	/** Create a static layer for vector shapes (not yet added to the map). */
-	createStaticLayer(): StaticLayer {
-		const ctx = this._ctx;
-		const vs = ctx.viewState;
-		const layer = new StaticLayer();
-
-		const renderer = new StaticLayerRenderer({
-			getContainer: () => ctx.container,
-			getGL: () => ctx.gl!,
-			getDpr: () => vs.dpr,
-			getZoom: () => vs.zoom,
-			getCenter: () => vs.center,
-			getImageMaxZoom: () => vs.imageMaxZoom,
-			requestRender: () => ctx.requestRender(),
-			debugWarn: (msg, err) => ctx.debug.warn(msg, err),
-		});
-		layer._renderer = renderer;
-
-		layer._wire({
-			setVectors: (vectors) => renderer.setVectors(vectors),
-		});
-		this._createdLayers.push(layer);
-		return layer;
-	}
-
-	/** Add a layer to the map at a given z-order. */
-	addLayer(layer: AnyLayer, opts: AddLayerOptions): void {
-		if (layer._destroyed) throw new Error('GTMap: cannot add a destroyed layer');
-		if (layer._attached) throw new Error('GTMap: layer is already attached');
-
-		const ctx = this._ctx;
-		const vs = ctx.viewState;
-		const state = {
-			z: opts.z,
-			visible: opts.visible !== false,
-			opacity: Math.max(0, Math.min(1, opts.opacity ?? 1)),
-		};
-		layer._attached = true;
-		this._layerRegistry.add(layer, state);
-
-		// Create per-layer renderer
-		if (layer.type === 'tile') {
-			const tl = layer as TileLayer;
-			const renderer = new TileLayerRenderer(
-				{
+				// Create own InteractiveLayerRenderer (buffers state before GL init)
+				const renderer = new InteractiveLayerRenderer({
 					getGL: () => ctx.gl!,
-					getMapSize: () => vs.mapSize,
+					getContainer: () => ctx.container,
+					getDpr: () => vs.dpr,
+					getZoom: () => vs.zoom,
+					getMinZoom: () => vs.minZoom,
+					getMaxZoom: () => vs.maxZoom,
+					getCenter: () => vs.center,
 					getImageMaxZoom: () => vs.imageMaxZoom,
-					debugLog: (msg) => ctx.debug.log(msg),
+					getZoomSnapThreshold: () => vs.zoomSnapThreshold,
 					debugWarn: (msg, err) => ctx.debug.warn(msg, err),
+					debugLog: (msg) => ctx.debug.log(msg),
 					requestRender: () => ctx.requestRender(),
 					clearScreenCache: () => {
 						try { ctx.renderCoordinator?.screenCache?.clear?.(); } catch { /* noop */ }
 					},
 					now: () => ctx.now(),
-					getLastInteractAt: () => ctx.lastInteractAt,
-					getInteractionIdleMs: () => ctx.options.interactionIdleMs,
-					isAnimating: () => ctx.renderCoordinator?.isAnimating() ?? false,
-					updateViewForSource: () => {
-						/* Map owns mapSize/zoom -- tile source does not override. */
-					},
-				},
-				tl.options,
-			);
-			this._layerRegistry.setRenderer(layer.id, renderer);
-			// Init immediately if GL is ready, otherwise defer
-			if (ctx.gl) renderer.init();
-		} else if (layer.type === 'interactive') {
-			const il = layer as InteractiveLayer;
-			if (il._renderer) {
-				this._layerRegistry.setRenderer(layer.id, il._renderer);
-				if (ctx.gl) il._renderer.init();
-			}
-		} else if (layer.type === 'static') {
-			const sl = layer as StaticLayer;
-			if (sl._renderer) {
-				this._layerRegistry.setRenderer(layer.id, sl._renderer);
-				if (ctx.gl) sl._renderer.init();
-			}
-		}
+					getView: () => vs.toPublic(),
+				});
+				layer._renderer = renderer;
 
-		ctx.requestRender();
-	}
+				layer._wire(this._sharedVis, {
+					setIconDefs: (defs) => renderer.setIconDefs(defs),
+					setMarkers: (markers) => renderer.setMarkers(markers),
+					setMarkerData: (payloads) => renderer.setMarkerData(payloads),
+					onMarkerEvent: (name, handler) => renderer.onMarkerEvent(name, handler),
+					loadSpriteAtlas: (url, desc, id) => renderer.loadSpriteAtlas(url, desc, id),
+				});
+				this._createdLayers.push(layer);
+				return layer;
+			},
+			createStaticLayer: () => {
+				const layer = new StaticLayer();
 
-	/** Remove a layer from the map (data is preserved). */
-	removeLayer(layer: AnyLayer): void {
-		if (!layer._attached) return;
-		const entry = this._layerRegistry.remove(layer.id);
-		layer._attached = false;
-		if (entry?.renderer) {
-			try {
-				entry.renderer.dispose();
-			} catch {
-				/* expected */
-			}
-		}
-		this._ctx.requestRender();
-	}
+				const renderer = new StaticLayerRenderer({
+					getContainer: () => ctx.container,
+					getGL: () => ctx.gl!,
+					getDpr: () => vs.dpr,
+					getZoom: () => vs.zoom,
+					getCenter: () => vs.center,
+					getImageMaxZoom: () => vs.imageMaxZoom,
+					requestRender: () => ctx.requestRender(),
+					debugWarn: (msg, err) => ctx.debug.warn(msg, err),
+				});
+				layer._renderer = renderer;
 
-	/** Set opacity for an attached layer (0 to 1). */
-	setLayerOpacity(layer: AnyLayer, opacity: number): void {
-		this._layerRegistry.setOpacity(layer.id, opacity);
-		this._ctx.requestRender();
-	}
+				layer._wire({
+					setVectors: (vectors) => renderer.setVectors(vectors),
+				});
+				this._createdLayers.push(layer);
+				return layer;
+			},
+			addLayer: (layer, opts) => {
+				if (layer._destroyed) throw new Error('GTMap: cannot add a destroyed layer');
+				if (layer._attached) throw new Error('GTMap: layer is already attached');
 
-	/** Set visibility for an attached layer. */
-	setLayerVisible(layer: AnyLayer, visible: boolean): void {
-		this._layerRegistry.setVisible(layer.id, visible);
-		this._ctx.requestRender();
-	}
+				const state = {
+					z: opts.z,
+					visible: opts.visible !== false,
+					opacity: Math.max(0, Math.min(1, opts.opacity ?? 1)),
+				};
+				layer._attached = true;
+				this._layerRegistry.add(layer, state);
 
-	/** Set z-order for an attached layer. */
-	setLayerZ(layer: AnyLayer, z: number): void {
-		this._layerRegistry.setZ(layer.id, z);
-		this._ctx.requestRender();
+				// Create per-layer renderer
+				if (layer.type === 'tile') {
+					const tl = layer as TileLayer;
+					const renderer = new TileLayerRenderer(
+						{
+							getGL: () => ctx.gl!,
+							getMapSize: () => vs.mapSize,
+							getImageMaxZoom: () => vs.imageMaxZoom,
+							debugLog: (msg) => ctx.debug.log(msg),
+							debugWarn: (msg, err) => ctx.debug.warn(msg, err),
+							requestRender: () => ctx.requestRender(),
+							clearScreenCache: () => {
+								try { ctx.renderCoordinator?.screenCache?.clear?.(); } catch { /* noop */ }
+							},
+							now: () => ctx.now(),
+							getLastInteractAt: () => ctx.lastInteractAt,
+							getInteractionIdleMs: () => ctx.options.interactionIdleMs,
+							isAnimating: () => ctx.renderCoordinator?.isAnimating() ?? false,
+							updateViewForSource: () => {
+								/* Map owns mapSize/zoom -- tile source does not override. */
+							},
+						},
+						tl.options,
+					);
+					this._layerRegistry.setRenderer(layer.id, renderer);
+					// Init immediately if GL is ready, otherwise defer
+					if (ctx.gl) renderer.init();
+				} else if (layer.type === 'interactive') {
+					const il = layer as InteractiveLayer;
+					if (il._renderer) {
+						this._layerRegistry.setRenderer(layer.id, il._renderer);
+						if (ctx.gl) il._renderer.init();
+					}
+				} else if (layer.type === 'static') {
+					const sl = layer as StaticLayer;
+					if (sl._renderer) {
+						this._layerRegistry.setRenderer(layer.id, sl._renderer);
+						if (ctx.gl) sl._renderer.init();
+					}
+				}
+
+				ctx.requestRender();
+			},
+			removeLayer: (layer) => {
+				if (!layer._attached) return;
+				const entry = this._layerRegistry.remove(layer.id);
+				layer._attached = false;
+				if (entry?.renderer) {
+					try {
+						entry.renderer.dispose();
+					} catch {
+						/* expected */
+					}
+				}
+				ctx.requestRender();
+			},
+			setLayerOpacity: (layer, opacity) => {
+				this._layerRegistry.setOpacity(layer.id, opacity);
+				ctx.requestRender();
+			},
+			setLayerVisible: (layer, visible) => {
+				this._layerRegistry.setVisible(layer.id, visible);
+				ctx.requestRender();
+			},
+			setLayerZ: (layer, z) => {
+				this._layerRegistry.setZ(layer.id, z);
+				ctx.requestRender();
+			},
+		});
 	}
 
 	// -- Lifecycle --

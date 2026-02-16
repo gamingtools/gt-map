@@ -283,12 +283,12 @@
 			debug: true,
 		});
 
-		tileLayer = map.createTileLayer(MAP_TILES);
-		map.addLayer(tileLayer, { z: 0 });
-		markerLayer = map.createInteractiveLayer();
-		map.addLayer(markerLayer, { z: 10 });
-		vectorLayer = map.createStaticLayer();
-		map.addLayer(vectorLayer, { z: 5 });
+		tileLayer = map.layers.createTileLayer(MAP_TILES);
+		map.layers.addLayer(tileLayer, { z: 0 });
+		markerLayer = map.layers.createInteractiveLayer();
+		map.layers.addLayer(markerLayer, { z: 10 });
+		vectorLayer = map.layers.createStaticLayer();
+		map.layers.addLayer(vectorLayer, { z: 5 });
 
 		// Create SvgVisual instances
 		svgVisuals = createSvgVisuals();

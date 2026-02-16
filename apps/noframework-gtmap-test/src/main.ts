@@ -37,14 +37,14 @@ const map = new GTMap(container, {
 });
 
 // Layers
-const tileLayer: TileLayer = map.createTileLayer(MAP_TILES);
-map.addLayer(tileLayer, { z: 0 });
+const tileLayer: TileLayer = map.layers.createTileLayer(MAP_TILES);
+map.layers.addLayer(tileLayer, { z: 0 });
 
-const vectorLayer: StaticLayer = map.createStaticLayer();
-map.addLayer(vectorLayer, { z: 5 });
+const vectorLayer: StaticLayer = map.layers.createStaticLayer();
+map.layers.addLayer(vectorLayer, { z: 5 });
 
-const markerLayer: InteractiveLayer = map.createInteractiveLayer();
-map.addLayer(markerLayer, { z: 10 });
+const markerLayer: InteractiveLayer = map.layers.createInteractiveLayer();
+map.layers.addLayer(markerLayer, { z: 10 });
 
 // -- Icon scale function (same curve as Svelte demo) --
 map.view.setIconScaleFunction((zoom) => {

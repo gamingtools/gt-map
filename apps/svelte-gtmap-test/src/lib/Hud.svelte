@@ -203,7 +203,7 @@
 		map?.display?.setUpscaleFilter(upscaleFilter);
 	});
 	$effect(() => {
-		if (tileLayer) map?.setLayerOpacity?.(tileLayer, rasterOpacity);
+		if (tileLayer) map?.layers?.setLayerOpacity(tileLayer, rasterOpacity);
 	});
 	$effect(() => {
 		map?.display?.setZoomSnapThreshold(zoomSnapThreshold);
