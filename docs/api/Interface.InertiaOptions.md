@@ -14,7 +14,7 @@
   - [inertiaDeceleration?](#inertiadeceleration)
   - [inertiaMaxSpeed?](#inertiamaxspeed)
 
-Defined in: [api/types.ts:420](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L420)
+Defined in: [api/types.ts:463](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L463)
 
 ## Properties
 
@@ -22,7 +22,7 @@ Defined in: [api/types.ts:420](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **easeLinearity**: `number`
 
-Defined in: [api/types.ts:424](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L424)
+Defined in: [api/types.ts:467](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L467)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [api/types.ts:424](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **inertia**: `boolean`
 
-Defined in: [api/types.ts:421](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L421)
+Defined in: [api/types.ts:464](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L464)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [api/types.ts:421](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **inertiaDeceleration**: `number`
 
-Defined in: [api/types.ts:422](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L422)
+Defined in: [api/types.ts:465](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L465)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [api/types.ts:422](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **inertiaMaxSpeed**: `number`
 
-Defined in: [api/types.ts:423](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L423)
+Defined in: [api/types.ts:466](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L466)

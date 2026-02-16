@@ -20,7 +20,11 @@
       "mcp__chrome__wait_for",
       "mcp__codex__codex",
       "Bash(npx typedoc)",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(npx svelte-check:*)",
+      "Bash(npm ls:*)",
+      "Bash(grep:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

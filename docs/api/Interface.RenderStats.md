@@ -15,7 +15,7 @@
   - [inflight?](#inflight)
   - [pending?](#pending)
 
-Defined in: [api/types.ts:330](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L330)
+Defined in: [api/types.ts:328](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L328)
 
 ## Properties
 
@@ -23,7 +23,7 @@ Defined in: [api/types.ts:330](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **cacheSize**: `number`
 
-Defined in: [api/types.ts:332](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L332)
+Defined in: [api/types.ts:330](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L330)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [api/types.ts:332](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **fps**: `number`
 
-Defined in: [api/types.ts:331](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L331)
+Defined in: [api/types.ts:329](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L329)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [api/types.ts:331](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **frame**: `number`
 
-Defined in: [api/types.ts:335](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L335)
+Defined in: [api/types.ts:333](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L333)
 
 ***
 
@@ -47,7 +47,7 @@ Defined in: [api/types.ts:335](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **inflight**: `number`
 
-Defined in: [api/types.ts:333](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L333)
+Defined in: [api/types.ts:331](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L331)
 
 ***
 
@@ -55,4 +55,4 @@ Defined in: [api/types.ts:333](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > `optional` **pending**: `number`
 
-Defined in: [api/types.ts:334](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L334)
+Defined in: [api/types.ts:332](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L332)

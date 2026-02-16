@@ -212,4 +212,3 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
 	ctx.arcTo(x, y, x + r, y, r);
 	ctx.closePath();
 }
-

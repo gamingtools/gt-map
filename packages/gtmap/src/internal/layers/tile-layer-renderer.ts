@@ -239,9 +239,17 @@ export class TileLayerRenderer implements LayerRendererHandle {
 		const tileCache = this._tileMgr.cache;
 		if (!tileCache) return 0;
 		return this._raster.coverage(
-			tileCache, ctx.baseZ, ctx.tlWorld, ctx.levelScale,
-			ctx.widthCSS, ctx.heightCSS, ctx.wrapX,
-			this._tileMgr.tileSize, ctx.mapSize, ctx.maxZoom, this._tileMgr.sourceMaxZoom,
+			tileCache,
+			ctx.baseZ,
+			ctx.tlWorld,
+			ctx.levelScale,
+			ctx.widthCSS,
+			ctx.heightCSS,
+			ctx.wrapX,
+			this._tileMgr.tileSize,
+			ctx.mapSize,
+			ctx.maxZoom,
+			this._tileMgr.sourceMaxZoom,
 		);
 	}
 

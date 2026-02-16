@@ -38,8 +38,18 @@ export class LayerFBO {
 			const fbo = gl.createFramebuffer();
 			const tex = gl.createTexture();
 			if (!fbo || !tex) {
-				if (fbo) try { gl.deleteFramebuffer(fbo); } catch { /* noop */ }
-				if (tex) try { gl.deleteTexture(tex); } catch { /* noop */ }
+				if (fbo)
+					try {
+						gl.deleteFramebuffer(fbo);
+					} catch {
+						/* noop */
+					}
+				if (tex)
+					try {
+						gl.deleteTexture(tex);
+					} catch {
+						/* noop */
+					}
 				return false;
 			}
 			this._fbo = fbo;
@@ -74,7 +84,10 @@ export class LayerFBO {
 	bind(gl: WebGLRenderingContext): void {
 		gl.bindFramebuffer(gl.FRAMEBUFFER, this._fbo!);
 		const pc = gl.getParameter(gl.COLOR_CLEAR_VALUE) as Float32Array;
-		const pcR = pc[0] ?? 0, pcG = pc[1] ?? 0, pcB = pc[2] ?? 0, pcA = pc[3] ?? 0;
+		const pcR = pc[0] ?? 0,
+			pcG = pc[1] ?? 0,
+			pcB = pc[2] ?? 0,
+			pcA = pc[3] ?? 0;
 		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT);
 		gl.clearColor(pcR, pcG, pcB, pcA);
@@ -104,8 +117,18 @@ export class LayerFBO {
 	dispose(): void {
 		const gl = this._gl;
 		if (gl) {
-			if (this._fboTex) try { gl.deleteTexture(this._fboTex); } catch { /* GL context may be lost */ }
-			if (this._fbo) try { gl.deleteFramebuffer(this._fbo); } catch { /* GL context may be lost */ }
+			if (this._fboTex)
+				try {
+					gl.deleteTexture(this._fboTex);
+				} catch {
+					/* GL context may be lost */
+				}
+			if (this._fbo)
+				try {
+					gl.deleteFramebuffer(this._fbo);
+				} catch {
+					/* GL context may be lost */
+				}
 		}
 		this._fbo = null;
 		this._fboTex = null;

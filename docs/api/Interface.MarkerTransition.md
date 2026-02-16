@@ -14,7 +14,7 @@
   - [moveTo()](#moveto)
   - [setStyle()](#setstyle)
 
-Defined in: [entities/marker.ts:38](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L38)
+Defined in: [entities/marker.ts:32](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/entities/marker.ts#L32)
 
 Builder for animating a single Marker (position/rotation/scale).
 
@@ -24,7 +24,7 @@ Builder for animating a single Marker (position/rotation/scale).
 
 > **apply**(`opts?`): `Promise`\<[`ApplyResult`](Interface.ApplyResult.md)\>
 
-Defined in: [entities/marker.ts:44](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L44)
+Defined in: [entities/marker.ts:38](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/entities/marker.ts#L38)
 
 Commit the transition (instant or animated).
 
@@ -44,7 +44,7 @@ Commit the transition (instant or animated).
 
 > **cancel**(): `void`
 
-Defined in: [entities/marker.ts:46](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L46)
+Defined in: [entities/marker.ts:40](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/entities/marker.ts#L40)
 
 Cancel a pending or running transition.
 
@@ -58,7 +58,7 @@ Cancel a pending or running transition.
 
 > **moveTo**(`x`, `y`): `this`
 
-Defined in: [entities/marker.ts:40](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L40)
+Defined in: [entities/marker.ts:34](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/entities/marker.ts#L34)
 
 Target a new position in world pixels.
 
@@ -82,7 +82,7 @@ Target a new position in world pixels.
 
 > **setStyle**(`opts`): `this`
 
-Defined in: [entities/marker.ts:42](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/entities/marker.ts#L42)
+Defined in: [entities/marker.ts:36](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/entities/marker.ts#L36)
 
 Target style properties (scale, rotation, opacity).
 

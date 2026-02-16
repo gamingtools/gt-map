@@ -242,12 +242,7 @@ export class IconRenderer {
 
 		if (
 			this.buffers.hasCustomIconScale &&
-			(
-				this.buffers.iconScaleDirty ||
-				ctx.zoom !== this.buffers.lastBuildZoom ||
-				minZoom !== this.buffers.lastBuildMinZoom ||
-				maxZoom !== this.buffers.lastBuildMaxZoom
-			)
+			(this.buffers.iconScaleDirty || ctx.zoom !== this.buffers.lastBuildZoom || minZoom !== this.buffers.lastBuildMinZoom || maxZoom !== this.buffers.lastBuildMaxZoom)
 		) {
 			this.buffers.updateIconScales(ctx.zoom, minZoom, maxZoom, mapIconScale);
 		}

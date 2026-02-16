@@ -13,7 +13,7 @@
 
 > **PaddingInput** = `number` \| \{ `bottom`: `number`; `left`: `number`; `right`: `number`; `top`: `number`; \}
 
-Defined in: [api/types.ts:477](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L477)
+Defined in: [api/types.ts:520](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L520)
 
 Padding specification for view fitting operations.
 

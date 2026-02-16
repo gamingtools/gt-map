@@ -17,7 +17,7 @@
   - [width](#width)
   - [x2IconPath?](#x2iconpath)
 
-Defined in: [api/types.ts:121](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L121)
+Defined in: [api/types.ts:119](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L119)
 
 Icon bitmap metadata for registering marker icons.
 
@@ -31,7 +31,7 @@ Provide intrinsic pixel dimensions for the source image and optional 2x asset an
 
 > `optional` **anchorX**: `number`
 
-Defined in: [api/types.ts:131](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L131)
+Defined in: [api/types.ts:129](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L129)
 
 Optional anchor X in pixels from the left (defaults to width/2).
 
@@ -41,7 +41,7 @@ Optional anchor X in pixels from the left (defaults to width/2).
 
 > `optional` **anchorY**: `number`
 
-Defined in: [api/types.ts:133](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L133)
+Defined in: [api/types.ts:131](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L131)
 
 Optional anchor Y in pixels from the top (defaults to height/2).
 
@@ -51,7 +51,7 @@ Optional anchor Y in pixels from the top (defaults to height/2).
 
 > **height**: `number`
 
-Defined in: [api/types.ts:129](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L129)
+Defined in: [api/types.ts:127](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L127)
 
 Intrinsic height of the icon in pixels (1x asset).
 
@@ -61,7 +61,7 @@ Intrinsic height of the icon in pixels (1x asset).
 
 > **iconPath**: `string`
 
-Defined in: [api/types.ts:123](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L123)
+Defined in: [api/types.ts:121](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L121)
 
 URL or data URL for the 1x icon bitmap.
 
@@ -71,7 +71,7 @@ URL or data URL for the 1x icon bitmap.
 
 > **width**: `number`
 
-Defined in: [api/types.ts:127](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L127)
+Defined in: [api/types.ts:125](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L125)
 
 Intrinsic width of the icon in pixels (1x asset).
 
@@ -81,6 +81,6 @@ Intrinsic width of the icon in pixels (1x asset).
 
 > `optional` **x2IconPath**: `string`
 
-Defined in: [api/types.ts:125](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L125)
+Defined in: [api/types.ts:123](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L123)
 
 Optional URL or data URL for a 2x (retina) icon bitmap.

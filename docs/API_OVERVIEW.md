@@ -19,7 +19,6 @@ Use the lists below to jump directly to types and members.
 ### Classes
 
 - [CircleVisual](api/Class.CircleVisual.md)
-- [ContentFacade](api/Class.ContentFacade.md)
 - [CoordTransformer](api/Class.CoordTransformer.md)
 - [DisplayFacade](api/Class.DisplayFacade.md)
 - [EntityCollection](api/Class.EntityCollection.md)
@@ -27,16 +26,22 @@ Use the lists below to jump directly to types and members.
 - [HtmlVisual](api/Class.HtmlVisual.md)
 - [ImageVisual](api/Class.ImageVisual.md)
 - [InputFacade](api/Class.InputFacade.md)
+- [InteractiveLayer](api/Class.InteractiveLayer.md)
+- [LayersFacade](api/Class.LayersFacade.md)
 - [Marker](api/Class.Marker.md)
 - [RectVisual](api/Class.RectVisual.md)
+- [SpriteVisual](api/Class.SpriteVisual.md)
+- [StaticLayer](api/Class.StaticLayer.md)
 - [SvgVisual](api/Class.SvgVisual.md)
 - [TextVisual](api/Class.TextVisual.md)
+- [TileLayer](api/Class.TileLayer.md)
 - [Vector](api/Class.Vector.md)
 - [ViewFacade](api/Class.ViewFacade.md)
 - [Visual](api/Class.Visual.md)
 
 ### Interfaces
 
+- [AddLayerOptions](api/Interface.AddLayerOptions.md)
 - [AnchorPoint](api/Interface.AnchorPoint.md)
 - [AnimateOptions](api/Interface.AnimateOptions.md)
 - [ApplyOptions](api/Interface.ApplyOptions.md)
@@ -70,8 +75,13 @@ Use the lists below to jump directly to types and members.
 - [ResizeEventData](api/Interface.ResizeEventData.md)
 - [SetViewOptions](api/Interface.SetViewOptions.md)
 - [SpinnerOptions](api/Interface.SpinnerOptions.md)
+- [SpriteAtlasDescriptor](api/Interface.SpriteAtlasDescriptor.md)
+- [SpriteAtlasEntry](api/Interface.SpriteAtlasEntry.md)
+- [SpriteAtlasHandle](api/Interface.SpriteAtlasHandle.md)
+- [SpriteAtlasMeta](api/Interface.SpriteAtlasMeta.md)
 - [SuspendOptions](api/Interface.SuspendOptions.md)
 - [SvgShadow](api/Interface.SvgShadow.md)
+- [TileLayerOptions](api/Interface.TileLayerOptions.md)
 - [TileSourceOptions](api/Interface.TileSourceOptions.md)
 - [VectorData](api/Interface.VectorData.md)
 - [VectorEventMap](api/Interface.VectorEventMap.md)
@@ -111,6 +121,7 @@ Use the lists below to jump directly to types and members.
 - [isPolygon](api/Function.isPolygon.md)
 - [isPolyline](api/Function.isPolyline.md)
 - [isRectVisual](api/Function.isRectVisual.md)
+- [isSpriteVisual](api/Function.isSpriteVisual.md)
 - [isSvgVisual](api/Function.isSvgVisual.md)
 - [isTextVisual](api/Function.isTextVisual.md)
 

@@ -14,7 +14,7 @@
   - [minX](#minx)
   - [minY](#miny)
 
-Defined in: [api/types.ts:428](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L428)
+Defined in: [api/types.ts:471](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L471)
 
 ## Properties
 
@@ -22,7 +22,7 @@ Defined in: [api/types.ts:428](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > **maxX**: `number`
 
-Defined in: [api/types.ts:431](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L431)
+Defined in: [api/types.ts:474](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L474)
 
 ***
 
@@ -30,7 +30,7 @@ Defined in: [api/types.ts:431](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > **maxY**: `number`
 
-Defined in: [api/types.ts:432](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L432)
+Defined in: [api/types.ts:475](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L475)
 
 ***
 
@@ -38,7 +38,7 @@ Defined in: [api/types.ts:432](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > **minX**: `number`
 
-Defined in: [api/types.ts:429](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L429)
+Defined in: [api/types.ts:472](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L472)
 
 ***
 
@@ -46,4 +46,4 @@ Defined in: [api/types.ts:429](https://github.com/gamingtools/gt-map/blob/5a2bc9
 
 > **minY**: `number`
 
-Defined in: [api/types.ts:430](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L430)
+Defined in: [api/types.ts:473](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L473)

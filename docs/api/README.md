@@ -23,7 +23,6 @@ Use the lists below to jump directly to types and members.
 ### Classes
 
 - [CircleVisual](./Class.CircleVisual.md)
-- [ContentFacade](./Class.ContentFacade.md)
 - [CoordTransformer](./Class.CoordTransformer.md)
 - [DisplayFacade](./Class.DisplayFacade.md)
 - [EntityCollection](./Class.EntityCollection.md)
@@ -31,16 +30,22 @@ Use the lists below to jump directly to types and members.
 - [HtmlVisual](./Class.HtmlVisual.md)
 - [ImageVisual](./Class.ImageVisual.md)
 - [InputFacade](./Class.InputFacade.md)
+- [InteractiveLayer](./Class.InteractiveLayer.md)
+- [LayersFacade](./Class.LayersFacade.md)
 - [Marker](./Class.Marker.md)
 - [RectVisual](./Class.RectVisual.md)
+- [SpriteVisual](./Class.SpriteVisual.md)
+- [StaticLayer](./Class.StaticLayer.md)
 - [SvgVisual](./Class.SvgVisual.md)
 - [TextVisual](./Class.TextVisual.md)
+- [TileLayer](./Class.TileLayer.md)
 - [Vector](./Class.Vector.md)
 - [ViewFacade](./Class.ViewFacade.md)
 - [Visual](./Class.Visual.md)
 
 ### Interfaces
 
+- [AddLayerOptions](./Interface.AddLayerOptions.md)
 - [AnchorPoint](./Interface.AnchorPoint.md)
 - [AnimateOptions](./Interface.AnimateOptions.md)
 - [ApplyOptions](./Interface.ApplyOptions.md)
@@ -74,8 +79,13 @@ Use the lists below to jump directly to types and members.
 - [ResizeEventData](./Interface.ResizeEventData.md)
 - [SetViewOptions](./Interface.SetViewOptions.md)
 - [SpinnerOptions](./Interface.SpinnerOptions.md)
+- [SpriteAtlasDescriptor](./Interface.SpriteAtlasDescriptor.md)
+- [SpriteAtlasEntry](./Interface.SpriteAtlasEntry.md)
+- [SpriteAtlasHandle](./Interface.SpriteAtlasHandle.md)
+- [SpriteAtlasMeta](./Interface.SpriteAtlasMeta.md)
 - [SuspendOptions](./Interface.SuspendOptions.md)
 - [SvgShadow](./Interface.SvgShadow.md)
+- [TileLayerOptions](./Interface.TileLayerOptions.md)
 - [TileSourceOptions](./Interface.TileSourceOptions.md)
 - [VectorData](./Interface.VectorData.md)
 - [VectorEventMap](./Interface.VectorEventMap.md)
@@ -115,6 +125,7 @@ Use the lists below to jump directly to types and members.
 - [isPolygon](./Function.isPolygon.md)
 - [isPolyline](./Function.isPolyline.md)
 - [isRectVisual](./Function.isRectVisual.md)
+- [isSpriteVisual](./Function.isSpriteVisual.md)
 - [isSvgVisual](./Function.isSvgVisual.md)
 - [isTextVisual](./Function.isTextVisual.md)
 

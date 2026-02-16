@@ -196,7 +196,11 @@ export class GTMap {
 					debugLog: (msg) => ctx.debug.log(msg),
 					requestRender: () => ctx.requestRender(),
 					clearScreenCache: () => {
-						try { ctx.renderCoordinator?.screenCache?.clear?.(); } catch { /* noop */ }
+						try {
+							ctx.renderCoordinator?.screenCache?.clear?.();
+						} catch {
+							/* noop */
+						}
 					},
 					now: () => ctx.now(),
 					getView: () => vs.toPublic(),
@@ -258,7 +262,11 @@ export class GTMap {
 							debugWarn: (msg, err) => ctx.debug.warn(msg, err),
 							requestRender: () => ctx.requestRender(),
 							clearScreenCache: () => {
-								try { ctx.renderCoordinator?.screenCache?.clear?.(); } catch { /* noop */ }
+								try {
+									ctx.renderCoordinator?.screenCache?.clear?.();
+								} catch {
+									/* noop */
+								}
 							},
 							now: () => ctx.now(),
 							getLastInteractAt: () => ctx.lastInteractAt,

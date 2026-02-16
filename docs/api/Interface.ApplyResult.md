@@ -12,7 +12,7 @@
   - [error?](#error)
   - [status](#status)
 
-Defined in: [api/types.ts:626](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L626)
+Defined in: [api/types.ts:669](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L669)
 
 Result returned by [apply](Interface.ApplyOptions.md) Promises.
 
@@ -22,7 +22,7 @@ Result returned by [apply](Interface.ApplyOptions.md) Promises.
 
 > `optional` **error**: `unknown`
 
-Defined in: [api/types.ts:630](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L630)
+Defined in: [api/types.ts:673](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L673)
 
 Error details if status is 'error'
 
@@ -32,6 +32,6 @@ Error details if status is 'error'
 
 > **status**: [`ApplyStatus`](TypeAlias.ApplyStatus.md)
 
-Defined in: [api/types.ts:628](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/types.ts#L628)
+Defined in: [api/types.ts:671](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L671)
 
 Completion status of the transition.

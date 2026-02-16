@@ -10,7 +10,7 @@
 	let markerLayer: InteractiveLayer;
 	let vectorLayer: StaticLayer;
 
-	const MAP_SIZE = { width: 8192, height: 6192 };
+	const MAP_SIZE = { width: 8192, height: 8192 };
 	const MAP_TILES = {
 		packUrl: 'https://gtcdn.info/dune/tiles/hb_8k.gtpk',
 		tileSize: 256,

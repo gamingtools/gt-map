@@ -17,7 +17,7 @@
   - [iconScaleFunction?](#iconscalefunction)
   - [type](#type)
 
-Defined in: [api/visual.ts:89](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L89)
+Defined in: [api/visual.ts:89](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L89)
 
 Abstract base class for all visuals.
 
@@ -33,6 +33,7 @@ Visuals define appearance only. Use with Marker for screen-sized interactive ent
 - [`RectVisual`](Class.RectVisual.md)
 - [`SvgVisual`](Class.SvgVisual.md)
 - [`HtmlVisual`](Class.HtmlVisual.md)
+- [`SpriteVisual`](Class.SpriteVisual.md)
 
 ## Constructors
 
@@ -50,7 +51,7 @@ Visuals define appearance only. Use with Marker for screen-sized interactive ent
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -60,7 +61,7 @@ Anchor point for positioning. Defaults to center.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -72,6 +73,6 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `abstract` `readonly` **type**: [`VisualType`](TypeAlias.VisualType.md)
 
-Defined in: [api/visual.ts:91](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/visual.ts#L91)
+Defined in: [api/visual.ts:91](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L91)
 
 Discriminator for runtime type checking.

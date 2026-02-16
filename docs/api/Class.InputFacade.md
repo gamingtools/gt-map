@@ -12,7 +12,7 @@
   - [setInertiaOptions()](#setinertiaoptions)
   - [setWheelSpeed()](#setwheelspeed)
 
-Defined in: [api/facades/input-facade.ts:13](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/input-facade.ts#L13)
+Defined in: [api/facades/input-facade.ts:13](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/input-facade.ts#L13)
 
 ## Methods
 
@@ -20,7 +20,7 @@ Defined in: [api/facades/input-facade.ts:13](https://github.com/gamingtools/gt-m
 
 > **setInertiaOptions**(`opts`): `void`
 
-Defined in: [api/facades/input-facade.ts:32](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/input-facade.ts#L32)
+Defined in: [api/facades/input-facade.ts:32](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/input-facade.ts#L32)
 
 Configure inertia behavior for pan gestures.
 
@@ -40,7 +40,7 @@ Configure inertia behavior for pan gestures.
 
 > **setWheelSpeed**(`v`): `void`
 
-Defined in: [api/facades/input-facade.ts:25](https://github.com/gamingtools/gt-map/blob/5a2bc977f1d6f1065e37e4f5d2c2817935068be0/packages/gtmap/src/api/facades/input-facade.ts#L25)
+Defined in: [api/facades/input-facade.ts:25](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/input-facade.ts#L25)
 
 Set mouse-wheel zoom speed.
 
