@@ -10,7 +10,8 @@
 		HOME,
 		buildBoundaryOpts,
 		refreshClusterStats,
-		initLayers,
+		fetchActorData,
+		createLayers,
 		wireMapEvents,
 		type ResourceLayerInfo,
 		type MarkerHoverInfo,
@@ -138,6 +139,10 @@
 		if (!container) return;
 		mounted = true;
 
+		// Start fetching data immediately -- no map needed yet.
+		const dataPromise = fetchActorData((msg) => { initStatus = msg; });
+
+		// Init map while data is in flight.
 		map = new GTMap(container, {
 			mapSize: MAP_SIZE,
 			center: { x: HOME.lng, y: HOME.lat },
@@ -178,12 +183,15 @@
 			(info) => { hoverInfo = info; },
 		);
 
-		initLayers(map, {
-			clusterRadius,
-			minClusterSize,
-			sizeTemplate,
-			boundaryParams: getBoundaryParams(),
-		}, (msg) => { initStatus = msg; }).then((infos) => {
+		// Once data arrives, create layers on the already-initialized map.
+		dataPromise.then((data) => {
+			return createLayers(map, data, {
+				clusterRadius,
+				minClusterSize,
+				sizeTemplate,
+				boundaryParams: getBoundaryParams(),
+			}, (msg) => { initStatus = msg; });
+		}).then((infos) => {
 			resourceLayers = infos;
 			const markerTotal = infos.reduce((total, info) => total + info.markerCount, 0);
 			for (const info of infos) {

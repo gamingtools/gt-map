@@ -222,15 +222,25 @@ export interface InitLayersConfig {
 	boundaryParams: BoundaryParams;
 }
 
-export async function initLayers(
-	map: GTMap,
-	config: InitLayersConfig,
+export interface ActorData {
+	sorted: [string, { x: number; y: number }[]][];
+	descriptor: SpriteAtlasDescriptor;
+}
+
+export async function fetchActorData(
 	onStatus: (msg: string) => void,
-): Promise<ResourceLayerInfo[]> {
+): Promise<ActorData> {
 	onStatus('Fetching actor data...');
-	const resp = await fetch(API_URL);
+	const [resp, atlasResp] = await Promise.all([
+		fetch(API_URL),
+		fetch(`${ATLAS_CDN}/atlas.json`),
+	]);
 	if (!resp.ok) throw new Error(`API responded with ${resp.status}`);
-	const actors: ActorRecord[] = await resp.json();
+
+	const [actors, descriptor]: [ActorRecord[], SpriteAtlasDescriptor] = await Promise.all([
+		resp.json() as Promise<ActorRecord[]>,
+		atlasResp.json() as Promise<SpriteAtlasDescriptor>,
+	]);
 
 	onStatus('Grouping by resource type...');
 	const groups = new Map<string, { x: number; y: number }[]>();
@@ -249,9 +259,16 @@ export async function initLayers(
 		.sort((a, b) => b[1].length - a[1].length)
 		.slice(0, 11);
 
-	onStatus('Loading sprite atlas...');
-	const atlasResp = await fetch(`${ATLAS_CDN}/atlas.json`);
-	const descriptor: SpriteAtlasDescriptor = await atlasResp.json();
+	return { sorted, descriptor };
+}
+
+export async function createLayers(
+	map: GTMap,
+	data: ActorData,
+	config: InitLayersConfig,
+	onStatus: (msg: string) => void,
+): Promise<ResourceLayerInfo[]> {
+	const { sorted, descriptor } = data;
 
 	onStatus('Creating layers in parallel...');
 	const buildLayerTasks: Promise<ResourceLayerInfo>[] = sorted.map(async ([resourceId, positions], i) => {
