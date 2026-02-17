@@ -16,6 +16,8 @@
 		<a href="/map" class="header-link">Map</a>
 		<a href="/clusters" class="header-link">Clusters</a>
 		<a href="/sprites" class="header-link">Sprites</a>
+		<a href="/tiles-generator" class="header-link">Tiles</a>
+		<a href="/gtpk-viewer" class="header-link">Viewer</a>
 	</nav>
 </header>
 {@render children?.()}

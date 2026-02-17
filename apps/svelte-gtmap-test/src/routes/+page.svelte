@@ -45,5 +45,35 @@
 				Open &rarr;
 			</div>
 		</a>
+		<a
+			href="/tiles-generator"
+			class="group block rounded-lg border border-neutral-700 bg-neutral-800/80 px-4 py-3 shadow-sm transition hover:border-neutral-600 hover:shadow-md"
+		>
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold text-neutral-100">Tile Generator</h2>
+				<span class="rounded bg-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300">/tiles-generator</span>
+			</div>
+			<p class="mt-2 text-sm text-neutral-400">
+				Generate GTPK tile packs from local images. Drop a PNG, configure, and download.
+			</p>
+			<div class="mt-3 text-sm font-medium text-neutral-300 group-hover:text-neutral-100">
+				Open &rarr;
+			</div>
+		</a>
+		<a
+			href="/gtpk-viewer"
+			class="group block rounded-lg border border-neutral-700 bg-neutral-800/80 px-4 py-3 shadow-sm transition hover:border-neutral-600 hover:shadow-md"
+		>
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold text-neutral-100">GTPK Viewer</h2>
+				<span class="rounded bg-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300">/gtpk-viewer</span>
+			</div>
+			<p class="mt-2 text-sm text-neutral-400">
+				Drop a .gtpk tile pack and view it on an interactive map.
+			</p>
+			<div class="mt-3 text-sm font-medium text-neutral-300 group-hover:text-neutral-100">
+				Open &rarr;
+			</div>
+		</a>
 	</div>
 </div>
