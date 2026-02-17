@@ -3,6 +3,7 @@
  * respecting z-order (topmost first).
  */
 import type { MarkerEventData } from '../../api/types';
+import type { ClusterEventData } from '../../api/layers/types';
 import type { LayerRegistry } from '../layers/layer-registry';
 import type { InteractiveLayerRenderer } from '../layers/interactive-layer-renderer';
 import type { HitResult, AllHitsResult, HoverKey } from './marker-hit-testing';
@@ -100,6 +101,37 @@ export class LayerHitTester {
 			if (!renderer.getMarkerDataById) continue;
 			const data = renderer.getMarkerDataById(id);
 			if (data !== undefined) return data;
+		}
+		return undefined;
+	}
+
+	private _getClusterForMarkerInLayer(layerId: string, markerId: string): ClusterEventData | undefined {
+		const entry = this._registry.get(layerId);
+		if (!entry?.renderer) return undefined;
+		const renderer = entry.renderer as unknown as { getClusterForMarkerId?: (id: string) => ClusterEventData | undefined };
+		if (!renderer.getClusterForMarkerId) return undefined;
+		return renderer.getClusterForMarkerId(markerId);
+	}
+
+	getClusterForMarkerId(id: string): ClusterEventData | undefined {
+		// Prefer the source layer from the current hit path.
+		if (this._lastHitSource) {
+			const fromLastHit = this._getClusterForMarkerInLayer(this._lastHitSource, id);
+			if (fromLastHit) return fromLastHit;
+		}
+		// Fallback to the current hover source (for leave/hover transitions).
+		if (this._hoverSource && this._hoverSource !== this._lastHitSource) {
+			const fromHover = this._getClusterForMarkerInLayer(this._hoverSource, id);
+			if (fromHover) return fromHover;
+		}
+		// Final fallback: scan all interactive layers.
+		for (const entry of this._registry.getInteractiveSortedReverse()) {
+			if (entry.layer.id === this._lastHitSource || entry.layer.id === this._hoverSource) continue;
+			if (!entry.renderer) continue;
+			const renderer = entry.renderer as unknown as { getClusterForMarkerId?: (markerId: string) => ClusterEventData | undefined };
+			if (!renderer.getClusterForMarkerId) continue;
+			const cluster = renderer.getClusterForMarkerId(id);
+			if (cluster) return cluster;
 		}
 		return undefined;
 	}

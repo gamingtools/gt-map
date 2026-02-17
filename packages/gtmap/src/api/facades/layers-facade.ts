@@ -3,16 +3,18 @@
  *
  * Layer creation, attachment, removal, and per-layer display properties.
  */
-import type { TileLayerOptions, AddLayerOptions } from '../layers/types';
+import type { TileLayerOptions, AddLayerOptions, ClusteredLayerOptions } from '../layers/types';
 import type { TileLayer } from '../layers/tile-layer';
 import type { InteractiveLayer } from '../layers/interactive-layer';
 import type { StaticLayer } from '../layers/static-layer';
+import type { ClusteredLayer } from '../layers/clustered-layer';
 import type { AnyLayer } from '../../internal/layers/layer-registry';
 
 export interface LayersFacadeDeps {
 	createTileLayer(opts: TileLayerOptions): TileLayer;
 	createInteractiveLayer(): InteractiveLayer;
 	createStaticLayer(): StaticLayer;
+	createClusteredLayer(opts?: ClusteredLayerOptions): ClusteredLayer;
 	addLayer(layer: AnyLayer, opts: AddLayerOptions): void;
 	removeLayer(layer: AnyLayer): void;
 	setLayerOpacity(layer: AnyLayer, opacity: number): void;
@@ -47,6 +49,13 @@ export class LayersFacade {
 	 */
 	createStaticLayer(): StaticLayer {
 		return this._deps.createStaticLayer();
+	}
+
+	/**
+	 * Create a clustered layer that groups nearby markers into clusters (not yet added to the map).
+	 */
+	createClusteredLayer(opts?: ClusteredLayerOptions): ClusteredLayer {
+		return this._deps.createClusteredLayer(opts);
 	}
 
 	/**

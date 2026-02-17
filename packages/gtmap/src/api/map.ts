@@ -22,12 +22,14 @@ import { LayersFacade } from './facades/layers-facade';
 import { TileLayer } from './layers/tile-layer';
 import { InteractiveLayer } from './layers/interactive-layer';
 import { StaticLayer } from './layers/static-layer';
+import { ClusteredLayer } from './layers/clustered-layer';
 import { LayerRegistry } from '../internal/layers/layer-registry';
 import type { AnyLayer } from '../internal/layers/layer-registry';
 import { VisualIconService } from '../internal/markers/visual-icon-service';
 import { TileLayerRenderer } from '../internal/layers/tile-layer-renderer';
 import { InteractiveLayerRenderer } from '../internal/layers/interactive-layer-renderer';
 import { StaticLayerRenderer } from '../internal/layers/static-layer-renderer';
+import { ClusteredLayerRenderer } from '../internal/layers/clustered-layer-renderer';
 
 // Re-export types from centralized types file
 export type { Point, MapOptions, IconDef, IconHandle, VectorStyle, Polyline, Polygon, Circle, SuspendOptions } from './types';
@@ -125,6 +127,8 @@ export class GTMap {
 				for (const entry of reg.entries()) {
 					if (entry.layer.type === 'interactive' && entry.renderer) {
 						(entry.renderer as unknown as InteractiveLayerRenderer).setIconScaleFunction(fn);
+					} else if (entry.layer.type === 'clustered' && entry.renderer) {
+						(entry.renderer as unknown as ClusteredLayerRenderer).setIconScaleFunction(fn);
 					}
 				}
 			},
@@ -238,6 +242,59 @@ export class GTMap {
 				this._createdLayers.push(layer);
 				return layer;
 			},
+			createClusteredLayer: (opts) => {
+				const layer = new ClusteredLayer(opts);
+
+				// Share VisualIconService across interactive/clustered layers
+				if (!this._sharedVis) {
+					this._sharedVis = new VisualIconService({
+						setIconDefs: (defs) => layer._renderer!.setIconDefs(defs),
+						onVisualUpdated: () => ctx.requestRender(),
+					});
+					this._sharedVis.ensureDefaultIcon();
+				}
+
+				const renderer = new ClusteredLayerRenderer(
+					{
+						getGL: () => ctx.gl!,
+						getContainer: () => ctx.container,
+						getDpr: () => vs.dpr,
+						getZoom: () => vs.zoom,
+						getMinZoom: () => vs.minZoom,
+						getMaxZoom: () => vs.maxZoom,
+						getCenter: () => vs.center,
+						getImageMaxZoom: () => vs.imageMaxZoom,
+						getZoomSnapThreshold: () => vs.zoomSnapThreshold,
+						debugWarn: (msg, err) => ctx.debug.warn(msg, err),
+						debugLog: (msg) => ctx.debug.log(msg),
+						requestRender: () => ctx.requestRender(),
+						clearScreenCache: () => {
+							try {
+								ctx.renderCoordinator?.screenCache?.clear?.();
+							} catch {
+								/* noop */
+							}
+						},
+						now: () => ctx.now(),
+						getView: () => vs.toPublic(),
+					},
+					opts,
+				);
+				layer._renderer = renderer;
+
+				layer._wire(this._sharedVis, {
+					setIconDefs: (defs) => renderer.setIconDefs(defs),
+					setMarkers: (markers) => renderer.setMarkers(markers),
+					setMarkerData: (payloads) => renderer.setMarkerData(payloads),
+					onMarkerEvent: (name, handler) => renderer.onMarkerEvent(name, handler),
+					loadSpriteAtlas: (url, desc, id) => renderer.loadSpriteAtlas(url, desc, id),
+					onOptionsChanged: (o) => renderer.onOptionsChanged(o),
+					getClusters: () => renderer.getClusters(),
+					getClusterForMarkerId: (id) => renderer.getClusterForMarkerId(id),
+				});
+				this._createdLayers.push(layer);
+				return layer;
+			},
 			addLayer: (layer, opts) => {
 				if (layer._destroyed) throw new Error('GTMap: cannot add a destroyed layer');
 				if (layer._attached) throw new Error('GTMap: layer is already attached');
@@ -292,6 +349,12 @@ export class GTMap {
 					if (sl._renderer) {
 						this._layerRegistry.setRenderer(layer.id, sl._renderer);
 						if (ctx.gl) sl._renderer.init();
+					}
+				} else if (layer.type === 'clustered') {
+					const cl = layer as ClusteredLayer;
+					if (cl._renderer) {
+						this._layerRegistry.setRenderer(layer.id, cl._renderer);
+						if (ctx.gl) cl._renderer.init();
 					}
 				}
 

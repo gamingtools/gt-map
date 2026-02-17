@@ -3,6 +3,7 @@
  * and the InputDeps assembly.
  */
 import type { EventMap, MarkerEventData } from '../../api/types';
+import type { ClusterEventData } from '../../api/layers/types';
 import type { InputDeps } from '../types';
 import type { TypedEventBus } from '../events/typed-stream';
 import type { HitResult, AllHitsResult } from '../events/marker-hit-testing';
@@ -57,6 +58,7 @@ export interface InputManagerDeps {
 	getLastHover(): { type: string; idx: number; id?: string } | null;
 	setLastHover(h: { type: string; idx: number; id?: string } | null): void;
 	getMarkerDataById(id: string): unknown | undefined;
+	getClusterForMarkerId(id: string): ClusterEventData | undefined;
 }
 
 export class InputManager {
@@ -138,6 +140,7 @@ export class InputManager {
 				getLastHover: d.getLastHover,
 				setLastHover: d.setLastHover,
 				getMarkerDataById: d.getMarkerDataById,
+				getClusterForMarkerId: d.getClusterForMarkerId,
 			});
 			this._bridge.attach();
 		} catch (e) {

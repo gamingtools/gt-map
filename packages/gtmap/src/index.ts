@@ -65,8 +65,9 @@ export { DisplayFacade } from './api/facades/display-facade';
 export { InputFacade } from './api/facades/input-facade';
 
 // Export layer classes and types
-export { TileLayer, InteractiveLayer, StaticLayer } from './api/layers/index';
-export type { TileLayerOptions, AddLayerOptions } from './api/layers/types';
+export { TileLayer, InteractiveLayer, StaticLayer, ClusteredLayer } from './api/layers/index';
+export { ClusterIconSizeTemplates } from './api/layers/index';
+export type { TileLayerOptions, AddLayerOptions, ClusteredLayerOptions, ClusterBoundaryOptions, ClusterIconSizeFunction, ClusterSnapshot, ClusterEventData } from './api/layers/types';
 
 // Export entity option types
 export type { MarkerOptions, MarkerTransition } from './entities/marker';

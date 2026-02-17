@@ -457,6 +457,8 @@ export interface MarkerEventData {
 	marker: { id: string; index: number; world: Point; size: { width: number; height: number }; rotation?: number; data?: unknown | null };
 	icon: { id: string; iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
 	originalEvent?: PointerEvent | MouseEvent;
+	/** Present when the hit target is a cluster icon. Contains cluster metadata. */
+	cluster?: import('./layers/types').ClusterEventData;
 }
 
 // Inertia options

@@ -1,4 +1,5 @@
 import type { Polyline as PolylineT, Polygon as PolygonT, Circle as CircleT } from '../types';
+import type { ClusterEventData } from '../layers/types';
 
 /**
  * Lightweight snapshot of a marker used in event payloads.
@@ -51,19 +52,19 @@ export interface PointerMeta {
 /** Events emitted by a Marker instance. */
 export interface MarkerEventMap {
 	/** Device-agnostic activate (mouse click or touch tap). */
-	click: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	click: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta; cluster?: ClusterEventData };
 	/** Touch alias for click (emitted only on touch). */
-	tap: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	tap: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta; cluster?: ClusterEventData };
 	/** Touch long-press (~500ms) on the marker. */
-	longpress: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	longpress: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta; cluster?: ClusterEventData };
 	/** Pointer pressed on the marker. */
-	pointerdown: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	pointerdown: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta; cluster?: ClusterEventData };
 	/** Pointer released on the marker. */
-	pointerup: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	pointerup: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta; cluster?: ClusterEventData };
 	/** Hover enter on the top-most marker under the pointer. */
-	pointerenter: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	pointerenter: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta; cluster?: ClusterEventData };
 	/** Hover leave for the previously hovered marker. */
-	pointerleave: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta };
+	pointerleave: { x: number; y: number; marker: MarkerData; pointer?: PointerMeta; cluster?: ClusterEventData };
 	/** Position changed via Marker.moveTo; includes deltas. */
 	positionchange: { x: number; y: number; dx: number; dy: number; marker: MarkerData };
 	/** Marker was removed. */

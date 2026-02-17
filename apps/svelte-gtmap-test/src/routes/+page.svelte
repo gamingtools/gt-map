@@ -16,6 +16,21 @@
 			</div>
 		</a>
 		<a
+			href="/clusters"
+			class="group block rounded-lg border border-neutral-700 bg-neutral-800/80 px-4 py-3 shadow-sm transition hover:border-neutral-600 hover:shadow-md"
+		>
+			<div class="flex items-center justify-between">
+				<h2 class="text-lg font-semibold text-neutral-100">Cluster Layer Demo</h2>
+				<span class="rounded bg-neutral-700 px-2 py-0.5 text-[10px] text-neutral-300">/clusters</span>
+			</div>
+			<p class="mt-2 text-sm text-neutral-400">
+				Spatial marker clustering with configurable radius, icon sizing, and boundary polygons.
+			</p>
+			<div class="mt-3 text-sm font-medium text-neutral-300 group-hover:text-neutral-100">
+				Open &rarr;
+			</div>
+		</a>
+		<a
 			href="/sprites"
 			class="group block rounded-lg border border-neutral-700 bg-neutral-800/80 px-4 py-3 shadow-sm transition hover:border-neutral-600 hover:shadow-md"
 		>

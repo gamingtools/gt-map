@@ -4,10 +4,11 @@
 import type { TileLayer } from '../../api/layers/tile-layer';
 import type { InteractiveLayer } from '../../api/layers/interactive-layer';
 import type { StaticLayer } from '../../api/layers/static-layer';
+import type { ClusteredLayer } from '../../api/layers/clustered-layer';
 import type { LayerState } from '../../api/layers/types';
 import type { SharedRenderCtx } from '../types';
 
-export type AnyLayer = TileLayer | InteractiveLayer | StaticLayer;
+export type AnyLayer = TileLayer | InteractiveLayer | StaticLayer | ClusteredLayer;
 
 /** Per-layer renderer handle (set by the rendering system when GL is ready). */
 export interface LayerRendererHandle {
@@ -73,7 +74,7 @@ export class LayerRegistry {
 	getInteractiveSortedReverse(): readonly LayerEntry[] {
 		if (!this._interactiveSorted) {
 			this._interactiveSorted = Array.from(this._entries.values())
-				.filter((e) => e.layer.type === 'interactive')
+				.filter((e) => e.layer.type === 'interactive' || e.layer.type === 'clustered')
 				.sort((a, b) => b.state.z - a.state.z);
 		}
 		return this._interactiveSorted;

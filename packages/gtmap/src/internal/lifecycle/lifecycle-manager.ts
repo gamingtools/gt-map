@@ -279,6 +279,7 @@ export class LifecycleManager {
 			getLastHover: () => hitTester.getLastHover(),
 			setLastHover: (h) => hitTester.setLastHover(h),
 			getMarkerDataById: (id) => hitTester.getMarkerDataById(id),
+			getClusterForMarkerId: (id) => hitTester.getClusterForMarkerId(id),
 		});
 		ctx.inputManager = im;
 		im.init();

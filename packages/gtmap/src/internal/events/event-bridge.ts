@@ -1,4 +1,5 @@
 import type { EventMap, MarkerEventData, PointerEventData, MouseEventData } from '../../api/types';
+import type { ClusterEventData } from '../../api/layers/types';
 
 import { TypedEventBus } from './typed-stream';
 import { getInputDevice } from './pointer-meta';
@@ -24,6 +25,7 @@ function buildMarkerPayload(
 	view: import('../../api/types').ViewState,
 	originalEvent: PointerEvent | undefined,
 	data?: unknown | null,
+	cluster?: ClusterEventData,
 ): MarkerEventData {
 	return {
 		now,
@@ -46,6 +48,7 @@ function buildMarkerPayload(
 			anchorX: hit.icon.anchorX,
 			anchorY: hit.icon.anchorY,
 		},
+		...(cluster ? { cluster } : {}),
 		...(originalEvent ? { originalEvent } : {}),
 	};
 }
@@ -101,6 +104,7 @@ export interface EventBridgeDeps {
 	setLastHover(h: HoverKey | null): void;
 	// marker data lookup (optional)
 	getMarkerDataById?: (id: string) => unknown | null | undefined;
+	getClusterForMarkerId?: (id: string) => ClusterEventData | undefined;
 }
 
 export default class EventBridge {
@@ -139,7 +143,8 @@ export default class EventBridge {
 			const hit = this.d.hitTest(e.x, e.y, false);
 			if (hit) {
 				const markerData = this.d.getMarkerDataById ? this.d.getMarkerDataById(hit.id) : null;
-				const payload = buildMarkerPayload(hit, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, markerData);
+				const clusterMeta = this.d.getClusterForMarkerId?.(hit.id);
+				const payload = buildMarkerPayload(hit, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, markerData, clusterMeta);
 				this.d.emitMarker('down', payload);
 				try {
 					this.d.events.emit('markerdown', payload);
@@ -155,7 +160,8 @@ export default class EventBridge {
 						this.longPressed = true;
 						const lpHit = this.d.hitTest(e.x, e.y, false);
 						if (lpHit && this.pressTarget && lpHit.id === this.pressTarget.id) {
-							const pl = buildMarkerPayload(lpHit, { x: e.x, y: e.y }, this.d.now(), this.d.getView(), e.originalEvent);
+							const clusterMeta = this.d.getClusterForMarkerId?.(lpHit.id);
+							const pl = buildMarkerPayload(lpHit, { x: e.x, y: e.y }, this.d.now(), this.d.getView(), e.originalEvent, null, clusterMeta);
 							this.d.emitMarker('longpress', pl);
 							try {
 								this.d.events.emit('markerlongpress', pl);
@@ -207,7 +213,8 @@ export default class EventBridge {
 						const leavePayload = buildLeavePayload(prev, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, prev.id ? (this.d.getMarkerDataById?.(prev.id) ?? null) : null);
 						this.d.emitMarker('leave', leavePayload);
 					}
-					const enterPayload = buildMarkerPayload(hit, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, this.d.getMarkerDataById?.(hit.id) ?? null);
+					const clusterMeta = this.d.getClusterForMarkerId?.(hit.id);
+					const enterPayload = buildMarkerPayload(hit, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, this.d.getMarkerDataById?.(hit.id) ?? null, clusterMeta);
 					this.d.emitMarker('enter', enterPayload);
 					try {
 						this.d.events.emit('markerenter', enterPayload);
@@ -240,7 +247,8 @@ export default class EventBridge {
 			const upHit = this.d.hitTest(e.x, e.y, true);
 			if (upHit) {
 				const dataUp = this.d.getMarkerDataById ? this.d.getMarkerDataById(upHit.id) : null;
-				const payload = buildMarkerPayload(upHit, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, dataUp);
+				const clusterMeta = this.d.getClusterForMarkerId?.(upHit.id);
+				const payload = buildMarkerPayload(upHit, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, dataUp, clusterMeta);
 				this.d.emitMarker('up', payload);
 				try {
 					this.d.events.emit('markerup', payload);
@@ -256,7 +264,8 @@ export default class EventBridge {
 			const hit = this.d.hitTest(e.x, e.y, true);
 			if (hit) {
 				const data = this.d.getMarkerDataById ? this.d.getMarkerDataById(hit.id) : null;
-				const payload = buildMarkerPayload(hit, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, data);
+				const clusterMeta = this.d.getClusterForMarkerId?.(hit.id);
+				const payload = buildMarkerPayload(hit, { x: e.x, y: e.y }, now, this.d.getView(), e.originalEvent, data, clusterMeta);
 				this.d.emitMarker('click', payload);
 				try {
 					this.d.events.emit('markerclick', payload);
