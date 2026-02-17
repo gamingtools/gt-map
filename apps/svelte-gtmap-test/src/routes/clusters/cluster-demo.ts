@@ -108,10 +108,10 @@ export const HOME = { lng: MAP_SIZE.width / 2, lat: MAP_SIZE.height / 2 };
 const ATLAS_CDN = 'https://cdn.gaming.tools/dune/images';
 const API_URL = 'https://dune-api-v2.gaming.tools/actors?seed=11&world=survival_1';
 
-const WORLD_MIN_X = -456485;
-const WORLD_MAX_X = 355555;
-const WORLD_MIN_Y = -457149;
-const WORLD_MAX_Y = 344662;
+const WORLD_MIN_X = -457200;
+const WORLD_MAX_X = 355600;
+const WORLD_MIN_Y = -457200;
+const WORLD_MAX_Y = 355600;
 
 export const LAYER_COLORS: string[] = [
 	'#22c55e',

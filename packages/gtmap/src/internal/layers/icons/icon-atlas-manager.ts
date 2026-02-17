@@ -6,6 +6,9 @@ import type { IconMeta, IconSizeProvider } from './types';
 import { IconMaskBuilder } from './icon-mask-builder';
 import { createAtlas } from './icon-atlas';
 
+/** Coalesces concurrent fetches for the same image URL across all IconAtlasManager instances. */
+const _pendingFetches = new Map<string, Promise<Blob>>();
+
 export class IconAtlasManager implements IconSizeProvider {
 	private textures = new Map<string, WebGLTexture>();
 	private textures2x = new Map<string, WebGLTexture>();
@@ -263,9 +266,18 @@ export class IconAtlasManager implements IconSizeProvider {
 	private async loadImageSource(url: string): Promise<ImageBitmap | HTMLImageElement | null> {
 		if (typeof fetch === 'function' && typeof createImageBitmap === 'function') {
 			try {
-				const r = await fetch(url, { mode: 'cors', credentials: 'omit' });
-				if (!r.ok) throw new Error(`HTTP ${r.status}`);
-				const blob = await r.blob();
+				// Coalesce concurrent fetches for the same URL into a single network request.
+				// Each caller still gets its own ImageBitmap (independent WebGL textures per layer).
+				let blobPromise = _pendingFetches.get(url);
+				if (!blobPromise) {
+					blobPromise = fetch(url, { mode: 'cors', credentials: 'omit' }).then(async (r) => {
+						if (!r.ok) throw new Error(`HTTP ${r.status}`);
+						return r.blob();
+					});
+					_pendingFetches.set(url, blobPromise);
+					blobPromise.finally(() => _pendingFetches.delete(url));
+				}
+				const blob = await blobPromise;
 				const bmp = await createImageBitmap(blob);
 				if (bmp.width === 0 || bmp.height === 0) throw new Error('Empty bitmap');
 				return bmp;
