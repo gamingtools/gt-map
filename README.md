@@ -6,6 +6,8 @@
 
 Minimal, zero-dependency WebGL map renderer for tiled raster imagery. Pixel CRS only (image pixel coordinates, no Web Mercator).
 
+[Live Demo](https://gtmap-svelte-test.gamingtools.workers.dev/)
+
 ## Quick Start
 
 ```bash
