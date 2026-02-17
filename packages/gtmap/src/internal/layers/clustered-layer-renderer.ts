@@ -21,6 +21,7 @@ import { MarkerEventManager } from '../markers/marker-event-manager';
 import { VectorLayer } from './vector-layer';
 import { ClusterEngine, type ClusterData, type ClusterResult } from './cluster-engine';
 import { ClusterWorkerClient } from './cluster-worker-client';
+import { convexHull } from './convex-hull';
 import { LayerFBO } from '../render/layer-fbo';
 
 /** Coverage threshold: how much tile coverage before we unlock icon rendering. */
@@ -72,6 +73,10 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 	private _optionsDirty = false;
 	private _boundaryEnabled = false;
 
+	// Hover-boundary state
+	private _showOnHover = false;
+	private _hoveredClusterId: string | null = null;
+
 	// Map from synthetic cluster marker id -> ClusterData
 	private _clusterIdMap = new Map<string, ClusterData>();
 
@@ -85,6 +90,7 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 			this._boundary = opts.boundary;
 		}
 		this._boundaryEnabled = !!this._boundary;
+		this._showOnHover = !!this._boundary?.showOnHover;
 
 		this._iconMgr = new IconManager({
 			getGL: deps.getGL,
@@ -124,6 +130,9 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 		if (this._boundaryEnabled) {
 			this._initVectorLayer();
 		}
+
+		// Wire internal hover events for showOnHover boundary mode
+		this._wireHoverBoundary();
 	}
 
 	private _initVectorLayer(): void {
@@ -213,6 +222,7 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 			this._vectorLayer = null;
 		}
 		this._boundaryEnabled = needBoundary;
+		this._showOnHover = !!this._boundary?.showOnHover;
 
 		this._clusterEngine.invalidate();
 		this._optionsDirty = true;
@@ -253,14 +263,21 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 		// Build the combined marker list for IconManager:
 		// - Clusters become synthetic markers at centroid, scaled by clusterIconSizeFunction
 		// - Singles pass through as-is
+		// maxClusterSize is computed lazily in the first pass and used for adaptive scaling.
 		const allMarkers: MarkerInternal[] = [];
 		const visibleData: Record<string, unknown | null | undefined> = {};
+		const clusters = result.clusters;
 
-		for (const cluster of result.clusters) {
+		let maxClusterSize = 1;
+		for (const c of clusters) {
+			if (c.size > maxClusterSize) maxClusterSize = c.size;
+		}
+
+		for (const cluster of clusters) {
 			// Use the first cluster member as representative for icon style.
 			const representative = this._rawMarkers[cluster.representativeIndex];
 			if (!representative) continue;
-			const scale = this._clusterIconSizeFunction(cluster.size);
+			const scale = this._clusterIconSizeFunction(cluster.size, maxClusterSize);
 			const syntheticId = `__cl_${cluster.id}`;
 
 			allMarkers.push({
@@ -292,22 +309,27 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 
 		// Update boundary polygons if enabled
 		if (this._boundaryEnabled && this._vectorLayer) {
-			const boundaryStyle = this._boundary ?? {};
-			const vectors: VectorPrimitiveInternal[] = result.clusters
-				.filter((c) => c.bounds.length >= 3)
-				.map((c) => ({
-					type: 'polygon' as const,
-					points: c.bounds.map((p) => ({ x: p.x, y: p.y })),
-					style: {
-						color: boundaryStyle.color ?? 'rgba(0,100,255,0.4)',
-						weight: boundaryStyle.weight ?? 1.5,
-						opacity: boundaryStyle.opacity ?? 1,
-						fill: boundaryStyle.fill !== false,
-						fillColor: boundaryStyle.fillColor ?? 'rgba(0,100,255,0.1)',
-						fillOpacity: boundaryStyle.fillOpacity ?? 0.15,
-					},
-				}));
-			this._vectorLayer.setVectors(vectors);
+			if (this._showOnHover) {
+				// In hover mode, only render the hovered cluster's boundary (lazy).
+				this._updateHoverBoundary();
+			} else {
+				const boundaryStyle = this._boundary ?? {};
+				const vectors: VectorPrimitiveInternal[] = result.clusters
+					.filter((c) => c.bounds.length >= 3)
+					.map((c) => ({
+						type: 'polygon' as const,
+						points: c.bounds.map((p) => ({ x: p.x, y: p.y })),
+						style: {
+							color: boundaryStyle.color ?? 'rgba(0,100,255,0.4)',
+							weight: boundaryStyle.weight ?? 1.5,
+							opacity: boundaryStyle.opacity ?? 1,
+							fill: boundaryStyle.fill !== false,
+							fillColor: boundaryStyle.fillColor ?? 'rgba(0,100,255,0.1)',
+							fillOpacity: boundaryStyle.fillOpacity ?? 0.15,
+						},
+					}));
+				this._vectorLayer.setVectors(vectors);
+			}
 		}
 	}
 
@@ -326,6 +348,9 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 		this._optionsDirty = false;
 
 		const imageMaxZoom = this._deps.getImageMaxZoom();
+		// When showOnHover is active, skip pre-computing bounds for all clusters;
+		// the hull is lazily computed only for the hovered cluster.
+		const includeBounds = this._boundaryEnabled && !this._showOnHover;
 		if (this._clusterWorker.enabled) {
 			const token = ++this._latestWorkerToken;
 			this._clusterWorker.request(
@@ -336,7 +361,7 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 					radius: this._clusterRadius,
 					minSize: this._minClusterSize,
 					imageMaxZoom,
-					includeBounds: this._boundaryEnabled,
+					includeBounds,
 					includeMembers: true,
 				},
 				(result) => {
@@ -348,8 +373,82 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 			return;
 		}
 
-		const result = this._clusterEngine.compute(this._rawMarkers, zoom, this._clusterRadius, this._minClusterSize, imageMaxZoom, this._boundaryEnabled, false);
+		const result = this._clusterEngine.compute(this._rawMarkers, zoom, this._clusterRadius, this._minClusterSize, imageMaxZoom, includeBounds, false);
 		this._applyClusterResult(result);
+	}
+
+	// -- Hover boundary --
+
+	/** Subscribe to internal marker enter/leave to drive showOnHover boundaries. */
+	private _wireHoverBoundary(): void {
+		this._markerEvents.onMarkerEvent('enter', (e) => {
+			if (!this._showOnHover || !this._boundaryEnabled) return;
+			const id = e?.marker?.id;
+			if (!id || !id.startsWith('__cl_')) return;
+			const clusterId = id.slice('__cl_'.length);
+			if (this._hoveredClusterId === clusterId) return;
+			this._hoveredClusterId = clusterId;
+			this._updateHoverBoundary();
+		});
+		this._markerEvents.onMarkerEvent('leave', () => {
+			if (!this._showOnHover || !this._boundaryEnabled) return;
+			if (this._hoveredClusterId === null) return;
+			this._hoveredClusterId = null;
+			this._updateHoverBoundary();
+		});
+	}
+
+	/** Compute and render the boundary polygon for the currently hovered cluster. */
+	private _updateHoverBoundary(): void {
+		if (!this._vectorLayer) return;
+		const boundaryStyle = this._boundary ?? {};
+
+		if (this._hoveredClusterId === null) {
+			this._vectorLayer.setVectors([]);
+			this._vectorLayer.draw();
+			this._deps.requestRender();
+			return;
+		}
+
+		// Find the cluster data for the hovered id
+		const cluster = this._lastClusters.find((c) => c.id === this._hoveredClusterId);
+		if (!cluster) {
+			this._vectorLayer.setVectors([]);
+			this._vectorLayer.draw();
+			this._deps.requestRender();
+			return;
+		}
+
+		// Lazily compute convex hull from member marker positions
+		const indices = cluster.markerIndices.length > 0 ? cluster.markerIndices : this._clusterEngine.resolveMarkerIndices(cluster);
+		const points = indices
+			.map((idx) => this._rawMarkers[idx])
+			.filter((m): m is MarkerInternal => !!m)
+			.map((m) => ({ x: m.x, y: m.y }));
+
+		if (points.length < 3) {
+			this._vectorLayer.setVectors([]);
+			this._vectorLayer.draw();
+			this._deps.requestRender();
+			return;
+		}
+
+		const hull = convexHull(points);
+		const vectors: VectorPrimitiveInternal[] = [{
+			type: 'polygon' as const,
+			points: hull.map((p) => ({ x: p.x, y: p.y })),
+			style: {
+				color: boundaryStyle.color ?? 'rgba(0,100,255,0.4)',
+				weight: boundaryStyle.weight ?? 1.5,
+				opacity: boundaryStyle.opacity ?? 1,
+				fill: boundaryStyle.fill !== false,
+				fillColor: boundaryStyle.fillColor ?? 'rgba(0,100,255,0.1)',
+				fillOpacity: boundaryStyle.fillOpacity ?? 0.15,
+			},
+		}];
+		this._vectorLayer.setVectors(vectors);
+		this._vectorLayer.draw();
+		this._deps.requestRender();
 	}
 
 	// -- LayerRendererHandle --
@@ -440,6 +539,7 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 		this._fbo.dispose();
 		this._clusterIdMap.clear();
 		this._lastClusters = [];
+		this._hoveredClusterId = null;
 	}
 
 	rebuild(_gl: WebGLRenderingContext): void {

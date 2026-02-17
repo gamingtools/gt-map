@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { GTMap, clusterIconSize, type ClusterIconSizeMode } from '@gtmap';
+	import { GTMap } from '@gtmap';
 	import {
+		defaults,
+		SIZE_TEMPLATE_OPTIONS,
+		resolveClusterIconSizeFunction,
 		MAP_SIZE,
 		MAP_TILES,
 		HOME,
@@ -12,6 +15,7 @@
 		type ResourceLayerInfo,
 		type MarkerHoverInfo,
 		type BoundaryParams,
+		type SizeTemplateValue,
 	} from './cluster-demo';
 
 	// -- State --
@@ -26,15 +30,16 @@
 
 	let resourceLayers = $state<ResourceLayerInfo[]>([]);
 
-	let clusterRadius = $state(80);
-	let minClusterSize = $state(2);
-	let sizeTemplate = $state<ClusterIconSizeMode>('logarithmic');
+	let clusterRadius = $state(defaults.clusterRadius);
+	let minClusterSize = $state(defaults.minClusterSize);
+	let sizeTemplate = $state<SizeTemplateValue>(defaults.sizeTemplate);
 
-	let boundaryEnabled = $state(false);
-	let boundaryFill = $state(true);
-	let boundaryWeight = $state(1.5);
-	let boundaryOpacity = $state(1);
-	let boundaryFillOpacity = $state(0.15);
+	let boundaryEnabled = $state(defaults.boundary.enabled);
+	let boundaryShowOnHover = $state(defaults.boundary.showOnHover);
+	let boundaryFill = $state(defaults.boundary.fill);
+	let boundaryWeight = $state(defaults.boundary.weight);
+	let boundaryOpacity = $state(defaults.boundary.opacity);
+	let boundaryFillOpacity = $state(defaults.boundary.fillOpacity);
 
 	let hoverInfo = $state<MarkerHoverInfo | null>(null);
 	let cursorX = $state(0);
@@ -54,6 +59,7 @@
 			weight: boundaryWeight,
 			opacity: boundaryOpacity,
 			fillOpacity: boundaryFillOpacity,
+			showOnHover: boundaryShowOnHover,
 		};
 	}
 
@@ -66,6 +72,33 @@
 	}
 
 	// -- Layer controls --
+
+	let toggleAllCheckbox: HTMLInputElement | null = null;
+
+	type ToggleAllState = 'all' | 'none' | 'mixed';
+	let toggleAllState = $derived.by((): ToggleAllState => {
+		if (resourceLayers.length === 0) return 'none';
+		const visibleCount = resourceLayers.filter((l) => l.visible).length;
+		if (visibleCount === 0) return 'none';
+		if (visibleCount === resourceLayers.length) return 'all';
+		return 'mixed';
+	});
+
+	$effect(() => {
+		if (!toggleAllCheckbox) return;
+		toggleAllCheckbox.indeterminate = toggleAllState === 'mixed';
+		toggleAllCheckbox.checked = toggleAllState === 'all';
+	});
+
+	function toggleAllLayers(): void {
+		const target = toggleAllState === 'none';
+		for (const info of resourceLayers) {
+			info.visible = target;
+			map.layers.setLayerVisible(info.layer, target);
+		}
+		resourceLayers = [...resourceLayers];
+		scheduleClusterStatsRefresh(0);
+	}
 
 	function toggleLayerVisibility(info: ResourceLayerInfo): void {
 		info.visible = !info.visible;
@@ -81,6 +114,7 @@
 		void minClusterSize;
 		void sizeTemplate;
 		void boundaryEnabled;
+		void boundaryShowOnHover;
 		void boundaryFill;
 		void boundaryWeight;
 		void boundaryOpacity;
@@ -91,7 +125,7 @@
 			info.layer.setClusterOptions({
 				clusterRadius,
 				minClusterSize,
-				clusterIconSizeFunction: clusterIconSize(sizeTemplate),
+				clusterIconSizeFunction: resolveClusterIconSizeFunction(sizeTemplate),
 				boundary: buildBoundaryOpts(info.color, bp),
 			});
 		}
@@ -107,10 +141,10 @@
 		map = new GTMap(container, {
 			mapSize: MAP_SIZE,
 			center: { x: HOME.lng, y: HOME.lat },
-			zoom: 2,
-			minZoom: 0,
-			maxZoom: 7,
-			fpsCap: 60,
+			zoom: defaults.map.zoom,
+			minZoom: defaults.map.minZoom,
+			maxZoom: defaults.map.maxZoom,
+			fpsCap: defaults.map.fpsCap,
 			autoResize: true,
 			clipToBounds: true,
 			debug: false,
@@ -195,7 +229,16 @@
 
 		<!-- Resource Layers -->
 		<div class="rounded border border-neutral-700 bg-neutral-800/60 p-2">
-			<div class="mb-1 text-[9px] font-semibold uppercase tracking-widest text-neutral-500">Resource Layers</div>
+			<label class="mb-1 flex cursor-pointer items-center gap-2">
+				<input
+					type="checkbox"
+					bind:this={toggleAllCheckbox}
+					checked={toggleAllState === 'all'}
+					onchange={toggleAllLayers}
+					class="accent-cyan-500"
+				/>
+				<span class="text-[9px] font-semibold uppercase tracking-widest text-neutral-500">Resource Layers</span>
+			</label>
 			{#if resourceLayers.length === 0 && !loading}
 				<div class="text-neutral-500">No layers loaded</div>
 			{/if}
@@ -239,10 +282,9 @@
 					bind:value={sizeTemplate}
 					class="rounded border border-neutral-600 bg-neutral-700 px-1 py-0.5 text-neutral-200"
 				>
-					<option value="logarithmic">Logarithmic</option>
-					<option value="linear">Linear</option>
-					<option value="stepped">Stepped</option>
-					<option value="exponentialLog">Exponential-Log</option>
+					{#each SIZE_TEMPLATE_OPTIONS as opt}
+						<option value={opt.value}>{opt.label}</option>
+					{/each}
 				</select>
 			</label>
 		</div>
@@ -257,6 +299,11 @@
 			</label>
 
 			{#if boundaryEnabled}
+				<label class="mt-2 flex items-center gap-2">
+					<input type="checkbox" bind:checked={boundaryShowOnHover} class="accent-cyan-500" />
+					<span>Show on Hover Only</span>
+				</label>
+
 				<label class="mt-2 flex items-center gap-2">
 					<input type="checkbox" bind:checked={boundaryFill} class="accent-cyan-500" />
 					<span>Fill</span>

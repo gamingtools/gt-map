@@ -7,6 +7,8 @@ import {
 	SpriteVisual,
 	clusterIconSize,
 	type ClusterIconSizeMode,
+	type ClusterIconSizeFunction,
+	type ClusterIconSizeOptions,
 	type ClusteredLayerOptions,
 	type ClusterEventData,
 	type MarkerEventData,
@@ -14,6 +16,66 @@ import {
 	type SpriteAtlasHandle,
 } from '@gtmap';
 import { ClusteredLayer } from '@gtmap';
+
+// -- Defaults --
+
+/** Per-mode defaults for {@link clusterIconSize}. */
+export const clusterIconSizeDefaults: Record<ClusterIconSizeMode, Required<ClusterIconSizeOptions>> = {
+	linear:         { min: 0.9, max: 2.0, steps: [], base: 1, ceiling: 0 },
+	logarithmic:    { min: 0.9, max: 2.0, steps: [], base: 1, ceiling: 0 },
+	stepped:        { min: 0.9, max: 2.0, steps: [[5, 1.0], [15, 1.15], [40, 1.35], [100, 1.6], [Infinity, 1.85]], base: 1, ceiling: 0 },
+	exponentialLog: { min: 0.25, max: 2.5, steps: [], base: 1.5, ceiling: 0 },
+};
+
+/**
+ * Custom cluster icon size function.
+ * Uses square-root scaling for a middle-ground between linear and logarithmic curves.
+ * Uses `maxClusterSize` for dynamic per-layer ceiling.
+ */
+export const customClusterIconSize: ClusterIconSizeFunction = (size: number, maxClusterSize: number) => {
+	const min = 0.8;
+	const max = 2.0;
+	const ceiling = Math.max(1, maxClusterSize);
+	const t = Math.sqrt(Math.min(size, ceiling) / ceiling);
+	return min + (max - min) * t;
+};
+
+/** Template selector value -- built-in modes plus 'custom'. */
+export type SizeTemplateValue = ClusterIconSizeMode | 'custom';
+
+export const SIZE_TEMPLATE_OPTIONS: { value: SizeTemplateValue; label: string }[] = [
+	{ value: 'logarithmic', label: 'Logarithmic' },
+	{ value: 'linear', label: 'Linear' },
+	{ value: 'stepped', label: 'Stepped' },
+	{ value: 'exponentialLog', label: 'Exponential-Log' },
+	{ value: 'custom', label: 'Custom (sqrt)' },
+];
+
+/** Resolve a template value to a {@link ClusterIconSizeFunction}. */
+export function resolveClusterIconSizeFunction(template: SizeTemplateValue): ClusterIconSizeFunction {
+	if (template === 'custom') return customClusterIconSize;
+	return clusterIconSize(template, clusterIconSizeDefaults[template]);
+}
+
+export const defaults = {
+	clusterRadius: 80,
+	minClusterSize: 2,
+	sizeTemplate: 'exponentialLog' as SizeTemplateValue,
+	boundary: {
+		enabled: true,
+		showOnHover: true,
+		fill: true,
+		weight: 3,
+		opacity: 1,
+		fillOpacity: 0.6,
+	},
+	map: {
+		zoom: 2,
+		minZoom: 0,
+		maxZoom: 7,
+		fpsCap: 60,
+	},
+} as const;
 
 // -- Types --
 
@@ -105,6 +167,7 @@ export interface BoundaryParams {
 	weight: number;
 	opacity: number;
 	fillOpacity: number;
+	showOnHover: boolean;
 }
 
 export function buildBoundaryOpts(color: string, params: BoundaryParams): ClusteredLayerOptions['boundary'] {
@@ -118,6 +181,7 @@ export function buildBoundaryOpts(color: string, params: BoundaryParams): Cluste
 		fill: params.fill,
 		fillColor: hexToRgba(color, params.fillOpacity),
 		fillOpacity: params.fillOpacity,
+		showOnHover: params.showOnHover,
 	};
 }
 
@@ -154,7 +218,7 @@ export function refreshClusterStats(layers: ResourceLayerInfo[]): number {
 export interface InitLayersConfig {
 	clusterRadius: number;
 	minClusterSize: number;
-	sizeTemplate: ClusterIconSizeMode;
+	sizeTemplate: SizeTemplateValue;
 	boundaryParams: BoundaryParams;
 }
 
@@ -196,7 +260,7 @@ export async function initLayers(
 		const layer = map.layers.createClusteredLayer({
 			clusterRadius: config.clusterRadius,
 			minClusterSize: config.minClusterSize,
-			clusterIconSizeFunction: clusterIconSize(config.sizeTemplate),
+			clusterIconSizeFunction: resolveClusterIconSizeFunction(config.sizeTemplate),
 			boundary: buildBoundaryOpts(color, config.boundaryParams),
 		});
 		map.layers.addLayer(layer, { z: 10 + i, opacity: 1 });
