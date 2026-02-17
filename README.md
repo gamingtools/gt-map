@@ -9,24 +9,28 @@ Minimal, zero-dependency WebGL map renderer for tiled raster imagery. Pixel CRS 
 ## Quick Start
 
 ```bash
-npm install
-npm run dev        # SvelteKit app at http://localhost:5173
-npm run build      # Build library + apps
+npm install @gaming.tools/gtmap
 ```
-
-## Public API
-
-Import `GTMap` from `@gaming.tools/gtmap` (or `@gtmap` alias in demos).
 
 ```ts
 import { GTMap } from '@gaming.tools/gtmap';
+
+const container = document.getElementById('map');
 
 const map = new GTMap(container, {
   mapSize: { width: 8192, height: 8192 },
   zoom: 2,
   center: { x: 4096, y: 4096 },
-  backgroundColor: '#0a0a0a',
 });
+
+// Add a tile layer
+const tiles = map.layers.createTileLayer({
+  packUrl: 'https://example.com/tiles/map.gtpk',
+  tileSize: 256,
+  sourceMinZoom: 0,
+  sourceMaxZoom: 5,
+});
+map.layers.addLayer(tiles, { z: 0 });
 ```
 
 ### Facades
@@ -108,7 +112,9 @@ map.resume();                        // resume
 map.destroy();                       // full teardown
 ```
 
-## Project Structure
+## Development
+
+### Project Structure
 
 ```
 packages/gtmap/          Core WebGL library (zero external deps)
@@ -117,7 +123,7 @@ apps/noframework-gtmap-test/  Plain HTML+TS demo
 docs/api/                Generated API reference (TypeDoc markdown)
 ```
 
-## Commands
+### Commands
 
 | Command | Description |
 |---------|-------------|
@@ -128,7 +134,7 @@ docs/api/                Generated API reference (TypeDoc markdown)
 | `npm run test` | Playwright E2E tests |
 | `npm run check` | svelte-check type checking |
 
-## API Reference
+### API Reference
 
 Generated docs: `docs/api/README.md`
 
