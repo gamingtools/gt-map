@@ -4,17 +4,7 @@
 
 # Interface: AnimateOptions
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [delayMs?](#delayms)
-  - [durationMs](#durationms)
-  - [easing?](#easing)
-  - [interrupt?](#interrupt)
-
-Defined in: [api/types.ts:640](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L640)
+Defined in: [api/types.ts:649](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L649)
 
 Options for animating a transition.
 
@@ -24,7 +14,7 @@ Options for animating a transition.
 
 > `optional` **delayMs**: `number`
 
-Defined in: [api/types.ts:646](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L646)
+Defined in: [api/types.ts:655](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L655)
 
 Optional delay before starting, in milliseconds.
 
@@ -34,7 +24,7 @@ Optional delay before starting, in milliseconds.
 
 > **durationMs**: `number`
 
-Defined in: [api/types.ts:642](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L642)
+Defined in: [api/types.ts:651](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L651)
 
 Total animation time in milliseconds.
 
@@ -44,7 +34,7 @@ Total animation time in milliseconds.
 
 > `optional` **easing**: [`Easing`](TypeAlias.Easing.md)
 
-Defined in: [api/types.ts:644](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L644)
+Defined in: [api/types.ts:653](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L653)
 
 Optional easing function; defaults to a built‑in ease curve.
 
@@ -54,7 +44,7 @@ Optional easing function; defaults to a built‑in ease curve.
 
 > `optional` **interrupt**: `"cancel"` \| `"join"` \| `"enqueue"`
 
-Defined in: [api/types.ts:654](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L654)
+Defined in: [api/types.ts:663](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L663)
 
 Policy when another transition targets the same object.
 

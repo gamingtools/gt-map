@@ -4,18 +4,7 @@
 
 # Interface: EntityCollectionEvents\<T\>
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Extends](#extends)
-- [Type Parameters](#type-parameters)
-  - [T](#t)
-- [Methods](#methods)
-  - [on()](#on)
-  - [once()](#once)
-
-Defined in: [api/events/public.ts:81](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L81)
+Defined in: [api/events/public.ts:81](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L81)
 
 EntityCollection events surface with typed names and payloads.
 
@@ -37,7 +26,7 @@ EntityCollection events surface with typed names and payloads.
 
 > **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`EntityCollectionEventMap`](Interface.EntityCollectionEventMap.md)\<`T`\>\[`K`\]\>
 
-Defined in: [api/events/public.ts:83](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L83)
+Defined in: [api/events/public.ts:83](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L83)
 
 Supported names: 'entityadd' | 'entityremove' | 'clear' | 'visibilitychange'
 
@@ -65,7 +54,7 @@ Supported names: 'entityadd' | 'entityremove' | 'clear' | 'visibilitychange'
 
 > **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:84](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L84)
+Defined in: [api/events/public.ts:84](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L84)
 
 Subscribe to a named event.
 
@@ -111,7 +100,7 @@ marker.events.on('click').each((e) => {
 
 > **once**\<`K`\>(`event`): `Promise`\<[`EntityCollectionEventMap`](Interface.EntityCollectionEventMap.md)\<`T`\>\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 

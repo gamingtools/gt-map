@@ -4,25 +4,16 @@
 
 # Class: GTMap
 
-[← Back to API index](./README.md)
+Defined in: [api/map.ts:55](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L55)
 
-## Contents
+GTMap -- the root class for creating and managing a WebGL map instance.
 
-- [Constructors](#constructors)
-  - [Constructor](#constructor)
-- [Properties](#properties)
-  - [display](#display)
-  - [input](#input)
-  - [layers](#layers)
-  - [view](#view)
-- [Accessors](#accessors)
-  - [events](#events)
-- [Methods](#methods)
-  - [destroy()](#destroy)
-  - [resume()](#resume)
-  - [suspend()](#suspend)
+## Remarks
 
-Defined in: [api/map.ts:48](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L48)
+Construct with a container element and [MapOptions](Interface.MapOptions.md). Access functionality
+through the four facades: [view](#view), [layers](#layers),
+[display](#display), and [input](#input).
+Subscribe to events via [events](#events).
 
 ## Constructors
 
@@ -30,7 +21,9 @@ Defined in: [api/map.ts:48](https://github.com/gamingtools/gt-map/blob/6e5b4ff27
 
 > **new GTMap**(`container`, `options`): `GTMap`
 
-Defined in: [api/map.ts:66](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L66)
+Defined in: [api/map.ts:79](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L79)
+
+Create a new GTMap instance inside the given container.
 
 #### Parameters
 
@@ -38,9 +31,13 @@ Defined in: [api/map.ts:66](https://github.com/gamingtools/gt-map/blob/6e5b4ff27
 
 `HTMLElement`
 
+DOM element that will host the map canvas
+
 ##### options
 
 [`MapOptions`](Interface.MapOptions.md)
+
+Map configuration (size, zoom range, background, etc.)
 
 #### Returns
 
@@ -52,7 +49,7 @@ Defined in: [api/map.ts:66](https://github.com/gamingtools/gt-map/blob/6e5b4ff27
 
 > `readonly` **display**: [`DisplayFacade`](Class.DisplayFacade.md)
 
-Defined in: [api/map.ts:59](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L59)
+Defined in: [api/map.ts:66](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L66)
 
 Display settings: background, grid, upscale filter, FPS.
 
@@ -62,7 +59,7 @@ Display settings: background, grid, upscale filter, FPS.
 
 > `readonly` **input**: [`InputFacade`](Class.InputFacade.md)
 
-Defined in: [api/map.ts:57](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L57)
+Defined in: [api/map.ts:64](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L64)
 
 Input settings: wheel speed, inertia.
 
@@ -72,7 +69,7 @@ Input settings: wheel speed, inertia.
 
 > `readonly` **layers**: [`LayersFacade`](Class.LayersFacade.md)
 
-Defined in: [api/map.ts:55](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L55)
+Defined in: [api/map.ts:62](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L62)
 
 Layer management: creation, attachment, removal, per-layer display.
 
@@ -82,7 +79,7 @@ Layer management: creation, attachment, removal, per-layer display.
 
 > `readonly` **view**: [`ViewFacade`](Class.ViewFacade.md)
 
-Defined in: [api/map.ts:53](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L53)
+Defined in: [api/map.ts:60](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L60)
 
 View control: center, zoom, transitions, bounds, coordinates.
 
@@ -94,7 +91,9 @@ View control: center, zoom, transitions, bounds, coordinates.
 
 > **get** **events**(): [`MapEvents`](Interface.MapEvents.md)
 
-Defined in: [api/map.ts:416](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L416)
+Defined in: [api/map.ts:435](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L435)
+
+Typed event surface for subscribing to map, pointer, and marker events.
 
 ##### Returns
 
@@ -106,7 +105,9 @@ Defined in: [api/map.ts:416](https://github.com/gamingtools/gt-map/blob/6e5b4ff2
 
 > **destroy**(): `void`
 
-Defined in: [api/map.ts:403](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L403)
+Defined in: [api/map.ts:421](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L421)
+
+Destroy the map instance, releasing all resources and detaching from the DOM.
 
 #### Returns
 
@@ -118,7 +119,9 @@ Defined in: [api/map.ts:403](https://github.com/gamingtools/gt-map/blob/6e5b4ff2
 
 > **resume**(): `this`
 
-Defined in: [api/map.ts:398](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L398)
+Defined in: [api/map.ts:415](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L415)
+
+Resume rendering after a [suspend](#suspend) call.
 
 #### Returns
 
@@ -130,7 +133,10 @@ Defined in: [api/map.ts:398](https://github.com/gamingtools/gt-map/blob/6e5b4ff2
 
 > **suspend**(`opts?`): `this`
 
-Defined in: [api/map.ts:393](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L393)
+Defined in: [api/map.ts:409](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/map.ts#L409)
+
+Suspend rendering and optionally release WebGL resources.
+Call [resume](#resume) to restart.
 
 #### Parameters
 

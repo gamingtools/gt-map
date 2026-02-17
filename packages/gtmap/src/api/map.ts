@@ -43,7 +43,14 @@ export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual,
 export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow } from './visual';
 
 /**
- * @group Overview
+ * GTMap -- the root class for creating and managing a WebGL map instance.
+ *
+ * @public
+ * @remarks
+ * Construct with a container element and {@link MapOptions}. Access functionality
+ * through the four facades: {@link GTMap.view | view}, {@link GTMap.layers | layers},
+ * {@link GTMap.display | display}, and {@link GTMap.input | input}.
+ * Subscribe to events via {@link GTMap.events | events}.
  */
 export class GTMap {
 	private _ctx: MapContext;
@@ -63,6 +70,12 @@ export class GTMap {
 	private _createdLayers: AnyLayer[] = [];
 	private _sharedVis: VisualIconService | null = null;
 
+	/**
+	 * Create a new GTMap instance inside the given container.
+	 *
+	 * @param container - DOM element that will host the map canvas
+	 * @param options - Map configuration (size, zoom range, background, etc.)
+	 */
 	constructor(container: HTMLElement, options: MapOptions) {
 		if (!options.mapSize || !Number.isFinite(options.mapSize.width) || !Number.isFinite(options.mapSize.height)) throw new Error('GTMap: mapSize must have finite width and height');
 		if (Number.isFinite(options.minZoom as number) && Number.isFinite(options.maxZoom as number) && (options.minZoom as number) > (options.maxZoom as number)) {
@@ -389,16 +402,22 @@ export class GTMap {
 
 	// -- Lifecycle --
 
+	/**
+	 * Suspend rendering and optionally release WebGL resources.
+	 * Call {@link resume} to restart.
+	 */
 	suspend(opts?: SuspendOptions): this {
 		this._lifecycle.setActive(false, opts);
 		return this;
 	}
 
+	/** Resume rendering after a {@link suspend} call. */
 	resume(): this {
 		this._lifecycle.setActive(true);
 		return this;
 	}
 
+	/** Destroy the map instance, releasing all resources and detaching from the DOM. */
 	destroy(): void {
 		// Mark all created layers as destroyed
 		for (const layer of this._createdLayers) {
@@ -412,6 +431,7 @@ export class GTMap {
 
 	// -- Events --
 
+	/** Typed event surface for subscribing to map, pointer, and marker events. */
 	get events(): MapEvents {
 		const bus = this._ctx.events;
 		return {

@@ -9,6 +9,14 @@ import type { VectorOptions } from '../../entities/vector';
 
 let _staticLayerIdSeq = 0;
 
+/**
+ * A layer that owns vector shapes (polylines, polygons, circles).
+ *
+ * @public
+ * @remarks
+ * Create via `map.layers.createStaticLayer()`, then attach
+ * with `map.layers.addLayer(layer, { z })`.
+ */
 export class StaticLayer {
 	readonly type = 'static' as const;
 	readonly id: string;
@@ -42,16 +50,19 @@ export class StaticLayer {
 
 	// -- Convenience methods --
 
+	/** Add a filled polygon from an array of points. */
 	addPolygon(points: Point[], style?: VectorStyle, opts?: VectorOptions): Vector {
 		const geometry: VectorGeom = { type: 'polygon', points: points.map((p) => ({ x: p.x, y: p.y })), ...(style != null ? { style } : {}) };
 		return this._addVector(geometry, opts);
 	}
 
+	/** Add a polyline (open path) from an array of points. */
 	addPolyline(points: Point[], style?: VectorStyle, opts?: VectorOptions): Vector {
 		const geometry: VectorGeom = { type: 'polyline', points: points.map((p) => ({ x: p.x, y: p.y })), ...(style != null ? { style } : {}) };
 		return this._addVector(geometry, opts);
 	}
 
+	/** Add a circle from a center point and radius. */
 	addCircle(center: Point, radius: number, style?: VectorStyle, opts?: VectorOptions): Vector {
 		const geometry: VectorGeom = { type: 'circle', center: { x: center.x, y: center.y }, radius, ...(style != null ? { style } : {}) };
 		return this._addVector(geometry, opts);
@@ -62,6 +73,7 @@ export class StaticLayer {
 		return this._addVector(geometry, opts);
 	}
 
+	/** Remove all vectors from this layer. */
 	clearVectors(): void {
 		this.vectors.clear();
 		this._deps?.setVectors([]);

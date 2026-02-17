@@ -4,17 +4,9 @@
 
 # Interface: InertiaOptions
 
-[← Back to API index](./README.md)
+Defined in: [api/types.ts:474](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L474)
 
-## Contents
-
-- [Properties](#properties)
-  - [easeLinearity?](#easelinearity)
-  - [inertia?](#inertia)
-  - [inertiaDeceleration?](#inertiadeceleration)
-  - [inertiaMaxSpeed?](#inertiamaxspeed)
-
-Defined in: [api/types.ts:465](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L465)
+Options controlling pan inertia (momentum after releasing a drag).
 
 ## Properties
 
@@ -22,7 +14,7 @@ Defined in: [api/types.ts:465](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > `optional` **easeLinearity**: `number`
 
-Defined in: [api/types.ts:469](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L469)
+Defined in: [api/types.ts:478](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L478)
 
 ***
 
@@ -30,7 +22,7 @@ Defined in: [api/types.ts:469](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > `optional` **inertia**: `boolean`
 
-Defined in: [api/types.ts:466](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L466)
+Defined in: [api/types.ts:475](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L475)
 
 ***
 
@@ -38,7 +30,7 @@ Defined in: [api/types.ts:466](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > `optional` **inertiaDeceleration**: `number`
 
-Defined in: [api/types.ts:467](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L467)
+Defined in: [api/types.ts:476](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L476)
 
 ***
 
@@ -46,4 +38,4 @@ Defined in: [api/types.ts:467](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > `optional` **inertiaMaxSpeed**: `number`
 
-Defined in: [api/types.ts:468](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L468)
+Defined in: [api/types.ts:477](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L477)

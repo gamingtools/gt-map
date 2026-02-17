@@ -4,19 +4,7 @@
 
 # Interface: EntityCollectionEventMap\<T\>
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Type Parameters](#type-parameters)
-  - [T](#t)
-- [Properties](#properties)
-  - [clear](#clear)
-  - [entityadd](#entityadd)
-  - [entityremove](#entityremove)
-  - [visibilitychange](#visibilitychange)
-
-Defined in: [api/events/maps.ts:81](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L81)
+Defined in: [api/events/maps.ts:83](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L83)
 
 Events emitted by an EntityCollection for entity management and visibility.
 
@@ -32,7 +20,7 @@ Events emitted by an EntityCollection for entity management and visibility.
 
 > **clear**: `object`
 
-Defined in: [api/events/maps.ts:87](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L87)
+Defined in: [api/events/maps.ts:89](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L89)
 
 All entities were removed.
 
@@ -42,7 +30,7 @@ All entities were removed.
 
 > **entityadd**: `object`
 
-Defined in: [api/events/maps.ts:83](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L83)
+Defined in: [api/events/maps.ts:85](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L85)
 
 A new entity was added to the collection.
 
@@ -56,7 +44,7 @@ A new entity was added to the collection.
 
 > **entityremove**: `object`
 
-Defined in: [api/events/maps.ts:85](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L85)
+Defined in: [api/events/maps.ts:87](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L87)
 
 An entity was removed from the collection.
 
@@ -70,7 +58,7 @@ An entity was removed from the collection.
 
 > **visibilitychange**: `object`
 
-Defined in: [api/events/maps.ts:89](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L89)
+Defined in: [api/events/maps.ts:91](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L91)
 
 Visibility of the collection changed.
 

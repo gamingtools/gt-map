@@ -4,17 +4,7 @@
 
 # Interface: ClusteredLayerOptions
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [boundary?](#boundary)
-  - [clusterIconSizeFunction?](#clustericonsizefunction)
-  - [clusterRadius?](#clusterradius)
-  - [minClusterSize?](#minclustersize)
-
-Defined in: [api/layers/types.ts:82](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L82)
+Defined in: [api/layers/types.ts:170](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L170)
 
 Options for creating a clustered layer.
 
@@ -24,7 +14,7 @@ Options for creating a clustered layer.
 
 > `optional` **boundary**: [`ClusterBoundaryOptions`](Interface.ClusterBoundaryOptions.md)
 
-Defined in: [api/layers/types.ts:90](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L90)
+Defined in: [api/layers/types.ts:178](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L178)
 
 Optional cluster boundary polygon styling. Omit to disable boundaries.
 
@@ -34,9 +24,9 @@ Optional cluster boundary polygon styling. Omit to disable boundaries.
 
 > `optional` **clusterIconSizeFunction**: [`ClusterIconSizeFunction`](TypeAlias.ClusterIconSizeFunction.md)
 
-Defined in: [api/layers/types.ts:88](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L88)
+Defined in: [api/layers/types.ts:176](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L176)
 
-Function mapping cluster size to an icon scale multiplier. Default: ClusterIconSizeTemplates.logarithmic.
+Function mapping cluster size to an icon scale multiplier. Default: clusterIconSize('logarithmic').
 
 ***
 
@@ -44,7 +34,7 @@ Function mapping cluster size to an icon scale multiplier. Default: ClusterIconS
 
 > `optional` **clusterRadius**: `number`
 
-Defined in: [api/layers/types.ts:84](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L84)
+Defined in: [api/layers/types.ts:172](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L172)
 
 Pixel radius for grouping nearby markers into clusters. Default: 80.
 
@@ -54,6 +44,6 @@ Pixel radius for grouping nearby markers into clusters. Default: 80.
 
 > `optional` **minClusterSize**: `number`
 
-Defined in: [api/layers/types.ts:86](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L86)
+Defined in: [api/layers/types.ts:174](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L174)
 
 Minimum number of markers to form a cluster. Default: 2.

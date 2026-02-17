@@ -4,18 +4,9 @@
 
 # Interface: ViewState
 
-[← Back to API index](./README.md)
+Defined in: [api/types.ts:13](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L13)
 
-## Contents
-
-- [Properties](#properties)
-  - [center](#center)
-  - [maxZoom](#maxzoom)
-  - [minZoom](#minzoom)
-  - [wrapX](#wrapx)
-  - [zoom](#zoom)
-
-Defined in: [api/types.ts:13](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L13)
+Snapshot of the current view state, included in most event payloads.
 
 ## Properties
 
@@ -23,7 +14,9 @@ Defined in: [api/types.ts:13](https://github.com/gamingtools/gt-map/blob/6e5b4ff
 
 > **center**: [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:14](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L14)
+Defined in: [api/types.ts:15](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L15)
+
+Center of the viewport in world pixels.
 
 ***
 
@@ -31,7 +24,9 @@ Defined in: [api/types.ts:14](https://github.com/gamingtools/gt-map/blob/6e5b4ff
 
 > **maxZoom**: `number`
 
-Defined in: [api/types.ts:17](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L17)
+Defined in: [api/types.ts:21](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L21)
+
+Maximum allowed zoom.
 
 ***
 
@@ -39,7 +34,9 @@ Defined in: [api/types.ts:17](https://github.com/gamingtools/gt-map/blob/6e5b4ff
 
 > **minZoom**: `number`
 
-Defined in: [api/types.ts:16](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L16)
+Defined in: [api/types.ts:19](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L19)
+
+Minimum allowed zoom.
 
 ***
 
@@ -47,7 +44,9 @@ Defined in: [api/types.ts:16](https://github.com/gamingtools/gt-map/blob/6e5b4ff
 
 > **wrapX**: `boolean`
 
-Defined in: [api/types.ts:18](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L18)
+Defined in: [api/types.ts:23](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L23)
+
+Whether horizontal wrapping is enabled.
 
 ***
 
@@ -55,4 +54,6 @@ Defined in: [api/types.ts:18](https://github.com/gamingtools/gt-map/blob/6e5b4ff
 
 > **zoom**: `number`
 
-Defined in: [api/types.ts:15](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L15)
+Defined in: [api/types.ts:17](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L17)
+
+Current zoom level.

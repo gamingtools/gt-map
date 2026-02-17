@@ -4,24 +4,14 @@
 
 # Class: StaticLayer
 
-[← Back to API index](./README.md)
+Defined in: [api/layers/static-layer.ts:20](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L20)
 
-## Contents
+A layer that owns vector shapes (polylines, polygons, circles).
 
-- [Constructors](#constructors)
-  - [Constructor](#constructor)
-- [Properties](#properties)
-  - [id](#id)
-  - [type](#type)
-  - [vectors](#vectors)
-- [Methods](#methods)
-  - [addCircle()](#addcircle)
-  - [addPolygon()](#addpolygon)
-  - [addPolyline()](#addpolyline)
-  - [addVector()](#addvector)
-  - [clearVectors()](#clearvectors)
+## Remarks
 
-Defined in: [api/layers/static-layer.ts:12](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L12)
+Create via `map.layers.createStaticLayer()`, then attach
+with `map.layers.addLayer(layer, { z })`.
 
 ## Constructors
 
@@ -29,7 +19,7 @@ Defined in: [api/layers/static-layer.ts:12](https://github.com/gamingtools/gt-ma
 
 > **new StaticLayer**(): `StaticLayer`
 
-Defined in: [api/layers/static-layer.ts:30](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L30)
+Defined in: [api/layers/static-layer.ts:38](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L38)
 
 #### Returns
 
@@ -41,7 +31,7 @@ Defined in: [api/layers/static-layer.ts:30](https://github.com/gamingtools/gt-ma
 
 > `readonly` **id**: `string`
 
-Defined in: [api/layers/static-layer.ts:14](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L14)
+Defined in: [api/layers/static-layer.ts:22](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L22)
 
 ***
 
@@ -49,7 +39,7 @@ Defined in: [api/layers/static-layer.ts:14](https://github.com/gamingtools/gt-ma
 
 > `readonly` **type**: `"static"`
 
-Defined in: [api/layers/static-layer.ts:13](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L13)
+Defined in: [api/layers/static-layer.ts:21](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L21)
 
 ***
 
@@ -57,7 +47,7 @@ Defined in: [api/layers/static-layer.ts:13](https://github.com/gamingtools/gt-ma
 
 > `readonly` **vectors**: [`EntityCollection`](Class.EntityCollection.md)\<[`Vector`](Class.Vector.md)\>
 
-Defined in: [api/layers/static-layer.ts:17](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L17)
+Defined in: [api/layers/static-layer.ts:25](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L25)
 
 Vector collection for this layer.
 
@@ -67,7 +57,9 @@ Vector collection for this layer.
 
 > **addCircle**(`center`, `radius`, `style?`, `opts?`): [`Vector`](Class.Vector.md)
 
-Defined in: [api/layers/static-layer.ts:55](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L55)
+Defined in: [api/layers/static-layer.ts:66](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L66)
+
+Add a circle from a center point and radius.
 
 #### Parameters
 
@@ -97,7 +89,9 @@ Defined in: [api/layers/static-layer.ts:55](https://github.com/gamingtools/gt-ma
 
 > **addPolygon**(`points`, `style?`, `opts?`): [`Vector`](Class.Vector.md)
 
-Defined in: [api/layers/static-layer.ts:45](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L45)
+Defined in: [api/layers/static-layer.ts:54](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L54)
+
+Add a filled polygon from an array of points.
 
 #### Parameters
 
@@ -123,7 +117,9 @@ Defined in: [api/layers/static-layer.ts:45](https://github.com/gamingtools/gt-ma
 
 > **addPolyline**(`points`, `style?`, `opts?`): [`Vector`](Class.Vector.md)
 
-Defined in: [api/layers/static-layer.ts:50](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L50)
+Defined in: [api/layers/static-layer.ts:60](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L60)
+
+Add a polyline (open path) from an array of points.
 
 #### Parameters
 
@@ -149,7 +145,7 @@ Defined in: [api/layers/static-layer.ts:50](https://github.com/gamingtools/gt-ma
 
 > **addVector**(`geometry`, `opts?`): [`Vector`](Class.Vector.md)
 
-Defined in: [api/layers/static-layer.ts:61](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L61)
+Defined in: [api/layers/static-layer.ts:72](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L72)
 
 Generic add method for any vector geometry.
 
@@ -173,7 +169,9 @@ Generic add method for any vector geometry.
 
 > **clearVectors**(): `void`
 
-Defined in: [api/layers/static-layer.ts:65](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/static-layer.ts#L65)
+Defined in: [api/layers/static-layer.ts:77](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/static-layer.ts#L77)
+
+Remove all vectors from this layer.
 
 #### Returns
 

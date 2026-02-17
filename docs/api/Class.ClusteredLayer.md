@@ -4,30 +4,15 @@
 
 # Class: ClusteredLayer
 
-[← Back to API index](./README.md)
+Defined in: [api/layers/clustered-layer.ts:26](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L26)
 
-## Contents
+A layer that spatially clusters markers and renders cluster icons
+with optional boundary polygons.
 
-- [Constructors](#constructors)
-  - [Constructor](#constructor)
-- [Properties](#properties)
-  - [id](#id)
-  - [markers](#markers)
-  - [type](#type)
-- [Accessors](#accessors)
-  - [boundary](#boundary)
-  - [clusterIconSizeFunction](#clustericonsizefunction)
-  - [clusterRadius](#clusterradius)
-  - [minClusterSize](#minclustersize)
-- [Methods](#methods)
-  - [addIcon()](#addicon)
-  - [addMarker()](#addmarker)
-  - [clearMarkers()](#clearmarkers)
-  - [getClusters()](#getclusters)
-  - [loadSpriteAtlas()](#loadspriteatlas)
-  - [setClusterOptions()](#setclusteroptions)
+## Remarks
 
-Defined in: [api/layers/clustered-layer.ts:17](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L17)
+Create via `map.layers.createClusteredLayer(opts?)`, then attach
+with `map.layers.addLayer(layer, { z })`.
 
 ## Constructors
 
@@ -35,7 +20,7 @@ Defined in: [api/layers/clustered-layer.ts:17](https://github.com/gamingtools/gt
 
 > **new ClusteredLayer**(`opts?`): `ClusteredLayer`
 
-Defined in: [api/layers/clustered-layer.ts:50](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L50)
+Defined in: [api/layers/clustered-layer.ts:59](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L59)
 
 #### Parameters
 
@@ -53,7 +38,7 @@ Defined in: [api/layers/clustered-layer.ts:50](https://github.com/gamingtools/gt
 
 > `readonly` **id**: `string`
 
-Defined in: [api/layers/clustered-layer.ts:19](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L19)
+Defined in: [api/layers/clustered-layer.ts:28](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L28)
 
 ***
 
@@ -61,7 +46,7 @@ Defined in: [api/layers/clustered-layer.ts:19](https://github.com/gamingtools/gt
 
 > `readonly` **markers**: [`EntityCollection`](Class.EntityCollection.md)\<[`Marker`](Class.Marker.md)\>
 
-Defined in: [api/layers/clustered-layer.ts:22](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L22)
+Defined in: [api/layers/clustered-layer.ts:31](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L31)
 
 Marker collection for this layer.
 
@@ -71,7 +56,7 @@ Marker collection for this layer.
 
 > `readonly` **type**: `"clustered"`
 
-Defined in: [api/layers/clustered-layer.ts:18](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L18)
+Defined in: [api/layers/clustered-layer.ts:27](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L27)
 
 ## Accessors
 
@@ -81,7 +66,7 @@ Defined in: [api/layers/clustered-layer.ts:18](https://github.com/gamingtools/gt
 
 > **get** **boundary**(): `undefined` \| [`ClusterBoundaryOptions`](Interface.ClusterBoundaryOptions.md)
 
-Defined in: [api/layers/clustered-layer.ts:78](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L78)
+Defined in: [api/layers/clustered-layer.ts:87](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L87)
 
 Current boundary options (undefined = boundaries disabled).
 
@@ -97,7 +82,7 @@ Current boundary options (undefined = boundaries disabled).
 
 > **get** **clusterIconSizeFunction**(): [`ClusterIconSizeFunction`](TypeAlias.ClusterIconSizeFunction.md)
 
-Defined in: [api/layers/clustered-layer.ts:74](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L74)
+Defined in: [api/layers/clustered-layer.ts:83](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L83)
 
 Current cluster icon size function.
 
@@ -113,7 +98,7 @@ Current cluster icon size function.
 
 > **get** **clusterRadius**(): `number`
 
-Defined in: [api/layers/clustered-layer.ts:66](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L66)
+Defined in: [api/layers/clustered-layer.ts:75](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L75)
 
 Current cluster radius in world pixels.
 
@@ -129,7 +114,7 @@ Current cluster radius in world pixels.
 
 > **get** **minClusterSize**(): `number`
 
-Defined in: [api/layers/clustered-layer.ts:70](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L70)
+Defined in: [api/layers/clustered-layer.ts:79](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L79)
 
 Current minimum cluster size.
 
@@ -143,7 +128,9 @@ Current minimum cluster size.
 
 > **addIcon**(`def`, `id?`): [`IconHandle`](Interface.IconHandle.md)
 
-Defined in: [api/layers/clustered-layer.ts:115](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L115)
+Defined in: [api/layers/clustered-layer.ts:130](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L130)
+
+Register an icon definition for use with markers on this layer.
 
 #### Parameters
 
@@ -151,13 +138,19 @@ Defined in: [api/layers/clustered-layer.ts:115](https://github.com/gamingtools/g
 
 [`IconDef`](Interface.IconDef.md)
 
+The icon definition (image path, dimensions, anchor).
+
 ##### id?
 
 `string`
 
+Optional custom identifier; auto-generated if omitted.
+
 #### Returns
 
 [`IconHandle`](Interface.IconHandle.md)
+
+A handle containing the resolved icon id.
 
 ***
 
@@ -165,7 +158,9 @@ Defined in: [api/layers/clustered-layer.ts:115](https://github.com/gamingtools/g
 
 > **addMarker**(`x`, `y`, `opts`): [`Marker`](Class.Marker.md)
 
-Defined in: [api/layers/clustered-layer.ts:140](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L140)
+Defined in: [api/layers/clustered-layer.ts:169](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L169)
+
+Add a marker at the given world-pixel position.
 
 #### Parameters
 
@@ -173,17 +168,25 @@ Defined in: [api/layers/clustered-layer.ts:140](https://github.com/gamingtools/g
 
 `number`
 
+Horizontal position in world pixels.
+
 ##### y
 
 `number`
+
+Vertical position in world pixels.
 
 ##### opts
 
 [`MarkerOptions`](Interface.MarkerOptions.md)
 
+Marker options (visual, scale, data, etc.).
+
 #### Returns
 
 [`Marker`](Class.Marker.md)
+
+The created Marker entity.
 
 ***
 
@@ -191,7 +194,9 @@ Defined in: [api/layers/clustered-layer.ts:140](https://github.com/gamingtools/g
 
 > **clearMarkers**(): `void`
 
-Defined in: [api/layers/clustered-layer.ts:147](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L147)
+Defined in: [api/layers/clustered-layer.ts:177](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L177)
+
+Remove all markers from this layer.
 
 #### Returns
 
@@ -203,7 +208,7 @@ Defined in: [api/layers/clustered-layer.ts:147](https://github.com/gamingtools/g
 
 > **getClusters**(): [`ClusterSnapshot`](Interface.ClusterSnapshot.md)[]
 
-Defined in: [api/layers/clustered-layer.ts:102](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L102)
+Defined in: [api/layers/clustered-layer.ts:111](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L111)
 
 Get a read-only snapshot of the current clusters.
 
@@ -217,7 +222,9 @@ Get a read-only snapshot of the current clusters.
 
 > **loadSpriteAtlas**(`atlasImageUrl`, `descriptor`, `atlasId?`): `Promise`\<[`SpriteAtlasHandle`](Interface.SpriteAtlasHandle.md)\>
 
-Defined in: [api/layers/clustered-layer.ts:131](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L131)
+Defined in: [api/layers/clustered-layer.ts:153](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L153)
+
+Load a sprite atlas image and register all sprites described by the descriptor.
 
 #### Parameters
 
@@ -225,17 +232,25 @@ Defined in: [api/layers/clustered-layer.ts:131](https://github.com/gamingtools/g
 
 `string`
 
+URL of the atlas PNG image.
+
 ##### descriptor
 
 [`SpriteAtlasDescriptor`](Interface.SpriteAtlasDescriptor.md)
+
+Sprite positions and dimensions within the atlas.
 
 ##### atlasId?
 
 `string`
 
+Optional custom atlas identifier; auto-generated if omitted.
+
 #### Returns
 
 `Promise`\<[`SpriteAtlasHandle`](Interface.SpriteAtlasHandle.md)\>
+
+A handle containing the atlas id and a map of sprite name to internal icon id.
 
 ***
 
@@ -243,7 +258,7 @@ Defined in: [api/layers/clustered-layer.ts:131](https://github.com/gamingtools/g
 
 > **setClusterOptions**(`opts`): `void`
 
-Defined in: [api/layers/clustered-layer.ts:85](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/clustered-layer.ts#L85)
+Defined in: [api/layers/clustered-layer.ts:94](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/clustered-layer.ts#L94)
 
 Update cluster options at runtime. Triggers a re-cluster on next frame.
 

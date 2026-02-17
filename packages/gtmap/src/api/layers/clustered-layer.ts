@@ -14,6 +14,15 @@ import { extractPointerMeta } from '../../internal/events/pointer-meta';
 
 let _clusteredLayerIdSeq = 0;
 
+/**
+ * A layer that spatially clusters markers and renders cluster icons
+ * with optional boundary polygons.
+ *
+ * @public
+ * @remarks
+ * Create via `map.layers.createClusteredLayer(opts?)`, then attach
+ * with `map.layers.addLayer(layer, { z })`.
+ */
 export class ClusteredLayer {
 	readonly type = 'clustered' as const;
 	readonly id: string;
@@ -112,6 +121,12 @@ export class ClusteredLayer {
 
 	// -- Icon management (same API as InteractiveLayer) --
 
+	/**
+	 * Register an icon definition for use with markers on this layer.
+	 * @param def - The icon definition (image path, dimensions, anchor).
+	 * @param id - Optional custom identifier; auto-generated if omitted.
+	 * @returns A handle containing the resolved icon id.
+	 */
 	addIcon(def: IconDef, id?: string): IconHandle {
 		this._iconIdSeq = (this._iconIdSeq + 1) % Number.MAX_SAFE_INTEGER;
 		const iconId = id || `icon_${this._iconIdSeq.toString(36)}`;
@@ -128,6 +143,13 @@ export class ClusteredLayer {
 		return { id: iconId };
 	}
 
+	/**
+	 * Load a sprite atlas image and register all sprites described by the descriptor.
+	 * @param atlasImageUrl - URL of the atlas PNG image.
+	 * @param descriptor - Sprite positions and dimensions within the atlas.
+	 * @param atlasId - Optional custom atlas identifier; auto-generated if omitted.
+	 * @returns A handle containing the atlas id and a map of sprite name to internal icon id.
+	 */
 	async loadSpriteAtlas(atlasImageUrl: string, descriptor: SpriteAtlasDescriptor, atlasId?: string): Promise<SpriteAtlasHandle> {
 		this._atlasIdSeq = (this._atlasIdSeq + 1) % Number.MAX_SAFE_INTEGER;
 		const id = atlasId || `atlas_${this._atlasIdSeq.toString(36)}`;
@@ -137,6 +159,13 @@ export class ClusteredLayer {
 
 	// -- Marker management --
 
+	/**
+	 * Add a marker at the given world-pixel position.
+	 * @param x - Horizontal position in world pixels.
+	 * @param y - Vertical position in world pixels.
+	 * @param opts - Marker options (visual, scale, data, etc.).
+	 * @returns The created Marker entity.
+	 */
 	addMarker(x: number, y: number, opts: MarkerOptions): Marker {
 		if (opts.visual) this._vis?.ensureRegistered(opts.visual);
 		const mk = new Marker(x, y, opts, () => this._markMarkersDirtyAndSchedule());
@@ -144,6 +173,7 @@ export class ClusteredLayer {
 		return mk;
 	}
 
+	/** Remove all markers from this layer. */
 	clearMarkers(): void {
 		this.markers.clear();
 	}

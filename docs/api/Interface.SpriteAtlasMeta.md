@@ -4,18 +4,7 @@
 
 # Interface: SpriteAtlasMeta
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [format?](#format)
-  - [generatedAt?](#generatedat)
-  - [generator?](#generator)
-  - [image?](#image)
-  - [size](#size)
-
-Defined in: [api/types.ts:387](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L387)
+Defined in: [api/types.ts:396](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L396)
 
 Informational metadata about a sprite atlas.
 
@@ -25,7 +14,7 @@ Informational metadata about a sprite atlas.
 
 > `optional` **format**: `string`
 
-Defined in: [api/types.ts:393](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L393)
+Defined in: [api/types.ts:402](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L402)
 
 Pixel format (informational, e.g. 'RGBA8888').
 
@@ -35,7 +24,7 @@ Pixel format (informational, e.g. 'RGBA8888').
 
 > `optional` **generatedAt**: `string`
 
-Defined in: [api/types.ts:397](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L397)
+Defined in: [api/types.ts:406](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L406)
 
 ISO timestamp of generation (informational).
 
@@ -45,7 +34,7 @@ ISO timestamp of generation (informational).
 
 > `optional` **generator**: `string`
 
-Defined in: [api/types.ts:395](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L395)
+Defined in: [api/types.ts:404](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L404)
 
 Generator tool name (informational).
 
@@ -55,7 +44,7 @@ Generator tool name (informational).
 
 > `optional` **image**: `string`
 
-Defined in: [api/types.ts:389](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L389)
+Defined in: [api/types.ts:398](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L398)
 
 Filename of the atlas image (informational).
 
@@ -65,7 +54,7 @@ Filename of the atlas image (informational).
 
 > **size**: `object`
 
-Defined in: [api/types.ts:391](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L391)
+Defined in: [api/types.ts:400](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L400)
 
 Total atlas image dimensions (required for UV computation).
 

@@ -10,6 +10,14 @@ import { extractPointerMeta } from '../../internal/events/pointer-meta';
 
 let _interactiveLayerIdSeq = 0;
 
+/**
+ * A layer that owns markers with WebGL hit-testing support.
+ *
+ * @public
+ * @remarks
+ * Create via `map.layers.createInteractiveLayer()`, then attach
+ * with `map.layers.addLayer(layer, { z })`.
+ */
 export class InteractiveLayer {
 	readonly type = 'interactive' as const;
 	readonly id: string;
@@ -56,6 +64,7 @@ export class InteractiveLayer {
 
 	// -- Icon management --
 
+	/** Register a bitmap icon for use with markers on this layer. */
 	addIcon(def: IconDef, id?: string): IconHandle {
 		this._iconIdSeq = (this._iconIdSeq + 1) % Number.MAX_SAFE_INTEGER;
 		const iconId = id || `icon_${this._iconIdSeq.toString(36)}`;
@@ -72,6 +81,7 @@ export class InteractiveLayer {
 		return { id: iconId };
 	}
 
+	/** Load a sprite atlas image and register all sprites as icons. */
 	async loadSpriteAtlas(atlasImageUrl: string, descriptor: SpriteAtlasDescriptor, atlasId?: string): Promise<SpriteAtlasHandle> {
 		this._atlasIdSeq = (this._atlasIdSeq + 1) % Number.MAX_SAFE_INTEGER;
 		const id = atlasId || `atlas_${this._atlasIdSeq.toString(36)}`;
@@ -81,6 +91,7 @@ export class InteractiveLayer {
 
 	// -- Marker management --
 
+	/** Add a marker at the given world pixel position. */
 	addMarker(x: number, y: number, opts: MarkerOptions): Marker {
 		if (opts.visual) this._vis?.ensureRegistered(opts.visual);
 		const mk = new Marker(x, y, opts, () => this._markMarkersDirtyAndSchedule());
@@ -88,6 +99,7 @@ export class InteractiveLayer {
 		return mk;
 	}
 
+	/** Remove all markers from this layer. */
 	clearMarkers(): void {
 		this.markers.clear();
 	}

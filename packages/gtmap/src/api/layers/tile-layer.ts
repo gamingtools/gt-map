@@ -5,6 +5,14 @@ import type { TileLayerOptions } from './types';
 
 let _tileLayerIdSeq = 0;
 
+/**
+ * A layer backed by a GTPK tile pyramid.
+ *
+ * @public
+ * @remarks
+ * Create via `map.layers.createTileLayer(options)`, then attach
+ * with `map.layers.addLayer(layer, { z })`.
+ */
 export class TileLayer {
 	readonly type = 'tile' as const;
 	readonly id: string;

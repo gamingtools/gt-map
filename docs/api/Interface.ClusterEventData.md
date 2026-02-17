@@ -4,17 +4,7 @@
 
 # Interface: ClusterEventData
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [center](#center)
-  - [clusterId](#clusterid)
-  - [markerIds](#markerids)
-  - [size](#size)
-
-Defined in: [api/layers/types.ts:108](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L108)
+Defined in: [api/layers/types.ts:196](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L196)
 
 Cluster metadata included in marker event payloads when the hit target is a cluster icon.
 
@@ -24,7 +14,7 @@ Cluster metadata included in marker event payloads when the hit target is a clus
 
 > **center**: `object`
 
-Defined in: [api/layers/types.ts:114](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L114)
+Defined in: [api/layers/types.ts:202](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L202)
 
 Centroid position in world pixels.
 
@@ -42,7 +32,7 @@ Centroid position in world pixels.
 
 > **clusterId**: `string`
 
-Defined in: [api/layers/types.ts:110](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L110)
+Defined in: [api/layers/types.ts:198](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L198)
 
 Cluster identifier.
 
@@ -52,7 +42,7 @@ Cluster identifier.
 
 > **markerIds**: `string`[]
 
-Defined in: [api/layers/types.ts:116](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L116)
+Defined in: [api/layers/types.ts:204](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L204)
 
 IDs of all markers in this cluster.
 
@@ -62,6 +52,6 @@ IDs of all markers in this cluster.
 
 > **size**: `number`
 
-Defined in: [api/layers/types.ts:112](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L112)
+Defined in: [api/layers/types.ts:200](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L200)
 
 Number of markers in this cluster.

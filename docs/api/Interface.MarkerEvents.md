@@ -4,16 +4,7 @@
 
 # Interface: MarkerEvents
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Extends](#extends)
-- [Methods](#methods)
-  - [on()](#on)
-  - [once()](#once)
-
-Defined in: [api/events/public.ts:63](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L63)
+Defined in: [api/events/public.ts:63](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L63)
 
 Marker events surface with typed names and payloads.
 
@@ -29,7 +20,7 @@ Marker events surface with typed names and payloads.
 
 > **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`MarkerEventMap`](Interface.MarkerEventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:69](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L69)
+Defined in: [api/events/public.ts:69](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L69)
 
 Subscribe to a marker event.
 
@@ -59,7 +50,7 @@ Supported names: 'click' | 'tap' | 'longpress' | 'pointerdown' | 'pointerup' | '
 
 > **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:70](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L70)
+Defined in: [api/events/public.ts:70](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L70)
 
 Subscribe to a named event.
 
@@ -105,7 +96,7 @@ marker.events.on('click').each((e) => {
 
 > **once**\<`K`\>(`event`): `Promise`\<[`MarkerEventMap`](Interface.MarkerEventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 

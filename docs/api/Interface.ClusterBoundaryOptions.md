@@ -4,19 +4,7 @@
 
 # Interface: ClusterBoundaryOptions
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [color?](#color)
-  - [fill?](#fill)
-  - [fillColor?](#fillcolor)
-  - [fillOpacity?](#fillopacity)
-  - [opacity?](#opacity)
-  - [weight?](#weight)
-
-Defined in: [api/layers/types.ts:66](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L66)
+Defined in: [api/layers/types.ts:152](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L152)
 
 Styling options for optional cluster boundary polygons.
 
@@ -26,7 +14,7 @@ Styling options for optional cluster boundary polygons.
 
 > `optional` **color**: `string`
 
-Defined in: [api/layers/types.ts:68](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L68)
+Defined in: [api/layers/types.ts:154](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L154)
 
 Border color. Default: 'rgba(0,100,255,0.4)'.
 
@@ -36,7 +24,7 @@ Border color. Default: 'rgba(0,100,255,0.4)'.
 
 > `optional` **fill**: `boolean`
 
-Defined in: [api/layers/types.ts:74](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L74)
+Defined in: [api/layers/types.ts:160](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L160)
 
 Whether to fill the boundary polygon. Default: true.
 
@@ -46,7 +34,7 @@ Whether to fill the boundary polygon. Default: true.
 
 > `optional` **fillColor**: `string`
 
-Defined in: [api/layers/types.ts:76](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L76)
+Defined in: [api/layers/types.ts:162](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L162)
 
 Fill color. Default: 'rgba(0,100,255,0.1)'.
 
@@ -56,7 +44,7 @@ Fill color. Default: 'rgba(0,100,255,0.1)'.
 
 > `optional` **fillOpacity**: `number`
 
-Defined in: [api/layers/types.ts:78](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L78)
+Defined in: [api/layers/types.ts:164](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L164)
 
 Fill opacity (0-1). Default: 0.15.
 
@@ -66,9 +54,19 @@ Fill opacity (0-1). Default: 0.15.
 
 > `optional` **opacity**: `number`
 
-Defined in: [api/layers/types.ts:72](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L72)
+Defined in: [api/layers/types.ts:158](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L158)
 
 Border opacity (0-1). Default: 1.
+
+***
+
+### showOnHover?
+
+> `optional` **showOnHover**: `boolean`
+
+Defined in: [api/layers/types.ts:166](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L166)
+
+When true, only show the boundary for the hovered cluster. Default: false.
 
 ***
 
@@ -76,6 +74,6 @@ Border opacity (0-1). Default: 1.
 
 > `optional` **weight**: `number`
 
-Defined in: [api/layers/types.ts:70](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L70)
+Defined in: [api/layers/types.ts:156](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L156)
 
 Border weight in pixels. Default: 1.5.

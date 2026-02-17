@@ -4,18 +4,14 @@
 
 # Class: TileLayer
 
-[← Back to API index](./README.md)
+Defined in: [api/layers/tile-layer.ts:16](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/tile-layer.ts#L16)
 
-## Contents
+A layer backed by a GTPK tile pyramid.
 
-- [Constructors](#constructors)
-  - [Constructor](#constructor)
-- [Properties](#properties)
-  - [id](#id)
-  - [options](#options)
-  - [type](#type)
+## Remarks
 
-Defined in: [api/layers/tile-layer.ts:8](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/tile-layer.ts#L8)
+Create via `map.layers.createTileLayer(options)`, then attach
+with `map.layers.addLayer(layer, { z })`.
 
 ## Constructors
 
@@ -23,7 +19,7 @@ Defined in: [api/layers/tile-layer.ts:8](https://github.com/gamingtools/gt-map/b
 
 > **new TileLayer**(`options`): `TileLayer`
 
-Defined in: [api/layers/tile-layer.ts:18](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/tile-layer.ts#L18)
+Defined in: [api/layers/tile-layer.ts:26](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/tile-layer.ts#L26)
 
 #### Parameters
 
@@ -41,7 +37,7 @@ Defined in: [api/layers/tile-layer.ts:18](https://github.com/gamingtools/gt-map/
 
 > `readonly` **id**: `string`
 
-Defined in: [api/layers/tile-layer.ts:10](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/tile-layer.ts#L10)
+Defined in: [api/layers/tile-layer.ts:18](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/tile-layer.ts#L18)
 
 ***
 
@@ -49,7 +45,7 @@ Defined in: [api/layers/tile-layer.ts:10](https://github.com/gamingtools/gt-map/
 
 > `readonly` **options**: `Readonly`\<[`TileLayerOptions`](Interface.TileLayerOptions.md)\>
 
-Defined in: [api/layers/tile-layer.ts:11](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/tile-layer.ts#L11)
+Defined in: [api/layers/tile-layer.ts:19](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/tile-layer.ts#L19)
 
 ***
 
@@ -57,4 +53,4 @@ Defined in: [api/layers/tile-layer.ts:11](https://github.com/gamingtools/gt-map/
 
 > `readonly` **type**: `"tile"`
 
-Defined in: [api/layers/tile-layer.ts:9](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/tile-layer.ts#L9)
+Defined in: [api/layers/tile-layer.ts:17](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/tile-layer.ts#L17)

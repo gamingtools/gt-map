@@ -4,17 +4,9 @@
 
 # Interface: MaxBoundsPx
 
-[← Back to API index](./README.md)
+Defined in: [api/types.ts:482](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L482)
 
-## Contents
-
-- [Properties](#properties)
-  - [maxX](#maxx)
-  - [maxY](#maxy)
-  - [minX](#minx)
-  - [minY](#miny)
-
-Defined in: [api/types.ts:473](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L473)
+Axis-aligned bounding box in world pixel coordinates for constraining pan.
 
 ## Properties
 
@@ -22,7 +14,7 @@ Defined in: [api/types.ts:473](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > **maxX**: `number`
 
-Defined in: [api/types.ts:476](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L476)
+Defined in: [api/types.ts:485](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L485)
 
 ***
 
@@ -30,7 +22,7 @@ Defined in: [api/types.ts:476](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > **maxY**: `number`
 
-Defined in: [api/types.ts:477](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L477)
+Defined in: [api/types.ts:486](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L486)
 
 ***
 
@@ -38,7 +30,7 @@ Defined in: [api/types.ts:477](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > **minX**: `number`
 
-Defined in: [api/types.ts:474](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L474)
+Defined in: [api/types.ts:483](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L483)
 
 ***
 
@@ -46,4 +38,4 @@ Defined in: [api/types.ts:474](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > **minY**: `number`
 
-Defined in: [api/types.ts:475](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L475)
+Defined in: [api/types.ts:484](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L484)

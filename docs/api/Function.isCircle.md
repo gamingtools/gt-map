@@ -4,17 +4,11 @@
 
 # Function: isCircle()
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Parameters](#parameters)
-  - [v](#v)
-- [Returns](#returns)
-
 > **isCircle**(`v`): `v is Circle`
 
-Defined in: [api/types.ts:182](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L182)
+Defined in: [api/types.ts:191](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L191)
+
+Type guard: narrows a vector union to [Circle](TypeAlias.Circle.md).
 
 ## Parameters
 

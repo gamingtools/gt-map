@@ -6,15 +6,20 @@
  * Prefer these types over duplicating shapes in app code.
  */
 
-// Core geometric types
+/** A 2D point in world pixel coordinates. */
 export type Point = { x: number; y: number };
 
-// View and state types
+/** Snapshot of the current view state, included in most event payloads. */
 export interface ViewState {
+	/** Center of the viewport in world pixels. */
 	center: Point;
+	/** Current zoom level. */
 	zoom: number;
+	/** Minimum allowed zoom. */
 	minZoom: number;
+	/** Maximum allowed zoom. */
 	maxZoom: number;
+	/** Whether horizontal wrapping is enabled. */
 	wrapX: boolean;
 }
 
@@ -140,7 +145,7 @@ export interface IconHandle {
 	id: string;
 }
 
-// Vector styling
+/** Styling options applied to vector primitives (polylines, polygons, circles). */
 export interface VectorStyle {
 	color?: string;
 	weight?: number;
@@ -150,19 +155,21 @@ export interface VectorStyle {
 	fillOpacity?: number;
 }
 
-// Vector primitives with discriminated unions
+/** A polyline vector primitive (open path). */
 export type Polyline = {
 	type: 'polyline';
 	points: Point[];
 	style?: VectorStyle;
 };
 
+/** A polygon vector primitive (closed, optionally filled path). */
 export type Polygon = {
 	type: 'polygon';
 	points: Point[];
 	style?: VectorStyle;
 };
 
+/** A circle vector primitive. */
 export type Circle = {
 	type: 'circle';
 	center: Point;
@@ -170,15 +177,17 @@ export type Circle = {
 	style?: VectorStyle;
 };
 
-// Type guards for vector geometry
+/** Type guard: narrows a vector union to {@link Polyline}. */
 export function isPolyline(v: Polyline | Polygon | Circle): v is Polyline {
 	return v.type === 'polyline';
 }
 
+/** Type guard: narrows a vector union to {@link Polygon}. */
 export function isPolygon(v: Polyline | Polygon | Circle): v is Polygon {
 	return v.type === 'polygon';
 }
 
+/** Type guard: narrows a vector union to {@link Circle}. */
 export function isCircle(v: Polyline | Polygon | Circle): v is Circle {
 	return v.type === 'circle';
 }
@@ -324,7 +333,7 @@ export interface EventMap {
 	contextmenu: MouseEventData;
 }
 
-// Performance stats (optional fields for diagnostics)
+/** Per-frame renderer statistics (optional, for diagnostics/HUD). */
 export interface RenderStats {
 	fps?: number;
 	cacheSize?: number;
@@ -461,7 +470,7 @@ export interface MarkerEventData {
 	cluster?: import('./layers/types').ClusterEventData;
 }
 
-// Inertia options
+/** Options controlling pan inertia (momentum after releasing a drag). */
 export interface InertiaOptions {
 	inertia?: boolean;
 	inertiaDeceleration?: number;
@@ -469,7 +478,7 @@ export interface InertiaOptions {
 	easeLinearity?: number;
 }
 
-// Max bounds (pixel coordinates)
+/** Axis-aligned bounding box in world pixel coordinates for constraining pan. */
 export interface MaxBoundsPx {
 	minX: number;
 	minY: number;
@@ -477,7 +486,7 @@ export interface MaxBoundsPx {
 	maxY: number;
 }
 
-// Filter modes
+/** Upscale filtering mode for the tile raster when zoomed beyond source resolution. */
 export type UpscaleFilterMode = 'auto' | 'linear' | 'bicubic';
 
 /**

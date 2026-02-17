@@ -4,15 +4,7 @@
 
 # Interface: AnchorPoint
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [x](#x)
-  - [y](#y)
-
-Defined in: [api/visual.ts:27](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L27)
+Defined in: [api/visual.ts:27](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L27)
 
 Explicit anchor as normalized coordinates (0-1 range).
 
@@ -22,7 +14,7 @@ Explicit anchor as normalized coordinates (0-1 range).
 
 > **x**: `number`
 
-Defined in: [api/visual.ts:29](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L29)
+Defined in: [api/visual.ts:29](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L29)
 
 X position from left (0 = left edge, 0.5 = center, 1 = right edge)
 
@@ -32,6 +24,6 @@ X position from left (0 = left edge, 0.5 = center, 1 = right edge)
 
 > **y**: `number`
 
-Defined in: [api/visual.ts:31](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L31)
+Defined in: [api/visual.ts:31](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L31)
 
 Y position from top (0 = top edge, 0.5 = center, 1 = bottom edge)

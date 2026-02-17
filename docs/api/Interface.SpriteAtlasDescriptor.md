@@ -4,16 +4,7 @@
 
 # Interface: SpriteAtlasDescriptor
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [meta](#meta)
-  - [sprites](#sprites)
-  - [version](#version)
-
-Defined in: [api/types.ts:401](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L401)
+Defined in: [api/types.ts:410](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L410)
 
 Full sprite atlas JSON descriptor.
 
@@ -23,7 +14,7 @@ Full sprite atlas JSON descriptor.
 
 > **meta**: [`SpriteAtlasMeta`](Interface.SpriteAtlasMeta.md)
 
-Defined in: [api/types.ts:405](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L405)
+Defined in: [api/types.ts:414](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L414)
 
 Atlas metadata.
 
@@ -33,7 +24,7 @@ Atlas metadata.
 
 > **sprites**: `Record`\<`string`, [`SpriteAtlasEntry`](Interface.SpriteAtlasEntry.md)\>
 
-Defined in: [api/types.ts:407](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L407)
+Defined in: [api/types.ts:416](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L416)
 
 Map of sprite name to its atlas entry.
 
@@ -43,6 +34,6 @@ Map of sprite name to its atlas entry.
 
 > **version**: `1`
 
-Defined in: [api/types.ts:403](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L403)
+Defined in: [api/types.ts:412](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L412)
 
 Format version (currently 1).

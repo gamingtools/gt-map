@@ -4,29 +4,7 @@
 
 # Class: SvgVisual
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Remarks](#remarks)
-- [Example](#example)
-- [Extends](#extends)
-- [Constructors](#constructors)
-  - [Constructor](#constructor)
-- [Properties](#properties)
-  - [anchor](#anchor)
-  - [fill?](#fill)
-  - [iconScaleFunction?](#iconscalefunction)
-  - [shadow?](#shadow)
-  - [size](#size)
-  - [stroke?](#stroke)
-  - [strokeWidth?](#strokewidth)
-  - [svg](#svg)
-  - [type](#type)
-- [Methods](#methods)
-  - [getSize()](#getsize)
-
-Defined in: [api/visual.ts:371](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L371)
+Defined in: [api/visual.ts:371](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L371)
 
 SVG-based visual with color customization and shadow support.
 
@@ -58,7 +36,7 @@ const colored = new SvgVisual('<svg>...</svg>', { width: 32, height: 32 }, {
 
 > **new SvgVisual**(`svg`, `size`, `options`): `SvgVisual`
 
-Defined in: [api/visual.ts:398](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L398)
+Defined in: [api/visual.ts:398](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L398)
 
 Create an SVG visual.
 
@@ -118,7 +96,7 @@ Override stroke width for all SVG elements
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -132,7 +110,7 @@ Anchor point for positioning. Defaults to center.
 
 > `readonly` `optional` **fill**: `string`
 
-Defined in: [api/visual.ts:381](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L381)
+Defined in: [api/visual.ts:381](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L381)
 
 Override fill color for all SVG elements.
 
@@ -142,7 +120,7 @@ Override fill color for all SVG elements.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -158,7 +136,7 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `readonly` `optional` **shadow**: [`SvgShadow`](Interface.SvgShadow.md)
 
-Defined in: [api/visual.ts:390](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L390)
+Defined in: [api/visual.ts:390](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L390)
 
 Shadow effect options.
 
@@ -168,7 +146,7 @@ Shadow effect options.
 
 > `readonly` **size**: [`VisualSize`](TypeAlias.VisualSize.md)
 
-Defined in: [api/visual.ts:378](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L378)
+Defined in: [api/visual.ts:378](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L378)
 
 Display size.
 
@@ -178,7 +156,7 @@ Display size.
 
 > `readonly` `optional` **stroke**: `string`
 
-Defined in: [api/visual.ts:384](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L384)
+Defined in: [api/visual.ts:384](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L384)
 
 Override stroke color for all SVG elements.
 
@@ -188,7 +166,7 @@ Override stroke color for all SVG elements.
 
 > `readonly` `optional` **strokeWidth**: `number`
 
-Defined in: [api/visual.ts:387](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L387)
+Defined in: [api/visual.ts:387](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L387)
 
 Override stroke width for all SVG elements.
 
@@ -198,7 +176,7 @@ Override stroke width for all SVG elements.
 
 > `readonly` **svg**: `string`
 
-Defined in: [api/visual.ts:375](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L375)
+Defined in: [api/visual.ts:375](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L375)
 
 SVG content (inline string or URL).
 
@@ -208,7 +186,7 @@ SVG content (inline string or URL).
 
 > `readonly` **type**: `"svg"`
 
-Defined in: [api/visual.ts:372](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L372)
+Defined in: [api/visual.ts:372](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L372)
 
 Discriminator for runtime type checking.
 
@@ -222,7 +200,7 @@ Discriminator for runtime type checking.
 
 > **getSize**(): `object`
 
-Defined in: [api/visual.ts:422](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L422)
+Defined in: [api/visual.ts:422](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L422)
 
 Get resolved size as {width, height}.
 

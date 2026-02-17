@@ -4,19 +4,11 @@
 
 # Type Alias: Circle
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [center](#center)
-  - [radius](#radius)
-  - [style?](#style)
-  - [type](#type)
-
 > **Circle** = `object`
 
-Defined in: [api/types.ts:166](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L166)
+Defined in: [api/types.ts:173](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L173)
+
+A circle vector primitive.
 
 ## Properties
 
@@ -24,7 +16,7 @@ Defined in: [api/types.ts:166](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > **center**: [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:168](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L168)
+Defined in: [api/types.ts:175](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L175)
 
 ***
 
@@ -32,7 +24,7 @@ Defined in: [api/types.ts:168](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > **radius**: `number`
 
-Defined in: [api/types.ts:169](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L169)
+Defined in: [api/types.ts:176](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L176)
 
 ***
 
@@ -40,7 +32,7 @@ Defined in: [api/types.ts:169](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > `optional` **style**: [`VectorStyle`](Interface.VectorStyle.md)
 
-Defined in: [api/types.ts:170](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L170)
+Defined in: [api/types.ts:177](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L177)
 
 ***
 
@@ -48,4 +40,4 @@ Defined in: [api/types.ts:170](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > **type**: `"circle"`
 
-Defined in: [api/types.ts:167](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L167)
+Defined in: [api/types.ts:174](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L174)

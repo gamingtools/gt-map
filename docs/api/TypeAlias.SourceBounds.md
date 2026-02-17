@@ -4,19 +4,9 @@
 
 # Type Alias: SourceBounds
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [maxX](#maxx)
-  - [maxY](#maxy)
-  - [minX](#minx)
-  - [minY](#miny)
-
 > **SourceBounds** = `object`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/coord-transformer.ts#L1)
 
 ## Properties
 
@@ -24,7 +14,7 @@ Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/b
 
 > **maxX**: `number`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/coord-transformer.ts#L1)
 
 ***
 
@@ -32,7 +22,7 @@ Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/b
 
 > **maxY**: `number`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/coord-transformer.ts#L1)
 
 ***
 
@@ -40,7 +30,7 @@ Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/b
 
 > **minX**: `number`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/coord-transformer.ts#L1)
 
 ***
 
@@ -48,4 +38,4 @@ Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/b
 
 > **minY**: `number`
 
-Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/coord-transformer.ts#L1)
+Defined in: [api/coord-transformer.ts:1](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/coord-transformer.ts#L1)

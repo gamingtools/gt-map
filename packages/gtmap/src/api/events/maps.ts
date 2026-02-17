@@ -24,9 +24,10 @@ export interface VectorData {
 	data?: unknown;
 }
 
-// Pointer metadata for device-specific behavior
+/** Input device type that originated a pointer event. */
 export type InputDevice = 'mouse' | 'touch' | 'pen';
 
+/** Modifier key state at the time of a pointer event. */
 export interface PointerModifiers {
 	alt: boolean;
 	ctrl: boolean;
@@ -34,6 +35,7 @@ export interface PointerModifiers {
 	shift: boolean;
 }
 
+/** Extended pointer metadata attached to marker interaction events. */
 export interface PointerMeta {
 	device: InputDevice;
 	isPrimary: boolean;

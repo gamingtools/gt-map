@@ -4,22 +4,7 @@
 
 # Interface: SetViewOptions
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Remarks](#remarks)
-- [Example](#example)
-- [Properties](#properties)
-  - [animate?](#animate)
-  - [bounds?](#bounds)
-  - [center?](#center)
-  - [offset?](#offset)
-  - [padding?](#padding)
-  - [points?](#points)
-  - [zoom?](#zoom)
-
-Defined in: [api/types.ts:566](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L566)
+Defined in: [api/types.ts:575](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L575)
 
 Options for [ViewFacade.setView](Class.ViewFacade.md#setview).
 
@@ -69,7 +54,7 @@ await map.view.setView({ offset: { dx: 100, dy: -50 } });
 
 > `optional` **animate**: [`AnimateOptions`](Interface.AnimateOptions.md)
 
-Defined in: [api/types.ts:622](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L622)
+Defined in: [api/types.ts:631](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L631)
 
 Animation parameters. When omitted the view change is applied instantly.
 
@@ -83,7 +68,7 @@ Animation parameters. When omitted the view change is applied instantly.
 
 > `optional` **bounds**: `object`
 
-Defined in: [api/types.ts:597](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L597)
+Defined in: [api/types.ts:606](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L606)
 
 Bounding box in world pixels to fit the viewport to.
 
@@ -112,7 +97,7 @@ Mutually exclusive intent with `points` (if both are set, `bounds` wins).
 
 > `optional` **center**: [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/types.ts:573](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L573)
+Defined in: [api/types.ts:582](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L582)
 
 Target center position in world pixels.
 
@@ -125,7 +110,7 @@ for the center while the fitted zoom is kept.
 
 > `optional` **offset**: `object`
 
-Defined in: [api/types.ts:589](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L589)
+Defined in: [api/types.ts:598](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L598)
 
 Pixel offset added to the resolved center.
 
@@ -146,7 +131,7 @@ useful for nudging the view relative to its computed position.
 
 > `optional` **padding**: [`PaddingInput`](TypeAlias.PaddingInput.md)
 
-Defined in: [api/types.ts:615](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L615)
+Defined in: [api/types.ts:624](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L624)
 
 Padding applied when fitting `bounds` or `points`.
 
@@ -163,7 +148,7 @@ Accepts a uniform number or a per-side object.
 
 > `optional` **points**: [`Point`](TypeAlias.Point.md)[]
 
-Defined in: [api/types.ts:605](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L605)
+Defined in: [api/types.ts:614](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L614)
 
 Array of world-pixel points to fit the viewport around.
 
@@ -176,7 +161,7 @@ Ignored when `bounds` is also provided.
 
 > `optional` **zoom**: `number`
 
-Defined in: [api/types.ts:581](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L581)
+Defined in: [api/types.ts:590](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L590)
 
 Target zoom level (fractional values allowed).
 

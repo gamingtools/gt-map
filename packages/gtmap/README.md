@@ -1,8 +1,8 @@
 # GTMap
 
-High‑performance, pixel‑CRS WebGL map renderer with a small, typed API. Optimized for image/scan maps (no geodetic lat‑lng). Ships a thin facade (`GTMap`) over a fast WebGL core: input, rendering, and caches.
+High-performance, pixel-CRS WebGL map renderer with a small, typed API. Optimized for image/scan maps (no geodetic lat-lng). Ships a thin facade (`GTMap`) over a fast WebGL core: input, rendering, and caches.
 
-Status: early-stage, pre-release — everything is subject to change before the initial release (including public APIs and behavior). No heavy runtime deps; pure TypeScript and Web APIs.
+Status: early-stage, pre-release -- everything is subject to change before the initial release (including public APIs and behavior). No heavy runtime deps; pure TypeScript and Web APIs.
 
 ## Install
 
@@ -10,435 +10,382 @@ Status: early-stage, pre-release — everything is subject to change before the 
 npm install @gaming.tools/gtmap
 ```
 
-## Quick Start (no framework)
+## Quick Start
 
 HTML
 
 ```html
 <div id="map"></div>
 <style>
-	#map {
-		width: 100%;
-		height: 480px;
-	}
-	/* Ensure the container has a concrete size */
+  #map {
+    width: 100%;
+    height: 480px;
+  }
+  /* Ensure the container has a concrete size */
 </style>
 ```
 
 TypeScript
 
 ```ts
-import { GTMap, type MapOptions } from '@gaming.tools/gtmap';
+import { GTMap, ImageVisual, type MapOptions } from '@gaming.tools/gtmap';
 
 const container = document.getElementById('map') as HTMLDivElement;
 
 const map = new GTMap(container, {
-	image: {
-		url: 'https://example.com/maps/hagga-basin.webp',
-		width: 8192,
-		height: 8192,
-	},
-	wrapX: false,
-	minZoom: 0,
-	maxZoom: 5,
-	center: { x: 4096, y: 4096 },
-	zoom: 3,
-	backgroundColor: '#0a0a0a',
+  mapSize: { width: 8192, height: 8192 },
+  wrapX: false,
+  minZoom: 0,
+  maxZoom: 5,
+  center: { x: 4096, y: 4096 },
+  zoom: 3,
+  backgroundColor: '#0a0a0a',
 } satisfies MapOptions);
-
-// Optional: grid + filtering
-map.setGridVisible(false);
-map.setUpscaleFilter('linear'); // 'auto' | 'linear' | 'bicubic' (default: 'linear')
 ```
 
-### View Controls (Transition Builder)
+## Architecture
+
+GTMap uses a facade pattern. The root `GTMap` class exposes four sub-objects:
+
+| Facade | Access | Purpose |
+|--------|--------|---------|
+| **view** | `map.view` | Center, zoom, setView, bounds, coordinate transforms, icon scaling |
+| **layers** | `map.layers` | Layer creation, attachment, removal, per-layer display |
+| **display** | `map.display` | Grid overlay, upscale filter, FPS cap, background color, zoom snap |
+| **input** | `map.input` | Wheel speed, inertia options |
+
+Events are accessed via `map.events`.
+
+## Layers
+
+Content is organized into typed layers. Layers must be created via `map.layers`, then attached with a z-order:
+
+### Tile Layer
+
+Backed by a `.gtpk` tile pyramid (binary pack containing the full tile set).
 
 ```ts
-// Instant change
-await map.transition().center({ x: 4200, y: 4100 }).zoom(3).apply();
-
-// Animated recenter
-await map
-	.transition()
-	.center({ x: 5000, y: 3000 })
-	.apply({ animate: { durationMs: 600 } });
-
-// Animated zoom + center
-await map
-	.transition()
-	.center({ x: 4096, y: 4096 })
-	.zoom(4)
-	.apply({ animate: { durationMs: 800 } });
-
-// Fit bounds
-await map
-	.transition()
-	.bounds({ minX: 1000, minY: 1200, maxX: 2400, maxY: 2200 }, 24)
-	.apply({ animate: { durationMs: 500 } });
-
-// Fit markers (all): gather positions and use points(...)
-const pts = map.markers.getAll().map((m) => ({ x: m.x, y: m.y }));
-await map
-	.transition()
-	.points(pts, 16)
-	.apply({ animate: { durationMs: 500 } });
+const tiles = map.layers.createTileLayer({
+  packUrl: 'https://cdn.example.com/tiles/map.gtpk',
+  tileSize: 256,
+  sourceMinZoom: 0,
+  sourceMaxZoom: 5,
+});
+map.layers.addLayer(tiles, { z: 0 });
 ```
 
-### Rendering & Behavior
+### Interactive Layer
 
-````ts
-// Grid overlay and filtering
-map.setGridVisible(false);
-map.setUpscaleFilter('linear'); // default
-
-// Icon Scaling
-// Control icon size in screen space. The function receives (zoom, minZoom, maxZoom)
-// and returns a multiplier: 1.0 = screen‑fixed size.
-
-// Default: screen‑fixed size
-map.setIconScaleFunction(() => 1);
-
-// World‑like scaling around Z=3
-map.setIconScaleFunction((z) => Math.pow(2, z - 3));
-
-// Step behavior
-map.setIconScaleFunction((z) => (z < 2 ? 0.75 : z < 4 ? 1.0 : 1.25));
-
-// Reset to default
-map.setIconScaleFunction(null);
-
-### Coordinate Transforms (world → pixels)
-
-When your data lives in an external/world coordinate space (e.g., Unreal units), you can map it
-into image pixel coordinates using a uniform fit transform. Initialize with the world bounds and
-then call `translate(x, y)` for each point.
+Owns markers with WebGL hit-testing (click, hover, drag).
 
 ```ts
-// World extents (authoritative bounds in your source CRS)
-const WORLD: { minX: number; minY: number; maxX: number; maxY: number } = {
-  minX: -457200,
-  minY: -457200,
-  maxX: 355600,
-  maxY: 355600,
-};
+const layer = map.layers.createInteractiveLayer();
+map.layers.addLayer(layer, { z: 1 });
 
-// Initialize once after creating the map
-map.setCoordBounds(WORLD);
+// Add markers using Visual templates
+const mk = layer.addMarker(2048, 2048, {
+  visual: new ImageVisual('/icons/pin.png', 32),
+  scale: 1.25,
+  data: { name: 'POI A', category: 'shop' },
+});
+```
 
-// Convert world → pixel coordinates for markers or vectors
-const p = map.translate(wx, wy); // default 'original' transform
-map.addMarker(p.x, p.y);
+### Static Layer
 
-// Optional transforms for orientation fixes
-// 'original' | 'flipVertical' | 'flipHorizontal' | 'flipBoth'
-// 'rotate90CW' | 'rotate90CCW' | 'rotate180'
-const q = map.translate(wx, wy, 'flipVertical');
-````
-
-Notes
-
-- The mapping preserves aspect ratio (uniform scale) and centers the world rect in the image — letter/pillarboxing as needed.
-- Not Unreal‑specific: works for any source coordinate ranges.
-
-// Performance knobs
-map.setFpsCap(60);
-map.setAutoResize(true); // enabled by default
-
-// Background: either 'transparent' or solid (alpha ignored)
-map.setBackgroundColor('transparent');
-map.setBackgroundColor('#000000');
-map.setBackgroundColor({ r: 16, g: 16, b: 16 });
-
-// Bounds & zoom behavior
-// Constrain panning and (when needed) zoom-out so bounds always cover the viewport
-map.setMaxBoundsPx({ minX: 0, minY: 0, maxX: 8192, maxY: 8192 });
-map.setMaxBoundsViscosity(0.15); // 0..1 soft-clamp near edges
-// Optionally allow a small bounce at zoom limits (enable at construction via MapOptions)
-// new GTMap(el, { image, bounceAtZoomLimits: true, ... })
-
-````
-
-### Lifecycle
+Owns vector shapes (polylines, polygons, circles).
 
 ```ts
-// One‑time map initialization
-map.events.on('load').each(({ size, view }) => {
-	console.log('ready', size.width, size.height, size.dpr, view);
+const vectors = map.layers.createStaticLayer();
+map.layers.addLayer(vectors, { z: 2 });
+
+vectors.addPolygon(
+  [{ x: 100, y: 100 }, { x: 200, y: 100 }, { x: 150, y: 200 }],
+  { color: '#00ff00', fill: true, fillColor: 'rgba(0,255,0,0.2)' },
+);
+vectors.addPolyline(
+  [{ x: 0, y: 0 }, { x: 300, y: 150 }],
+  { color: '#ff0000', weight: 2 },
+);
+vectors.addCircle({ x: 500, y: 500 }, 80, { color: '#0000ff' });
+```
+
+### Clustered Layer
+
+Groups nearby markers into clusters with optional boundary polygons.
+
+```ts
+import { clusterIconSize } from '@gaming.tools/gtmap';
+
+const clusters = map.layers.createClusteredLayer({
+  clusterRadius: 80,
+  minClusterSize: 2,
+  clusterIconSizeFunction: clusterIconSize('exponentialLog', { max: 1.8 }),
+  boundary: { fill: true, fillColor: 'rgba(0,100,255,0.1)', showOnHover: true },
+});
+map.layers.addLayer(clusters, { z: 3 });
+
+// Add markers the same way as interactive layers
+clusters.addMarker(1000, 1000, { visual: myVisual, data: { type: 'ore' } });
+```
+
+### Layer Display
+
+```ts
+map.layers.setLayerVisible(layer, false);
+map.layers.setLayerOpacity(layer, 0.5);
+map.layers.setLayerZ(layer, 10);
+map.layers.removeLayer(layer);
+```
+
+## Visual System
+
+Visuals are rendering templates that define appearance. They are separate from entities (Marker) which define position and interactivity.
+
+```ts
+import {
+  ImageVisual, CircleVisual, RectVisual,
+  TextVisual, SvgVisual, HtmlVisual, SpriteVisual,
+} from '@gaming.tools/gtmap';
+
+// Bitmap icon
+const pin = new ImageVisual('/icons/pin.png', 32);
+pin.anchor = 'bottom-center';
+
+// Colored dot
+const dot = new CircleVisual(6, { fill: '#ff0000', stroke: '#000' });
+
+// Text label
+const label = new TextVisual('Town', { fontSize: 12, color: '#fff', strokeColor: '#000', strokeWidth: 2 });
+
+// SVG with color override
+const icon = new SvgVisual('<svg>...</svg>', 24, { fill: '#ff0000', shadow: { blur: 4 } });
+
+// Sprite atlas sub-region
+const atlas = await layer.loadSpriteAtlas(atlasUrl, descriptor);
+const sword = new SpriteVisual(atlas, 'sword', 32);
+```
+
+## View Controls
+
+```ts
+// Instant jump
+await map.view.setView({ center: { x: 4096, y: 4096 }, zoom: 3 });
+
+// Animated fly-to
+await map.view.setView({
+  center: { x: 5000, y: 3000 },
+  zoom: 4,
+  animate: { durationMs: 800, easing: easings.easeInOutCubic },
 });
 
-// Debounced resize with final size + DPR
-map.events.on('resize').each(({ size }) => {
-	console.log('resized', size.width, size.height, size.dpr);
+// Fit bounds with padding
+await map.view.setView({
+  bounds: { minX: 1000, minY: 1000, maxX: 7000, maxY: 7000 },
+  padding: 40,
+  animate: { durationMs: 600 },
 });
 
-// Suspend/resume rendering
-map.suspend({ releaseGL: true });
-map.resume();
+// Fit a set of points
+await map.view.setView({
+  points: [{ x: 500, y: 500 }, { x: 6000, y: 6000 }],
+  padding: { top: 20, right: 20, bottom: 20, left: 200 },
+});
 
-// Cleanup when removing the map
-map.destroy();
-````
+// Cancel an in-flight animation
+map.view.cancelView();
+```
+
+### Coordinate Transforms (world -> pixels)
+
+When your data lives in an external coordinate space (e.g., Unreal units), map it into image pixel coordinates:
+
+```ts
+// Initialize with world bounds
+map.view.setCoordBounds({
+  minX: -457200, minY: -457200,
+  maxX: 355600, maxY: 355600,
+});
+
+// Convert world -> pixel
+const p = map.view.translate(wx, wy);
+layer.addMarker(p.x, p.y, { visual: myVisual });
+
+// Optional orientation transforms
+const q = map.view.translate(wx, wy, 'flipVertical');
+```
 
 ## Events
 
-GTMap exposes a typed event surface. Subscribe with `events.on(name).each(handler)` or await one occurrence with `events.once(name)`.
+GTMap exposes a typed event surface. Subscribe with `events.on(name, handler)` or await a one-shot with `events.once(name)`.
 
-Map examples
+### Map Events
 
 ```ts
-map.events.on('move').each(({ view }) => {
-	console.log('center', view.center, 'zoom', view.zoom);
+map.events.on('move', ({ view }) => {
+  console.log('center', view.center, 'zoom', view.zoom);
 });
 
-map.events.on('zoomend').each(({ view }) => {
-	console.log('zoomend', view.zoom);
+map.events.on('click', (e) => {
+  console.log('screen', e.x, e.y, 'world', e.world);
 });
 
-map.events.on('click').each((e) => {
-	console.log('screen', e.x, e.y, 'world', e.world);
+map.events.on('load', ({ size, view }) => {
+  console.log('ready', size.width, size.height, size.dpr);
 });
 ```
 
-Lifecycle
+Full event list: `load`, `resize`, `move`, `moveend`, `zoom`, `zoomend`, `pointerdown`, `pointermove`, `pointerup`, `mousedown`, `mousemove`, `mouseup`, `click`, `dblclick`, `contextmenu`, `frame`, `markerenter`, `markerleave`, `markerclick`, `markerdown`, `markerup`, `markerlongpress`.
 
-- `load`: fired once after the first frame is scheduled (map initialized)
-- `resize`: fired after a debounced resize completes (final size + DPR)
-
-```ts
-map.events.on('load').each(({ size, view }) => {
-	console.log('map ready', size.width, size.height, size.dpr, view);
-});
-
-map.events.on('resize').each(({ size }) => {
-	console.log('resized to', size.width, size.height, 'dpr', size.dpr);
-});
-```
-
-## Markers
-
-Markers are entities anchored at pixel coordinates. Each marker has an ID, position, style, optional user data, and a typed event stream. Use the map’s `markers` layer to add/remove markers and observe layer‑level events.
-
-Create markers
+### Marker Events
 
 ```ts
-// Minimal
-const m = map.addMarker(1024, 1024);
-
-// With style and user data
-const icon = map.addIcon({ iconPath: '/assets/pin.png', width: 24, height: 24 });
-const poi = map.addMarker(2048, 2048, {
-	icon, // Icon handle from addIcon()
-	size: 1.25, // Scale multiplier (1 = source icon size)
-	rotation: 0, // Degrees clockwise
-	data: { name: 'POI A', category: 'shop' },
+mk.events.on('click', (e) => {
+  console.log('clicked marker', e.marker.id, 'at', e.x, e.y);
 });
+mk.events.on('pointerenter', (e) => { /* hover in */ });
+mk.events.on('pointerleave', (e) => { /* hover out */ });
 ```
 
-Properties
+Supported: `click`, `tap`, `longpress`, `pointerdown`, `pointerup`, `pointerenter`, `pointerleave`, `positionchange`, `remove`.
 
-- `id: string` — stable identifier
-- `x: number`, `y: number` — world pixel position
-- `iconType: string` — icon key (matches `IconHandle.id` or `'default'`)
-- `size?: number` — scale multiplier (default 1)
-- `rotation?: number` — degrees clockwise
-- `data?: unknown` — user data included in event payloads
-
-Methods
-
-```ts
-// Move in world pixels; emits `positionchange`
-m.moveTo(1100, 980);
-
-// Update style in place
-m.setStyle({ iconType: icon.id, size: 1.5, rotation: 30 });
-
-// Attach/replace user data
-m.setData({ name: 'POI B', category: 'viewpoint' });
-
-// Snapshot used in event payloads
-const snapshot = m.toData(); // { id, x, y, data }
-
-// Remove via the layer (recommended)
-map.markers.remove(m);
-// or clear all
-map.markers.clear();
-```
-
-Marker events (subscribe via `m.events.on(name).each(handler)`)
-
-- `click`: `{ x, y, marker, pointer? }`
-- `tap`: `{ x, y, marker, pointer? }` (touch alias)
-- `longpress`: `{ x, y, marker, pointer? }`
-- `pointerdown` / `pointerup` / `pointerenter` / `pointerleave`
-- `positionchange`: `{ x, y, dx, dy, marker }`
-- `remove`: `{ marker }`
-
-Pointer metadata (when available)
+Pointer metadata (when available):
 
 ```ts
 {
   device: 'mouse' | 'touch' | 'pen',
   isPrimary: boolean,
   buttons: number,
-  pointerId: number,
-  pressure?: number,
-  width?: number,
-  height?: number,
-  tiltX?: number,
-  tiltY?: number,
-  twist?: number,
-  modifiers: { alt: boolean; ctrl: boolean; meta: boolean; shift: boolean }
+  modifiers: { alt, ctrl, meta, shift },
 }
 ```
 
-Coordinate note: `x`, `y` in click/enter/leave payloads are screen coordinates relative to the container; `marker.x`, `marker.y` are world pixels.
+## Markers
 
-## Layers
-
-Layers group entities and expose lifecycle + visibility events.
+Markers are entities anchored at pixel coordinates with position, style, data, and typed events.
 
 ```ts
-// Built‑in layers
-const { markers, vectors } = map;
+// Move (emits positionchange)
+mk.moveTo(1100, 980);
 
-// Observe adds/removes
-markers.events.on('entityadd').each(({ entity }) => console.log('marker added', entity.id));
-markers.events.on('entityremove').each(({ entity }) => console.log('marker removed', entity.id));
+// Update style
+mk.setStyle({ scale: 1.5, rotation: 30, opacity: 0.8 });
 
-// Visibility
-markers.setVisible(false);
-console.log('visible?', markers.visible);
+// Attach user data
+mk.setData({ name: 'POI B', category: 'viewpoint' });
+
+// Animated transition
+await mk.transition()
+  .moveTo(2000, 1500)
+  .setStyle({ scale: 2.0, rotation: 90 })
+  .apply({ animate: { durationMs: 400 } });
+
+// Snapshot
+const data = mk.toData(); // { id, x, y, data }
+
+// Remove via collection
+layer.markers.remove(mk);
+// or clear all
+layer.clearMarkers();
 ```
 
-API
+### EntityCollection
 
-- `add(entity)` / `remove(entityOrId)` / `clear()`
-- `get(id)` / `getAll()`
-- `setVisible(boolean)` / `visible`
-- Events: `entityadd`, `entityremove`, `clear`, `visibilitychange`
-
-## Vectors
-
-Vectors are simple geometry overlays (polyline, polygon, circle). They live in the `vectors` layer and can be added individually.
+Layers expose typed collections (`layer.markers`, `layer.vectors`) with add/remove/filter/find:
 
 ```ts
-// Polyline
-map.addVector({
-	type: 'polyline',
-	points: [
-		{ x: 0, y: 0 },
-		{ x: 200, y: 100 },
-	],
-});
+layer.markers.setFilter<MyPOI>((m) => m.data.category === 'resource');
+layer.markers.setFilter(null); // clear
+layer.markers.setVisible(false);
 
-// Polygon
-map.addVector({
-	type: 'polygon',
-	points: [
-		{ x: 100, y: 100 },
-		{ x: 150, y: 160 },
-		{ x: 80, y: 190 },
-	],
-});
+const rares = layer.markers.find<MyPOI>((m) => m.data.tier === 'rare');
+const count = layer.markers.count();
 
-// Circle
-map.addVector({ type: 'circle', center: { x: 300, y: 300 }, radius: 60 });
-
-// Clear all vectors
-map.vectors.clear();
+layer.markers.events.on('entityadd', ({ entity }) => console.log('added', entity.id));
 ```
 
-Note: vector interaction events are minimal for now and will expand over time.
-
-## Cookbook
-
-Recenter on marker click
+## Display & Rendering
 
 ```ts
-const m = map.addMarker(1200, 900);
-m.events.on('click').each(async () => {
-	await map
-		.transition()
-		.center({ x: m.x, y: m.y })
-		.apply({ animate: { durationMs: 400 } });
-});
+// Grid overlay
+map.display.setGridVisible(true);
+
+// Upscale filtering for zoomed-in tiles
+map.display.setUpscaleFilter('bicubic'); // 'auto' | 'linear' | 'bicubic'
+
+// FPS cap
+map.display.setFpsCap(60);
+
+// Background color
+map.display.setBackgroundColor('#0a0a0a');
+map.display.setBackgroundColor({ r: 16, g: 16, b: 16 });
+
+// Zoom snap threshold (0-1, default 0.4)
+map.display.setZoomSnapThreshold(0.4);
 ```
 
-Wheel speed slider
+### Icon Scaling
+
+Control marker icon size relative to zoom:
 
 ```ts
-const slider = document.querySelector('#wheelSpeed') as HTMLInputElement;
-slider.oninput = () => map.setWheelSpeed(Number(slider.value));
+// World-like scaling around Z=3
+map.view.setIconScaleFunction((z) => Math.pow(2, z - 3));
+
+// Step behavior
+map.view.setIconScaleFunction((z) => (z < 2 ? 0.75 : z < 4 ? 1.0 : 1.25));
+
+// Reset to default (screen-fixed)
+map.view.resetIconScale();
 ```
 
-Frame loop hook (stats or overlays)
+### Bounds & Pan Constraints
 
 ```ts
-map.events.on('frame').each(({ now, stats }) => {
-	// Currently, only stats?.frame is populated by the engine.
-	// Other fields are reserved for future diagnostics.
-});
+map.view.setMaxBoundsPx({ minX: 0, minY: 0, maxX: 8192, maxY: 8192 });
+map.view.setMaxBoundsViscosity(0.15); // 0-1
+map.view.setClipToBounds(true);
+map.view.setWrapX(false);
 ```
 
-### Loading Behavior
-
-Default (spinner‑only): On initialization, a small spinner overlay is shown and the map blocks all rendering and input until the full‑resolution image is decoded and uploaded. This avoids partial rendering and ensures consistent UX across devices. Uploads are chunked, prioritized (viewport‑first), and adaptively budgeted to minimize stalls.
-
-Progressive (optional): Provide a low‑resolution `preview` along with the full `image`. The preview renders first; interaction is enabled immediately after it uploads. The full‑resolution image then loads in the background and swaps in atomically with zero blocking (only quality increases).
+### Input
 
 ```ts
-const map = new GTMap(el, {
-	preview: { url: '/hb_2k.webp', width: 2048, height: 2048 },
-	image: { url: '/hb_8k.webp', width: 8192, height: 8192 },
-	// other options
+map.input.setWheelSpeed(0.5);
+map.input.setInertiaOptions({
+  inertia: true,
+  inertiaDeceleration: 3000,
+  inertiaMaxSpeed: 1500,
 });
 ```
 
-Spinner customization (`MapOptions.spinner`):
-
-- `size` (px): outer diameter (default 32)
-- `thickness` (px): ring width (default 3)
-- `color`: active arc (default `rgba(0,0,0,0.6)`)
-- `trackColor`: background ring (default `rgba(0,0,0,0.2)`)
-- `speedMs`: rotation period (default 1000)
-
-### Performance
-
-- Full‑resolution textures are uploaded incrementally in small stripes with adaptive time budgeting; uploads pause during interaction and resume when idle.
-- Uses ImageBitmap where available for decode; iOS uses a memory‑safe canvas path for chunking.
-- Use modern formats (e.g., WebP/AVIF) with proper CORS headers for best results.
-- Tune `fpsCap` if you want to reduce background work on less powerful devices.
-
-Throttle high‑frequency events in your handlers
+## Lifecycle
 
 ```ts
-let scheduled = false;
-let lastPos = { x: 0, y: 0 };
-map.events.on('pointermove').each(({ x, y }) => {
-	lastPos = { x, y };
-	if (!scheduled) {
-		scheduled = true;
-		requestAnimationFrame(() => {
-			scheduled = false;
-			// do work with lastPos
-		});
-	}
-});
+// Suspend/resume rendering
+map.suspend({ releaseGL: true });
+map.resume();
+
+// Full teardown
+map.destroy();
+
+// Manual resize
+map.view.invalidateSize();
+map.view.setAutoResize(true); // enabled by default
 ```
 
-### Easings
-
-Convenient easing functions are exported under `easings`:
+## Easings
 
 ```ts
 import { easings } from '@gaming.tools/gtmap';
 
-await map
-	.transition()
-	.center({ x: 4096, y: 4096 })
-	.zoom(4)
-	.apply({ animate: { durationMs: 700, easing: easings.easeInOutCubic } });
+await map.view.setView({
+  center: { x: 4096, y: 4096 },
+  zoom: 4,
+  animate: { durationMs: 700, easing: easings.easeInOutCubic },
+});
 ```
+
+Available: `linear`, `easeInQuad`, `easeOutQuad`, `easeInOutQuad`, `easeInCubic`, `easeOutCubic`, `easeInOutCubic`, `easeOutExpo`.
 
 ## Types & Bundles
 
@@ -448,4 +395,4 @@ await map
 
 ## License
 
-MIT © gaming.tools
+MIT (c) gaming.tools

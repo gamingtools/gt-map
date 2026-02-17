@@ -4,21 +4,7 @@
 
 # Interface: SpriteAtlasEntry
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [anchorX?](#anchorx)
-  - [anchorY?](#anchory)
-  - [height](#height)
-  - [metadata?](#metadata)
-  - [tags?](#tags)
-  - [width](#width)
-  - [x](#x)
-  - [y](#y)
-
-Defined in: [api/types.ts:367](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L367)
+Defined in: [api/types.ts:376](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L376)
 
 A single sprite entry within a sprite atlas descriptor.
 
@@ -28,7 +14,7 @@ A single sprite entry within a sprite atlas descriptor.
 
 > `optional` **anchorX**: `number`
 
-Defined in: [api/types.ts:377](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L377)
+Defined in: [api/types.ts:386](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L386)
 
 Anchor X in pixels from the left (defaults to width/2).
 
@@ -38,7 +24,7 @@ Anchor X in pixels from the left (defaults to width/2).
 
 > `optional` **anchorY**: `number`
 
-Defined in: [api/types.ts:379](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L379)
+Defined in: [api/types.ts:388](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L388)
 
 Anchor Y in pixels from the top (defaults to height/2).
 
@@ -48,7 +34,7 @@ Anchor Y in pixels from the top (defaults to height/2).
 
 > **height**: `number`
 
-Defined in: [api/types.ts:375](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L375)
+Defined in: [api/types.ts:384](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L384)
 
 Sprite height in the atlas image (pixels).
 
@@ -58,7 +44,7 @@ Sprite height in the atlas image (pixels).
 
 > `optional` **metadata**: `Record`\<`string`, `unknown`\>
 
-Defined in: [api/types.ts:383](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L383)
+Defined in: [api/types.ts:392](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L392)
 
 Optional metadata for user extensibility (ignored by library).
 
@@ -68,7 +54,7 @@ Optional metadata for user extensibility (ignored by library).
 
 > `optional` **tags**: `string`[]
 
-Defined in: [api/types.ts:381](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L381)
+Defined in: [api/types.ts:390](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L390)
 
 Optional tags for user extensibility (ignored by library).
 
@@ -78,7 +64,7 @@ Optional tags for user extensibility (ignored by library).
 
 > **width**: `number`
 
-Defined in: [api/types.ts:373](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L373)
+Defined in: [api/types.ts:382](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L382)
 
 Sprite width in the atlas image (pixels).
 
@@ -88,7 +74,7 @@ Sprite width in the atlas image (pixels).
 
 > **x**: `number`
 
-Defined in: [api/types.ts:369](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L369)
+Defined in: [api/types.ts:378](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L378)
 
 X offset in the atlas image (pixels).
 
@@ -98,6 +84,6 @@ X offset in the atlas image (pixels).
 
 > **y**: `number`
 
-Defined in: [api/types.ts:371](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L371)
+Defined in: [api/types.ts:380](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L380)
 
 Y offset in the atlas image (pixels).

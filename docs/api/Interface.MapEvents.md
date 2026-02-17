@@ -4,16 +4,7 @@
 
 # Interface: MapEvents
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Extends](#extends)
-- [Methods](#methods)
-  - [on()](#on)
-  - [once()](#once)
-
-Defined in: [api/events/public.ts:88](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L88)
+Defined in: [api/events/public.ts:88](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L88)
 
 Map events surface with typed names and payloads.
 
@@ -29,7 +20,7 @@ Map events surface with typed names and payloads.
 
 > **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`EventMap`](Interface.EventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:94](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L94)
+Defined in: [api/events/public.ts:94](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L94)
 
 Subscribe to a map event.
 
@@ -59,7 +50,7 @@ Common names: 'load' | 'resize' | 'move' | 'moveend' | 'zoom' | 'zoomend' | 'poi
 
 > **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:95](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L95)
+Defined in: [api/events/public.ts:95](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L95)
 
 Subscribe to a named event.
 
@@ -105,7 +96,7 @@ marker.events.on('click').each((e) => {
 
 > **once**\<`K`\>(`event`): `Promise`\<[`EventMap`](Interface.EventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 

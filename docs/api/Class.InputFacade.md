@@ -4,15 +4,7 @@
 
 # Class: InputFacade
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Methods](#methods)
-  - [setInertiaOptions()](#setinertiaoptions)
-  - [setWheelSpeed()](#setwheelspeed)
-
-Defined in: [api/facades/input-facade.ts:13](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/input-facade.ts#L13)
+Defined in: [api/facades/input-facade.ts:13](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/facades/input-facade.ts#L13)
 
 ## Methods
 
@@ -20,7 +12,7 @@ Defined in: [api/facades/input-facade.ts:13](https://github.com/gamingtools/gt-m
 
 > **setInertiaOptions**(`opts`): `void`
 
-Defined in: [api/facades/input-facade.ts:32](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/input-facade.ts#L32)
+Defined in: [api/facades/input-facade.ts:32](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/facades/input-facade.ts#L32)
 
 Configure inertia behavior for pan gestures.
 
@@ -40,7 +32,7 @@ Configure inertia behavior for pan gestures.
 
 > **setWheelSpeed**(`v`): `void`
 
-Defined in: [api/facades/input-facade.ts:25](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/input-facade.ts#L25)
+Defined in: [api/facades/input-facade.ts:25](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/facades/input-facade.ts#L25)
 
 Set mouse-wheel zoom speed.
 

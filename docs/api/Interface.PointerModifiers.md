@@ -4,17 +4,9 @@
 
 # Interface: PointerModifiers
 
-[← Back to API index](./README.md)
+Defined in: [api/events/maps.ts:31](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L31)
 
-## Contents
-
-- [Properties](#properties)
-  - [alt](#alt)
-  - [ctrl](#ctrl)
-  - [meta](#meta)
-  - [shift](#shift)
-
-Defined in: [api/events/maps.ts:30](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L30)
+Modifier key state at the time of a pointer event.
 
 ## Properties
 
@@ -22,7 +14,7 @@ Defined in: [api/events/maps.ts:30](https://github.com/gamingtools/gt-map/blob/6
 
 > **alt**: `boolean`
 
-Defined in: [api/events/maps.ts:31](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L31)
+Defined in: [api/events/maps.ts:32](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L32)
 
 ***
 
@@ -30,7 +22,7 @@ Defined in: [api/events/maps.ts:31](https://github.com/gamingtools/gt-map/blob/6
 
 > **ctrl**: `boolean`
 
-Defined in: [api/events/maps.ts:32](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L32)
+Defined in: [api/events/maps.ts:33](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L33)
 
 ***
 
@@ -38,7 +30,7 @@ Defined in: [api/events/maps.ts:32](https://github.com/gamingtools/gt-map/blob/6
 
 > **meta**: `boolean`
 
-Defined in: [api/events/maps.ts:33](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L33)
+Defined in: [api/events/maps.ts:34](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L34)
 
 ***
 
@@ -46,4 +38,4 @@ Defined in: [api/events/maps.ts:33](https://github.com/gamingtools/gt-map/blob/6
 
 > **shift**: `boolean`
 
-Defined in: [api/events/maps.ts:34](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L34)
+Defined in: [api/events/maps.ts:35](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/events/maps.ts#L35)

@@ -4,14 +4,7 @@
 
 # Interface: SuspendOptions
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [releaseGL?](#releasegl)
-
-Defined in: [api/types.ts:419](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L419)
+Defined in: [api/types.ts:428](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L428)
 
 ## Properties
 
@@ -19,6 +12,6 @@ Defined in: [api/types.ts:419](https://github.com/gamingtools/gt-map/blob/6e5b4f
 
 > `optional` **releaseGL**: `boolean`
 
-Defined in: [api/types.ts:421](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L421)
+Defined in: [api/types.ts:430](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L430)
 
 If true, release WebGL context and textures to free VRAM

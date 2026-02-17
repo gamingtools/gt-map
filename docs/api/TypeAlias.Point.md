@@ -4,25 +4,11 @@
 
 # Type Alias: Point
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Remarks](#remarks)
-- [Properties](#properties)
-  - [x](#x)
-  - [y](#y)
-
 > **Point** = `object`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L10)
 
-Comprehensive type definitions for GTMap.
-
-## Remarks
-
-This file contains all public‑facing types and interfaces for consumers of the library.
-Prefer these types over duplicating shapes in app code.
+A 2D point in world pixel coordinates.
 
 ## Properties
 
@@ -30,7 +16,7 @@ Prefer these types over duplicating shapes in app code.
 
 > **x**: `number`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L10)
 
 ***
 
@@ -38,4 +24,4 @@ Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/6e5b4ff
 
 > **y**: `number`
 
-Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L10)
+Defined in: [api/types.ts:10](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/types.ts#L10)

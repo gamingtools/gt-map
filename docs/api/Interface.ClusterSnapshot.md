@@ -4,18 +4,7 @@
 
 # Interface: ClusterSnapshot
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Properties](#properties)
-  - [id](#id)
-  - [markerIds](#markerids)
-  - [size](#size)
-  - [x](#x)
-  - [y](#y)
-
-Defined in: [api/layers/types.ts:94](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L94)
+Defined in: [api/layers/types.ts:182](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L182)
 
 Read-only snapshot of a cluster for external consumption (e.g. getClusters()).
 
@@ -25,7 +14,7 @@ Read-only snapshot of a cluster for external consumption (e.g. getClusters()).
 
 > **id**: `string`
 
-Defined in: [api/layers/types.ts:96](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L96)
+Defined in: [api/layers/types.ts:184](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L184)
 
 Cluster identifier.
 
@@ -35,7 +24,7 @@ Cluster identifier.
 
 > **markerIds**: `string`[]
 
-Defined in: [api/layers/types.ts:104](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L104)
+Defined in: [api/layers/types.ts:192](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L192)
 
 IDs of the markers in this cluster.
 
@@ -45,7 +34,7 @@ IDs of the markers in this cluster.
 
 > **size**: `number`
 
-Defined in: [api/layers/types.ts:102](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L102)
+Defined in: [api/layers/types.ts:190](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L190)
 
 Number of markers in this cluster.
 
@@ -55,7 +44,7 @@ Number of markers in this cluster.
 
 > **x**: `number`
 
-Defined in: [api/layers/types.ts:98](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L98)
+Defined in: [api/layers/types.ts:186](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L186)
 
 Centroid X in world pixels.
 
@@ -65,6 +54,6 @@ Centroid X in world pixels.
 
 > **y**: `number`
 
-Defined in: [api/layers/types.ts:100](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/types.ts#L100)
+Defined in: [api/layers/types.ts:188](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/layers/types.ts#L188)
 
 Centroid Y in world pixels.

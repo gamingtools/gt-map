@@ -4,27 +4,7 @@
 
 # Class: SpriteVisual
 
-[← Back to API index](./README.md)
-
-## Contents
-
-- [Remarks](#remarks)
-- [Example](#example)
-- [Extends](#extends)
-- [Constructors](#constructors)
-  - [Constructor](#constructor)
-- [Properties](#properties)
-  - [anchor](#anchor)
-  - [atlasHandle](#atlashandle)
-  - [iconScaleFunction?](#iconscalefunction)
-  - [size?](#size)
-  - [spriteName](#spritename)
-  - [type](#type)
-- [Methods](#methods)
-  - [getIconId()](#geticonid)
-  - [getSize()](#getsize)
-
-Defined in: [api/visual.ts:479](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L479)
+Defined in: [api/visual.ts:479](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L479)
 
 Sprite-based visual referencing a sub-region of a loaded sprite atlas.
 
@@ -50,7 +30,7 @@ map.content.addMarker(100, 200, { visual: sprite });
 
 > **new SpriteVisual**(`atlasHandle`, `spriteName`, `size?`): `SpriteVisual`
 
-Defined in: [api/visual.ts:497](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L497)
+Defined in: [api/visual.ts:497](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L497)
 
 Create a sprite visual.
 
@@ -88,7 +68,7 @@ Optional display size override (number for square, or {width, height})
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -102,7 +82,7 @@ Anchor point for positioning. Defaults to center.
 
 > `readonly` **atlasHandle**: [`SpriteAtlasHandle`](Interface.SpriteAtlasHandle.md)
 
-Defined in: [api/visual.ts:483](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L483)
+Defined in: [api/visual.ts:483](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L483)
 
 Handle to the loaded sprite atlas.
 
@@ -112,7 +92,7 @@ Handle to the loaded sprite atlas.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -128,7 +108,7 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `readonly` `optional` **size**: [`VisualSize`](TypeAlias.VisualSize.md)
 
-Defined in: [api/visual.ts:489](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L489)
+Defined in: [api/visual.ts:489](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L489)
 
 Optional display size override.
 
@@ -138,7 +118,7 @@ Optional display size override.
 
 > `readonly` **spriteName**: `string`
 
-Defined in: [api/visual.ts:486](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L486)
+Defined in: [api/visual.ts:486](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L486)
 
 Name of the sprite within the atlas.
 
@@ -148,7 +128,7 @@ Name of the sprite within the atlas.
 
 > `readonly` **type**: `"sprite"`
 
-Defined in: [api/visual.ts:480](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L480)
+Defined in: [api/visual.ts:480](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L480)
 
 Discriminator for runtime type checking.
 
@@ -162,7 +142,7 @@ Discriminator for runtime type checking.
 
 > **getIconId**(): `string`
 
-Defined in: [api/visual.ts:505](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L505)
+Defined in: [api/visual.ts:505](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L505)
 
 Get the icon ID for this sprite (atlasId/spriteName).
 
@@ -176,7 +156,7 @@ Get the icon ID for this sprite (atlasId/spriteName).
 
 > **getSize**(): `undefined` \| \{ `height`: `number`; `width`: `number`; \}
 
-Defined in: [api/visual.ts:510](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L510)
+Defined in: [api/visual.ts:510](https://github.com/gamingtools/gt-map/blob/60b7d85a08927f385c0b7e39626596679a619336/packages/gtmap/src/api/visual.ts#L510)
 
 Get resolved size as {width, height} if size is specified.
 
