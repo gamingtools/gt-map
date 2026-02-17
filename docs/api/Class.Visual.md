@@ -17,7 +17,7 @@
   - [iconScaleFunction?](#iconscalefunction)
   - [type](#type)
 
-Defined in: [api/visual.ts:89](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L89)
+Defined in: [api/visual.ts:89](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L89)
 
 Abstract base class for all visuals.
 
@@ -51,7 +51,7 @@ Visuals define appearance only. Use with Marker for screen-sized interactive ent
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -61,7 +61,7 @@ Anchor point for positioning. Defaults to center.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -73,6 +73,6 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `abstract` `readonly` **type**: [`VisualType`](TypeAlias.VisualType.md)
 
-Defined in: [api/visual.ts:91](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L91)
+Defined in: [api/visual.ts:91](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L91)
 
 Discriminator for runtime type checking.

@@ -22,7 +22,7 @@
   - [resume()](#resume)
   - [suspend()](#suspend)
 
-Defined in: [api/map.ts:46](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L46)
+Defined in: [api/map.ts:48](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L48)
 
 ## Constructors
 
@@ -30,7 +30,7 @@ Defined in: [api/map.ts:46](https://github.com/gamingtools/gt-map/blob/519c67acb
 
 > **new GTMap**(`container`, `options`): `GTMap`
 
-Defined in: [api/map.ts:64](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L64)
+Defined in: [api/map.ts:66](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L66)
 
 #### Parameters
 
@@ -52,7 +52,7 @@ Defined in: [api/map.ts:64](https://github.com/gamingtools/gt-map/blob/519c67acb
 
 > `readonly` **display**: [`DisplayFacade`](Class.DisplayFacade.md)
 
-Defined in: [api/map.ts:57](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L57)
+Defined in: [api/map.ts:59](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L59)
 
 Display settings: background, grid, upscale filter, FPS.
 
@@ -62,7 +62,7 @@ Display settings: background, grid, upscale filter, FPS.
 
 > `readonly` **input**: [`InputFacade`](Class.InputFacade.md)
 
-Defined in: [api/map.ts:55](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L55)
+Defined in: [api/map.ts:57](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L57)
 
 Input settings: wheel speed, inertia.
 
@@ -72,7 +72,7 @@ Input settings: wheel speed, inertia.
 
 > `readonly` **layers**: [`LayersFacade`](Class.LayersFacade.md)
 
-Defined in: [api/map.ts:53](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L53)
+Defined in: [api/map.ts:55](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L55)
 
 Layer management: creation, attachment, removal, per-layer display.
 
@@ -82,7 +82,7 @@ Layer management: creation, attachment, removal, per-layer display.
 
 > `readonly` **view**: [`ViewFacade`](Class.ViewFacade.md)
 
-Defined in: [api/map.ts:51](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L51)
+Defined in: [api/map.ts:53](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L53)
 
 View control: center, zoom, transitions, bounds, coordinates.
 
@@ -94,7 +94,7 @@ View control: center, zoom, transitions, bounds, coordinates.
 
 > **get** **events**(): [`MapEvents`](Interface.MapEvents.md)
 
-Defined in: [api/map.ts:353](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L353)
+Defined in: [api/map.ts:416](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L416)
 
 ##### Returns
 
@@ -106,7 +106,7 @@ Defined in: [api/map.ts:353](https://github.com/gamingtools/gt-map/blob/519c67ac
 
 > **destroy**(): `void`
 
-Defined in: [api/map.ts:340](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L340)
+Defined in: [api/map.ts:403](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L403)
 
 #### Returns
 
@@ -118,7 +118,7 @@ Defined in: [api/map.ts:340](https://github.com/gamingtools/gt-map/blob/519c67ac
 
 > **resume**(): `this`
 
-Defined in: [api/map.ts:335](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L335)
+Defined in: [api/map.ts:398](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L398)
 
 #### Returns
 
@@ -130,7 +130,7 @@ Defined in: [api/map.ts:335](https://github.com/gamingtools/gt-map/blob/519c67ac
 
 > **suspend**(`opts?`): `this`
 
-Defined in: [api/map.ts:330](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/map.ts#L330)
+Defined in: [api/map.ts:393](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/map.ts#L393)
 
 #### Parameters
 

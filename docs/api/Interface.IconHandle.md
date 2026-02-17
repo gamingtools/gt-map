@@ -11,7 +11,7 @@
 - [Properties](#properties)
   - [id](#id)
 
-Defined in: [api/types.ts:138](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L138)
+Defined in: [api/types.ts:138](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L138)
 
 Opaque handle returned by GTMap.addIcon for use in GTMap.addMarker.
 
@@ -21,6 +21,6 @@ Opaque handle returned by GTMap.addIcon for use in GTMap.addMarker.
 
 > **id**: `string`
 
-Defined in: [api/types.ts:140](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L140)
+Defined in: [api/types.ts:140](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L140)
 
 Stable icon id.

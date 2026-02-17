@@ -13,7 +13,7 @@
   - [on()](#on)
   - [once()](#once)
 
-Defined in: [api/events/public.ts:74](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/public.ts#L74)
+Defined in: [api/events/public.ts:74](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L74)
 
 Vector events surface with typed names and payloads.
 
@@ -29,7 +29,7 @@ Vector events surface with typed names and payloads.
 
 > **on**\<`K`\>(`event`): [`EventSubscription`](Interface.EventSubscription.md)\<[`VectorEventMap`](Interface.VectorEventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:76](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/public.ts#L76)
+Defined in: [api/events/public.ts:76](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L76)
 
 Supported names: 'remove'
 
@@ -57,7 +57,7 @@ Supported names: 'remove'
 
 > **on**\<`K`\>(`event`, `handler`): [`Unsubscribe`](TypeAlias.Unsubscribe.md)
 
-Defined in: [api/events/public.ts:77](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/public.ts#L77)
+Defined in: [api/events/public.ts:77](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L77)
 
 Subscribe to a named event.
 
@@ -103,7 +103,7 @@ marker.events.on('click').each((e) => {
 
 > **once**\<`K`\>(`event`): `Promise`\<[`VectorEventMap`](Interface.VectorEventMap.md)\[`K`\]\>
 
-Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/public.ts#L52)
+Defined in: [api/events/public.ts:52](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/public.ts#L52)
 
 Wait for the next event occurrence and resolve with its payload.
 

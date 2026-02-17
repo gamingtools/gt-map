@@ -15,7 +15,7 @@
   - [thickness?](#thickness)
   - [trackColor?](#trackcolor)
 
-Defined in: [api/types.ts:104](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L104)
+Defined in: [api/types.ts:104](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L104)
 
 ## Properties
 
@@ -23,7 +23,7 @@ Defined in: [api/types.ts:104](https://github.com/gamingtools/gt-map/blob/519c67
 
 > `optional` **color**: `string`
 
-Defined in: [api/types.ts:107](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L107)
+Defined in: [api/types.ts:107](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L107)
 
 ***
 
@@ -31,7 +31,7 @@ Defined in: [api/types.ts:107](https://github.com/gamingtools/gt-map/blob/519c67
 
 > `optional` **size**: `number`
 
-Defined in: [api/types.ts:105](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L105)
+Defined in: [api/types.ts:105](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L105)
 
 ***
 
@@ -39,7 +39,7 @@ Defined in: [api/types.ts:105](https://github.com/gamingtools/gt-map/blob/519c67
 
 > `optional` **speedMs**: `number`
 
-Defined in: [api/types.ts:109](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L109)
+Defined in: [api/types.ts:109](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L109)
 
 ***
 
@@ -47,7 +47,7 @@ Defined in: [api/types.ts:109](https://github.com/gamingtools/gt-map/blob/519c67
 
 > `optional` **thickness**: `number`
 
-Defined in: [api/types.ts:106](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L106)
+Defined in: [api/types.ts:106](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L106)
 
 ***
 
@@ -55,4 +55,4 @@ Defined in: [api/types.ts:106](https://github.com/gamingtools/gt-map/blob/519c67
 
 > `optional` **trackColor**: `string`
 
-Defined in: [api/types.ts:108](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L108)
+Defined in: [api/types.ts:108](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L108)

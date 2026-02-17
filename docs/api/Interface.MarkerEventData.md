@@ -9,6 +9,7 @@
 ## Contents
 
 - [Properties](#properties)
+  - [cluster?](#cluster)
   - [icon](#icon)
   - [marker](#marker)
   - [now](#now)
@@ -16,15 +17,25 @@
   - [screen](#screen)
   - [view](#view)
 
-Defined in: [api/types.ts:453](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L453)
+Defined in: [api/types.ts:453](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L453)
 
 ## Properties
+
+### cluster?
+
+> `optional` **cluster**: [`ClusterEventData`](Interface.ClusterEventData.md)
+
+Defined in: [api/types.ts:461](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L461)
+
+Present when the hit target is a cluster icon. Contains cluster metadata.
+
+***
 
 ### icon
 
 > **icon**: `object`
 
-Defined in: [api/types.ts:458](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L458)
+Defined in: [api/types.ts:458](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L458)
 
 #### anchorX
 
@@ -60,7 +71,7 @@ Defined in: [api/types.ts:458](https://github.com/gamingtools/gt-map/blob/519c67
 
 > **marker**: `object`
 
-Defined in: [api/types.ts:457](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L457)
+Defined in: [api/types.ts:457](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L457)
 
 #### data?
 
@@ -100,7 +111,7 @@ Defined in: [api/types.ts:457](https://github.com/gamingtools/gt-map/blob/519c67
 
 > **now**: `number`
 
-Defined in: [api/types.ts:454](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L454)
+Defined in: [api/types.ts:454](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L454)
 
 ***
 
@@ -108,7 +119,7 @@ Defined in: [api/types.ts:454](https://github.com/gamingtools/gt-map/blob/519c67
 
 > `optional` **originalEvent**: `PointerEvent` \| `MouseEvent`
 
-Defined in: [api/types.ts:459](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L459)
+Defined in: [api/types.ts:459](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L459)
 
 ***
 
@@ -116,7 +127,7 @@ Defined in: [api/types.ts:459](https://github.com/gamingtools/gt-map/blob/519c67
 
 > **screen**: `object`
 
-Defined in: [api/types.ts:456](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L456)
+Defined in: [api/types.ts:456](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L456)
 
 #### x
 
@@ -132,4 +143,4 @@ Defined in: [api/types.ts:456](https://github.com/gamingtools/gt-map/blob/519c67
 
 > **view**: [`ViewState`](Interface.ViewState.md)
 
-Defined in: [api/types.ts:455](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L455)
+Defined in: [api/types.ts:455](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L455)

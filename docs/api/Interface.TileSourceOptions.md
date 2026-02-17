@@ -15,7 +15,7 @@
   - [sourceMinZoom](#sourceminzoom)
   - [tileSize](#tilesize)
 
-Defined in: [api/types.ts:27](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L27)
+Defined in: [api/types.ts:27](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L27)
 
 Tile pyramid source options (GTPK pack only).
 
@@ -29,7 +29,7 @@ Tiles must be square (tileSize x tileSize), but the overall map may be non-squar
 
 > **packUrl**: `string`
 
-Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L29)
+Defined in: [api/types.ts:29](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L29)
 
 URL to a `.gtpk` tile pack (single binary containing the full tile pyramid).
 
@@ -39,7 +39,7 @@ URL to a `.gtpk` tile pack (single binary containing the full tile pyramid).
 
 > **sourceMaxZoom**: `number`
 
-Defined in: [api/types.ts:35](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L35)
+Defined in: [api/types.ts:35](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L35)
 
 Maximum zoom level available in the tile set.
 
@@ -49,7 +49,7 @@ Maximum zoom level available in the tile set.
 
 > **sourceMinZoom**: `number`
 
-Defined in: [api/types.ts:33](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L33)
+Defined in: [api/types.ts:33](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L33)
 
 Minimum zoom level available in the tile set.
 
@@ -59,6 +59,6 @@ Minimum zoom level available in the tile set.
 
 > **tileSize**: `number`
 
-Defined in: [api/types.ts:31](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/types.ts#L31)
+Defined in: [api/types.ts:31](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/types.ts#L31)
 
 Tile size in pixels (tiles are always square).

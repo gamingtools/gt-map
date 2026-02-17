@@ -19,6 +19,7 @@ Use the lists below to jump directly to types and members.
 ### Classes
 
 - [CircleVisual](api/Class.CircleVisual.md)
+- [ClusteredLayer](api/Class.ClusteredLayer.md)
 - [CoordTransformer](api/Class.CoordTransformer.md)
 - [DisplayFacade](api/Class.DisplayFacade.md)
 - [EntityCollection](api/Class.EntityCollection.md)
@@ -46,6 +47,10 @@ Use the lists below to jump directly to types and members.
 - [AnimateOptions](api/Interface.AnimateOptions.md)
 - [ApplyOptions](api/Interface.ApplyOptions.md)
 - [ApplyResult](api/Interface.ApplyResult.md)
+- [ClusterBoundaryOptions](api/Interface.ClusterBoundaryOptions.md)
+- [ClusteredLayerOptions](api/Interface.ClusteredLayerOptions.md)
+- [ClusterEventData](api/Interface.ClusterEventData.md)
+- [ClusterSnapshot](api/Interface.ClusterSnapshot.md)
 - [EntityCollectionEventMap](api/Interface.EntityCollectionEventMap.md)
 - [EntityCollectionEvents](api/Interface.EntityCollectionEvents.md)
 - [EventMap](api/Interface.EventMap.md)
@@ -97,6 +102,7 @@ Use the lists below to jump directly to types and members.
 - [AnchorPreset](api/TypeAlias.AnchorPreset.md)
 - [ApplyStatus](api/TypeAlias.ApplyStatus.md)
 - [Circle](api/TypeAlias.Circle.md)
+- [ClusterIconSizeFunction](api/TypeAlias.ClusterIconSizeFunction.md)
 - [Easing](api/TypeAlias.Easing.md)
 - [IconScaleFunction](api/TypeAlias.IconScaleFunction.md)
 - [InputDevice](api/TypeAlias.InputDevice.md)
@@ -139,3 +145,4 @@ Use the lists below to jump directly to types and members.
 - [Function.easeOutExpo](api/easings.Function.easeOutExpo.md)
 - [Function.easeOutQuad](api/easings.Function.easeOutQuad.md)
 - [Function.linear](api/easings.Function.linear.md)
+- [ClusterIconSizeTemplates](api/Variable.ClusterIconSizeTemplates.md)

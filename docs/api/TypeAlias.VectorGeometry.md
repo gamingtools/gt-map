@@ -10,6 +10,6 @@
 
 > **VectorGeometry** = [`Polyline`](TypeAlias.Polyline.md) \| [`Polygon`](TypeAlias.Polygon.md) \| [`Circle`](TypeAlias.Circle.md)
 
-Defined in: [api/events/maps.ts:15](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L15)
+Defined in: [api/events/maps.ts:16](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L16)
 
 Union of supported vector geometries.

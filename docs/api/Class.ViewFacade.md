@@ -25,7 +25,7 @@
   - [setWrapX()](#setwrapx)
   - [translate()](#translate)
 
-Defined in: [api/facades/view-facade.ts:34](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L34)
+Defined in: [api/facades/view-facade.ts:34](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L34)
 
 ## Methods
 
@@ -33,7 +33,7 @@ Defined in: [api/facades/view-facade.ts:34](https://github.com/gamingtools/gt-ma
 
 > **cancelView**(): `void`
 
-Defined in: [api/facades/view-facade.ts:214](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L214)
+Defined in: [api/facades/view-facade.ts:214](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L214)
 
 Cancel an active [setView](#setview) transition without starting a new one.
 
@@ -59,7 +59,7 @@ const result = await p; // { status: 'canceled' }
 
 > **getCenter**(): [`Point`](TypeAlias.Point.md)
 
-Defined in: [api/facades/view-facade.ts:47](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L47)
+Defined in: [api/facades/view-facade.ts:47](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L47)
 
 Get the current center position in world pixels.
 
@@ -73,7 +73,7 @@ Get the current center position in world pixels.
 
 > **getPointerAbs**(): `null` \| \{ `x`: `number`; `y`: `number`; \}
 
-Defined in: [api/facades/view-facade.ts:62](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L62)
+Defined in: [api/facades/view-facade.ts:62](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L62)
 
 Get the last pointer position in world pixels.
 
@@ -87,7 +87,7 @@ Get the last pointer position in world pixels.
 
 > **getZoom**(): `number`
 
-Defined in: [api/facades/view-facade.ts:55](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L55)
+Defined in: [api/facades/view-facade.ts:55](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L55)
 
 Get the current zoom level.
 
@@ -101,7 +101,7 @@ Get the current zoom level.
 
 > **invalidateSize**(): `void`
 
-Defined in: [api/facades/view-facade.ts:271](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L271)
+Defined in: [api/facades/view-facade.ts:271](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L271)
 
 Recompute canvas sizes after external container changes.
 
@@ -115,7 +115,7 @@ Recompute canvas sizes after external container changes.
 
 > **resetIconScale**(): `void`
 
-Defined in: [api/facades/view-facade.ts:257](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L257)
+Defined in: [api/facades/view-facade.ts:257](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L257)
 
 Reset icon scaling to default.
 
@@ -129,7 +129,7 @@ Reset icon scaling to default.
 
 > **setAutoResize**(`on`): `void`
 
-Defined in: [api/facades/view-facade.ts:264](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L264)
+Defined in: [api/facades/view-facade.ts:264](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L264)
 
 Enable or disable automatic resize handling.
 
@@ -149,7 +149,7 @@ Enable or disable automatic resize handling.
 
 > **setClipToBounds**(`on`): `void`
 
-Defined in: [api/facades/view-facade.ts:243](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L243)
+Defined in: [api/facades/view-facade.ts:243](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L243)
 
 Enable or disable clipping to map image bounds.
 
@@ -169,7 +169,7 @@ Enable or disable clipping to map image bounds.
 
 > **setCoordBounds**(`bounds`): `void`
 
-Defined in: [api/facades/view-facade.ts:278](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L278)
+Defined in: [api/facades/view-facade.ts:278](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L278)
 
 Set source coordinate bounds for external-to-pixel mapping.
 
@@ -189,7 +189,7 @@ Set source coordinate bounds for external-to-pixel mapping.
 
 > **setIconScaleFunction**(`fn`): `void`
 
-Defined in: [api/facades/view-facade.ts:250](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L250)
+Defined in: [api/facades/view-facade.ts:250](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L250)
 
 Set a custom icon scale function.
 
@@ -209,7 +209,7 @@ Set a custom icon scale function.
 
 > **setMaxBoundsPx**(`bounds`): `void`
 
-Defined in: [api/facades/view-facade.ts:229](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L229)
+Defined in: [api/facades/view-facade.ts:229](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L229)
 
 Constrain panning to pixel bounds. Pass null to clear.
 
@@ -229,7 +229,7 @@ Constrain panning to pixel bounds. Pass null to clear.
 
 > **setMaxBoundsViscosity**(`v`): `void`
 
-Defined in: [api/facades/view-facade.ts:236](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L236)
+Defined in: [api/facades/view-facade.ts:236](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L236)
 
 Set bounds viscosity (0..1).
 
@@ -249,7 +249,7 @@ Set bounds viscosity (0..1).
 
 > **setView**(`opts`): `Promise`\<[`ApplyResult`](Interface.ApplyResult.md)\>
 
-Defined in: [api/facades/view-facade.ts:106](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L106)
+Defined in: [api/facades/view-facade.ts:106](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L106)
 
 Set the map view (center, zoom, bounds) instantly or with animation.
 
@@ -310,7 +310,7 @@ await map.view.setView({
 
 > **setWrapX**(`on`): `void`
 
-Defined in: [api/facades/view-facade.ts:222](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L222)
+Defined in: [api/facades/view-facade.ts:222](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L222)
 
 Enable or disable horizontal world wrap.
 
@@ -330,7 +330,7 @@ Enable or disable horizontal world wrap.
 
 > **translate**(`x`, `y`, `type`): `object`
 
-Defined in: [api/facades/view-facade.ts:287](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/facades/view-facade.ts#L287)
+Defined in: [api/facades/view-facade.ts:287](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/facades/view-facade.ts#L287)
 
 Translate from source coordinates to map pixel coordinates.
 

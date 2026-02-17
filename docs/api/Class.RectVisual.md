@@ -25,7 +25,7 @@
 - [Methods](#methods)
   - [getSize()](#getsize)
 
-Defined in: [api/visual.ts:293](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L293)
+Defined in: [api/visual.ts:293](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L293)
 
 Rectangle shape visual.
 
@@ -49,7 +49,7 @@ const box = new RectVisual({ width: 20, height: 16 }, { fill: '#0000ff', stroke:
 
 > **new RectVisual**(`size`, `options`): `RectVisual`
 
-Defined in: [api/visual.ts:316](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L316)
+Defined in: [api/visual.ts:316](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L316)
 
 Create a rectangle visual.
 
@@ -95,7 +95,7 @@ Styling options
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -109,7 +109,7 @@ Anchor point for positioning. Defaults to center.
 
 > `readonly` `optional` **borderRadius**: `number`
 
-Defined in: [api/visual.ts:309](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L309)
+Defined in: [api/visual.ts:309](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L309)
 
 Corner radius for rounded rectangles.
 
@@ -119,7 +119,7 @@ Corner radius for rounded rectangles.
 
 > `readonly` `optional` **fill**: `string`
 
-Defined in: [api/visual.ts:300](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L300)
+Defined in: [api/visual.ts:300](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L300)
 
 Fill color.
 
@@ -129,7 +129,7 @@ Fill color.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -145,7 +145,7 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `readonly` **size**: [`VisualSize`](TypeAlias.VisualSize.md)
 
-Defined in: [api/visual.ts:297](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L297)
+Defined in: [api/visual.ts:297](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L297)
 
 Rectangle size.
 
@@ -155,7 +155,7 @@ Rectangle size.
 
 > `readonly` `optional` **stroke**: `string`
 
-Defined in: [api/visual.ts:303](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L303)
+Defined in: [api/visual.ts:303](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L303)
 
 Stroke color.
 
@@ -165,7 +165,7 @@ Stroke color.
 
 > `readonly` `optional` **strokeWidth**: `number`
 
-Defined in: [api/visual.ts:306](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L306)
+Defined in: [api/visual.ts:306](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L306)
 
 Stroke width in pixels.
 
@@ -175,7 +175,7 @@ Stroke width in pixels.
 
 > `readonly` **type**: `"rect"`
 
-Defined in: [api/visual.ts:294](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L294)
+Defined in: [api/visual.ts:294](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L294)
 
 Discriminator for runtime type checking.
 
@@ -189,7 +189,7 @@ Discriminator for runtime type checking.
 
 > **getSize**(): `object`
 
-Defined in: [api/visual.ts:334](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L334)
+Defined in: [api/visual.ts:334](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L334)
 
 Get resolved size as {width, height}.
 

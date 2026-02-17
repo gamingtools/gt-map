@@ -184,7 +184,7 @@
 
 		const sorted = [...groups.entries()]
 			.sort((a, b) => b[1].length - a[1].length)
-			.slice(0, 12);
+			.slice(0, 11);
 
 		initStatus = 'Loading sprite atlas...';
 		const atlasResp = await fetch(`${ATLAS_CDN}/atlas.json`);
@@ -201,7 +201,7 @@
 				boundary: buildBoundaryOpts(color),
 			});
 			// Keep layers transparent while data/atlas are populated so clustering can precompute without progressive reveal.
-			map.layers.addLayer(layer, { z: 10 + i, opacity: 0 });
+			map.layers.addLayer(layer, { z: 10 + i, opacity: 1 });
 
 			const handle: SpriteAtlasHandle = await layer.loadSpriteAtlas(
 				`${ATLAS_CDN}/atlas.png`,

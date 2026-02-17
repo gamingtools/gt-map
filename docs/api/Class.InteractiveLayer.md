@@ -20,7 +20,7 @@
   - [clearMarkers()](#clearmarkers)
   - [loadSpriteAtlas()](#loadspriteatlas)
 
-Defined in: [api/layers/interactive-layer.ts:13](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L13)
+Defined in: [api/layers/interactive-layer.ts:13](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L13)
 
 ## Constructors
 
@@ -28,7 +28,7 @@ Defined in: [api/layers/interactive-layer.ts:13](https://github.com/gamingtools/
 
 > **new InteractiveLayer**(): `InteractiveLayer`
 
-Defined in: [api/layers/interactive-layer.ts:42](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L42)
+Defined in: [api/layers/interactive-layer.ts:42](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L42)
 
 #### Returns
 
@@ -40,7 +40,7 @@ Defined in: [api/layers/interactive-layer.ts:42](https://github.com/gamingtools/
 
 > `readonly` **id**: `string`
 
-Defined in: [api/layers/interactive-layer.ts:15](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L15)
+Defined in: [api/layers/interactive-layer.ts:15](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L15)
 
 ***
 
@@ -48,7 +48,7 @@ Defined in: [api/layers/interactive-layer.ts:15](https://github.com/gamingtools/
 
 > `readonly` **markers**: [`EntityCollection`](Class.EntityCollection.md)\<[`Marker`](Class.Marker.md)\>
 
-Defined in: [api/layers/interactive-layer.ts:18](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L18)
+Defined in: [api/layers/interactive-layer.ts:18](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L18)
 
 Marker collection for this layer.
 
@@ -58,7 +58,7 @@ Marker collection for this layer.
 
 > `readonly` **type**: `"interactive"`
 
-Defined in: [api/layers/interactive-layer.ts:14](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L14)
+Defined in: [api/layers/interactive-layer.ts:14](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L14)
 
 ## Methods
 
@@ -66,7 +66,7 @@ Defined in: [api/layers/interactive-layer.ts:14](https://github.com/gamingtools/
 
 > **addIcon**(`def`, `id?`): [`IconHandle`](Interface.IconHandle.md)
 
-Defined in: [api/layers/interactive-layer.ts:59](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L59)
+Defined in: [api/layers/interactive-layer.ts:59](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L59)
 
 #### Parameters
 
@@ -88,7 +88,7 @@ Defined in: [api/layers/interactive-layer.ts:59](https://github.com/gamingtools/
 
 > **addMarker**(`x`, `y`, `opts`): [`Marker`](Class.Marker.md)
 
-Defined in: [api/layers/interactive-layer.ts:84](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L84)
+Defined in: [api/layers/interactive-layer.ts:84](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L84)
 
 #### Parameters
 
@@ -114,7 +114,7 @@ Defined in: [api/layers/interactive-layer.ts:84](https://github.com/gamingtools/
 
 > **clearMarkers**(): `void`
 
-Defined in: [api/layers/interactive-layer.ts:91](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L91)
+Defined in: [api/layers/interactive-layer.ts:91](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L91)
 
 #### Returns
 
@@ -126,7 +126,7 @@ Defined in: [api/layers/interactive-layer.ts:91](https://github.com/gamingtools/
 
 > **loadSpriteAtlas**(`atlasImageUrl`, `descriptor`, `atlasId?`): `Promise`\<[`SpriteAtlasHandle`](Interface.SpriteAtlasHandle.md)\>
 
-Defined in: [api/layers/interactive-layer.ts:75](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/layers/interactive-layer.ts#L75)
+Defined in: [api/layers/interactive-layer.ts:75](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/layers/interactive-layer.ts#L75)
 
 #### Parameters
 

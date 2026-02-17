@@ -22,7 +22,7 @@
 - [Methods](#methods)
   - [getSize()](#getsize)
 
-Defined in: [api/visual.ts:439](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L439)
+Defined in: [api/visual.ts:439](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L439)
 
 HTML-based visual for complex content.
 
@@ -46,7 +46,7 @@ const html = new HtmlVisual('<div class="tooltip">Info</div>', { width: 100, hei
 
 > **new HtmlVisual**(`html`, `size`): `HtmlVisual`
 
-Defined in: [api/visual.ts:453](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L453)
+Defined in: [api/visual.ts:453](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L453)
 
 Create an HTML visual.
 
@@ -78,7 +78,7 @@ Display size
 
 > **anchor**: [`Anchor`](TypeAlias.Anchor.md) = `'center'`
 
-Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L94)
+Defined in: [api/visual.ts:94](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L94)
 
 Anchor point for positioning. Defaults to center.
 
@@ -92,7 +92,7 @@ Anchor point for positioning. Defaults to center.
 
 > `readonly` **html**: `string`
 
-Defined in: [api/visual.ts:443](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L443)
+Defined in: [api/visual.ts:443](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L443)
 
 HTML content string.
 
@@ -102,7 +102,7 @@ HTML content string.
 
 > `optional` **iconScaleFunction**: `null` \| [`IconScaleFunction`](TypeAlias.IconScaleFunction.md)
 
-Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L101)
+Defined in: [api/visual.ts:101](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L101)
 
 Optional scale function for this visual.
 Overrides the map-level iconScaleFunction when set.
@@ -118,7 +118,7 @@ Set to `null` to disable scaling (use scale=1 always).
 
 > `readonly` **size**: [`VisualSize`](TypeAlias.VisualSize.md)
 
-Defined in: [api/visual.ts:446](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L446)
+Defined in: [api/visual.ts:446](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L446)
 
 Display size.
 
@@ -128,7 +128,7 @@ Display size.
 
 > `readonly` **type**: `"html"`
 
-Defined in: [api/visual.ts:440](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L440)
+Defined in: [api/visual.ts:440](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L440)
 
 Discriminator for runtime type checking.
 
@@ -142,7 +142,7 @@ Discriminator for runtime type checking.
 
 > **getSize**(): `object`
 
-Defined in: [api/visual.ts:460](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/visual.ts#L460)
+Defined in: [api/visual.ts:460](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/visual.ts#L460)
 
 Get resolved size as {width, height}.
 

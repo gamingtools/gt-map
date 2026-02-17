@@ -19,7 +19,7 @@
   - [remove](#remove)
   - [tap](#tap)
 
-Defined in: [api/events/maps.ts:52](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L52)
+Defined in: [api/events/maps.ts:53](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L53)
 
 Events emitted by a Marker instance.
 
@@ -29,9 +29,13 @@ Events emitted by a Marker instance.
 
 > **click**: `object`
 
-Defined in: [api/events/maps.ts:54](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L54)
+Defined in: [api/events/maps.ts:55](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L55)
 
 Device-agnostic activate (mouse click or touch tap).
+
+#### cluster?
+
+> `optional` **cluster**: [`ClusterEventData`](Interface.ClusterEventData.md)
 
 #### marker
 
@@ -55,9 +59,13 @@ Device-agnostic activate (mouse click or touch tap).
 
 > **longpress**: `object`
 
-Defined in: [api/events/maps.ts:58](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L58)
+Defined in: [api/events/maps.ts:59](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L59)
 
 Touch long-press (~500ms) on the marker.
+
+#### cluster?
+
+> `optional` **cluster**: [`ClusterEventData`](Interface.ClusterEventData.md)
 
 #### marker
 
@@ -81,9 +89,13 @@ Touch long-press (~500ms) on the marker.
 
 > **pointerdown**: `object`
 
-Defined in: [api/events/maps.ts:60](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L60)
+Defined in: [api/events/maps.ts:61](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L61)
 
 Pointer pressed on the marker.
+
+#### cluster?
+
+> `optional` **cluster**: [`ClusterEventData`](Interface.ClusterEventData.md)
 
 #### marker
 
@@ -107,9 +119,13 @@ Pointer pressed on the marker.
 
 > **pointerenter**: `object`
 
-Defined in: [api/events/maps.ts:64](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L64)
+Defined in: [api/events/maps.ts:65](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L65)
 
 Hover enter on the top-most marker under the pointer.
+
+#### cluster?
+
+> `optional` **cluster**: [`ClusterEventData`](Interface.ClusterEventData.md)
 
 #### marker
 
@@ -133,9 +149,13 @@ Hover enter on the top-most marker under the pointer.
 
 > **pointerleave**: `object`
 
-Defined in: [api/events/maps.ts:66](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L66)
+Defined in: [api/events/maps.ts:67](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L67)
 
 Hover leave for the previously hovered marker.
+
+#### cluster?
+
+> `optional` **cluster**: [`ClusterEventData`](Interface.ClusterEventData.md)
 
 #### marker
 
@@ -159,9 +179,13 @@ Hover leave for the previously hovered marker.
 
 > **pointerup**: `object`
 
-Defined in: [api/events/maps.ts:62](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L62)
+Defined in: [api/events/maps.ts:63](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L63)
 
 Pointer released on the marker.
+
+#### cluster?
+
+> `optional` **cluster**: [`ClusterEventData`](Interface.ClusterEventData.md)
 
 #### marker
 
@@ -185,7 +209,7 @@ Pointer released on the marker.
 
 > **positionchange**: `object`
 
-Defined in: [api/events/maps.ts:68](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L68)
+Defined in: [api/events/maps.ts:69](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L69)
 
 Position changed via Marker.moveTo; includes deltas.
 
@@ -215,7 +239,7 @@ Position changed via Marker.moveTo; includes deltas.
 
 > **remove**: `object`
 
-Defined in: [api/events/maps.ts:70](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L70)
+Defined in: [api/events/maps.ts:71](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L71)
 
 Marker was removed.
 
@@ -229,9 +253,13 @@ Marker was removed.
 
 > **tap**: `object`
 
-Defined in: [api/events/maps.ts:56](https://github.com/gamingtools/gt-map/blob/519c67acbd59e79f858abbb775fd1ea25ef71ebb/packages/gtmap/src/api/events/maps.ts#L56)
+Defined in: [api/events/maps.ts:57](https://github.com/gamingtools/gt-map/blob/6e5b4ff27bf09f0e785ef4a3d4f9d13135759b96/packages/gtmap/src/api/events/maps.ts#L57)
 
 Touch alias for click (emitted only on touch).
+
+#### cluster?
+
+> `optional` **cluster**: [`ClusterEventData`](Interface.ClusterEventData.md)
 
 #### marker
 
