@@ -1,5 +1,9 @@
 # GTMap
 
+[![npm](https://img.shields.io/npm/v/@gaming.tools/gtmap)](https://www.npmjs.com/package/@gaming.tools/gtmap)
+[![license](https://img.shields.io/npm/l/@gaming.tools/gtmap)](https://github.com/gamingtools/gt-map/blob/main/LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@gaming.tools/gtmap)](https://bundlephobia.com/package/@gaming.tools/gtmap)
+
 High-performance, pixel-CRS WebGL map renderer with a small, typed API. Optimized for image/scan maps (no geodetic lat-lng). Ships a thin facade (`GTMap`) over a fast WebGL core: input, rendering, and caches.
 
 Status: early-stage, pre-release -- everything is subject to change before the initial release (including public APIs and behavior). No heavy runtime deps; pure TypeScript and Web APIs.

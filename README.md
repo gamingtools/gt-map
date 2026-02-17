@@ -1,5 +1,9 @@
 # gt-map
 
+[![npm](https://img.shields.io/npm/v/@gaming.tools/gtmap)](https://www.npmjs.com/package/@gaming.tools/gtmap)
+[![license](https://img.shields.io/npm/l/@gaming.tools/gtmap)](https://github.com/gamingtools/gt-map/blob/main/LICENSE)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@gaming.tools/gtmap)](https://bundlephobia.com/package/@gaming.tools/gtmap)
+
 Minimal, zero-dependency WebGL map renderer for tiled raster imagery. Pixel CRS only (image pixel coordinates, no Web Mercator).
 
 ## Quick Start
