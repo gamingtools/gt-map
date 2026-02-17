@@ -20,9 +20,15 @@
 		"README.md",
 		"LICENSE"
 	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/gamingtools/gt-map.git",
+		"directory": "packages/gtmap"
+	},
 	"publishConfig": {
 		"access": "public",
-		"registry": "https://registry.npmjs.org/"
+		"registry": "https://registry.npmjs.org/",
+		"provenance": true
 	},
 	"scripts": {
 		"clean": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch(e){}\"",
