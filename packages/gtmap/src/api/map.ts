@@ -127,9 +127,8 @@ export class GTMap {
 				for (const entry of reg.entries()) {
 					if (entry.layer.type === 'interactive' && entry.renderer) {
 						(entry.renderer as unknown as InteractiveLayerRenderer).setIconScaleFunction(fn);
-					} else if (entry.layer.type === 'clustered' && entry.renderer) {
-						(entry.renderer as unknown as ClusteredLayerRenderer).setIconScaleFunction(fn);
 					}
+					// Clustered layers ignore map-level iconScaleFunction entirely.
 				}
 			},
 			setAutoResize: (on) => lm.setAutoResize(on),

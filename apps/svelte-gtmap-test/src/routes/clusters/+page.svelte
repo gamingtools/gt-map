@@ -1,91 +1,23 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { GTMap, clusterIconSize, type ClusterIconSizeMode } from '@gtmap';
 	import {
-		GTMap,
-		TileLayer,
-		SpriteVisual,
-		ClusterIconSizeTemplates,
-		type ClusteredLayerOptions,
-		type ClusterEventData,
-		type MarkerEventData,
-		type SpriteAtlasDescriptor,
-		type SpriteAtlasHandle,
-	} from '@gtmap';
-	import { ClusteredLayer } from '@gtmap';
-
-	// -- Types --
-
-	interface ResourceLayerInfo {
-		resourceId: string;
-		displayName: string;
-		color: string;
-		layer: ClusteredLayer;
-		markerCount: number;
-		visible: boolean;
-	}
-
-	interface ActorRecord {
-		x: number;
-		y: number;
-		map_marker_id?: string;
-	}
-
-	// -- Constants --
-
-	const MAP_SIZE = { width: 8192, height: 8192 };
-	const MAP_TILES = {
-		packUrl: 'https://gtcdn.info/dune/tiles/hb_8k.gtpk',
-		tileSize: 256,
-		sourceMinZoom: 0,
-		sourceMaxZoom: 5,
-	};
-	const HOME = { lng: MAP_SIZE.width / 2, lat: MAP_SIZE.height / 2 };
-	const ATLAS_CDN = 'https://cdn.gaming.tools/dune/images';
-	const API_URL = 'https://dune-api-v2.gaming.tools/actors?seed=11&world=survival_1';
-
-	const WORLD_MIN_X = -456485;
-	const WORLD_MAX_X = 355555;
-	const WORLD_MIN_Y = -457149;
-	const WORLD_MAX_Y = 344662;
-
-	const LAYER_COLORS: string[] = [
-		'#22c55e',
-		'#eab308',
-		'#ef4444',
-		'#f97316',
-		'#3b82f6',
-		'#8b5cf6',
-		'#06b6d4',
-		'#ec4899',
-	];
-
-	const DISPLAY_NAMES: Record<string, string> = {
-		primrosefield: 'Primrose Field',
-		brittlebush: 'Brittle Bush',
-		rhyoliteore: 'Rhyolite Ore',
-		scrapmetalwreckage: 'Scrap Metal Wreckage',
-		azuriteore: 'Azurite Ore',
-		basaltore: 'Basalt Ore',
-		dolomiterock: 'Dolomite Rock',
-		bauxiteore: 'Bauxite Ore',
-		magnetiteore: 'Magnetite Ore',
-		fuelcellwreckage: 'Fuel Cell Wreckage',
-		erythriteore: 'Erythrite Ore',
-		spicefieldsmall: 'Spice Field (Small)',
-		jasmiumore: 'Jasmium Ore',
-		npcfriendly: 'NPC (Friendly)',
-		buriedtreasure: 'Buried Treasure',
-		saguaroseed: 'Saguaro Seed',
-		lootcontainer: 'Loot Container',
-		scrapmetalpart: 'Scrap Metal Part',
-		salvagesteel: 'Salvage Steel',
-	};
+		MAP_SIZE,
+		MAP_TILES,
+		HOME,
+		buildBoundaryOpts,
+		refreshClusterStats,
+		initLayers,
+		wireMapEvents,
+		type ResourceLayerInfo,
+		type MarkerHoverInfo,
+		type BoundaryParams,
+	} from './cluster-demo';
 
 	// -- State --
 
 	let container: HTMLDivElement | null = null;
 	let map: GTMap;
-	let tileLayer: TileLayer;
 	let mounted = $state(false);
 
 	let loading = $state(true);
@@ -96,7 +28,7 @@
 
 	let clusterRadius = $state(80);
 	let minClusterSize = $state(2);
-	let sizeTemplate = $state<'logarithmic' | 'linear' | 'stepped'>('logarithmic');
+	let sizeTemplate = $state<ClusterIconSizeMode>('logarithmic');
 
 	let boundaryEnabled = $state(false);
 	let boundaryFill = $state(true);
@@ -104,7 +36,7 @@
 	let boundaryOpacity = $state(1);
 	let boundaryFillOpacity = $state(0.15);
 
-	let hoverInfo = $state<{ marker: string; cluster: ClusterEventData | null; screen: { x: number; y: number } } | null>(null);
+	let hoverInfo = $state<MarkerHoverInfo | null>(null);
 	let cursorX = $state(0);
 	let cursorY = $state(0);
 
@@ -115,171 +47,22 @@
 
 	// -- Helpers --
 
-	function worldToMap(worldX: number, worldY: number): { x: number; y: number } {
-		const mapX = ((worldX - WORLD_MIN_X) / (WORLD_MAX_X - WORLD_MIN_X)) * MAP_SIZE.width;
-		const mapY = ((worldY - WORLD_MIN_Y) / (WORLD_MAX_Y - WORLD_MIN_Y)) * MAP_SIZE.height;
-		return { x: mapX, y: mapY };
-	}
-
-	function hexToRgba(hex: string, alpha: number): string {
-		const r = parseInt(hex.slice(1, 3), 16);
-		const g = parseInt(hex.slice(3, 5), 16);
-		const b = parseInt(hex.slice(5, 7), 16);
-		return `rgba(${r},${g},${b},${alpha})`;
-	}
-
-	function buildBoundaryOpts(color: string): ClusteredLayerOptions['boundary'] {
-		if (!boundaryEnabled) {
-			return { fill: false, opacity: 0, weight: 0 };
-		}
+	function getBoundaryParams(): BoundaryParams {
 		return {
-			color: hexToRgba(color, 0.4),
+			enabled: boundaryEnabled,
+			fill: boundaryFill,
 			weight: boundaryWeight,
 			opacity: boundaryOpacity,
-			fill: boundaryFill,
-			fillColor: hexToRgba(color, boundaryFillOpacity),
 			fillOpacity: boundaryFillOpacity,
 		};
 	}
 
-	function resolveClusterFromMarkerId(markerId: string): ClusterEventData | null {
-		if (!markerId.startsWith('__cl_')) return null;
-		const clusterId = markerId.slice('__cl_'.length);
-		if (!clusterId) return null;
-
-		for (const info of resourceLayers) {
-			if (!info.visible) continue;
-			const cluster = info.layer.getClusters().find((snapshot) => snapshot.id === clusterId);
-			if (!cluster) continue;
-			return {
-				clusterId: cluster.id,
-				size: cluster.size,
-				center: { x: cluster.x, y: cluster.y },
-				markerIds: cluster.markerIds,
-			};
-		}
-		return null;
-	}
-
-	// -- Core initialization --
-
-	async function initLayers(): Promise<void> {
-		initStatus = 'Fetching actor data...';
-		const resp = await fetch(API_URL);
-		if (!resp.ok) throw new Error(`API responded with ${resp.status}`);
-		const actors: ActorRecord[] = await resp.json();
-
-		initStatus = 'Grouping by resource type...';
-		const groups = new Map<string, { x: number; y: number }[]>();
-		for (const actor of actors) {
-			const key = actor.map_marker_id;
-			if (!key) continue;
-			let arr = groups.get(key);
-			if (!arr) {
-				arr = [];
-				groups.set(key, arr);
-			}
-			arr.push({ x: actor.x, y: actor.y });
-		}
-
-		const sorted = [...groups.entries()]
-			.sort((a, b) => b[1].length - a[1].length)
-			.slice(0, 11);
-
-		initStatus = 'Loading sprite atlas...';
-		const atlasResp = await fetch(`${ATLAS_CDN}/atlas.json`);
-		const descriptor: SpriteAtlasDescriptor = await atlasResp.json();
-
-		initStatus = 'Creating layers in parallel...';
-		const buildLayerTasks: Promise<ResourceLayerInfo>[] = sorted.map(async ([resourceId, positions], i) => {
-			const color = LAYER_COLORS[i % LAYER_COLORS.length]!;
-
-			const layer = map.layers.createClusteredLayer({
-				clusterRadius,
-				minClusterSize,
-				clusterIconSizeFunction: ClusterIconSizeTemplates[sizeTemplate],
-				boundary: buildBoundaryOpts(color),
-			});
-			// Keep layers transparent while data/atlas are populated so clustering can precompute without progressive reveal.
-			map.layers.addLayer(layer, { z: 10 + i, opacity: 1 });
-
-			const handle: SpriteAtlasHandle = await layer.loadSpriteAtlas(
-				`${ATLAS_CDN}/atlas.png`,
-				descriptor,
-				`dune_${resourceId}`,
-			);
-
-			const entry = descriptor.sprites[resourceId];
-			let visual: SpriteVisual;
-			if (entry) {
-				visual = new SpriteVisual(handle, resourceId, {
-					width: entry.width / 1.6,
-					height: entry.height / 1.6,
-				});
-			} else {
-				const fallbackName = Object.keys(descriptor.sprites)[0]!;
-				const fb = descriptor.sprites[fallbackName]!;
-				visual = new SpriteVisual(handle, fallbackName, {
-					width: fb.width / 1.6,
-					height: fb.height / 1.6,
-				});
-			}
-			visual.anchor = 'center';
-
-			for (const pos of positions) {
-				const mapped = worldToMap(pos.x, pos.y);
-				layer.addMarker(mapped.x, mapped.y, {
-					visual,
-					data: { resource: resourceId },
-				});
-			}
-
-			return {
-				resourceId,
-				displayName: DISPLAY_NAMES[resourceId] ?? resourceId,
-				color,
-				layer,
-				markerCount: positions.length,
-				visible: true,
-			};
-		});
-		const infos = await Promise.all(buildLayerTasks);
-		const markerTotal = infos.reduce((total, info) => total + info.markerCount, 0);
-
-		resourceLayers = infos;
-		for (const info of infos) {
-			map.layers.setLayerVisible(info.layer, info.visible);
-			map.layers.setLayerOpacity(info.layer, info.visible ? 1 : 0);
-		}
-		totalMarkers = markerTotal;
-		loading = false;
-		initStatus = 'Ready';
-		scheduleClusterStatsRefresh(0);
-	}
-
-	// -- Events (map-level, O(1) subscriptions instead of 81k per-marker) --
-
-	const unsubs: (() => void)[] = [];
-
-	function wireMapEvents(): void {
-		unsubs.push(
-			map.events.on('markerenter', (e: MarkerEventData) => {
-				const data = e.marker.data as { resource?: string } | null | undefined;
-				const resourceId = data?.resource ?? '';
-				const displayName = DISPLAY_NAMES[resourceId] ?? resourceId;
-				const clusterMeta = e.cluster ?? resolveClusterFromMarkerId(e.marker.id);
-				hoverInfo = {
-					marker: displayName,
-					cluster: clusterMeta,
-					screen: e.screen ?? { x: 0, y: 0 },
-				};
-			}),
-		);
-		unsubs.push(
-			map.events.on('markerleave', () => {
-				hoverInfo = null;
-			}),
-		);
+	function scheduleClusterStatsRefresh(delayMs = 120): void {
+		if (clusterStatsTimer) clearTimeout(clusterStatsTimer);
+		clusterStatsTimer = setTimeout(() => {
+			clusterStatsTimer = null;
+			totalClusters = refreshClusterStats(resourceLayers);
+		}, Math.max(0, delayMs));
 	}
 
 	// -- Layer controls --
@@ -289,24 +72,6 @@
 		map.layers.setLayerVisible(info.layer, info.visible);
 		resourceLayers = [...resourceLayers];
 		scheduleClusterStatsRefresh(0);
-	}
-
-	function refreshClusterStats(): void {
-		let total = 0;
-		for (const info of resourceLayers) {
-			if (!info.visible) continue;
-			const clusters = info.layer.getClusters();
-			total += clusters.length;
-		}
-		totalClusters = total;
-	}
-
-	function scheduleClusterStatsRefresh(delayMs = 120): void {
-		if (clusterStatsTimer) clearTimeout(clusterStatsTimer);
-		clusterStatsTimer = setTimeout(() => {
-			clusterStatsTimer = null;
-			refreshClusterStats();
-		}, Math.max(0, delayMs));
 	}
 
 	// -- Reactive settings --
@@ -321,12 +86,13 @@
 		void boundaryOpacity;
 		void boundaryFillOpacity;
 
+		const bp = getBoundaryParams();
 		for (const info of resourceLayers) {
 			info.layer.setClusterOptions({
 				clusterRadius,
 				minClusterSize,
-				clusterIconSizeFunction: ClusterIconSizeTemplates[sizeTemplate],
-				boundary: buildBoundaryOpts(info.color),
+				clusterIconSizeFunction: clusterIconSize(sizeTemplate),
+				boundary: buildBoundaryOpts(info.color, bp),
 			});
 		}
 		scheduleClusterStatsRefresh(120);
@@ -350,7 +116,7 @@
 			debug: false,
 		});
 
-		tileLayer = map.layers.createTileLayer(MAP_TILES);
+		const tileLayer = map.layers.createTileLayer(MAP_TILES);
 		map.layers.addLayer(tileLayer, { z: 0 });
 
 		map.view.setIconScaleFunction((zoom) => {
@@ -372,9 +138,29 @@
 
 		map.events.on('zoomend', () => scheduleClusterStatsRefresh(0));
 
-		wireMapEvents();
+		const unwireEvents = wireMapEvents(
+			map,
+			() => resourceLayers,
+			(info) => { hoverInfo = info; },
+		);
 
-		initLayers().catch((err) => {
+		initLayers(map, {
+			clusterRadius,
+			minClusterSize,
+			sizeTemplate,
+			boundaryParams: getBoundaryParams(),
+		}, (msg) => { initStatus = msg; }).then((infos) => {
+			resourceLayers = infos;
+			const markerTotal = infos.reduce((total, info) => total + info.markerCount, 0);
+			for (const info of infos) {
+				map.layers.setLayerVisible(info.layer, info.visible);
+				map.layers.setLayerOpacity(info.layer, info.visible ? 1 : 0);
+			}
+			totalMarkers = markerTotal;
+			loading = false;
+			initStatus = 'Ready';
+			scheduleClusterStatsRefresh(0);
+		}).catch((err) => {
 			loadError = String(err);
 			loading = false;
 			console.error('Failed to initialize layers:', err);
@@ -385,9 +171,7 @@
 				clearTimeout(clusterStatsTimer);
 				clusterStatsTimer = null;
 			}
-			for (const u of unsubs) {
-				try { u(); } catch { /* ignore */ }
-			}
+			unwireEvents();
 			map?.destroy?.();
 		};
 	});
@@ -458,6 +242,7 @@
 					<option value="logarithmic">Logarithmic</option>
 					<option value="linear">Linear</option>
 					<option value="stepped">Stepped</option>
+					<option value="exponentialLog">Exponential-Log</option>
 				</select>
 			</label>
 		</div>

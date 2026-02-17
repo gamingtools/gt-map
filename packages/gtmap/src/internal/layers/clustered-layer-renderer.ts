@@ -10,9 +10,9 @@
  *
  * Implements LayerRendererHandle for integration with LayerRegistry.
  */
-import type { MarkerInternal, MarkerEventData, IconScaleFunction, SpriteAtlasDescriptor, VectorPrimitiveInternal } from '../../api/types';
+import type { MarkerInternal, MarkerEventData, SpriteAtlasDescriptor, VectorPrimitiveInternal } from '../../api/types';
 import type { ClusteredLayerOptions, ClusterBoundaryOptions, ClusterIconSizeFunction, ClusterSnapshot, ClusterEventData } from '../../api/layers/types';
-import { ClusterIconSizeTemplates } from '../../api/layers/types';
+import { clusterIconSize } from '../../api/layers/types';
 import type { SharedRenderCtx } from '../types';
 import type { LayerRendererHandle } from './layer-registry';
 
@@ -60,7 +60,7 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 	// Cluster config (set from layer options)
 	private _clusterRadius = 80;
 	private _minClusterSize = 2;
-	private _clusterIconSizeFunction: ClusterIconSizeFunction = ClusterIconSizeTemplates.logarithmic;
+	private _clusterIconSizeFunction: ClusterIconSizeFunction = clusterIconSize('logarithmic');
 	private _boundary: ClusterBoundaryOptions | undefined;
 
 	// State tracking
@@ -81,7 +81,7 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 		if (opts) {
 			this._clusterRadius = opts.clusterRadius ?? 80;
 			this._minClusterSize = opts.minClusterSize ?? 2;
-			this._clusterIconSizeFunction = opts.clusterIconSizeFunction ?? ClusterIconSizeTemplates.logarithmic;
+			this._clusterIconSizeFunction = opts.clusterIconSizeFunction ?? clusterIconSize('logarithmic');
 			this._boundary = opts.boundary;
 		}
 		this._boundaryEnabled = !!this._boundary;
@@ -153,10 +153,6 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 		this._rawMarkers = markers;
 		this._markersDirty = true;
 		this._deps.requestRender();
-	}
-
-	setIconScaleFunction(fn: IconScaleFunction | null): void {
-		this._iconMgr.setIconScaleFunction(fn);
 	}
 
 	// -- Marker events --
@@ -403,7 +399,8 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 		gl.uniform1f(ctx.loc.u_alpha!, 1.0);
 		if (ctx.loc.u_filterMode) gl.uniform1i(ctx.loc.u_filterMode, 0);
 
-		const iconScaleFunction = this._iconMgr.iconScaleFunction;
+		// Clustered layers never apply iconScaleFunction -- icon sizing is handled
+		// exclusively by ClusterIconSizeFunction (baked into marker size).
 		icons.draw({
 			gl: ctx.gl,
 			prog: ctx.prog,
@@ -422,7 +419,6 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 			viewport: { width: ctx.widthCSS, height: ctx.heightCSS },
 			project: (x: number, y: number, z: number) => ctx.project(x, y, z),
 			wrapX: ctx.wrapX,
-			...(iconScaleFunction !== undefined ? { iconScaleFunction } : {}),
 		});
 
 		if (useFbo) {

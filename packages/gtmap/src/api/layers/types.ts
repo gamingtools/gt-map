@@ -44,23 +44,84 @@ export interface LayerState {
  */
 export type ClusterIconSizeFunction = (clusterSize: number) => number;
 
-/** Built-in cluster icon size templates. */
-const clampClusterScale = (value: number, min = 0.9, max = 2.2): number => Math.max(min, Math.min(max, value));
+/** Cluster icon size scaling mode. */
+export type ClusterIconSizeMode = 'linear' | 'logarithmic' | 'stepped' | 'exponentialLog';
 
-export const ClusterIconSizeTemplates = {
-	/** Linear scaling: smooth growth with a cap to avoid giant cluster icons. */
-	linear: (size: number) => clampClusterScale(0.95 + Math.max(0, size - 1) * 0.018, 0.9, 2.2),
-	/** Logarithmic scaling: stronger early growth, then tapers for dense clusters. */
-	logarithmic: (size: number) => clampClusterScale(0.9 + Math.log2(Math.max(1, size) + 1) * 0.24, 0.9, 2.1),
-	/** Stepped scaling: predictable visual tiers for quick density reading. */
-	stepped: (size: number) => {
-		if (size < 5) return 1.0;
-		if (size < 15) return 1.15;
-		if (size < 40) return 1.35;
-		if (size < 100) return 1.6;
-		return 1.85;
-	},
-} as const satisfies Record<string, ClusterIconSizeFunction>;
+/** Options for {@link clusterIconSize}. All fields are optional and have sensible defaults per mode. */
+export interface ClusterIconSizeOptions {
+	/** Minimum scale multiplier. Default varies by mode (~0.9-1.0). */
+	min?: number;
+	/** Maximum scale multiplier. Default: 2.0. */
+	max?: number;
+	/** (stepped) Breakpoints as `[threshold, scale]` pairs, sorted ascending by threshold. */
+	steps?: [number, number][];
+	/** (exponentialLog) Interpolation base. Default: 1.5. */
+	base?: number;
+	/** (exponentialLog) Cluster count treated as the ceiling for interpolation. Default: 200. */
+	ceiling?: number;
+}
+
+/**
+ * Factory for cluster icon size functions.
+ *
+ * @param mode - Scaling algorithm to use
+ * @param opts - Override defaults for the chosen mode
+ * @returns A {@link ClusterIconSizeFunction}
+ *
+ * @example
+ * ```ts
+ * // Defaults
+ * clusterIconSize('logarithmic')
+ *
+ * // Custom range
+ * clusterIconSize('logarithmic', { min: 1.0, max: 1.5 })
+ *
+ * // Custom exponential-log
+ * clusterIconSize('exponentialLog', { base: 2.0, ceiling: 500, max: 1.8 })
+ *
+ * // Custom stepped
+ * clusterIconSize('stepped', { steps: [[5, 1.0], [20, 1.3], [100, 1.6], [Infinity, 2.0]] })
+ * ```
+ */
+export function clusterIconSize(mode: ClusterIconSizeMode = 'logarithmic', opts?: ClusterIconSizeOptions): ClusterIconSizeFunction {
+	const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+
+	switch (mode) {
+		case 'linear': {
+			const min = opts?.min ?? 0.9;
+			const max = opts?.max ?? 2.0;
+			return (size: number) => clamp(0.95 + Math.max(0, size - 1) * 0.018, min, max);
+		}
+		case 'logarithmic': {
+			const min = opts?.min ?? 0.9;
+			const max = opts?.max ?? 2.0;
+			return (size: number) => clamp(0.9 + Math.log2(Math.max(1, size) + 1) * 0.24, min, max);
+		}
+		case 'stepped': {
+			const max = opts?.max ?? 2.0;
+			const steps = opts?.steps ?? [[5, 1.0], [15, 1.15], [40, 1.35], [100, 1.6], [Infinity, 1.85]];
+			return (size: number) => {
+				for (const [threshold, scale] of steps) {
+					if (size < threshold) return Math.min(scale, max);
+				}
+				return max;
+			};
+		}
+		case 'exponentialLog': {
+			const min = opts?.min ?? 1.0;
+			const max = opts?.max ?? 2.0;
+			const base = opts?.base ?? 1.5;
+			const ceiling = opts?.ceiling ?? 200;
+			const lnMax = Math.log(ceiling);
+			return (size: number) => {
+				const lnSize = Math.log(Math.max(1, size));
+				const t = Math.min(1, lnSize / lnMax);
+				const expT = (Math.pow(base, t) - 1) / (base - 1);
+				return clamp(min + (max - min) * expT, min, max);
+			};
+		}
+	}
+}
 
 /** Styling options for optional cluster boundary polygons. */
 export interface ClusterBoundaryOptions {
@@ -84,7 +145,7 @@ export interface ClusteredLayerOptions {
 	clusterRadius?: number;
 	/** Minimum number of markers to form a cluster. Default: 2. */
 	minClusterSize?: number;
-	/** Function mapping cluster size to an icon scale multiplier. Default: ClusterIconSizeTemplates.logarithmic. */
+	/** Function mapping cluster size to an icon scale multiplier. Default: clusterIconSize('logarithmic'). */
 	clusterIconSizeFunction?: ClusterIconSizeFunction;
 	/** Optional cluster boundary polygon styling. Omit to disable boundaries. */
 	boundary?: ClusterBoundaryOptions;

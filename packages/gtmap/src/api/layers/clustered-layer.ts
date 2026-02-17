@@ -4,7 +4,7 @@
  */
 import type { IconDef, IconHandle, IconDefInternal, MarkerInternal, MarkerEventData, SpriteAtlasDescriptor, SpriteAtlasHandle } from '../types';
 import type { ClusteredLayerOptions, ClusterBoundaryOptions, ClusterIconSizeFunction, ClusterSnapshot, ClusterEventData } from './types';
-import { ClusterIconSizeTemplates } from './types';
+import { clusterIconSize } from './types';
 import type { MarkerEventMap } from '../events/maps';
 import { EntityCollection } from '../../entities/entity-collection';
 import { Marker } from '../../entities/marker';
@@ -53,7 +53,7 @@ export class ClusteredLayer {
 
 		this._clusterRadius = opts?.clusterRadius ?? 80;
 		this._minClusterSize = opts?.minClusterSize ?? 2;
-		this._clusterIconSizeFunction = opts?.clusterIconSizeFunction ?? ClusterIconSizeTemplates.logarithmic;
+		this._clusterIconSizeFunction = opts?.clusterIconSizeFunction ?? clusterIconSize('logarithmic');
 		this._boundary = opts?.boundary;
 
 		const onMarkersChanged = () => this._markMarkersDirtyAndSchedule();
@@ -171,7 +171,7 @@ export class ClusteredLayer {
 		const list = this.markers.getFiltered();
 		const internalMarkers: MarkerInternal[] = list.map((m) => {
 			const scaledSize = this._vis!.getScaledSize(m.visual, m.scale);
-			const iconScaleFn = m.iconScaleFunction !== undefined ? m.iconScaleFunction : m.visual.iconScaleFunction;
+			// Clustered layers ignore iconScaleFunction entirely (map-level, per-visual, and per-marker).
 			return {
 				x: m.x,
 				y: m.y,
@@ -179,7 +179,6 @@ export class ClusteredLayer {
 				...(scaledSize !== undefined ? { size: scaledSize } : {}),
 				rotation: m.rotation,
 				id: m.id,
-				...(iconScaleFn !== undefined ? { iconScaleFunction: iconScaleFn } : {}),
 			};
 		});
 		this._deps.setMarkers(internalMarkers);
