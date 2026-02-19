@@ -6,7 +6,7 @@ export * as easings from './api/easings';
 // Export Visual classes and types
 export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual, SpriteVisual } from './api/map';
 export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual, isSpriteVisual } from './api/map';
-export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow } from './api/map';
+export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow, SpriteAtlasHandleVisualOptions } from './api/map';
 
 // Export all public types
 export type {
@@ -47,8 +47,10 @@ export type {
 	SpriteAtlasEntry,
 	SpriteAtlasMeta,
 	SpriteAtlasDescriptor,
-	SpriteAtlasHandle,
 } from './api/types';
+
+// Export classes from types
+export { SpriteAtlasHandle } from './api/types';
 
 // Export type guard functions (not types)
 export { isPolyline, isPolygon, isCircle } from './api/types';

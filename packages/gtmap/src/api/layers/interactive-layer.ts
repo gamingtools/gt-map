@@ -1,7 +1,7 @@
 /**
  * InteractiveLayer -- a layer that owns markers with hit-testing support.
  */
-import type { IconDef, IconHandle, IconDefInternal, MarkerInternal, MarkerEventData, SpriteAtlasDescriptor, SpriteAtlasHandle } from '../types';
+import type { IconDef, IconHandle, IconDefInternal, IconScaleFunction, MarkerInternal, MarkerEventData } from '../types';
 import { EntityCollection } from '../../entities/entity-collection';
 import { Marker } from '../../entities/marker';
 import type { MarkerOptions } from '../../entities/marker';
@@ -34,7 +34,6 @@ export class InteractiveLayer {
 
 	// Icon management
 	private _icons: Map<string, IconDef> = new Map();
-	private _atlasIdSeq = 0;
 	private _iconIdSeq = 0;
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
@@ -81,14 +80,6 @@ export class InteractiveLayer {
 		return { id: iconId };
 	}
 
-	/** Load a sprite atlas image and register all sprites as icons. */
-	async loadSpriteAtlas(atlasImageUrl: string, descriptor: SpriteAtlasDescriptor, atlasId?: string): Promise<SpriteAtlasHandle> {
-		this._atlasIdSeq = (this._atlasIdSeq + 1) % Number.MAX_SAFE_INTEGER;
-		const id = atlasId || `atlas_${this._atlasIdSeq.toString(36)}`;
-		const spriteIds = await (this._deps?.loadSpriteAtlas(atlasImageUrl, descriptor, id) ?? Promise.resolve({}));
-		return { atlasId: id, spriteIds };
-	}
-
 	// -- Marker management --
 
 	/** Add a marker at the given world pixel position. */
@@ -102,6 +93,11 @@ export class InteractiveLayer {
 	/** Remove all markers from this layer. */
 	clearMarkers(): void {
 		this.markers.clear();
+	}
+
+	/** Set a layer-level icon scale function (overrides map-level, overridden by marker-level). */
+	setIconScaleFunction(fn: IconScaleFunction | null): void {
+		this._renderer?.setIconScaleFunction(fn);
 	}
 
 	// -- Private helpers --
@@ -207,5 +203,4 @@ export interface InteractiveLayerDeps {
 	setMarkers(markers: MarkerInternal[]): void;
 	setMarkerData(payloads: Record<string, unknown | null | undefined>): void;
 	onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
-	loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>>;
 }

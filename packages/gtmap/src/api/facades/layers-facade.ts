@@ -4,6 +4,7 @@
  * Layer creation, attachment, removal, and per-layer display properties.
  */
 import type { TileLayerOptions, AddLayerOptions, ClusteredLayerOptions } from '../layers/types';
+import type { SpriteAtlasDescriptor, SpriteAtlasHandle } from '../types';
 import type { TileLayer } from '../layers/tile-layer';
 import type { InteractiveLayer } from '../layers/interactive-layer';
 import type { StaticLayer } from '../layers/static-layer';
@@ -20,6 +21,7 @@ export interface LayersFacadeDeps {
 	setLayerOpacity(layer: AnyLayer, opacity: number): void;
 	setLayerVisible(layer: AnyLayer, visible: boolean): void;
 	setLayerZ(layer: AnyLayer, z: number): void;
+	loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId?: string): Promise<SpriteAtlasHandle>;
 }
 
 export class LayersFacade {
@@ -56,6 +58,15 @@ export class LayersFacade {
 	 */
 	createClusteredLayer(opts?: ClusteredLayerOptions): ClusteredLayer {
 		return this._deps.createClusteredLayer(opts);
+	}
+
+	/**
+	 * Load a sprite atlas at the map level. Returns a handle for use with SpriteVisual
+	 * on any interactive or clustered layer. The atlas is automatically replayed into
+	 * layers created after this call.
+	 */
+	async loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId?: string): Promise<SpriteAtlasHandle> {
+		return this._deps.loadSpriteAtlas(url, descriptor, atlasId);
 	}
 
 	/**

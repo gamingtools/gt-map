@@ -2,7 +2,7 @@
  * ClusteredLayer -- a layer that spatially clusters markers and renders
  * cluster icons with optional boundary polygons.
  */
-import type { IconDef, IconHandle, IconDefInternal, MarkerInternal, MarkerEventData, SpriteAtlasDescriptor, SpriteAtlasHandle } from '../types';
+import type { IconDef, IconHandle, IconDefInternal, MarkerInternal, MarkerEventData } from '../types';
 import type { ClusteredLayerOptions, ClusterBoundaryOptions, ClusterIconSizeFunction, ClusterSnapshot, ClusterEventData } from './types';
 import { clusterIconSize } from './types';
 import type { MarkerEventMap } from '../events/maps';
@@ -45,7 +45,6 @@ export class ClusteredLayer {
 
 	// Icon management
 	private _icons: Map<string, IconDef> = new Map();
-	private _atlasIdSeq = 0;
 	private _iconIdSeq = 0;
 	private _markersDirty = false;
 	private _markersFlushScheduled = false;
@@ -141,20 +140,6 @@ export class ClusteredLayer {
 		};
 		this._deps?.setIconDefs(Object.fromEntries([[iconId, iconDefInternal]]));
 		return { id: iconId };
-	}
-
-	/**
-	 * Load a sprite atlas image and register all sprites described by the descriptor.
-	 * @param atlasImageUrl - URL of the atlas PNG image.
-	 * @param descriptor - Sprite positions and dimensions within the atlas.
-	 * @param atlasId - Optional custom atlas identifier; auto-generated if omitted.
-	 * @returns A handle containing the atlas id and a map of sprite name to internal icon id.
-	 */
-	async loadSpriteAtlas(atlasImageUrl: string, descriptor: SpriteAtlasDescriptor, atlasId?: string): Promise<SpriteAtlasHandle> {
-		this._atlasIdSeq = (this._atlasIdSeq + 1) % Number.MAX_SAFE_INTEGER;
-		const id = atlasId || `atlas_${this._atlasIdSeq.toString(36)}`;
-		const spriteIds = await (this._deps?.loadSpriteAtlas(atlasImageUrl, descriptor, id) ?? Promise.resolve({}));
-		return { atlasId: id, spriteIds };
 	}
 
 	// -- Marker management --
@@ -321,7 +306,6 @@ export interface ClusteredLayerDeps {
 	setMarkers(markers: MarkerInternal[]): void;
 	setMarkerData(payloads: Record<string, unknown | null | undefined>): void;
 	onMarkerEvent(name: 'enter' | 'leave' | 'click' | 'down' | 'up' | 'longpress', handler: (e: MarkerEventData) => void): () => void;
-	loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>>;
 	onOptionsChanged(opts: ClusteredLayerOptions): void;
 	getClusters(): ClusterSnapshot[];
 	getClusterForMarkerId(markerId: string): ClusterEventData | undefined;

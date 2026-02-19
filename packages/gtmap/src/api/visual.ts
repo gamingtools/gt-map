@@ -6,7 +6,8 @@
  * They are separate from entities (Marker) which define position and interactivity.
  */
 
-import type { IconScaleFunction, SpriteAtlasHandle } from './types';
+import type { IconScaleFunction } from './types';
+import { SpriteAtlasHandle } from './types';
 
 /**
  * Discriminator for Visual subclasses.
@@ -519,6 +520,36 @@ export class SpriteVisual extends Visual {
 export function isSpriteVisual(v: Visual): v is SpriteVisual {
 	return v.type === 'sprite';
 }
+
+// -- SpriteAtlasHandle.getVisual() --
+// Defined here (not in types.ts) to avoid circular dependency with SpriteVisual.
+
+export interface SpriteAtlasHandleVisualOptions {
+	/** Uniform scale factor applied to the atlas entry's native size. */
+	scale?: number;
+	/** Anchor preset (defaults to 'center'). */
+	anchor?: Anchor;
+}
+
+declare module './types' {
+	interface SpriteAtlasHandle {
+		/**
+		 * Create a SpriteVisual for a named sprite in this atlas.
+		 * @param name - Sprite name from the atlas descriptor
+		 * @param opts - Optional scale and anchor
+		 */
+		getVisual(name: string, opts?: SpriteAtlasHandleVisualOptions): SpriteVisual;
+	}
+}
+
+SpriteAtlasHandle.prototype.getVisual = function (this: SpriteAtlasHandle, name: string, opts?: SpriteAtlasHandleVisualOptions): SpriteVisual {
+	const entry = this.descriptor.sprites[name];
+	if (!entry) throw new Error(`Sprite '${name}' not found in atlas '${this.atlasId}'`);
+	const scale = opts?.scale ?? 1;
+	const visual = new SpriteVisual(this, name, { width: entry.width * scale, height: entry.height * scale });
+	visual.anchor = opts?.anchor ?? 'center';
+	return visual;
+};
 
 /**
  * Type guard for ImageVisual.

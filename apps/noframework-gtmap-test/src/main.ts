@@ -121,7 +121,7 @@ const ATLAS_CDN = 'https://cdn.gaming.tools/dune/images';
 async function loadSpriteAtlas(): Promise<SpriteVisual[]> {
   const resp = await fetch(`${ATLAS_CDN}/atlas.json`);
   const descriptor: SpriteAtlasDescriptor = await resp.json();
-  const handle: SpriteAtlasHandle = await markerLayer.loadSpriteAtlas(
+  const handle: SpriteAtlasHandle = await map.layers.loadSpriteAtlas(
     `${ATLAS_CDN}/atlas.png`,
     descriptor,
     'dune',

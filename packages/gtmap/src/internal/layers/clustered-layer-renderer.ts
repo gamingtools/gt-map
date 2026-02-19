@@ -45,6 +45,8 @@ export interface ClusteredLayerRendererDeps {
 	getView(): { center: { x: number; y: number }; zoom: number; minZoom: number; maxZoom: number; wrapX: boolean };
 	/** Optional: get tile coverage to determine icon unlock. */
 	getTileCoverage?: (ctx: SharedRenderCtx) => number;
+	/** Optional: get map-level sprite atlases for automatic loading. */
+	getMapAtlases?: () => Array<{ url: string; descriptor: SpriteAtlasDescriptor; atlasId: string }>;
 }
 
 export class ClusteredLayerRenderer implements LayerRendererHandle {
@@ -98,6 +100,7 @@ export class ClusteredLayerRenderer implements LayerRendererHandle {
 			debugLog: deps.debugLog,
 			requestRender: deps.requestRender,
 			clearScreenCache: deps.clearScreenCache,
+			...(deps.getMapAtlases ? { getMapAtlases: deps.getMapAtlases } : {}),
 		});
 
 		this._markerEvents = new MarkerEventManager({

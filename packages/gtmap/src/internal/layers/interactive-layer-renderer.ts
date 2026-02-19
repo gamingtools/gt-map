@@ -34,6 +34,10 @@ export interface InteractiveLayerRendererDeps {
 	getView(): { center: { x: number; y: number }; zoom: number; minZoom: number; maxZoom: number; wrapX: boolean };
 	/** Optional: get tile coverage to determine icon unlock. */
 	getTileCoverage?: (ctx: SharedRenderCtx) => number;
+	/** Optional: get the map-level iconScaleFunction (fallback when per-layer is null). */
+	getMapIconScaleFunction?: () => IconScaleFunction | null;
+	/** Optional: get map-level sprite atlases for automatic loading. */
+	getMapAtlases?: () => Array<{ url: string; descriptor: import('../../api/types').SpriteAtlasDescriptor; atlasId: string }>;
 }
 
 export class InteractiveLayerRenderer implements LayerRendererHandle {
@@ -52,6 +56,7 @@ export class InteractiveLayerRenderer implements LayerRendererHandle {
 			debugLog: deps.debugLog,
 			requestRender: deps.requestRender,
 			clearScreenCache: deps.clearScreenCache,
+			...(deps.getMapAtlases ? { getMapAtlases: deps.getMapAtlases } : {}),
 		});
 
 		this._markerEvents = new MarkerEventManager({
@@ -64,7 +69,7 @@ export class InteractiveLayerRenderer implements LayerRendererHandle {
 			getImageMaxZoom: deps.getImageMaxZoom,
 			getZoomSnapThreshold: deps.getZoomSnapThreshold,
 			getIcons: () => this._iconMgr.icons,
-			getIconScaleFunction: () => this._iconMgr.iconScaleFunction,
+			getIconScaleFunction: () => this._iconMgr.iconScaleFunction ?? this._deps.getMapIconScaleFunction?.() ?? null,
 			debugWarn: deps.debugWarn,
 			now: deps.now,
 			getView: deps.getView,
@@ -140,7 +145,7 @@ export class InteractiveLayerRenderer implements LayerRendererHandle {
 	}
 
 	get iconScaleFunction() {
-		return this._iconMgr.iconScaleFunction;
+		return this._iconMgr.iconScaleFunction ?? this._deps.getMapIconScaleFunction?.() ?? null;
 	}
 
 	get lastMarkers() {
@@ -177,7 +182,7 @@ export class InteractiveLayerRenderer implements LayerRendererHandle {
 		gl.uniform1f(ctx.loc.u_alpha!, 1.0);
 		if (ctx.loc.u_filterMode) gl.uniform1i(ctx.loc.u_filterMode, 0);
 
-		const iconScaleFunction = this._iconMgr.iconScaleFunction;
+		const iconScaleFunction = this._iconMgr.iconScaleFunction ?? this._deps.getMapIconScaleFunction?.() ?? null;
 		icons.draw({
 			gl: ctx.gl,
 			prog: ctx.prog,

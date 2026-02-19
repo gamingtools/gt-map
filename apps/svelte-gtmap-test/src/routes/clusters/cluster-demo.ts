@@ -282,7 +282,7 @@ export async function createLayers(
 		});
 		map.layers.addLayer(layer, { z: 10 + i, opacity: 1 });
 
-		const handle: SpriteAtlasHandle = await layer.loadSpriteAtlas(
+		const handle: SpriteAtlasHandle = await map.layers.loadSpriteAtlas(
 			`${ATLAS_CDN}/atlas.png`,
 			descriptor,
 			`dune_${resourceId}`,

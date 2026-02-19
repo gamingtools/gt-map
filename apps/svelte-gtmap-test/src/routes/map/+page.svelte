@@ -41,7 +41,7 @@
 		try {
 			const resp = await fetch(`${ATLAS_CDN}/atlas.json`);
 			const descriptor: SpriteAtlasDescriptor = await resp.json();
-			const handle: SpriteAtlasHandle = await markerLayer.loadSpriteAtlas(`${ATLAS_CDN}/atlas.png`, descriptor, 'dune');
+			const handle: SpriteAtlasHandle = await map.layers.loadSpriteAtlas(`${ATLAS_CDN}/atlas.png`, descriptor, 'dune');
 			const names = Object.keys(handle.spriteIds);
 			spriteVisuals = names.map((name) => {
 				const entry = descriptor.sprites[name];

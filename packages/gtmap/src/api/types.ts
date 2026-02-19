@@ -416,12 +416,28 @@ export interface SpriteAtlasDescriptor {
 	sprites: Record<string, SpriteAtlasEntry>;
 }
 
-/** Opaque handle returned after loading a sprite atlas. */
-export interface SpriteAtlasHandle {
+/**
+ * Handle returned after loading a sprite atlas.
+ * Provides access to sprite IDs and convenience methods for creating visuals.
+ *
+ * @public
+ */
+export class SpriteAtlasHandle {
 	/** Stable atlas identifier. */
-	atlasId: string;
+	readonly atlasId: string;
 	/** Map of sprite name to its resolved icon ID. */
-	spriteIds: Record<string, string>;
+	readonly spriteIds: Record<string, string>;
+	/** The descriptor used to create this handle. */
+	readonly descriptor: SpriteAtlasDescriptor;
+	/** Cached sprite names. */
+	readonly spriteNames: string[];
+
+	constructor(atlasId: string, spriteIds: Record<string, string>, descriptor: SpriteAtlasDescriptor) {
+		this.atlasId = atlasId;
+		this.spriteIds = spriteIds;
+		this.descriptor = descriptor;
+		this.spriteNames = Object.keys(spriteIds);
+	}
 }
 
 // Lifecycle options

@@ -12,6 +12,7 @@ export interface IconManagerDeps {
 	debugLog(msg: string): void;
 	requestRender(): void;
 	clearScreenCache(): void;
+	getMapAtlases?: () => Array<{ url: string; descriptor: SpriteAtlasDescriptor; atlasId: string }>;
 }
 
 export class IconManager {
@@ -65,6 +66,15 @@ export class IconManager {
 		// Replay sprite atlas loads queued before GL init
 		for (const sa of this._spriteAtlases) {
 			this._icons.loadSpriteAtlas(sa.url, sa.descriptor, sa.atlasId).catch((err) => this.deps.debugWarn('sprite atlas init load', err));
+		}
+		// Load map-level atlases not already in local queue
+		const mapAtlases = this.deps.getMapAtlases?.() ?? [];
+		const localIds = new Set(this._spriteAtlases.map((sa) => sa.atlasId));
+		for (const sa of mapAtlases) {
+			if (!localIds.has(sa.atlasId)) {
+				this._spriteAtlases.push(sa);
+				this._icons.loadSpriteAtlas(sa.url, sa.descriptor, sa.atlasId).catch((err) => this.deps.debugWarn('map atlas init load', err));
+			}
 		}
 	}
 
@@ -194,7 +204,12 @@ export class IconManager {
 			if (defs && Object.keys(defs).length) {
 				this._icons.loadIcons(defs).catch((err) => this.deps.debugWarn('icon rebuild load', err));
 			}
-			// Replay sprite atlas loads
+			// Replay sprite atlas loads (local + map-level)
+			const mapAtlases = this.deps.getMapAtlases?.() ?? [];
+			const localIds = new Set(this._spriteAtlases.map((sa) => sa.atlasId));
+			for (const sa of mapAtlases) {
+				if (!localIds.has(sa.atlasId)) this._spriteAtlases.push(sa);
+			}
 			for (const sa of this._spriteAtlases) {
 				this._icons.loadSpriteAtlas(sa.url, sa.descriptor, sa.atlasId).catch((err) => this.deps.debugWarn('sprite atlas rebuild load', err));
 			}

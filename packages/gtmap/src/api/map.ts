@@ -10,6 +10,7 @@
  */
 import type { MapEvents } from './events/public';
 import type { MapOptions, SuspendOptions, EventMap } from './types';
+import { SpriteAtlasHandle } from './types';
 import { MapConfig } from '../internal/context/map-config';
 import { MapContext } from '../internal/context/map-context';
 import { LifecycleManager } from '../internal/lifecycle/lifecycle-manager';
@@ -40,7 +41,7 @@ export { EntityCollection } from '../entities/entity-collection';
 // Re-export Visual classes and types
 export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual, SpriteVisual } from './visual';
 export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual, isSpriteVisual } from './visual';
-export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow } from './visual';
+export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow, SpriteAtlasHandleVisualOptions } from './visual';
 
 /**
  * GTMap -- the root class for creating and managing a WebGL map instance.
@@ -69,6 +70,9 @@ export class GTMap {
 	private _layerRegistry: LayerRegistry;
 	private _createdLayers: AnyLayer[] = [];
 	private _sharedVis: VisualIconService | null = null;
+	private _mapIconScaleFn: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
+	private _mapAtlases: Array<{ url: string; descriptor: import('./types').SpriteAtlasDescriptor; atlasId: string }> = [];
+	private _atlasIdSeq = 0;
 
 	/**
 	 * Create a new GTMap instance inside the given container.
@@ -137,12 +141,8 @@ export class GTMap {
 				}
 			},
 			setIconScaleFunction: (fn) => {
-				for (const entry of reg.entries()) {
-					if (entry.layer.type === 'interactive' && entry.renderer) {
-						(entry.renderer as unknown as InteractiveLayerRenderer).setIconScaleFunction(fn);
-					}
-					// Clustered layers ignore map-level iconScaleFunction entirely.
-				}
+				this._mapIconScaleFn = fn;
+				ctx.requestRender();
 			},
 			setAutoResize: (on) => lm.setAutoResize(on),
 			resize: () => ctx.renderCoordinator?.resize(),
@@ -220,6 +220,8 @@ export class GTMap {
 					},
 					now: () => ctx.now(),
 					getView: () => vs.toPublic(),
+					getMapIconScaleFunction: () => this._mapIconScaleFn,
+					getMapAtlases: () => this._mapAtlases,
 				});
 				layer._renderer = renderer;
 
@@ -228,8 +230,8 @@ export class GTMap {
 					setMarkers: (markers) => renderer.setMarkers(markers),
 					setMarkerData: (payloads) => renderer.setMarkerData(payloads),
 					onMarkerEvent: (name, handler) => renderer.onMarkerEvent(name, handler),
-					loadSpriteAtlas: (url, desc, id) => renderer.loadSpriteAtlas(url, desc, id),
 				});
+
 				this._createdLayers.push(layer);
 				return layer;
 			},
@@ -289,6 +291,7 @@ export class GTMap {
 						},
 						now: () => ctx.now(),
 						getView: () => vs.toPublic(),
+						getMapAtlases: () => this._mapAtlases,
 					},
 					opts,
 				);
@@ -299,11 +302,11 @@ export class GTMap {
 					setMarkers: (markers) => renderer.setMarkers(markers),
 					setMarkerData: (payloads) => renderer.setMarkerData(payloads),
 					onMarkerEvent: (name, handler) => renderer.onMarkerEvent(name, handler),
-					loadSpriteAtlas: (url, desc, id) => renderer.loadSpriteAtlas(url, desc, id),
 					onOptionsChanged: (o) => renderer.onOptionsChanged(o),
 					getClusters: () => renderer.getClusters(),
 					getClusterForMarkerId: (id) => renderer.getClusterForMarkerId(id),
 				});
+
 				this._createdLayers.push(layer);
 				return layer;
 			},
@@ -396,6 +399,28 @@ export class GTMap {
 			setLayerZ: (layer, z) => {
 				this._layerRegistry.setZ(layer.id, z);
 				ctx.requestRender();
+			},
+			loadSpriteAtlas: async (url, descriptor, atlasId?) => {
+				this._atlasIdSeq = (this._atlasIdSeq + 1) % Number.MAX_SAFE_INTEGER;
+				const id = atlasId || `atlas_${this._atlasIdSeq.toString(36)}`;
+				this._mapAtlases.push({ url, descriptor, atlasId: id });
+
+				// Build spriteIds from descriptor (maps sprite name -> internal icon id)
+				const spriteIds: Record<string, string> = {};
+				for (const name of Object.keys(descriptor.sprites)) {
+					spriteIds[name] = `${id}/${name}`;
+				}
+
+				// Load into all existing interactive/clustered layer renderers
+				for (const layer of this._createdLayers) {
+					if (layer.type === 'interactive' && layer._renderer) {
+						layer._renderer.loadSpriteAtlas(url, descriptor, id).catch(() => {});
+					} else if (layer.type === 'clustered' && layer._renderer) {
+						layer._renderer.loadSpriteAtlas(url, descriptor, id).catch(() => {});
+					}
+				}
+
+				return new SpriteAtlasHandle(id, spriteIds, descriptor);
 			},
 		});
 	}
