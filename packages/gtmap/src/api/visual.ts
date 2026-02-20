@@ -101,12 +101,26 @@ export abstract class Visual {
 	 */
 	iconScaleFunction?: IconScaleFunction | null;
 
+	/** Stroke/outline color applied around the visual. */
+	stroke?: string;
+
+	/** Stroke/outline width in pixels. */
+	strokeWidth?: number;
+
+	/** Drop shadow effect. */
+	shadow?: Shadow;
+
 	/**
 	 * Get the resolved anchor as normalized coordinates.
 	 * @internal
 	 */
 	getAnchorPoint(): AnchorPoint {
 		return resolveAnchor(this.anchor);
+	}
+
+	/** @internal Whether this visual has base-class effects that need post-processing. */
+	hasEffects(): boolean {
+		return (this.stroke !== undefined && this.strokeWidth !== undefined && this.strokeWidth > 0) || this.shadow !== undefined;
 	}
 }
 
@@ -185,9 +199,6 @@ export class TextVisual extends Visual {
 	/** Text stroke/outline color. */
 	readonly strokeColor?: string;
 
-	/** Text stroke/outline width in pixels. */
-	readonly strokeWidth?: number;
-
 	/** Font weight (normal, bold, 100-900). */
 	readonly fontWeight?: string;
 
@@ -252,12 +263,6 @@ export class CircleVisual extends Visual {
 	/** Fill color. */
 	readonly fill?: string;
 
-	/** Stroke color. */
-	readonly stroke?: string;
-
-	/** Stroke width in pixels. */
-	readonly strokeWidth?: number;
-
 	/**
 	 * Create a circle visual.
 	 * @param radius - Circle radius in pixels
@@ -300,12 +305,6 @@ export class RectVisual extends Visual {
 	/** Fill color. */
 	readonly fill?: string;
 
-	/** Stroke color. */
-	readonly stroke?: string;
-
-	/** Stroke width in pixels. */
-	readonly strokeWidth?: number;
-
 	/** Corner radius for rounded rectangles. */
 	readonly borderRadius?: number;
 
@@ -337,8 +336,8 @@ export class RectVisual extends Visual {
 	}
 }
 
-/** Shadow options for SvgVisual. */
-export interface SvgShadow {
+/** Shadow options for visuals. */
+export interface Shadow {
 	/** Shadow color (default: 'rgba(0,0,0,0.3)'). */
 	color?: string;
 	/** Shadow blur radius in pixels (default: 4). */
@@ -348,6 +347,9 @@ export interface SvgShadow {
 	/** Vertical shadow offset in pixels (default: 2). */
 	offsetY?: number;
 }
+
+/** @deprecated Use {@link Shadow} instead. */
+export type SvgShadow = Shadow;
 
 /**
  * SVG-based visual with color customization and shadow support.
@@ -380,15 +382,6 @@ export class SvgVisual extends Visual {
 
 	/** Override fill color for all SVG elements. */
 	readonly fill?: string;
-
-	/** Override stroke color for all SVG elements. */
-	readonly stroke?: string;
-
-	/** Override stroke width for all SVG elements. */
-	readonly strokeWidth?: number;
-
-	/** Shadow effect options. */
-	readonly shadow?: SvgShadow;
 
 	/**
 	 * Create an SVG visual.
@@ -529,6 +522,12 @@ export interface SpriteAtlasHandleVisualOptions {
 	scale?: number;
 	/** Anchor preset (defaults to 'center'). */
 	anchor?: Anchor;
+	/** Stroke/outline color. */
+	stroke?: string;
+	/** Stroke/outline width in pixels. */
+	strokeWidth?: number;
+	/** Drop shadow effect. */
+	shadow?: Shadow;
 }
 
 declare module './types' {
@@ -536,7 +535,7 @@ declare module './types' {
 		/**
 		 * Create a SpriteVisual for a named sprite in this atlas.
 		 * @param name - Sprite name from the atlas descriptor
-		 * @param opts - Optional scale and anchor
+		 * @param opts - Optional scale, anchor, stroke, and shadow
 		 */
 		getVisual(name: string, opts?: SpriteAtlasHandleVisualOptions): SpriteVisual;
 	}
@@ -548,6 +547,9 @@ SpriteAtlasHandle.prototype.getVisual = function (this: SpriteAtlasHandle, name:
 	const scale = opts?.scale ?? 1;
 	const visual = new SpriteVisual(this, name, { width: entry.width * scale, height: entry.height * scale });
 	visual.anchor = opts?.anchor ?? 'center';
+	if (opts?.stroke) visual.stroke = opts.stroke;
+	if (opts?.strokeWidth) visual.strokeWidth = opts.strokeWidth;
+	if (opts?.shadow) visual.shadow = opts.shadow;
 	return visual;
 };
 

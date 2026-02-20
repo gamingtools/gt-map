@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { GTMap, InteractiveLayer, StaticLayer, TextVisual, SvgVisual, SpriteVisual, type SpriteAtlasDescriptor, type SpriteAtlasHandle, TileLayer } from '@gtmap';
+	import { GTMap, InteractiveLayer, StaticLayer, ImageVisual, TextVisual, SvgVisual, SpriteVisual, CircleVisual, RectVisual, type SpriteAtlasDescriptor, type SpriteAtlasHandle, TileLayer } from '@gtmap';
 	import Hud from '$lib/Hud.svelte';
 	import Hover from '$lib/Hover.svelte';
 
@@ -33,6 +33,7 @@
 
 	let svgVisuals: SvgVisual[] | null = null;
 	let spriteVisuals: SpriteVisual[] | null = null;
+	let spriteAtlasHandle: SpriteAtlasHandle | null = null;
 
 	const ATLAS_CDN = 'https://cdn.gaming.tools/dune/images';
 
@@ -42,6 +43,7 @@
 			const resp = await fetch(`${ATLAS_CDN}/atlas.json`);
 			const descriptor: SpriteAtlasDescriptor = await resp.json();
 			const handle: SpriteAtlasHandle = await map.layers.loadSpriteAtlas(`${ATLAS_CDN}/atlas.png`, descriptor, 'dune');
+			spriteAtlasHandle = handle;
 			const names = Object.keys(handle.spriteIds);
 			spriteVisuals = names.map((name) => {
 				const entry = descriptor.sprites[name];
@@ -255,6 +257,104 @@
 		label5.anchor = 'center';
 		label5.iconScaleFunction = null; // Don't scale with zoom
 		markerLayer.addMarker(HOME.lng, HOME.lat, { visual: label5 });
+
+		// Add shape visuals
+		addShapeMarkers();
+	}
+
+	function addShapeMarkers(): void {
+		if (!map) return;
+
+		const cx = HOME.lng;
+		const cy = HOME.lat;
+		const noScale = <T extends { iconScaleFunction?: any }>(v: T): T => { v.iconScaleFunction = null; return v; };
+
+		// -- Row 1: Circles (above center) --
+		const circleY = cy - 400;
+		markerLayer.addMarker(cx - 200, circleY, { visual: noScale(new CircleVisual(12, { fill: '#dc2626' })) });
+		markerLayer.addMarker(cx - 100, circleY, { visual: noScale(new CircleVisual(14, { fill: '#3b82f6', stroke: '#ffffff', strokeWidth: 2 })) });
+		const c3 = new CircleVisual(16, { fill: '#22c55e' });
+		c3.shadow = { blur: 6, offsetY: 3, color: 'rgba(0,0,0,0.5)' };
+		markerLayer.addMarker(cx, circleY, { visual: noScale(c3) });
+		const c4 = new CircleVisual(14, { fill: '#f59e0b', stroke: '#78350f', strokeWidth: 2 });
+		c4.shadow = { blur: 4, offsetY: 2 };
+		markerLayer.addMarker(cx + 100, circleY, { visual: noScale(c4) });
+		markerLayer.addMarker(cx + 200, circleY, { visual: noScale(new CircleVisual(20, { stroke: '#e879f9', strokeWidth: 3 })) });
+
+		// -- Row 2: Rectangles (below center) --
+		const rectY = cy + 400;
+		markerLayer.addMarker(cx - 200, rectY, { visual: noScale(new RectVisual({ width: 28, height: 20 }, { fill: '#dc2626' })) });
+		markerLayer.addMarker(cx - 100, rectY, { visual: noScale(new RectVisual(24, { fill: '#3b82f6', stroke: '#ffffff', strokeWidth: 2 })) });
+		const r3 = new RectVisual({ width: 32, height: 22 }, { fill: '#22c55e', borderRadius: 6 });
+		r3.shadow = { blur: 6, offsetY: 3, color: 'rgba(0,0,0,0.5)' };
+		markerLayer.addMarker(cx, rectY, { visual: noScale(r3) });
+		const r4 = new RectVisual(26, { fill: '#f59e0b', stroke: '#78350f', strokeWidth: 2, borderRadius: 4 });
+		r4.shadow = { blur: 4, offsetY: 2 };
+		markerLayer.addMarker(cx + 100, rectY, { visual: noScale(r4) });
+		markerLayer.addMarker(cx + 200, rectY, { visual: noScale(new RectVisual({ width: 36, height: 24 }, { stroke: '#e879f9', strokeWidth: 3, borderRadius: 8 })) });
+
+		// -- Row 3: Text with universal effects (left of center) --
+		const textEffY = cy - 200;
+		// Text with shadow
+		const t1 = new TextVisual('Shadow Text', { fontSize: 16, color: '#ffffff', backgroundColor: '#1e293b', padding: 8 });
+		t1.shadow = { blur: 8, offsetY: 4, color: 'rgba(0,0,0,0.6)' };
+		markerLayer.addMarker(cx - 250, textEffY, { visual: noScale(t1) });
+		// Text with universal stroke (glow outline around the whole label)
+		const t2 = new TextVisual('Glow Label', { fontSize: 16, color: '#fbbf24', padding: 4 });
+		t2.stroke = '#f59e0b';
+		t2.strokeWidth = 3;
+		markerLayer.addMarker(cx, textEffY, { visual: noScale(t2) });
+		// Text with both text-stroke + universal shadow
+		const t3 = new TextVisual('Outlined + Shadow', { fontSize: 16, color: '#ffffff', strokeColor: '#000000', strokeWidth: 2 });
+		t3.shadow = { blur: 6, offsetY: 3 };
+		markerLayer.addMarker(cx + 250, textEffY, { visual: noScale(t3) });
+
+		// -- Row 4: Image with effects (right of center) --
+		const imgEffY = cy + 200;
+		const imgUrl = `${SVG_CDN}/broadsword.svg`;
+		// Image with shadow
+		const img1 = new ImageVisual(imgUrl, 36);
+		img1.shadow = { blur: 6, offsetY: 3, color: 'rgba(0,0,0,0.5)' };
+		markerLayer.addMarker(cx - 150, imgEffY, { visual: noScale(img1) });
+		// Image with stroke
+		const img2 = new ImageVisual(imgUrl, 36);
+		img2.stroke = '#dc2626';
+		img2.strokeWidth = 3;
+		markerLayer.addMarker(cx, imgEffY, { visual: noScale(img2) });
+		// Image with stroke + shadow
+		const img3 = new ImageVisual(imgUrl, 36);
+		img3.stroke = '#3b82f6';
+		img3.strokeWidth = 2;
+		img3.shadow = { blur: 5, offsetY: 2 };
+		markerLayer.addMarker(cx + 150, imgEffY, { visual: noScale(img3) });
+
+		// -- Row 5: Sprites with effects (via getVisual) --
+		if (spriteAtlasHandle) {
+			const spY = cy + 600;
+			const names = spriteAtlasHandle.spriteNames.slice(0, 5);
+			const strokeColors = ['#dc2626', '#3b82f6', '#22c55e', '#f59e0b', '#e879f9'];
+			for (let i = 0; i < names.length; i++) {
+				// Row A: Plain sprite (no effects)
+				const plain = spriteAtlasHandle.getVisual(names[i], { scale: 1 / 1.6 });
+				markerLayer.addMarker(cx - 300 + i * 120, spY - 80, { visual: noScale(plain) });
+
+				// Row B: Shadow only
+				const shadowed = spriteAtlasHandle.getVisual(names[i], {
+					scale: 1 / 1.6,
+					shadow: { blur: 6, offsetY: 3, color: 'rgba(0,0,0,0.5)' },
+				});
+				markerLayer.addMarker(cx - 300 + i * 120, spY, { visual: noScale(shadowed) });
+
+				// Row C: Colored stroke + shadow
+				const effected = spriteAtlasHandle.getVisual(names[i], {
+					scale: 1 / 1.6,
+					stroke: strokeColors[i],
+					strokeWidth: 2,
+					shadow: { blur: 5, offsetY: 2, color: 'rgba(0,0,0,0.5)' },
+				});
+				markerLayer.addMarker(cx - 300 + i * 120, spY + 80, { visual: noScale(effected) });
+			}
+		}
 	}
 
 	function setMarkersEnabled(on: boolean): void {

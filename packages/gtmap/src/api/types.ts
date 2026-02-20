@@ -429,13 +429,16 @@ export class SpriteAtlasHandle {
 	readonly spriteIds: Record<string, string>;
 	/** The descriptor used to create this handle. */
 	readonly descriptor: SpriteAtlasDescriptor;
+	/** URL of the atlas image. */
+	readonly url: string;
 	/** Cached sprite names. */
 	readonly spriteNames: string[];
 
-	constructor(atlasId: string, spriteIds: Record<string, string>, descriptor: SpriteAtlasDescriptor) {
+	constructor(atlasId: string, spriteIds: Record<string, string>, descriptor: SpriteAtlasDescriptor, url: string) {
 		this.atlasId = atlasId;
 		this.spriteIds = spriteIds;
 		this.descriptor = descriptor;
+		this.url = url;
 		this.spriteNames = Object.keys(spriteIds);
 	}
 }

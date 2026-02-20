@@ -41,7 +41,7 @@ export { EntityCollection } from '../entities/entity-collection';
 // Re-export Visual classes and types
 export { Visual, ImageVisual, TextVisual, CircleVisual, RectVisual, SvgVisual, HtmlVisual, SpriteVisual } from './visual';
 export { isImageVisual, isTextVisual, isCircleVisual, isRectVisual, isSvgVisual, isHtmlVisual, isSpriteVisual } from './visual';
-export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, SvgShadow, SpriteAtlasHandleVisualOptions } from './visual';
+export type { VisualType, AnchorPreset, AnchorPoint, Anchor, VisualSize, Shadow, SvgShadow, SpriteAtlasHandleVisualOptions } from './visual';
 
 /**
  * GTMap -- the root class for creating and managing a WebGL map instance.
@@ -420,7 +420,7 @@ export class GTMap {
 					}
 				}
 
-				return new SpriteAtlasHandle(id, spriteIds, descriptor);
+				return new SpriteAtlasHandle(id, spriteIds, descriptor, url);
 			},
 		});
 	}

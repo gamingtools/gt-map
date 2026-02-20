@@ -6,9 +6,11 @@
  * visual-to-size mappings.
  */
 import type { IconDefInternal } from '../../api/types';
-import { Visual, isImageVisual, isTextVisual, isSvgVisual, isSpriteVisual, resolveAnchor, resolveSize } from '../../api/visual';
+import { Visual, isImageVisual, isTextVisual, isSvgVisual, isSpriteVisual, isCircleVisual, isRectVisual, resolveAnchor, resolveSize } from '../../api/visual';
 import { renderTextToCanvas } from '../layers/text-renderer';
 import { renderSvgToDataUrlSync, renderSvgToCanvasAsync } from '../layers/svg-renderer';
+import { renderCircleToCanvas, renderRectToCanvas } from '../layers/shape-renderer';
+import { applyVisualEffectsAsync, type VisualEffectsOptions, type SpriteRegion } from '../layers/visual-effects';
 
 export interface VisualIconServiceDeps {
 	setIconDefs(defs: Record<string, IconDefInternal>): Promise<void>;
@@ -58,8 +60,9 @@ export class VisualIconService {
 		const cached = this._visualToIconId.get(visual);
 		if (cached) return cached;
 
-		// Sprite visuals are pre-registered via loadSpriteAtlas; just map the visual to its icon ID.
-		if (isSpriteVisual(visual)) {
+		// Sprite visuals are pre-registered via loadSpriteAtlas.
+		// If no base-class effects, just map directly to the atlas icon ID.
+		if (isSpriteVisual(visual) && !visual.hasEffects()) {
 			const iconId = visual.getIconId();
 			this._visualToIconId.set(visual, iconId);
 			return iconId;
@@ -69,9 +72,26 @@ export class VisualIconService {
 		const iconId = `v_${this._visualIdSeq.toString(36)}`;
 		let iconDef: IconDefInternal | null = null;
 
-		if (isImageVisual(visual)) {
+		if (isSpriteVisual(visual)) {
+			// Sprite with effects: load atlas image, extract sprite region, apply effects
+			const spriteSize = visual.getSize();
+			const entry = visual.atlasHandle.descriptor.sprites[visual.spriteName];
+			const w = spriteSize?.width ?? entry?.width ?? 32;
+			const h = spriteSize?.height ?? entry?.height ?? 32;
+			const anchor = resolveAnchor(visual.anchor);
+			this._visualToIconId.set(visual, iconId);
+			const region: SpriteRegion | undefined = entry ? { x: entry.x, y: entry.y, width: entry.width, height: entry.height } : undefined;
+			this._applyEffectsFromIconUrl(iconId, visual.atlasHandle.url, w, h, anchor, visual, region);
+			return iconId;
+		} else if (isImageVisual(visual)) {
 			const size = visual.getSize();
 			const anchor = resolveAnchor(visual.anchor);
+			if (visual.hasEffects()) {
+				// Image with effects: async post-process path
+				this._visualToIconId.set(visual, iconId);
+				this._applyEffectsFromIconUrl(iconId, visual.icon, size.width, size.height, anchor, visual);
+				return iconId;
+			}
 			iconDef = {
 				iconPath: visual.icon,
 				...(visual.icon2x != null ? { x2IconPath: visual.icon2x } : {}),
@@ -96,6 +116,12 @@ export class VisualIconService {
 			const anchor = resolveAnchor(visual.anchor);
 			const displayW = result.width / 2;
 			const displayH = result.height / 2;
+			if (visual.hasEffects()) {
+				// Text with base-class effects: apply post-process on rasterized text
+				this._visualToIconId.set(visual, iconId);
+				this._applyEffectsFromDataUrl(iconId, result.dataUrl, displayW, displayH, anchor, visual);
+				return iconId;
+			}
 			iconDef = {
 				iconPath: result.dataUrl,
 				width: displayW,
@@ -155,6 +181,53 @@ export class VisualIconService {
 				);
 				return iconId;
 			}
+		} else if (isCircleVisual(visual)) {
+			const result = renderCircleToCanvas({
+				radius: visual.radius,
+				...(visual.fill != null ? { fill: visual.fill } : {}),
+				...(visual.stroke != null ? { stroke: visual.stroke } : {}),
+				...(visual.strokeWidth != null ? { strokeWidth: visual.strokeWidth } : {}),
+			});
+			const anchor = resolveAnchor(visual.anchor);
+			const displayW = result.width / 2;
+			const displayH = result.height / 2;
+			if (visual.shadow) {
+				this._visualToIconId.set(visual, iconId);
+				this._applyEffectsFromDataUrl(iconId, result.dataUrl, displayW, displayH, anchor, visual);
+				return iconId;
+			}
+			iconDef = {
+				iconPath: result.dataUrl,
+				width: displayW,
+				height: displayH,
+				anchorX: anchor.x * displayW,
+				anchorY: anchor.y * displayH,
+			};
+		} else if (isRectVisual(visual)) {
+			const size = visual.getSize();
+			const result = renderRectToCanvas({
+				width: size.width,
+				height: size.height,
+				...(visual.fill != null ? { fill: visual.fill } : {}),
+				...(visual.stroke != null ? { stroke: visual.stroke } : {}),
+				...(visual.strokeWidth != null ? { strokeWidth: visual.strokeWidth } : {}),
+				...(visual.borderRadius != null ? { borderRadius: visual.borderRadius } : {}),
+			});
+			const anchor = resolveAnchor(visual.anchor);
+			const displayW = result.width / 2;
+			const displayH = result.height / 2;
+			if (visual.shadow) {
+				this._visualToIconId.set(visual, iconId);
+				this._applyEffectsFromDataUrl(iconId, result.dataUrl, displayW, displayH, anchor, visual);
+				return iconId;
+			}
+			iconDef = {
+				iconPath: result.dataUrl,
+				width: displayW,
+				height: displayH,
+				anchorX: anchor.x * displayW,
+				anchorY: anchor.y * displayH,
+			};
 		} else {
 			console.warn(`GTMap: Visual type '${visual.type}' is not yet supported for rendering. Using default icon.`);
 			return 'default';
@@ -186,5 +259,54 @@ export class VisualIconService {
 			return Math.max(sz.width, sz.height) * scale;
 		}
 		return undefined;
+	}
+
+	/** Build effect options from base-class Visual properties. */
+	private _buildEffectsOpts(visual: Visual): VisualEffectsOptions {
+		return {
+			...(visual.stroke != null ? { stroke: visual.stroke } : {}),
+			...(visual.strokeWidth != null ? { strokeWidth: visual.strokeWidth } : {}),
+			...(visual.shadow != null ? { shadow: visual.shadow } : {}),
+		};
+	}
+
+	/** Apply effects on an icon loaded from a URL (image/sprite). */
+	private _applyEffectsFromIconUrl(
+		iconId: string,
+		iconUrl: string,
+		srcW: number,
+		srcH: number,
+		anchor: { x: number; y: number },
+		visual: Visual,
+		region?: SpriteRegion,
+	): void {
+		const opts = this._buildEffectsOpts(visual);
+		applyVisualEffectsAsync(iconUrl, srcW, srcH, opts, (result) => {
+			const displayW = result.width / 2;
+			const displayH = result.height / 2;
+			const updatedDef: IconDefInternal = {
+				iconPath: result.dataUrl,
+				width: displayW,
+				height: displayH,
+				anchorX: anchor.x * displayW,
+				anchorY: anchor.y * displayH,
+			};
+			this._deps.setIconDefs(Object.fromEntries([[iconId, updatedDef]]));
+			this._visualToSize.set(visual, { width: displayW, height: displayH });
+			this._deps.onVisualUpdated();
+		}, region);
+	}
+
+	/** Apply effects on an already-rasterized data URL (text). */
+	private _applyEffectsFromDataUrl(
+		iconId: string,
+		dataUrl: string,
+		srcW: number,
+		srcH: number,
+		anchor: { x: number; y: number },
+		visual: Visual,
+	): void {
+		// Data URLs can be loaded as images too
+		this._applyEffectsFromIconUrl(iconId, dataUrl, srcW, srcH, anchor, visual);
 	}
 }
