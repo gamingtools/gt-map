@@ -63,6 +63,7 @@ export class IconAtlasManager implements IconSizeProvider {
 		defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>,
 		opts?: { replaceAll?: boolean },
 	) {
+		const bitmapsToClose: ImageBitmap[] = [];
 		const entries = Object.entries(defs);
 
 		// Collect old atlas textures for cleanup if doing a full replace
@@ -97,75 +98,63 @@ export class IconAtlasManager implements IconSizeProvider {
 		const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
 		const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
 
-		const loadTasks = entries.map(async ([key, d]) => {
-			this.texSize.set(key, { w: d.width, h: d.height });
-			this.texAnchor.set(key, { ax: d.anchorX ?? d.width / 2, ay: d.anchorY ?? d.height / 2 });
-			this._iconMeta.set(key, {
-				iconPath: d.iconPath,
-				...(d.x2IconPath !== undefined ? { x2IconPath: d.x2IconPath } : {}),
-				width: d.width,
-				height: d.height,
-				anchorX: d.anchorX ?? d.width / 2,
-				anchorY: d.anchorY ?? d.height / 2,
+		try {
+			const loadTasks = entries.map(async ([key, d]) => {
+				this.texSize.set(key, { w: d.width, h: d.height });
+				this.texAnchor.set(key, { ax: d.anchorX ?? d.width / 2, ay: d.anchorY ?? d.height / 2 });
+				this._iconMeta.set(key, {
+					iconPath: d.iconPath,
+					...(d.x2IconPath !== undefined ? { x2IconPath: d.x2IconPath } : {}),
+					width: d.width,
+					height: d.height,
+					anchorX: d.anchorX ?? d.width / 2,
+					anchorY: d.anchorY ?? d.height / 2,
+				});
+
+				let src2x: ImageBitmap | HTMLImageElement | null = null;
+				if (d.x2IconPath) src2x = await this.loadImageSource(d.x2IconPath);
+				if (src2x) {
+					if (typeof ImageBitmap !== 'undefined' && src2x instanceof ImageBitmap) bitmapsToClose.push(src2x);
+					imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
+					this.hasRetina.set(key, true);
+					this.maskBuilder.enqueue(key, src2x, d.width, d.height);
+				} else {
+					const src1x = await this.loadImageSource(d.iconPath);
+					if (src1x) {
+						if (typeof ImageBitmap !== 'undefined' && src1x instanceof ImageBitmap) bitmapsToClose.push(src1x);
+						imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
+						this.maskBuilder.enqueue(key, src1x, d.width, d.height);
+					}
+					this.hasRetina.set(key, false);
+				}
 			});
+			await Promise.all(loadTasks);
 
-			let src2x: ImageBitmap | HTMLImageElement | null = null;
-			if (d.x2IconPath) src2x = await this.loadImageSource(d.x2IconPath);
-			if (src2x) {
-				imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
-				this.hasRetina.set(key, true);
-				this.maskBuilder.enqueue(key, src2x, d.width, d.height);
-			} else {
-				const src1x = await this.loadImageSource(d.iconPath);
-				if (src1x) {
-					imgs1x.push({ key, w: d.width, h: d.height, src: src1x });
-					this.maskBuilder.enqueue(key, src1x, d.width, d.height);
-				}
-				this.hasRetina.set(key, false);
-			}
-		});
-		await Promise.all(loadTasks);
-
-		// Create 1x atlas
-		if (imgs1x.length > 0) {
-			const atlas1x = createAtlas(gl, imgs1x);
-			if (atlas1x) {
-				for (const [key, data] of atlas1x) {
-					this.textures.set(key, data.tex);
-					this.uvRect.set(key, data.uv);
+			// Create 1x atlas
+			if (imgs1x.length > 0) {
+				const atlas1x = createAtlas(gl, imgs1x);
+				if (atlas1x) {
+					for (const [key, data] of atlas1x) {
+						this.textures.set(key, data.tex);
+						this.uvRect.set(key, data.uv);
+					}
 				}
 			}
-		}
 
-		// Create 2x atlas
-		if (imgs2x.length > 0) {
-			const atlas2x = createAtlas(gl, imgs2x);
-			if (atlas2x) {
-				for (const [key, data] of atlas2x) {
-					this.textures2x.set(key, data.tex);
-					this.uvRect2x.set(key, data.uv);
+			// Create 2x atlas
+			if (imgs2x.length > 0) {
+				const atlas2x = createAtlas(gl, imgs2x);
+				if (atlas2x) {
+					for (const [key, data] of atlas2x) {
+						this.textures2x.set(key, data.tex);
+						this.uvRect2x.set(key, data.uv);
+					}
 				}
 			}
-		}
 
-		// Delete old atlases after new ones are created (only for full replace)
-		if (oldAtlases) {
-			for (const tex of oldAtlases) {
-				try {
-					gl.deleteTexture(tex);
-				} catch {
-					/* expected: GL context may be lost */
-				}
-			}
-		}
-
-		// Delete stale textures from incremental updates (not referenced by any icon)
-		if (staleTextures.size > 0) {
-			const liveTextures = new Set<WebGLTexture>();
-			for (const t of this.textures.values()) if (t) liveTextures.add(t);
-			for (const t of this.textures2x.values()) if (t) liveTextures.add(t);
-			for (const tex of staleTextures) {
-				if (!liveTextures.has(tex)) {
+			// Delete old atlases after new ones are created (only for full replace)
+			if (oldAtlases) {
+				for (const tex of oldAtlases) {
 					try {
 						gl.deleteTexture(tex);
 					} catch {
@@ -173,9 +162,33 @@ export class IconAtlasManager implements IconSizeProvider {
 					}
 				}
 			}
-		}
 
-		if (entries.length > 0) this.maskBuilder.start();
+			// Delete stale textures from incremental updates (not referenced by any icon)
+			if (staleTextures.size > 0) {
+				const liveTextures = new Set<WebGLTexture>();
+				for (const t of this.textures.values()) if (t) liveTextures.add(t);
+				for (const t of this.textures2x.values()) if (t) liveTextures.add(t);
+				for (const tex of staleTextures) {
+					if (!liveTextures.has(tex)) {
+						try {
+							gl.deleteTexture(tex);
+						} catch {
+							/* expected: GL context may be lost */
+						}
+					}
+				}
+			}
+
+			if (entries.length > 0) this.maskBuilder.start();
+		} finally {
+			for (const bmp of bitmapsToClose) {
+				try {
+					bmp.close();
+				} catch {
+					/* expected: bitmap may already be closed */
+				}
+			}
+		}
 	}
 
 	/**
@@ -186,6 +199,7 @@ export class IconAtlasManager implements IconSizeProvider {
 	async loadSpriteAtlas(gl: WebGLRenderingContext, atlasImageUrl: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>> {
 		const src = await this.loadImageSource(atlasImageUrl);
 		if (!src) return {};
+		const srcBitmap = typeof ImageBitmap !== 'undefined' && src instanceof ImageBitmap ? src : null;
 
 		const atlasW = descriptor.meta.size.width;
 		const atlasH = descriptor.meta.size.height;
@@ -198,9 +212,16 @@ export class IconAtlasManager implements IconSizeProvider {
 		const ctx2d = canvas.getContext('2d');
 		if (!ctx2d) return {};
 		ctx2d.clearRect(0, 0, atlasW, atlasH);
-		const sw = src instanceof ImageBitmap ? src.width : (src as HTMLImageElement).naturalWidth;
-		const sh = src instanceof ImageBitmap ? src.height : (src as HTMLImageElement).naturalHeight;
+		const sw = srcBitmap ? srcBitmap.width : (src as HTMLImageElement).naturalWidth;
+		const sh = srcBitmap ? srcBitmap.height : (src as HTMLImageElement).naturalHeight;
 		ctx2d.drawImage(src as CanvasImageSource, 0, 0, sw, sh, 0, 0, atlasW, atlasH);
+		if (srcBitmap) {
+			try {
+				srcBitmap.close();
+			} catch {
+				/* expected: bitmap may already be closed */
+			}
+		}
 
 		// Create a single WebGL texture from the canvas
 		const tex = gl.createTexture();
@@ -265,7 +286,7 @@ export class IconAtlasManager implements IconSizeProvider {
 			this.hasRetina.set(iconId, false);
 
 			// Enqueue mask building with crop rect for this sprite
-			this.maskBuilder.enqueue(iconId, src, entry.width, entry.height, {
+			this.maskBuilder.enqueue(iconId, canvas, entry.width, entry.height, {
 				sx: entry.x,
 				sy: entry.y,
 				sw: entry.width,
