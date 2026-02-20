@@ -422,14 +422,16 @@ export class GTMap {
 					spriteIds[name] = `${id}/${name}`;
 				}
 
-				// Load into all existing interactive/clustered layer renderers
+				// Load into all existing interactive/clustered layer renderers.
+				// Await all loads so the caller's `await loadSpriteAtlas(...)` resolves
+				// only after GL textures are actually uploaded in every renderer.
+				const loadTasks: Promise<unknown>[] = [];
 				for (const layer of this._createdLayers) {
-					if (layer.type === 'interactive' && layer._renderer) {
-						layer._renderer.loadSpriteAtlas(url, descriptor, id).catch(() => {});
-					} else if (layer.type === 'clustered' && layer._renderer) {
-						layer._renderer.loadSpriteAtlas(url, descriptor, id).catch(() => {});
+					if ((layer.type === 'interactive' || layer.type === 'clustered') && layer._renderer) {
+						loadTasks.push(layer._renderer.loadSpriteAtlas(url, descriptor, id).catch(() => {}));
 					}
 				}
+				if (loadTasks.length > 0) await Promise.all(loadTasks);
 
 				return new SpriteAtlasHandle(id, spriteIds, descriptor, url);
 			},
