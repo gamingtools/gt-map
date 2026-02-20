@@ -17,7 +17,8 @@ export interface VisualEffectsOptions {
 }
 
 export interface VisualEffectsResult {
-	dataUrl: string;
+	/** The rendered canvas with effects applied. */
+	canvas: HTMLCanvasElement;
 	width: number;
 	height: number;
 }
@@ -32,7 +33,7 @@ export interface SpriteRegion {
 
 /**
  * Apply stroke and/or shadow to an already-loaded image source.
- * Returns a new data URL with the effects baked in at 2x scale for retina sharpness.
+ * Returns the canvas with the effects baked in at 2x scale for retina sharpness.
  */
 export function applyVisualEffects(
 	src: CanvasImageSource,
@@ -66,7 +67,7 @@ export function applyVisualEffects(
 	canvas.width = Math.ceil(outW * scale);
 	canvas.height = Math.ceil(outH * scale);
 	const ctx = canvas.getContext('2d');
-	if (!ctx) return { dataUrl: '', width: outW, height: outH };
+	if (!ctx) return { canvas, width: outW, height: outH };
 	ctx.scale(scale, scale);
 
 	const drawX = padL;
@@ -114,7 +115,7 @@ export function applyVisualEffects(
 	}
 
 	return {
-		dataUrl: canvas.toDataURL('image/png'),
+		canvas,
 		width: canvas.width,
 		height: canvas.height,
 	};
@@ -131,20 +132,25 @@ export function applyVisualEffectsAsync(
 	opts: VisualEffectsOptions,
 	callback: (result: VisualEffectsResult) => void,
 	region?: SpriteRegion,
-	fallbackDataUrl?: string,
 ): void {
 	const img = new Image();
 	img.crossOrigin = 'anonymous';
 	img.onload = () => {
 		try {
 			const result = applyVisualEffects(img, srcW, srcH, opts, region);
-			callback(result.dataUrl ? result : { dataUrl: fallbackDataUrl ?? '', width: srcW, height: srcH });
+			callback(result);
 		} catch {
-			callback({ dataUrl: fallbackDataUrl ?? '', width: srcW, height: srcH });
+			const empty = document.createElement('canvas');
+			empty.width = 0;
+			empty.height = 0;
+			callback({ canvas: empty, width: srcW, height: srcH });
 		}
 	};
 	img.onerror = () => {
-		callback({ dataUrl: fallbackDataUrl ?? '', width: srcW, height: srcH });
+		const empty = document.createElement('canvas');
+		empty.width = 0;
+		empty.height = 0;
+		callback({ canvas: empty, width: srcW, height: srcH });
 	};
 	img.src = iconUrl;
 }

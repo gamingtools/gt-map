@@ -85,7 +85,7 @@ export class IconRenderer {
 
 	// -- Public API (delegates to atlas) --
 
-	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>, opts?: { replaceAll?: boolean }) {
+	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; canvas?: HTMLCanvasElement; width: number; height: number; anchorX?: number; anchorY?: number }>, opts?: { replaceAll?: boolean }) {
 		await this.atlas.loadIcons(this.gl, defs, opts);
 		this._markerRevision++;
 		this._markerInfoCache = null;

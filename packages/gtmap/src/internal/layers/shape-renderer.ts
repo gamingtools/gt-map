@@ -22,7 +22,8 @@ export interface RectRenderOptions {
 }
 
 export interface ShapeRenderResult {
-  dataUrl: string;
+  /** The rendered canvas (can be used as CanvasImageSource). */
+  canvas: HTMLCanvasElement;
   /** Canvas pixel width (at 2x scale). */
   width: number;
   /** Canvas pixel height (at 2x scale). */
@@ -45,7 +46,7 @@ export function renderCircleToCanvas(options: CircleRenderOptions): ShapeRenderR
   canvas.width = Math.ceil(w * scale);
   canvas.height = Math.ceil(h * scale);
   const ctx = canvas.getContext('2d');
-  if (!ctx) return { dataUrl: '', width: w * scale, height: h * scale };
+  if (!ctx) return { canvas, width: w * scale, height: h * scale };
   ctx.scale(scale, scale);
 
   const cx = w / 2;
@@ -66,7 +67,7 @@ export function renderCircleToCanvas(options: CircleRenderOptions): ShapeRenderR
   }
 
   return {
-    dataUrl: canvas.toDataURL('image/png'),
+    canvas,
     width: canvas.width,
     height: canvas.height,
   };
@@ -87,7 +88,7 @@ export function renderRectToCanvas(options: RectRenderOptions): ShapeRenderResul
   canvas.width = Math.ceil(w * scale);
   canvas.height = Math.ceil(h * scale);
   const ctx = canvas.getContext('2d');
-  if (!ctx) return { dataUrl: '', width: w * scale, height: h * scale };
+  if (!ctx) return { canvas, width: w * scale, height: h * scale };
   ctx.scale(scale, scale);
 
   const x = pad;
@@ -122,7 +123,7 @@ export function renderRectToCanvas(options: RectRenderOptions): ShapeRenderResul
   }
 
   return {
-    dataUrl: canvas.toDataURL('image/png'),
+    canvas,
     width: canvas.width,
     height: canvas.height,
   };

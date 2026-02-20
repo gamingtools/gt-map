@@ -4,7 +4,7 @@
 import type { MarkerInternal, UpscaleFilterMode, IconScaleFunction, SpriteAtlasDescriptor } from '../../api/types';
 import { IconRenderer } from '../layers/icons';
 
-export type IconDefInput = { iconPath: string; x2IconPath?: string; width: number; height: number };
+export type IconDefInput = { iconPath: string; x2IconPath?: string; canvas?: HTMLCanvasElement; width: number; height: number };
 
 export interface IconManagerDeps {
 	getGL(): WebGLRenderingContext;
@@ -26,6 +26,7 @@ export class IconManager {
 	private _lastDecals: MarkerInternal[] = [];
 	private _spriteAtlases: Array<{ url: string; descriptor: SpriteAtlasDescriptor; atlasId: string }> = [];
 	private _maskBuildRequested = false;
+	private _pruneScheduled = false;
 	rasterOpacity = 1.0;
 	upscaleFilter: UpscaleFilterMode = 'linear';
 	iconScaleFunction: IconScaleFunction | null = null;
@@ -136,6 +137,7 @@ export class IconManager {
 		this.deps.debugLog(`setMarkers count=${markers.length}`);
 		this.deps.clearScreenCache();
 		this.deps.requestRender();
+		this._schedulePruneGeneratedIconDefs();
 	}
 
 	setDecals(decals: MarkerInternal[]): void {
@@ -152,6 +154,7 @@ export class IconManager {
 		this.deps.debugLog(`setDecals count=${decals.length}`);
 		this.deps.clearScreenCache();
 		this.deps.requestRender();
+		this._schedulePruneGeneratedIconDefs();
 	}
 
 	// -- Rendering options --
@@ -241,5 +244,50 @@ export class IconManager {
 		const idx = this._spriteAtlases.findIndex((sa) => sa.atlasId === next.atlasId);
 		if (idx >= 0) this._spriteAtlases[idx] = next;
 		else this._spriteAtlases.push(next);
+	}
+
+	private _schedulePruneGeneratedIconDefs(): void {
+		if (this._pruneScheduled) return;
+		this._pruneScheduled = true;
+		const run = () => {
+			this._pruneScheduled = false;
+			this._pruneGeneratedIconDefs();
+		};
+		const w = window as { requestIdleCallback?: (cb: () => void) => number };
+		if (typeof w.requestIdleCallback === 'function') w.requestIdleCallback(run);
+		else setTimeout(run, 0);
+	}
+
+	/**
+	 * Prune stale generated visual defs (`v_*`) that are no longer referenced by
+	 * current markers/decals. Keeps user-added icon defs intact.
+	 *
+	 * This prunes JS-side definition stores only. We intentionally avoid
+	 * `loadIcons(..., { replaceAll: true })` here because replace-all also clears
+	 * sprite-atlas entries inside IconAtlasManager, which can temporarily drop
+	 * sprite markers until atlases are reloaded.
+	 */
+	private _pruneGeneratedIconDefs(): void {
+		const liveTypes = new Set<string>();
+		for (const marker of this._lastMarkers) liveTypes.add(marker.type);
+		for (const decal of this._lastDecals) liveTypes.add(decal.type);
+
+		let removed = false;
+		for (const key of Object.keys(this._allIconDefs)) {
+			if (!key.startsWith('v_')) continue;
+			if (liveTypes.has(key)) continue;
+			delete this._allIconDefs[key];
+			removed = true;
+		}
+		if (!removed) return;
+
+		// Keep pending store in sync for not-yet-initialized renderers.
+		if (this._pendingIconDefs) {
+			for (const key of Object.keys(this._pendingIconDefs)) {
+				if (!key.startsWith('v_')) continue;
+				if (liveTypes.has(key)) continue;
+				delete this._pendingIconDefs[key];
+			}
+		}
 	}
 }

@@ -71,6 +71,7 @@ export class GTMap {
 	private _createdLayers: AnyLayer[] = [];
 	private _sharedVis: VisualIconService | null = null;
 	private _sharedIconDefs: Record<string, IconDefInternal> = {};
+	private _sharedPruneScheduled = false;
 	private _mapIconScaleFn: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
 	private _mapAtlases: Array<{ url: string; descriptor: import('./types').SpriteAtlasDescriptor; atlasId: string }> = [];
 	private _atlasIdSeq = 0;
@@ -228,7 +229,10 @@ export class GTMap {
 
 				layer._wire(this._sharedVis, {
 					setIconDefs: (defs) => renderer.setIconDefs(defs),
-					setMarkers: (markers) => renderer.setMarkers(markers),
+					setMarkers: (markers) => {
+						renderer.setMarkers(markers);
+						this._scheduleSharedIconPrune();
+					},
 					setMarkerData: (payloads) => renderer.setMarkerData(payloads),
 					onMarkerEvent: (name, handler) => renderer.onMarkerEvent(name, handler),
 				});
@@ -301,7 +305,10 @@ export class GTMap {
 
 				layer._wire(this._sharedVis, {
 					setIconDefs: (defs) => renderer.setIconDefs(defs),
-					setMarkers: (markers) => renderer.setMarkers(markers),
+					setMarkers: (markers) => {
+						renderer.setMarkers(markers);
+						this._scheduleSharedIconPrune();
+					},
 					setMarkerData: (payloads) => renderer.setMarkerData(payloads),
 					onMarkerEvent: (name, handler) => renderer.onMarkerEvent(name, handler),
 					onOptionsChanged: (o) => renderer.onOptionsChanged(o),
@@ -389,6 +396,7 @@ export class GTMap {
 						/* expected */
 					}
 				}
+				this._scheduleSharedIconPrune();
 				ctx.requestRender();
 			},
 			setLayerOpacity: (layer, opacity) => {
@@ -458,6 +466,34 @@ export class GTMap {
 		else this._mapAtlases.push(next);
 	}
 
+	private _scheduleSharedIconPrune(): void {
+		if (this._sharedPruneScheduled) return;
+		this._sharedPruneScheduled = true;
+		const run = () => {
+			this._sharedPruneScheduled = false;
+			this._pruneSharedVisualIconDefs();
+		};
+		if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+		else setTimeout(run, 0);
+	}
+
+	/** Prune stale generated visual icon defs from map-level shared storage. */
+	private _pruneSharedVisualIconDefs(): void {
+		if (!this._sharedVis) return;
+		const live = new Set<string>(['default']);
+		for (const layer of this._createdLayers) {
+			if (layer._destroyed) continue;
+			if (layer.type !== 'interactive' && layer.type !== 'clustered') continue;
+			for (const marker of layer.markers.getAll()) {
+				live.add(this._sharedVis.getIconId(marker.visual));
+			}
+		}
+		for (const key of Object.keys(this._sharedIconDefs)) {
+			if (!key.startsWith('v_')) continue;
+			if (!live.has(key)) delete this._sharedIconDefs[key];
+		}
+	}
+
 	// -- Lifecycle --
 
 	/**
@@ -482,6 +518,8 @@ export class GTMap {
 			layer._destroyed = true;
 			layer._attached = false;
 		}
+		this._sharedIconDefs = {};
+		this._sharedVis = null;
 		this._layerRegistry.destroyAll();
 		this._createdLayers = [];
 		this._lifecycle.destroy();

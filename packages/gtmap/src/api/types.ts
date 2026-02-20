@@ -477,6 +477,8 @@ export interface MarkerInternal {
 export interface IconDefInternal {
 	iconPath: string;
 	x2IconPath?: string;
+	/** Pre-rendered canvas; when present, bypasses base64 encode/decode roundtrip. */
+	canvas?: HTMLCanvasElement;
 	width: number;
 	height: number;
 	anchorX?: number;

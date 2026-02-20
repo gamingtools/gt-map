@@ -1,4 +1,4 @@
-export type AtlasInput = Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }>;
+export type AtlasInput = Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement | HTMLCanvasElement }>;
 export type AtlasEntry = { tex: WebGLTexture; uv: { u0: number; v0: number; u1: number; v1: number } };
 
 export function createAtlas(gl: WebGLRenderingContext, imgs: AtlasInput): Map<string, AtlasEntry> | null {
@@ -35,8 +35,8 @@ export function createAtlas(gl: WebGLRenderingContext, imgs: AtlasInput): Map<st
 		if (!p) continue;
 		try {
 			const src = img.src as CanvasImageSource;
-			const sw = 'width' in img.src ? (img.src as ImageBitmap).width : (img.src as HTMLImageElement).naturalWidth;
-			const sh = 'height' in img.src ? (img.src as ImageBitmap).height : (img.src as HTMLImageElement).naturalHeight;
+			const sw = (img.src as HTMLImageElement).naturalWidth || (img.src as ImageBitmap | HTMLCanvasElement).width;
+			const sh = (img.src as HTMLImageElement).naturalHeight || (img.src as ImageBitmap | HTMLCanvasElement).height;
 			ctx2d.drawImage(src, 0, 0, sw, sh, p.x, p.y, p.w, p.h);
 		} catch {}
 	}

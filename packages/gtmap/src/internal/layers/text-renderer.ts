@@ -165,7 +165,7 @@ export function renderTextToCanvas(options: TextRenderOptions): TextRenderResult
 		canvas,
 		width: width * scale,
 		height: height * scale,
-		dataUrl: canvas.toDataURL('image/png'),
+		dataUrl: '',
 	};
 }
 

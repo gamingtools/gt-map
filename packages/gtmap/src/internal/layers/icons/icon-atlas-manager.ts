@@ -60,7 +60,7 @@ export class IconAtlasManager implements IconSizeProvider {
 	 */
 	async loadIcons(
 		gl: WebGLRenderingContext,
-		defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>,
+		defs: Record<string, { iconPath: string; x2IconPath?: string; canvas?: HTMLCanvasElement; width: number; height: number; anchorX?: number; anchorY?: number }>,
 		opts?: { replaceAll?: boolean },
 	) {
 		const bitmapsToClose: ImageBitmap[] = [];
@@ -95,8 +95,8 @@ export class IconAtlasManager implements IconSizeProvider {
 		}
 
 		// Load both 1x and 2x images for each icon (in parallel)
-		const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
-		const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement }> = [];
+		const imgs1x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement | HTMLCanvasElement }> = [];
+		const imgs2x: Array<{ key: string; w: number; h: number; src: ImageBitmap | HTMLImageElement | HTMLCanvasElement }> = [];
 
 		try {
 			const loadTasks = entries.map(async ([key, d]) => {
@@ -118,6 +118,11 @@ export class IconAtlasManager implements IconSizeProvider {
 					imgs2x.push({ key, w: d.width, h: d.height, src: src2x });
 					this.hasRetina.set(key, true);
 					this.maskBuilder.enqueue(key, src2x, d.width, d.height);
+				} else if (d.canvas) {
+					// Canvas-backed icon: skip loadImageSource entirely
+					imgs1x.push({ key, w: d.width, h: d.height, src: d.canvas });
+					this.maskBuilder.enqueue(key, d.canvas, d.width, d.height);
+					this.hasRetina.set(key, false);
 				} else {
 					const src1x = await this.loadImageSource(d.iconPath);
 					if (src1x) {

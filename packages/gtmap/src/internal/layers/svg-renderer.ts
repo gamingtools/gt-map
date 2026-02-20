@@ -227,7 +227,7 @@ export async function renderSvgToCanvas(options: SvgRenderOptions): Promise<SvgR
 		canvas,
 		width: canvasWidth,
 		height: canvasHeight,
-		dataUrl: canvas.toDataURL('image/png'),
+		dataUrl: '',
 	};
 }
 

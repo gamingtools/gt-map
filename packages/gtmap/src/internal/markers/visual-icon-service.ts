@@ -4,13 +4,16 @@
  * Handles text-to-canvas rendering, SVG-to-dataUrl conversion, image visuals,
  * and default icon generation. Maintains caches for visual-to-iconId and
  * visual-to-size mappings.
+ *
+ * Generated visuals (text, shapes, SVG async) pass their canvas through
+ * IconDefInternal to avoid a wasteful base64 encode/decode roundtrip.
  */
-import type { IconDefInternal } from '../../api/types';
+import type { IconDefInternal, SpriteAtlasHandle } from '../../api/types';
 import { Visual, isImageVisual, isTextVisual, isSvgVisual, isSpriteVisual, isCircleVisual, isRectVisual, resolveAnchor, resolveSize } from '../../api/visual';
 import { renderTextToCanvas } from '../layers/text-renderer';
 import { renderSvgToDataUrlSync, renderSvgToCanvasAsync } from '../layers/svg-renderer';
 import { renderCircleToCanvas, renderRectToCanvas } from '../layers/shape-renderer';
-import { applyVisualEffectsAsync, type VisualEffectsOptions, type SpriteRegion } from '../layers/visual-effects';
+import { applyVisualEffects, applyVisualEffectsAsync, type VisualEffectsOptions, type SpriteRegion } from '../layers/visual-effects';
 
 export interface VisualIconServiceDeps {
 	setIconDefs(defs: Record<string, IconDefInternal>): Promise<void>;
@@ -21,6 +24,8 @@ export class VisualIconService {
 	private _deps: VisualIconServiceDeps;
 	private _visualToIconId: WeakMap<Visual, string> = new WeakMap();
 	private _visualToSize: WeakMap<Visual, { width: number; height: number }> = new WeakMap();
+	private _atlasCanvasCache: WeakMap<SpriteAtlasHandle, HTMLCanvasElement> = new WeakMap();
+	private _atlasCanvasPending: WeakMap<SpriteAtlasHandle, Promise<HTMLCanvasElement | null>> = new WeakMap();
 	private _visualIdSeq = 0;
 	private _defaultIconReady = false;
 
@@ -47,8 +52,7 @@ export class VisualIconService {
 				ctx.lineWidth = 1;
 				ctx.stroke();
 			}
-			const dataUrl = cnv.toDataURL('image/png');
-			const defaultIcon: IconDefInternal = { iconPath: dataUrl, width: size, height: size };
+			const defaultIcon: IconDefInternal = { iconPath: '', canvas: cnv, width: size, height: size };
 			this._deps.setIconDefs({ default: defaultIcon });
 			this._defaultIconReady = true;
 		} catch {
@@ -73,7 +77,7 @@ export class VisualIconService {
 		let iconDef: IconDefInternal | null = null;
 
 		if (isSpriteVisual(visual)) {
-			// Sprite with effects: load atlas image, extract sprite region, apply effects
+			// Sprite with effects: resolve atlas canvas lazily to avoid preloading all atlases.
 			const spriteSize = visual.getSize();
 			const entry = visual.atlasHandle.descriptor.sprites[visual.spriteName];
 			const w = spriteSize?.width ?? entry?.width ?? 32;
@@ -81,7 +85,26 @@ export class VisualIconService {
 			const anchor = this._resolveSpriteAnchor(visual, entry, w, h);
 			this._visualToIconId.set(visual, iconId);
 			const region: SpriteRegion | undefined = entry ? { x: entry.x, y: entry.y, width: entry.width, height: entry.height } : undefined;
-			this._applyEffectsFromIconUrl(iconId, visual.atlasHandle.url, w, h, anchor, visual, region);
+			if (region) {
+				const cachedCanvas = this._atlasCanvasCache.get(visual.atlasHandle);
+				if (cachedCanvas) {
+					this._applyEffectsFromCanvas(iconId, cachedCanvas, w, h, anchor, visual, region);
+				} else {
+					this._ensureAtlasCanvas(visual.atlasHandle)
+						.then((atlasCanvas) => {
+							if (atlasCanvas) {
+								this._applyEffectsFromCanvas(iconId, atlasCanvas, w, h, anchor, visual, region);
+							} else {
+								this._applyEffectsFromIconUrl(iconId, visual.atlasHandle.url, w, h, anchor, visual, region);
+							}
+						})
+						.catch(() => {
+							this._applyEffectsFromIconUrl(iconId, visual.atlasHandle.url, w, h, anchor, visual, region);
+						});
+				}
+			} else {
+				this._applyEffectsFromIconUrl(iconId, visual.atlasHandle.url, w, h, anchor, visual, region);
+			}
 			return iconId;
 		} else if (isImageVisual(visual)) {
 			const size = visual.getSize();
@@ -117,13 +140,14 @@ export class VisualIconService {
 			const displayW = result.width / 2;
 			const displayH = result.height / 2;
 			if (visual.hasEffects()) {
-				// Text with base-class effects: apply post-process on rasterized text
+				// Text with base-class effects: apply post-process synchronously using the canvas
 				this._visualToIconId.set(visual, iconId);
-				this._applyEffectsFromDataUrl(iconId, result.dataUrl, displayW, displayH, anchor, visual);
+				this._applyEffectsFromCanvas(iconId, result.canvas, displayW, displayH, anchor, visual);
 				return iconId;
 			}
 			iconDef = {
-				iconPath: result.dataUrl,
+				iconPath: '',
+				canvas: result.canvas,
 				width: displayW,
 				height: displayH,
 				anchorX: anchor.x * displayW,
@@ -144,6 +168,7 @@ export class VisualIconService {
 					...(visual.strokeWidth != null ? { strokeWidth: visual.strokeWidth } : {}),
 				});
 				if (dataUrl) {
+					// SVG sync path: produces data:image/svg+xml (not PNG), stays on string path
 					iconDef = {
 						iconPath: dataUrl,
 						width: size.width,
@@ -168,7 +193,8 @@ export class VisualIconService {
 						const displayW = result.width / 2;
 						const displayH = result.height / 2;
 						const updatedDef: IconDefInternal = {
-							iconPath: result.dataUrl,
+							iconPath: '',
+							canvas: result.canvas,
 							width: displayW,
 							height: displayH,
 							anchorX: anchor.x * displayW,
@@ -193,11 +219,12 @@ export class VisualIconService {
 			const displayH = result.height / 2;
 			if (visual.shadow) {
 				this._visualToIconId.set(visual, iconId);
-				this._applyEffectsFromDataUrl(iconId, result.dataUrl, displayW, displayH, anchor, visual);
+				this._applyEffectsFromCanvas(iconId, result.canvas, displayW, displayH, anchor, visual);
 				return iconId;
 			}
 			iconDef = {
-				iconPath: result.dataUrl,
+				iconPath: '',
+				canvas: result.canvas,
 				width: displayW,
 				height: displayH,
 				anchorX: anchor.x * displayW,
@@ -218,11 +245,12 @@ export class VisualIconService {
 			const displayH = result.height / 2;
 			if (visual.shadow) {
 				this._visualToIconId.set(visual, iconId);
-				this._applyEffectsFromDataUrl(iconId, result.dataUrl, displayW, displayH, anchor, visual);
+				this._applyEffectsFromCanvas(iconId, result.canvas, displayW, displayH, anchor, visual);
 				return iconId;
 			}
 			iconDef = {
-				iconPath: result.dataUrl,
+				iconPath: '',
+				canvas: result.canvas,
 				width: displayW,
 				height: displayH,
 				anchorX: anchor.x * displayW,
@@ -273,7 +301,34 @@ export class VisualIconService {
 		};
 	}
 
-	/** Apply effects on an icon loaded from a URL (image/sprite). */
+	/** Apply effects synchronously using an already-rendered canvas as source. */
+	private _applyEffectsFromCanvas(
+		iconId: string,
+		sourceCanvas: HTMLCanvasElement,
+		srcW: number,
+		srcH: number,
+		anchor: { x: number; y: number },
+		visual: Visual,
+		region?: SpriteRegion,
+	): void {
+		const opts = this._buildEffectsOpts(visual);
+		const result = applyVisualEffects(sourceCanvas, srcW, srcH, opts, region);
+		const displayW = result.width / 2;
+		const displayH = result.height / 2;
+		const updatedDef: IconDefInternal = {
+			iconPath: '',
+			canvas: result.canvas,
+			width: displayW,
+			height: displayH,
+			anchorX: anchor.x * displayW,
+			anchorY: anchor.y * displayH,
+		};
+		this._deps.setIconDefs(Object.fromEntries([[iconId, updatedDef]]));
+		this._visualToSize.set(visual, { width: displayW, height: displayH });
+		this._deps.onVisualUpdated();
+	}
+
+	/** Apply effects on an icon loaded from a URL (image/sprite). Stays async. */
 	private _applyEffectsFromIconUrl(
 		iconId: string,
 		iconUrl: string,
@@ -285,11 +340,12 @@ export class VisualIconService {
 	): void {
 		const opts = this._buildEffectsOpts(visual);
 		applyVisualEffectsAsync(iconUrl, srcW, srcH, opts, (result) => {
-			if (!result.dataUrl) return;
+			if (!result.canvas.width) return;
 			const displayW = result.width / 2;
 			const displayH = result.height / 2;
 			const updatedDef: IconDefInternal = {
-				iconPath: result.dataUrl,
+				iconPath: '',
+				canvas: result.canvas,
 				width: displayW,
 				height: displayH,
 				anchorX: anchor.x * displayW,
@@ -298,20 +354,7 @@ export class VisualIconService {
 			this._deps.setIconDefs(Object.fromEntries([[iconId, updatedDef]]));
 			this._visualToSize.set(visual, { width: displayW, height: displayH });
 			this._deps.onVisualUpdated();
-		}, region, region ? undefined : iconUrl);
-	}
-
-	/** Apply effects on an already-rasterized data URL (text). */
-	private _applyEffectsFromDataUrl(
-		iconId: string,
-		dataUrl: string,
-		srcW: number,
-		srcH: number,
-		anchor: { x: number; y: number },
-		visual: Visual,
-	): void {
-		// Data URLs can be loaded as images too
-		this._applyEffectsFromIconUrl(iconId, dataUrl, srcW, srcH, anchor, visual);
+		}, region);
 	}
 
 	/** Resolve sprite anchor, preserving atlas-provided anchors when visual anchor is left at default center. */
@@ -327,5 +370,50 @@ export class VisualIconService {
 		const anchorX = entry?.anchorX ?? baseW / 2;
 		const anchorY = entry?.anchorY ?? baseH / 2;
 		return { x: anchorX / baseW, y: anchorY / baseH };
+	}
+
+	private _ensureAtlasCanvas(handle: SpriteAtlasHandle): Promise<HTMLCanvasElement | null> {
+		const cached = this._atlasCanvasCache.get(handle);
+		if (cached) return Promise.resolve(cached);
+		const pending = this._atlasCanvasPending.get(handle);
+		if (pending) return pending;
+
+		const task = this._loadAtlasCanvas(handle)
+			.then((canvas) => {
+				if (canvas) this._atlasCanvasCache.set(handle, canvas);
+				this._atlasCanvasPending.delete(handle);
+				return canvas;
+			})
+			.catch(() => {
+				this._atlasCanvasPending.delete(handle);
+				return null;
+			});
+		this._atlasCanvasPending.set(handle, task);
+		return task;
+	}
+
+	private async _loadAtlasCanvas(handle: SpriteAtlasHandle): Promise<HTMLCanvasElement | null> {
+		const response = await fetch(handle.url, { mode: 'cors', credentials: 'omit' });
+		if (!response.ok) return null;
+		const blob = await response.blob();
+		const bitmap = await createImageBitmap(blob);
+		try {
+			const width = handle.descriptor.meta.size.width;
+			const height = handle.descriptor.meta.size.height;
+			const canvas = document.createElement('canvas');
+			canvas.width = width;
+			canvas.height = height;
+			const ctx = canvas.getContext('2d');
+			if (!ctx) return null;
+			ctx.clearRect(0, 0, width, height);
+			ctx.drawImage(bitmap, 0, 0, bitmap.width, bitmap.height, 0, 0, width, height);
+			return canvas;
+		} finally {
+			try {
+				bitmap.close();
+			} catch {
+				/* expected: bitmap may already be closed */
+			}
+		}
 	}
 }
