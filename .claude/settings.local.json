@@ -24,7 +24,9 @@
       "Bash(npx svelte-check:*)",
       "Bash(npm ls:*)",
       "Bash(grep:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

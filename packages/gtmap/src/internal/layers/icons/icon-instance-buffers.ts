@@ -13,6 +13,7 @@ export class IconInstanceBuffers {
 	lastBuildZoom = 0;
 	lastBuildMinZoom = 0;
 	lastBuildMaxZoom = 19;
+	lastBuildMapIconScale = 1;
 
 	/**
 	 * Rebuild per-type instance data arrays for GPU upload.
@@ -52,10 +53,11 @@ export class IconInstanceBuffers {
 			const data = new Float32Array(list.length * 8);
 			let j = 0;
 			for (const m of list) {
-				const w = m.size ?? sz.w;
-				const h = m.size ?? sz.h;
-				const scaleX = m.size != null ? m.size / sz.w : 1;
-				const scaleY = m.size != null ? m.size / sz.h : 1;
+				const hasExplicitSize = m.sizeW != null || m.sizeH != null || m.size != null;
+				const w = m.sizeW ?? m.size ?? sz.w;
+				const h = m.sizeH ?? m.size ?? sz.h;
+				const scaleX = hasExplicitSize ? w / sz.w : 1;
+				const scaleY = hasExplicitSize ? h / sz.h : 1;
 				const ax = anc.ax * scaleX;
 				const ay = anc.ay * scaleY;
 				let iconScale = 1.0;
@@ -107,6 +109,7 @@ export class IconInstanceBuffers {
 		this.lastBuildZoom = zoom;
 		this.lastBuildMinZoom = minZoom;
 		this.lastBuildMaxZoom = maxZoom;
+		this.lastBuildMapIconScale = mapIconScale;
 		this.iconScaleDirty = false;
 	}
 

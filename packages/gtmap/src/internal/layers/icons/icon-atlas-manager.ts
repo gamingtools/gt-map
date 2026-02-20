@@ -157,7 +157,6 @@ export class IconAtlasManager implements IconSizeProvider {
 					/* expected: GL context may be lost */
 				}
 			}
-			this.maskBuilder.start();
 		}
 
 		// Delete stale textures from incremental updates (not referenced by any icon)
@@ -175,6 +174,8 @@ export class IconAtlasManager implements IconSizeProvider {
 				}
 			}
 		}
+
+		if (entries.length > 0) this.maskBuilder.start();
 	}
 
 	/**
@@ -213,6 +214,29 @@ export class IconAtlasManager implements IconSizeProvider {
 		gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, canvas);
 		const spriteIds: Record<string, string> = {};
+		const replacedTextures = new Set<WebGLTexture>();
+		const prefix = `${atlasId}/`;
+
+		// Replace existing atlas entries with the same atlasId.
+		for (const key of Array.from(this.textures.keys())) {
+			if (!key.startsWith(prefix)) continue;
+			const oldTex = this.textures.get(key);
+			if (oldTex) replacedTextures.add(oldTex);
+			this.textures.delete(key);
+			this.uvRect.delete(key);
+			this.texSize.delete(key);
+			this.texAnchor.delete(key);
+			this._iconMeta.delete(key);
+			this.hasRetina.delete(key);
+			this.maskBuilder.remove(key);
+		}
+		for (const key of Array.from(this.textures2x.keys())) {
+			if (!key.startsWith(prefix)) continue;
+			const oldTex2x = this.textures2x.get(key);
+			if (oldTex2x) replacedTextures.add(oldTex2x);
+			this.textures2x.delete(key);
+			this.uvRect2x.delete(key);
+		}
 
 		for (const [name, entry] of Object.entries(descriptor.sprites)) {
 			const iconId = `${atlasId}/${name}`;
@@ -247,6 +271,22 @@ export class IconAtlasManager implements IconSizeProvider {
 				sw: entry.width,
 				sh: entry.height,
 			});
+		}
+
+		// Delete replaced textures not referenced by any remaining icon.
+		if (replacedTextures.size > 0) {
+			const liveTextures = new Set<WebGLTexture>();
+			for (const t of this.textures.values()) if (t) liveTextures.add(t);
+			for (const t of this.textures2x.values()) if (t) liveTextures.add(t);
+			for (const texToDelete of replacedTextures) {
+				if (!liveTextures.has(texToDelete)) {
+					try {
+						gl.deleteTexture(texToDelete);
+					} catch {
+						/* expected: GL context may be lost */
+					}
+				}
+			}
 		}
 
 		this.maskBuilder.start();
@@ -330,5 +370,6 @@ export class IconAtlasManager implements IconSizeProvider {
 		this.texSize.clear();
 		this.texAnchor.clear();
 		this._iconMeta.clear();
+		this.maskBuilder.reset();
 	}
 }

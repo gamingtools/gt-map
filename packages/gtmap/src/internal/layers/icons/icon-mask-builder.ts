@@ -4,16 +4,31 @@ export class IconMaskBuilder {
 	private maskAlpha = new Map<string, { data: Uint8Array; w: number; h: number }>();
 	private pending: Array<{ key: string; src: MaskSource; w: number; h: number; crop?: { sx: number; sy: number; sw: number; sh: number } }> = [];
 	private started = false;
+	private processingScheduled = false;
 
 	/** Reset all state to allow fresh mask building after a full icon reload. */
 	reset(): void {
 		this.maskAlpha.clear();
 		this.pending = [];
 		this.started = false;
+		this.processingScheduled = false;
 	}
 
 	enqueue(key: string, src: MaskSource, w: number, h: number, crop?: { sx: number; sy: number; sw: number; sh: number }): void {
+		// Replace older queued work for the same key and invalidate any previously built mask.
+		this.maskAlpha.delete(key);
+		for (let i = this.pending.length - 1; i >= 0; i--) {
+			if (this.pending[i]!.key === key) this.pending.splice(i, 1);
+		}
 		this.pending.push(crop ? { key, src, w, h, crop } : { key, src, w, h });
+		if (this.started) this.schedule();
+	}
+
+	remove(key: string): void {
+		this.maskAlpha.delete(key);
+		for (let i = this.pending.length - 1; i >= 0; i--) {
+			if (this.pending[i]!.key === key) this.pending.splice(i, 1);
+		}
 	}
 
 	getMaskInfo(key: string): { data: Uint8Array; w: number; h: number } | null {
@@ -21,20 +36,23 @@ export class IconMaskBuilder {
 	}
 
 	start(): void {
-		if (this.started) return;
-		this.started = true;
+		if (!this.started) this.started = true;
+		this.schedule();
+	}
+
+	private schedule(): void {
+		if (this.processingScheduled || this.pending.length === 0) return;
+		this.processingScheduled = true;
 		const w = window as { requestIdleCallback?: (cb: () => void) => number };
 		const ric: ((cb: () => void) => number) | undefined = typeof w.requestIdleCallback === 'function' ? w.requestIdleCallback.bind(window) : undefined;
 		const process = () => {
+			this.processingScheduled = false;
 			let budget = 3;
 			while (budget-- > 0 && this.pending.length) {
 				const it = this.pending.shift()!;
-				if (!this.maskAlpha.has(it.key)) this.buildMaskSafe(it.key, it.src, it.w, it.h, it.crop);
+				this.buildMaskSafe(it.key, it.src, it.w, it.h, it.crop);
 			}
-			if (this.pending.length) {
-				if (typeof ric === 'function') ric(process);
-				else setTimeout(process, 0);
-			}
+			this.schedule();
 		};
 		if (typeof ric === 'function') ric(process);
 		else setTimeout(process, 0);

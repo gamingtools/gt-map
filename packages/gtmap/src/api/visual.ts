@@ -546,7 +546,8 @@ SpriteAtlasHandle.prototype.getVisual = function (this: SpriteAtlasHandle, name:
 	if (!entry) throw new Error(`Sprite '${name}' not found in atlas '${this.atlasId}'`);
 	const scale = opts?.scale ?? 1;
 	const visual = new SpriteVisual(this, name, { width: entry.width * scale, height: entry.height * scale });
-	visual.anchor = opts?.anchor ?? 'center';
+	const defaultAnchor = { x: (entry.anchorX ?? entry.width / 2) / entry.width, y: (entry.anchorY ?? entry.height / 2) / entry.height };
+	visual.anchor = opts?.anchor ?? defaultAnchor;
 	if (opts?.stroke) visual.stroke = opts.stroke;
 	if (opts?.strokeWidth) visual.strokeWidth = opts.strokeWidth;
 	if (opts?.shadow) visual.shadow = opts.shadow;

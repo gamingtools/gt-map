@@ -461,7 +461,12 @@ export interface MarkerInternal {
 	x: number;
 	y: number;
 	type: string;
+	/** Uniform marker size (legacy/internal convenience for square visuals). */
 	size?: number;
+	/** Explicit marker width for non-square visuals. */
+	sizeW?: number;
+	/** Explicit marker height for non-square visuals. */
+	sizeH?: number;
 	rotation?: number;
 	id: string;
 	/** Per-marker icon scale function override (undefined = use map's, null = no scaling) */

@@ -72,7 +72,7 @@ export class IconManager {
 		const localIds = new Set(this._spriteAtlases.map((sa) => sa.atlasId));
 		for (const sa of mapAtlases) {
 			if (!localIds.has(sa.atlasId)) {
-				this._spriteAtlases.push(sa);
+				this._upsertSpriteAtlas(sa);
 				this._icons.loadSpriteAtlas(sa.url, sa.descriptor, sa.atlasId).catch((err) => this.deps.debugWarn('map atlas init load', err));
 			}
 		}
@@ -89,6 +89,7 @@ export class IconManager {
 		}
 		try {
 			await this._icons.loadIcons(defs);
+			this._icons.startMaskBuild();
 		} catch (err) {
 			if (typeof console !== 'undefined' && console.warn) {
 				console.warn('[GTMap] Icon loading failed:', err);
@@ -101,12 +102,13 @@ export class IconManager {
 	// -- Sprite atlas --
 
 	async loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>> {
-		this._spriteAtlases.push({ url, descriptor, atlasId });
+		this._upsertSpriteAtlas({ url, descriptor, atlasId });
 		if (!this._icons) {
 			return {};
 		}
 		try {
 			const result = await this._icons.loadSpriteAtlas(url, descriptor, atlasId);
+			this._icons.startMaskBuild();
 			this.deps.clearScreenCache();
 			this.deps.requestRender();
 			return result;
@@ -208,7 +210,7 @@ export class IconManager {
 			const mapAtlases = this.deps.getMapAtlases?.() ?? [];
 			const localIds = new Set(this._spriteAtlases.map((sa) => sa.atlasId));
 			for (const sa of mapAtlases) {
-				if (!localIds.has(sa.atlasId)) this._spriteAtlases.push(sa);
+				if (!localIds.has(sa.atlasId)) this._upsertSpriteAtlas(sa);
 			}
 			for (const sa of this._spriteAtlases) {
 				this._icons.loadSpriteAtlas(sa.url, sa.descriptor, sa.atlasId).catch((err) => this.deps.debugWarn('sprite atlas rebuild load', err));
@@ -233,5 +235,11 @@ export class IconManager {
 			/* expected: GL context may be lost */
 		}
 		this._icons = null;
+	}
+
+	private _upsertSpriteAtlas(next: { url: string; descriptor: SpriteAtlasDescriptor; atlasId: string }): void {
+		const idx = this._spriteAtlases.findIndex((sa) => sa.atlasId === next.atlasId);
+		if (idx >= 0) this._spriteAtlases[idx] = next;
+		else this._spriteAtlases.push(next);
 	}
 }

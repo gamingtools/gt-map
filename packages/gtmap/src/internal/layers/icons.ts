@@ -22,6 +22,28 @@ export class IconRenderer {
 	private buffers = new IconInstanceBuffers();
 	private markers: MarkerRenderData[] = [];
 	private decals: MarkerRenderData[] = [];
+	private _markerRevision = 0;
+	private _markerInfoCache:
+		| {
+				revision: number;
+				mapScale: number;
+				zoom: number | undefined;
+				minZoom: number | undefined;
+				maxZoom: number | undefined;
+				data: Array<{
+					id: string;
+					index: number;
+					x: number;
+					y: number;
+					w: number;
+					h: number;
+					type: string;
+					anchor: { ax: number; ay: number };
+					rotation?: number;
+					icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+				}>;
+		  }
+		| null = null;
 	// Instancing support
 	private instExt: ANGLEInstancedArrays | null = null;
 	private instProg: WebGLProgram | null = null;
@@ -65,10 +87,17 @@ export class IconRenderer {
 
 	async loadIcons(defs: Record<string, { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX?: number; anchorY?: number }>, opts?: { replaceAll?: boolean }) {
 		await this.atlas.loadIcons(this.gl, defs, opts);
+		this._markerRevision++;
+		this._markerInfoCache = null;
+		this.buffers.rebuildTypeData(this.markers, this.decals, this.atlas);
 	}
 
 	async loadSpriteAtlas(url: string, descriptor: SpriteAtlasDescriptor, atlasId: string): Promise<Record<string, string>> {
-		return this.atlas.loadSpriteAtlas(this.gl, url, descriptor, atlasId);
+		const ids = await this.atlas.loadSpriteAtlas(this.gl, url, descriptor, atlasId);
+		this._markerRevision++;
+		this._markerInfoCache = null;
+		this.buffers.rebuildTypeData(this.markers, this.decals, this.atlas);
+		return ids;
 	}
 
 	startMaskBuild() {
@@ -81,47 +110,57 @@ export class IconRenderer {
 
 	// -- Marker data --
 
-	setMarkers(markers: Array<MarkerRenderData | { x: number; y: number; type: string; size?: number; rotation?: number; iconScaleFunction?: IconScaleFunction | null }>) {
+	setMarkers(
+		markers: Array<MarkerRenderData | { x: number; y: number; type: string; size?: number; sizeW?: number; sizeH?: number; rotation?: number; iconScaleFunction?: IconScaleFunction | null }>,
+	) {
 		let idx = 0;
 		const norm: MarkerRenderData[] = [];
 		for (const m of markers || []) {
 			if ('id' in (m as Record<string, unknown>)) {
 				norm.push(m as MarkerRenderData);
 			} else {
-				const mm = m as { x: number; y: number; type: string; size?: number; rotation?: number };
+				const mm = m as { x: number; y: number; type: string; size?: number; sizeW?: number; sizeH?: number; rotation?: number };
 				norm.push({
 					id: `m${idx++}`,
 					x: mm.x,
 					y: mm.y,
 					type: mm.type,
 					...(mm.size !== undefined ? { size: mm.size } : {}),
+					...(mm.sizeW !== undefined ? { sizeW: mm.sizeW } : {}),
+					...(mm.sizeH !== undefined ? { sizeH: mm.sizeH } : {}),
 					...(mm.rotation !== undefined ? { rotation: mm.rotation } : {}),
 				});
 			}
 		}
 		this.markers = norm;
+		this._markerRevision++;
+		this._markerInfoCache = null;
 		this.buffers.rebuildTypeData(this.markers, this.decals, this.atlas);
 	}
 
-	setDecals(decals: Array<MarkerRenderData | { x: number; y: number; type: string; size?: number; rotation?: number }>) {
+	setDecals(decals: Array<MarkerRenderData | { x: number; y: number; type: string; size?: number; sizeW?: number; sizeH?: number; rotation?: number }>) {
 		let idx = 0;
 		const norm: MarkerRenderData[] = [];
 		for (const d of decals || []) {
 			if ('id' in (d as Record<string, unknown>)) {
 				norm.push(d as MarkerRenderData);
 			} else {
-				const dd = d as { x: number; y: number; type: string; size?: number; rotation?: number };
+				const dd = d as { x: number; y: number; type: string; size?: number; sizeW?: number; sizeH?: number; rotation?: number };
 				norm.push({
 					id: `d${idx++}`,
 					x: dd.x,
 					y: dd.y,
 					type: dd.type,
 					...(dd.size !== undefined ? { size: dd.size } : {}),
+					...(dd.sizeW !== undefined ? { sizeW: dd.sizeW } : {}),
+					...(dd.sizeH !== undefined ? { sizeH: dd.sizeH } : {}),
 					...(dd.rotation !== undefined ? { rotation: dd.rotation } : {}),
 				});
 			}
 		}
 		this.decals = norm;
+		this._markerRevision++;
+		this._markerInfoCache = null;
 		this.buffers.rebuildTypeData(this.markers, this.decals, this.atlas);
 	}
 
@@ -139,9 +178,24 @@ export class IconRenderer {
 		h: number;
 		type: string;
 		anchor: { ax: number; ay: number };
-		rotation?: number;
-		icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
-	}> {
+			rotation?: number;
+			icon: { iconPath: string; x2IconPath?: string; width: number; height: number; anchorX: number; anchorY: number };
+		}> {
+		const cache = this._markerInfoCache;
+		const z = zoomParams?.zoom;
+		const minZ = zoomParams?.minZoom;
+		const maxZ = zoomParams?.maxZoom;
+		if (
+			cache &&
+			cache.revision === this._markerRevision &&
+			cache.mapScale === mapScale &&
+			cache.zoom === z &&
+			cache.minZoom === minZ &&
+			cache.maxZoom === maxZ
+		) {
+			return cache.data;
+		}
+
 		const out: Array<{
 			id: string;
 			index: number;
@@ -166,13 +220,14 @@ export class IconRenderer {
 				}
 			}
 			const sz = this.atlas.getSize(m.type);
-			const w0 = m.size || sz.w;
-			const h0 = m.size || sz.h;
+			const hasExplicitSize = m.sizeW != null || m.sizeH != null || m.size != null;
+			const w0 = m.sizeW ?? m.size ?? sz.w;
+			const h0 = m.sizeH ?? m.size ?? sz.h;
 			const w = w0 * scale;
 			const h = h0 * scale;
 			const origAnchor = this.atlas.getAnchor(m.type);
-			const scaleX = m.size ? m.size / sz.w : 1;
-			const scaleY = m.size ? m.size / sz.h : 1;
+			const scaleX = hasExplicitSize ? w0 / sz.w : 1;
+			const scaleY = hasExplicitSize ? h0 / sz.h : 1;
 			const a = { ax: origAnchor.ax * scaleX, ay: origAnchor.ay * scaleY };
 			const meta = this.atlas.getMeta(m.type) || { iconPath: '', width: sz.w, height: sz.h, anchorX: origAnchor.ax, anchorY: origAnchor.ay };
 			out.push({
@@ -189,6 +244,7 @@ export class IconRenderer {
 			});
 			idx++;
 		}
+		this._markerInfoCache = { revision: this._markerRevision, mapScale, zoom: z, minZoom: minZ, maxZoom: maxZ, data: out };
 		return out;
 	}
 
@@ -242,7 +298,13 @@ export class IconRenderer {
 
 		if (
 			this.buffers.hasCustomIconScale &&
-			(this.buffers.iconScaleDirty || ctx.zoom !== this.buffers.lastBuildZoom || minZoom !== this.buffers.lastBuildMinZoom || maxZoom !== this.buffers.lastBuildMaxZoom)
+			(
+				this.buffers.iconScaleDirty ||
+				ctx.zoom !== this.buffers.lastBuildZoom ||
+				minZoom !== this.buffers.lastBuildMinZoom ||
+				maxZoom !== this.buffers.lastBuildMaxZoom ||
+				mapIconScale !== this.buffers.lastBuildMapIconScale
+			)
 		) {
 			this.buffers.updateIconScales(ctx.zoom, minZoom, maxZoom, mapIconScale);
 		}
@@ -415,8 +477,8 @@ export class IconRenderer {
 				} else {
 					markerIconScale = mapIconScale;
 				}
-				const w = (m.size || sz.w) * markerIconScale;
-				const h = (m.size || sz.h) * markerIconScale;
+				const w = (m.sizeW ?? m.size ?? sz.w) * markerIconScale;
+				const h = (m.sizeH ?? m.size ?? sz.h) * markerIconScale;
 
 				if (xCSS + w / 2 < 0 || yCSS + h / 2 < 0 || xCSS - w / 2 > widthCSS || yCSS - h / 2 > heightCSS) continue;
 

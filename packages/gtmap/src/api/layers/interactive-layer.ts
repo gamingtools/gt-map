@@ -124,11 +124,17 @@ export class InteractiveLayer {
 		const internalMarkers: MarkerInternal[] = list.map((m) => {
 			const scaledSize = this._vis!.getScaledSize(m.visual, m.scale);
 			const iconScaleFn = m.iconScaleFunction !== undefined ? m.iconScaleFunction : m.visual.iconScaleFunction;
+			const sizeFields =
+				scaledSize !== undefined
+					? Math.abs(scaledSize.width - scaledSize.height) < 1e-6
+						? { size: scaledSize.width }
+						: { sizeW: scaledSize.width, sizeH: scaledSize.height }
+					: {};
 			return {
 				x: m.x,
 				y: m.y,
 				type: this._vis!.getIconId(m.visual),
-				...(scaledSize !== undefined ? { size: scaledSize } : {}),
+				...sizeFields,
 				rotation: m.rotation,
 				id: m.id,
 				...(iconScaleFn !== undefined ? { iconScaleFunction: iconScaleFn } : {}),

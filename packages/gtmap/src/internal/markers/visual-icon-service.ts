@@ -78,7 +78,7 @@ export class VisualIconService {
 			const entry = visual.atlasHandle.descriptor.sprites[visual.spriteName];
 			const w = spriteSize?.width ?? entry?.width ?? 32;
 			const h = spriteSize?.height ?? entry?.height ?? 32;
-			const anchor = resolveAnchor(visual.anchor);
+			const anchor = this._resolveSpriteAnchor(visual, entry, w, h);
 			this._visualToIconId.set(visual, iconId);
 			const region: SpriteRegion | undefined = entry ? { x: entry.x, y: entry.y, width: entry.width, height: entry.height } : undefined;
 			this._applyEffectsFromIconUrl(iconId, visual.atlasHandle.url, w, h, anchor, visual, region);
@@ -246,17 +246,20 @@ export class VisualIconService {
 		return this._visualToIconId.get(visual) ?? 'default';
 	}
 
-	getScaledSize(visual: Visual, scale: number): number | undefined {
+	getScaledSize(visual: Visual, scale: number): { width: number; height: number } | undefined {
 		if (isSpriteVisual(visual) && visual.size !== undefined) {
 			const sz = resolveSize(visual.size);
-			return Math.max(sz.width, sz.height) * scale;
+			return { width: sz.width * scale, height: sz.height * scale };
 		}
-		if (scale === 1) return undefined;
 		const cachedSize = this._visualToSize.get(visual);
-		if (cachedSize) return Math.max(cachedSize.width, cachedSize.height) * scale;
+		if (cachedSize) {
+			if (scale === 1) return undefined;
+			return { width: cachedSize.width * scale, height: cachedSize.height * scale };
+		}
 		if (isImageVisual(visual)) {
 			const sz = visual.getSize();
-			return Math.max(sz.width, sz.height) * scale;
+			if (scale === 1) return undefined;
+			return { width: sz.width * scale, height: sz.height * scale };
 		}
 		return undefined;
 	}
@@ -282,6 +285,7 @@ export class VisualIconService {
 	): void {
 		const opts = this._buildEffectsOpts(visual);
 		applyVisualEffectsAsync(iconUrl, srcW, srcH, opts, (result) => {
+			if (!result.dataUrl) return;
 			const displayW = result.width / 2;
 			const displayH = result.height / 2;
 			const updatedDef: IconDefInternal = {
@@ -294,7 +298,7 @@ export class VisualIconService {
 			this._deps.setIconDefs(Object.fromEntries([[iconId, updatedDef]]));
 			this._visualToSize.set(visual, { width: displayW, height: displayH });
 			this._deps.onVisualUpdated();
-		}, region);
+		}, region, region ? undefined : iconUrl);
 	}
 
 	/** Apply effects on an already-rasterized data URL (text). */
@@ -308,5 +312,20 @@ export class VisualIconService {
 	): void {
 		// Data URLs can be loaded as images too
 		this._applyEffectsFromIconUrl(iconId, dataUrl, srcW, srcH, anchor, visual);
+	}
+
+	/** Resolve sprite anchor, preserving atlas-provided anchors when visual anchor is left at default center. */
+	private _resolveSpriteAnchor(
+		visual: Visual,
+		entry: { width: number; height: number; anchorX?: number; anchorY?: number } | undefined,
+		w: number,
+		h: number,
+	): { x: number; y: number } {
+		if (visual.anchor !== 'center') return resolveAnchor(visual.anchor);
+		const baseW = entry?.width ?? w;
+		const baseH = entry?.height ?? h;
+		const anchorX = entry?.anchorX ?? baseW / 2;
+		const anchorY = entry?.anchorY ?? baseH / 2;
+		return { x: anchorX / baseW, y: anchorY / baseH };
 	}
 }

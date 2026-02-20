@@ -186,12 +186,18 @@ export class ClusteredLayer {
 		const list = this.markers.getFiltered();
 		const internalMarkers: MarkerInternal[] = list.map((m) => {
 			const scaledSize = this._vis!.getScaledSize(m.visual, m.scale);
+			const sizeFields =
+				scaledSize !== undefined
+					? Math.abs(scaledSize.width - scaledSize.height) < 1e-6
+						? { size: scaledSize.width }
+						: { sizeW: scaledSize.width, sizeH: scaledSize.height }
+					: {};
 			// Clustered layers ignore iconScaleFunction entirely (map-level, per-visual, and per-marker).
 			return {
 				x: m.x,
 				y: m.y,
 				type: this._vis!.getIconId(m.visual),
-				...(scaledSize !== undefined ? { size: scaledSize } : {}),
+				...sizeFields,
 				rotation: m.rotation,
 				id: m.id,
 			};

@@ -9,7 +9,7 @@
  *   map.events  -- typed event subscriptions
  */
 import type { MapEvents } from './events/public';
-import type { MapOptions, SuspendOptions, EventMap } from './types';
+import type { MapOptions, SuspendOptions, EventMap, IconDefInternal } from './types';
 import { SpriteAtlasHandle } from './types';
 import { MapConfig } from '../internal/context/map-config';
 import { MapContext } from '../internal/context/map-context';
@@ -70,6 +70,7 @@ export class GTMap {
 	private _layerRegistry: LayerRegistry;
 	private _createdLayers: AnyLayer[] = [];
 	private _sharedVis: VisualIconService | null = null;
+	private _sharedIconDefs: Record<string, IconDefInternal> = {};
 	private _mapIconScaleFn: ((zoom: number, minZoom: number, maxZoom: number) => number) | null = null;
 	private _mapAtlases: Array<{ url: string; descriptor: import('./types').SpriteAtlasDescriptor; atlasId: string }> = [];
 	private _atlasIdSeq = 0;
@@ -191,7 +192,7 @@ export class GTMap {
 				// Share VisualIconService across interactive layers
 				if (!this._sharedVis) {
 					this._sharedVis = new VisualIconService({
-						setIconDefs: (defs) => layer._renderer!.setIconDefs(defs),
+						setIconDefs: (defs) => this._setSharedVisualIconDefs(defs),
 						onVisualUpdated: () => ctx.requestRender(),
 					});
 					this._sharedVis.ensureDefaultIcon();
@@ -231,6 +232,7 @@ export class GTMap {
 					setMarkerData: (payloads) => renderer.setMarkerData(payloads),
 					onMarkerEvent: (name, handler) => renderer.onMarkerEvent(name, handler),
 				});
+				this._applySharedIconDefsToRenderer(renderer);
 
 				this._createdLayers.push(layer);
 				return layer;
@@ -262,7 +264,7 @@ export class GTMap {
 				// Share VisualIconService across interactive/clustered layers
 				if (!this._sharedVis) {
 					this._sharedVis = new VisualIconService({
-						setIconDefs: (defs) => layer._renderer!.setIconDefs(defs),
+						setIconDefs: (defs) => this._setSharedVisualIconDefs(defs),
 						onVisualUpdated: () => ctx.requestRender(),
 					});
 					this._sharedVis.ensureDefaultIcon();
@@ -306,6 +308,7 @@ export class GTMap {
 					getClusters: () => renderer.getClusters(),
 					getClusterForMarkerId: (id) => renderer.getClusterForMarkerId(id),
 				});
+				this._applySharedIconDefsToRenderer(renderer);
 
 				this._createdLayers.push(layer);
 				return layer;
@@ -403,7 +406,7 @@ export class GTMap {
 			loadSpriteAtlas: async (url, descriptor, atlasId?) => {
 				this._atlasIdSeq = (this._atlasIdSeq + 1) % Number.MAX_SAFE_INTEGER;
 				const id = atlasId || `atlas_${this._atlasIdSeq.toString(36)}`;
-				this._mapAtlases.push({ url, descriptor, atlasId: id });
+				this._upsertMapAtlas({ url, descriptor, atlasId: id });
 
 				// Build spriteIds from descriptor (maps sprite name -> internal icon id)
 				const spriteIds: Record<string, string> = {};
@@ -423,6 +426,36 @@ export class GTMap {
 				return new SpriteAtlasHandle(id, spriteIds, descriptor, url);
 			},
 		});
+	}
+
+	private async _setSharedVisualIconDefs(defs: Record<string, IconDefInternal>): Promise<void> {
+		for (const key of Object.keys(defs)) this._sharedIconDefs[key] = defs[key]!;
+		const tasks: Promise<void>[] = [];
+		for (const layer of this._createdLayers) {
+			if ((layer.type === 'interactive' || layer.type === 'clustered') && layer._renderer) {
+				tasks.push(layer._renderer.setIconDefs(defs));
+			}
+		}
+		if (tasks.length === 0) return;
+		const results = await Promise.allSettled(tasks);
+		for (const result of results) {
+			if (result.status === 'rejected') {
+				this._ctx.debug.warn('shared visual icon defs', result.reason);
+			}
+		}
+	}
+
+	private _applySharedIconDefsToRenderer(
+		renderer: { setIconDefs(defs: Record<string, IconDefInternal>): Promise<void> },
+	): void {
+		if (Object.keys(this._sharedIconDefs).length === 0) return;
+		renderer.setIconDefs(this._sharedIconDefs).catch((err) => this._ctx.debug.warn('shared icon defs apply', err));
+	}
+
+	private _upsertMapAtlas(next: { url: string; descriptor: import('./types').SpriteAtlasDescriptor; atlasId: string }): void {
+		const idx = this._mapAtlases.findIndex((a) => a.atlasId === next.atlasId);
+		if (idx >= 0) this._mapAtlases[idx] = next;
+		else this._mapAtlases.push(next);
 	}
 
 	// -- Lifecycle --

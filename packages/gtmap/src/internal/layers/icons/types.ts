@@ -6,6 +6,8 @@ export type MarkerRenderData = {
 	y: number;
 	type: string;
 	size?: number;
+	sizeW?: number;
+	sizeH?: number;
 	rotation?: number;
 	/** Per-marker icon scale function override (undefined = use map's, null = no scaling) */
 	iconScaleFunction?: IconScaleFunction | null;
